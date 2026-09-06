@@ -98,7 +98,7 @@ public sealed class LyricsStudioEngine : ILyricsStudioEngine
 
     public async Task<LyricsStudioResult> ProcessAsync(Track track, LyricsStudioOptions options, IProgress<LyricsStudioProgress>? progress, CancellationToken ct)
     {
-        var ffmpeg = _ffmpeg.GetFfmpegPath() ?? throw new InvalidOperationException("ffmpeg is required to decode the song. Set its path under Settings → Audio → Audio tools.");
+        var ffmpeg = _ffmpeg.GetFfmpegPath() ?? throw new InvalidOperationException("ffmpeg is required to decode the song. Set its path under Settings → Advanced → Helper programs.");
         if (string.IsNullOrWhiteSpace(track.FilePath) || !File.Exists(track.FilePath))
             throw new FileNotFoundException("The audio file is missing.", track.FilePath);
 

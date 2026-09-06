@@ -1,4 +1,5 @@
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.Interactivity;
 using Noctis.ViewModels;
 
@@ -21,5 +22,17 @@ public partial class YouTubeDownloadDialog : Window
     {
         base.OnLoaded(e);
         QueryBox.Focus();
+    }
+
+    protected override void OnKeyDown(KeyEventArgs e)
+    {
+        // Escape closes the same way the header X does.
+        if (e.Key == Key.Escape && DataContext is YouTubeDownloadViewModel vm)
+        {
+            e.Handled = true;
+            vm.CloseCommand.Execute(null);
+            return;
+        }
+        base.OnKeyDown(e);
     }
 }

@@ -38,6 +38,18 @@
             <Setter Property="Margin" Value="0,0,12,12"/>
         </Style>
 
+        <!-- Small fact pill (value + label) under the library numbers -->
+        <Style Selector="Border.stat-pill">
+            <Setter Property="CornerRadius" Value="999"/>
+            <Setter Property="Padding" Value="10,0"/>
+            <Setter Property="Height" Value="24"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <!-- One TextBlock (two Runs) per pill with a fixed 14px box: number and label share a
+                 baseline, and a label with descenders (Lossy, playlists) can't grow the box. -->
+            <Setter Property="Margin" Value="0,0,6,6"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
+        </Style>
+
         <!-- Section card -->
         <Style Selector="Border.stats-section">
             <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundListLowBrush}"/>
@@ -81,35 +93,7 @@
                 <!-- ═══════════════ OVERVIEW ═══════════════ -->
                 <StackPanel Spacing="16" IsVisible="{Binding IsOverviewTabSelected}">
 
-                    <!-- Library cards -->
-                    <UniformGrid Columns="4">
-                        <Border Classes="stat-card">
-                            <StackPanel Spacing="4">
-                                <TextBlock Text="{Binding TotalTracks}" FontSize="26" FontWeight="Bold"/>
-                                <TextBlock Text="{loc:T Statistics.Tracks}" FontSize="12" Opacity="0.5"/>
-                            </StackPanel>
-                        </Border>
-                        <Border Classes="stat-card">
-                            <StackPanel Spacing="4">
-                                <TextBlock Text="{Binding TotalAlbums}" FontSize="26" FontWeight="Bold"/>
-                                <TextBlock Text="{loc:T Statistics.Albums}" FontSize="12" Opacity="0.5"/>
-                            </StackPanel>
-                        </Border>
-                        <Border Classes="stat-card">
-                            <StackPanel Spacing="4">
-                                <TextBlock Text="{Binding TotalArtists}" FontSize="26" FontWeight="Bold"/>
-                                <TextBlock Text="{loc:T Statistics.Artists}" FontSize="12" Opacity="0.5"/>
-                            </StackPanel>
-                        </Border>
-                        <Border Classes="stat-card">
-                            <StackPanel Spacing="4">
-                                <TextBlock Text="{Binding TotalDuration}" FontSize="26" FontWeight="Bold"/>
-                                <TextBlock Text="{loc:T Statistics.TotalDuration}" FontSize="12" Opacity="0.5"/>
-                            </StackPanel>
-                        </Border>
-                    </UniformGrid>
-
-                    <!-- Listening cards (accent values, like the mock) -->
+                    <!-- Listening, the numbers that change: one accent row. -->
                     <UniformGrid Columns="4">
                         <Border Classes="stat-card">
                             <StackPanel Spacing="4">
@@ -125,24 +109,6 @@
                                 <TextBlock Text="{loc:T Statistics.ListeningTime}" FontSize="12" Opacity="0.5"/>
                             </StackPanel>
                         </Border>
-                        <Border Classes="stat-card">
-                            <StackPanel Spacing="4">
-                                <TextBlock Text="{Binding AvgTrackLength}" FontSize="26" FontWeight="Bold"
-                                           Foreground="{DynamicResource AccentTextBrush}"/>
-                                <TextBlock Text="{loc:T Statistics.AvgTrackLength}" FontSize="12" Opacity="0.5"/>
-                            </StackPanel>
-                        </Border>
-                        <Border Classes="stat-card">
-                            <StackPanel Spacing="4">
-                                <TextBlock Text="{Binding LikedTracks}" FontSize="26" FontWeight="Bold"
-                                           Foreground="{DynamicResource AccentTextBrush}"/>
-                                <TextBlock Text="{loc:T Statistics.LikedTracks}" FontSize="12" Opacity="0.5"/>
-                            </StackPanel>
-                        </Border>
-                    </UniformGrid>
-
-                    <!-- Streak + this week -->
-                    <UniformGrid Columns="2">
                         <Border Classes="stat-card">
                             <StackPanel Spacing="4">
                                 <TextBlock Text="{Binding CurrentStreakText}" FontSize="26" FontWeight="Bold"
@@ -224,52 +190,43 @@
                         </Border>
                     </Grid>
 
-                    <!-- Audio quality (merged in from the former Quality Report tab) -->
-                    <TextBlock Text="{loc:T Statistics.AudioQuality}" FontSize="16" FontWeight="Bold" Margin="2,8,0,0"/>
-                    <UniformGrid Columns="4">
-                        <Border Classes="stat-card">
-                            <StackPanel Spacing="4">
-                                <TextBlock Text="{Binding LosslessPercentText}" FontSize="26" FontWeight="Bold"
-                                           Foreground="{DynamicResource AccentTextBrush}"/>
-                                <TextBlock Text="{loc:T Statistics.Lossless}" FontSize="12" Opacity="0.5"/>
-                                <TextBlock Text="{Binding LosslessSubText}" FontSize="11" Opacity="0.35"/>
-                            </StackPanel>
-                        </Border>
-                        <Border Classes="stat-card">
-                            <StackPanel Spacing="4">
-                                <TextBlock Text="{Binding HiResPercentText}" FontSize="26" FontWeight="Bold"
-                                           Foreground="{DynamicResource AccentTextBrush}"/>
-                                <TextBlock Text="{loc:T Statistics.HiResLossless}" FontSize="12" Opacity="0.5"/>
-                                <TextBlock Text="{Binding HiResSubText}" FontSize="11" Opacity="0.35"/>
-                            </StackPanel>
-                        </Border>
-                        <Border Classes="stat-card">
-                            <StackPanel Spacing="4">
-                                <TextBlock Text="{Binding AvgSampleRateText}" FontSize="26" FontWeight="Bold"/>
-                                <TextBlock Text="{loc:T Statistics.AvgSampleRate}" FontSize="12" Opacity="0.5"/>
-                            </StackPanel>
-                        </Border>
-                        <Border Classes="stat-card">
-                            <StackPanel Spacing="4">
-                                <TextBlock Text="{Binding AvgBitDepthText}" FontSize="26" FontWeight="Bold"/>
-                                <TextBlock Text="{loc:T Statistics.AvgBitDepth}" FontSize="12" Opacity="0.5"/>
-                            </StackPanel>
-                        </Border>
-                    </UniformGrid>
-
+                    <!-- Library: the static facts in one section — a quiet number row, the format
+                         bars, and the audio-quality averages as a pill strip (was 8 tiles + a card). -->
                     <Border Classes="stats-section">
-                        <StackPanel Spacing="12">
-                            <TextBlock Text="{loc:T Statistics.FormatBreakdown}" FontSize="16" FontWeight="Bold"/>
+                        <StackPanel Spacing="16">
+                            <TextBlock Text="{loc:T Statistics.Library}" FontSize="16" FontWeight="Bold"/>
+                            <UniformGrid Columns="4">
+                                <StackPanel Spacing="2">
+                                    <TextBlock Text="{Binding TotalTracks}" FontSize="22" FontWeight="Bold"/>
+                                    <TextBlock Text="{loc:T Statistics.Tracks}" FontSize="12" Opacity="0.5"/>
+                                </StackPanel>
+                                <StackPanel Spacing="2">
+                                    <TextBlock Text="{Binding TotalAlbums}" FontSize="22" FontWeight="Bold"/>
+                                    <TextBlock Text="{loc:T Statistics.Albums}" FontSize="12" Opacity="0.5"/>
+                                </StackPanel>
+                                <StackPanel Spacing="2">
+                                    <TextBlock Text="{Binding TotalArtists}" FontSize="22" FontWeight="Bold"/>
+                                    <TextBlock Text="{loc:T Statistics.Artists}" FontSize="12" Opacity="0.5"/>
+                                </StackPanel>
+                                <StackPanel Spacing="2">
+                                    <TextBlock Text="{Binding TotalDuration}" FontSize="22" FontWeight="Bold"/>
+                                    <TextBlock Text="{loc:T Statistics.TotalDuration}" FontSize="12" Opacity="0.5"/>
+                                </StackPanel>
+                            </UniformGrid>
+
+                            <Border Height="1" Background="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
+
+                            <TextBlock Text="{loc:T Statistics.FormatBreakdown}" FontSize="12" FontWeight="SemiBold" Opacity="0.55"/>
                             <TextBlock Text="{loc:T Statistics.NoTracksLibrary}"
                                        FontSize="13" Opacity="0.4"
                                        IsVisible="{Binding !FormatBreakdown.Count}"/>
-                            <ItemsControl ItemsSource="{Binding FormatBreakdown}">
+                            <ItemsControl ItemsSource="{Binding FormatBreakdown}" Margin="0,-6,0,0">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate x:DataType="m:StatItem">
-                                        <Grid ColumnDefinitions="80,*,Auto" Margin="0,4" Height="26">
+                                        <Grid ColumnDefinitions="80,*,Auto" Margin="0,3" Height="24">
                                             <TextBlock Grid.Column="0" Text="{Binding Label}" FontSize="13"
                                                        FontWeight="SemiBold" VerticalAlignment="Center"/>
-                                            <Border Grid.Column="1" VerticalAlignment="Center" Height="16"
+                                            <Border Grid.Column="1" VerticalAlignment="Center" Height="12"
                                                     CornerRadius="999" ClipToBounds="True" Margin="8,0"
                                                     Background="{DynamicResource SystemControlBackgroundBaseLowBrush}">
                                                 <Border Background="{DynamicResource AccentColorBrush}" CornerRadius="999"
@@ -283,6 +240,27 @@
                                     </DataTemplate>
                                 </ItemsControl.ItemTemplate>
                             </ItemsControl>
+
+                            <WrapPanel Orientation="Horizontal" Margin="0,0,0,-6">
+                                <Border Classes="stat-pill">
+                                    <TextBlock FontSize="11.5" Height="14" LineHeight="14" VerticalAlignment="Center"><Run Text="{Binding LosslessPercentText}" FontWeight="SemiBold"/><Run Text=" "/><Run Text="{loc:T Statistics.Lossless}" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/></TextBlock>
+                                </Border>
+                                <Border Classes="stat-pill">
+                                    <TextBlock FontSize="11.5" Height="14" LineHeight="14" VerticalAlignment="Center"><Run Text="{Binding HiResPercentText}" FontWeight="SemiBold"/><Run Text=" "/><Run Text="{loc:T Statistics.HiResLossless}" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/></TextBlock>
+                                </Border>
+                                <Border Classes="stat-pill">
+                                    <TextBlock FontSize="11.5" Height="14" LineHeight="14" VerticalAlignment="Center"><Run Text="{Binding AvgSampleRateText}" FontWeight="SemiBold"/><Run Text=" "/><Run Text="{loc:T Statistics.AvgSampleRate}" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/></TextBlock>
+                                </Border>
+                                <Border Classes="stat-pill">
+                                    <TextBlock FontSize="11.5" Height="14" LineHeight="14" VerticalAlignment="Center"><Run Text="{Binding AvgBitDepthText}" FontWeight="SemiBold"/><Run Text=" "/><Run Text="{loc:T Statistics.AvgBitDepth}" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/></TextBlock>
+                                </Border>
+                                <Border Classes="stat-pill">
+                                    <TextBlock FontSize="11.5" Height="14" LineHeight="14" VerticalAlignment="Center"><Run Text="{Binding AvgTrackLength}" FontWeight="SemiBold"/><Run Text=" "/><Run Text="{loc:T Statistics.AvgLength}" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/></TextBlock>
+                                </Border>
+                                <Border Classes="stat-pill">
+                                    <TextBlock FontSize="11.5" Height="14" LineHeight="14" VerticalAlignment="Center"><Run Text="{Binding LikedTracks}" FontWeight="SemiBold"/><Run Text=" "/><Run Text="{loc:T Statistics.Liked}" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/></TextBlock>
+                                </Border>
+                            </WrapPanel>
                         </StackPanel>
                     </Border>
                 </StackPanel>

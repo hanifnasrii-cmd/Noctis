@@ -56,10 +56,12 @@
                      pill fills with the accent. -->
                 <Style Selector="Button.mode-pill">
                     <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
-                    <!-- Outline keeps the inactive pill visible on dark themes, where the
-                         BaseLow fill nearly matches the card background. -->
-                    <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
-                    <Setter Property="BorderThickness" Value="1"/>
+                    <!-- Same pill outline as the Settings page (SettingsView "(not set)" box):
+                         keeps the inactive pill visible on dark themes, where the BaseLow
+                         fill nearly matches the card background. -->
+                    <Setter Property="BorderBrush" Value="#99A0A0A8"/>
+                    <Setter Property="BorderThickness" Value="1.5"/>
+                    <Setter Property="UseLayoutRounding" Value="True"/>
                     <Setter Property="CornerRadius" Value="999"/>
                     <Setter Property="Padding" Value="18,6"/>
                     <Setter Property="Cursor" Value="Hand"/>
@@ -68,40 +70,106 @@
                 <Style Selector="Button.mode-pill:pointerover /template/ ContentPresenter#PART_ContentPresenter">
                     <Setter Property="BorderBrush" Value="{TemplateBinding BorderBrush}"/>
                 </Style>
+                <Style Selector="Button.mode-pill:pressed /template/ ContentPresenter#PART_ContentPresenter">
+                    <Setter Property="BorderBrush" Value="{TemplateBinding BorderBrush}"/>
+                </Style>
                 <Style Selector="Button.mode-pill.active">
                     <Setter Property="Background" Value="{DynamicResource AccentColorBrush}"/>
                     <Setter Property="Foreground" Value="{DynamicResource AccentForegroundBrush}"/>
-                    <Setter Property="BorderBrush" Value="Transparent"/>
+                    <!-- Accent-on-accent border: same stroke width as the inactive chip so the
+                         pair never changes size when the selection flips. -->
+                    <Setter Property="BorderBrush" Value="{DynamicResource AccentColorBrush}"/>
                 </Style>
                 <Style Selector="Button.mode-pill.active /template/ ContentPresenter#PART_ContentPresenter">
                     <Setter Property="Background" Value="{DynamicResource AccentColorBrush}"/>
                     <Setter Property="Foreground" Value="{DynamicResource AccentForegroundBrush}"/>
                 </Style>
+                <!-- Pill outline shared with Settings: 1.5px translucent mid-grey, layout-rounded.
+                     The Fluent templates restyle the border on hover/focus/press, so the template
+                     parts are pinned too. -->
+                <Style Selector="TextBox">
+                    <Setter Property="BorderBrush" Value="#99A0A0A8"/>
+                    <Setter Property="BorderThickness" Value="1.5"/>
+                    <Setter Property="UseLayoutRounding" Value="True"/>
+                </Style>
+                <Style Selector="TextBox /template/ Border#PART_BorderElement">
+                    <Setter Property="BorderBrush" Value="#99A0A0A8"/>
+                    <Setter Property="BorderThickness" Value="1.5"/>
+                    <Setter Property="UseLayoutRounding" Value="True"/>
+                </Style>
+                <Style Selector="TextBox:pointerover /template/ Border#PART_BorderElement">
+                    <Setter Property="BorderBrush" Value="#99A0A0A8"/>
+                </Style>
+                <Style Selector="TextBox:focus /template/ Border#PART_BorderElement, TextBox:focus-within /template/ Border#PART_BorderElement">
+                    <Setter Property="BorderBrush" Value="{DynamicResource AccentColorBrush}"/>
+                    <Setter Property="BorderThickness" Value="1.5"/>
+                </Style>
+                <Style Selector="Button.pill-outline">
+                    <Setter Property="BorderBrush" Value="#99A0A0A8"/>
+                    <Setter Property="BorderThickness" Value="1.5"/>
+                    <Setter Property="UseLayoutRounding" Value="True"/>
+                </Style>
+                <Style Selector="Button.pill-outline:pointerover /template/ ContentPresenter#PART_ContentPresenter, Button.pill-outline:pressed /template/ ContentPresenter#PART_ContentPresenter">
+                    <Setter Property="BorderBrush" Value="#99A0A0A8"/>
+                </Style>
+                <!-- Round header X (same look as the Settings header close). -->
+                <Style Selector="Button.dialog-close">
+                    <Setter Property="Width" Value="34"/>
+                    <Setter Property="Height" Value="34"/>
+                    <Setter Property="CornerRadius" Value="17"/>
+                    <Setter Property="Padding" Value="0"/>
+                    <Setter Property="BorderThickness" Value="0"/>
+                    <Setter Property="Cursor" Value="Hand"/>
+                    <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundListMediumBrush}"/>
+                </Style>
+                <Style Selector="Button.dialog-close:pointerover">
+                    <Setter Property="RenderTransform" Value="scale(1)"/>
+                </Style>
+                <!-- Quiet secondary actions in the sticky bar: no fill, no border, dims until hovered.
+                     The Fluent template paints a hover fill on the presenter, so pin it transparent. -->
+                <Style Selector="Button.text-btn">
+                    <Setter Property="Background" Value="Transparent"/>
+                    <Setter Property="BorderThickness" Value="0"/>
+                    <Setter Property="Padding" Value="10,6"/>
+                    <Setter Property="FontSize" Value="13"/>
+                    <Setter Property="Opacity" Value="0.7"/>
+                    <Setter Property="Cursor" Value="Hand"/>
+                </Style>
+                <Style Selector="Button.text-btn:pointerover">
+                    <Setter Property="Opacity" Value="1"/>
+                </Style>
+                <Style Selector="Button.text-btn:pointerover /template/ ContentPresenter#PART_ContentPresenter, Button.text-btn:pressed /template/ ContentPresenter#PART_ContentPresenter">
+                    <Setter Property="Background" Value="Transparent"/>
+                    <Setter Property="Opacity" Value="1"/>
+                </Style>
             </Border.Styles>
 
             <DockPanel>
 
-                <!-- Bottom buttons (match MetadataWindow: Cancel left, accent Save right). -->
+                <!-- Header: title + one-line description on the left, round X at the top-right. -->
+                <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto" Margin="24,18,18,4">
+                    <StackPanel Grid.Column="0" Spacing="2" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding DialogTitle}" FontSize="20" FontWeight="Bold"/>
+                        <TextBlock Text="{loc:T ThemeEditor.Subtitle}" FontSize="12" Opacity="0.6" TextWrapping="Wrap"/>
+                    </StackPanel>
+                    <Button Grid.Column="1" Classes="dialog-close" Command="{Binding CancelCommand}"
+                            ToolTip.Tip="{loc:T Common.Close}"
+                            VerticalAlignment="Top" Margin="12,0,0,0">
+                        <PathIcon Data="{StaticResource DismissIcon}" Width="12" Height="12"/>
+                    </Button>
+                </Grid>
+
+                <!-- Sticky bar: accent Save on the right (the header X is the cancel). -->
                 <Border DockPanel.Dock="Bottom"
                         Padding="24,12,24,16"
+                        Background="#09FFFFFF"
                         BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
                         BorderThickness="0,1,0,0">
                     <Grid ColumnDefinitions="*,Auto,Auto">
-                        <Button Grid.Column="1"
-                                Content="{loc:T ThemeEditor.Cancel}"
-                                Command="{Binding CancelCommand}"
-                                Width="100"
-                                Padding="0,10"
-                                FontWeight="Bold"
-                                HorizontalContentAlignment="Center"
-                                CornerRadius="999"
-                                Margin="0,0,8,0"
-                                Cursor="Hand"/>
                         <Button Grid.Column="2"
                                 Content="{loc:T ThemeEditor.Save}"
                                 Command="{Binding SaveCommand}"
-                                Width="100"
-                                Padding="0,10"
+                                Padding="22,10"
                                 Classes="accent-btn"
                                 Background="{DynamicResource AccentButtonBackground}"
                                 Foreground="{DynamicResource AccentForegroundBrush}"
@@ -112,17 +180,14 @@
                     </Grid>
                 </Border>
 
-                <Grid ColumnDefinitions="300,*" Margin="24,20,24,16">
+                <Grid ColumnDefinitions="300,*" Margin="24,10,24,16">
 
                     <!-- Left: inputs -->
                     <StackPanel Grid.Column="0" Spacing="16" Margin="0,0,22,0">
-                        <TextBlock Text="{Binding DialogTitle}" FontSize="20" FontWeight="Bold"/>
-
                         <StackPanel Spacing="5">
                             <TextBlock Text="{loc:T ThemeEditor.Name}" FontSize="13" FontWeight="SemiBold"/>
                             <TextBox x:Name="NameTextBox"
                                      Text="{Binding Name, Mode=TwoWay}"
-                                     Classes="crisp-input"
                                      Watermark="{loc:T ThemeEditor.MyTheme}"
                                      CornerRadius="999"
                                      Padding="14,8"/>

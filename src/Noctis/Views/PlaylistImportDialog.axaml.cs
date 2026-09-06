@@ -41,6 +41,18 @@ public partial class PlaylistImportDialog : Window
         };
     }
 
+    protected override void OnKeyDown(KeyEventArgs e)
+    {
+        // Escape closes the same way the header X does.
+        if (e.Key == Key.Escape && DataContext is PlaylistImportViewModel vm)
+        {
+            e.Handled = true;
+            vm.CloseCommand.Execute(null);
+            return;
+        }
+        base.OnKeyDown(e);
+    }
+
     private static void OnDragOver(object? sender, DragEventArgs e)
     {
         e.DragEffects = e.Data.Contains(DataFormats.Files) ? DragDropEffects.Copy : DragDropEffects.None;

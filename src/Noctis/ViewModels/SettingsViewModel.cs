@@ -134,16 +134,28 @@ public partial class SettingsViewModel : ViewModelBase
     public bool IsSettingsLoaded => _settingsLoaded;
     public event EventHandler? SettingsLoaded;
 
+    /// <summary>Transient line under the Plugins buttons ("Reloaded · 2 plugins found").</summary>
+    [ObservableProperty] private string _pluginsStatus = string.Empty;
+
     [RelayCommand]
     private void OpenPluginsFolder()
     {
         if (Plugins is null) return;
         try { Directory.CreateDirectory(Plugins.PluginsDirectory); } catch { /* shown by the OS if it fails */ }
-        PlatformHelper.OpenUrl(Plugins.PluginsDirectory);
+        // OpenFolder, not OpenUrl: OpenUrl only launches http(s) URLs and silently
+        // dropped the directory path, so this button did nothing.
+        PlatformHelper.OpenFolder(Plugins.PluginsDirectory);
     }
 
     [RelayCommand]
-    private void ReloadPlugins() => Plugins?.LoadAll();
+    private void ReloadPlugins()
+    {
+        if (Plugins is null) return;
+        Plugins.LoadAll();
+        var n = Plugins.Plugins.Count;
+        TransientStatus.Show(nameof(PluginsStatus), v => PluginsStatus = v,
+            n == 0 ? "Reloaded · no plugins found." : $"Reloaded · {n} plugin{(n == 1 ? "" : "s")} found.");
+    }
 
     public bool IsGeneralTabVisible => IsGeneralTabSelected;
     public bool IsAppearanceTabVisible => IsAppearanceTabSelected;
@@ -220,12 +232,99 @@ public partial class SettingsViewModel : ViewModelBase
     [ObservableProperty] private string _profileName = string.Empty;
     [ObservableProperty] private string _profileAvatarPath = string.Empty;
 
-    partial void OnProfileNameChanged(string value) { if (_settingsLoaded) QueueSettingsSave(); }
+    partial void OnProfileNameChanged(string value)
+    {
+        if (!_settingsLoaded) return;
+        QueueSettingsSave();
+        QueueProfileNameLog(value);
+    }
     partial void OnProfileAvatarPathChanged(string value) { if (_settingsLoaded) _ = SaveAsync(); }
 
-    /// <summary>Back to the initial-letter placeholder; the picture file itself is left alone.</summary>
+    private CancellationTokenSource? _profileNameLogCts;
+
+    /// <summary>Logs the name once typing pauses, not once per keystroke.</summary>
+    private void QueueProfileNameLog(string value)
+    {
+        _profileNameLogCts?.Cancel();
+        _profileNameLogCts?.Dispose();
+        var cts = _profileNameLogCts = new CancellationTokenSource();
+        _ = Task.Run(async () =>
+        {
+            try { await Task.Delay(1000, cts.Token); }
+            catch (OperationCanceledException) { return; }
+            LogProfileChange($"Name changed to \"{value}\"");
+        });
+    }
+
+    /// <summary>Profile edits go to the session log (Advanced → Developer Mode → Copy Logs).</summary>
+    private static void LogProfileChange(string message)
+    {
+        DebugLog.Write("Profile", message);
+        DebugLogger.Info(DebugLogger.Category.State, "Profile.Changed", message);
+    }
+
+    /// <summary>Where <see cref="SetProfileAvatarAsync"/> keeps the copy of the chosen picture.</summary>
+    public string ProfileAvatarDirectory => Path.Combine(_persistence.DataDirectory, "profile");
+
+    /// <summary>
+    /// Stores a user-picked profile picture: copies it into <see cref="ProfileAvatarDirectory"/>
+    /// (so the setting survives the source moving) and points the setting at the copy.
+    ///
+    /// The copy gets a fresh, unique name every time. It used to be a fixed "avatar.ext",
+    /// which broke changing the picture: a second pick with the same extension wrote to the
+    /// same path, so the bound path never changed (no property notification) and the image
+    /// cache, keyed by path, kept serving the first picture. Runs the copy off the UI thread —
+    /// the picker admits large animated images on slow shares.
+    /// </summary>
+    public async Task SetProfileAvatarAsync(string sourcePath)
+    {
+        if (string.IsNullOrWhiteSpace(sourcePath) || !File.Exists(sourcePath)) return;
+        var dir = ProfileAvatarDirectory;
+        var ext = Path.GetExtension(sourcePath).ToLowerInvariant();
+        var target = Path.Combine(dir, $"avatar-{DateTime.UtcNow:yyyyMMddHHmmssfff}{ext}");
+
+        await Task.Run(() =>
+        {
+            Directory.CreateDirectory(dir);
+            // One picture on disk at a time: drop every earlier copy.
+            foreach (var existing in Directory.EnumerateFiles(dir, "avatar*"))
+            {
+                if (!string.Equals(existing, target, StringComparison.OrdinalIgnoreCase))
+                {
+                    try { File.Delete(existing); } catch { }
+                }
+            }
+            File.Copy(sourcePath, target, overwrite: true);
+        });
+
+        ProfileAvatarPath = target;
+        LogProfileChange($"Avatar set from \"{sourcePath}\" → {Path.GetFileName(target)}");
+    }
+
+    /// <summary>
+    /// Back to the initial-letter placeholder. The picker copies the picture into
+    /// <see cref="ProfileAvatarDirectory"/>, so that copy is deleted too — it used to stay
+    /// behind for good. A path anywhere else is the user's own file and is left alone.
+    /// </summary>
     [RelayCommand]
-    private void ClearProfileAvatar() => ProfileAvatarPath = string.Empty;
+    private async Task ClearProfileAvatarAsync()
+    {
+        var path = ProfileAvatarPath;
+        ProfileAvatarPath = string.Empty;
+        if (string.IsNullOrEmpty(path)) return;
+
+        var dir = Path.TrimEndingDirectorySeparator(Path.GetFullPath(ProfileAvatarDirectory));
+        string full;
+        try { full = Path.GetFullPath(path); }
+        catch { return; }
+        var ownsFile = full.StartsWith(dir + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase)
+                    || full.StartsWith(dir + Path.AltDirectorySeparatorChar, StringComparison.OrdinalIgnoreCase);
+        if (!ownsFile) return;
+
+        // Off-thread: the file may be a large animated image on a slow disk.
+        await Task.Run(() => { try { File.Delete(full); } catch { } });
+        LogProfileChange($"Avatar removed ({Path.GetFileName(full)})");
+    }
 
     private AppSettings _settings;
 
@@ -1380,7 +1479,7 @@ public partial class SettingsViewModel : ViewModelBase
     /// otherwise the default call to action.</summary>
     public string CheckForUpdatesButtonText =>
         IsCheckingForUpdate ? "Checking..."
-        : IsUpToDate ? "✓ Up to date"
+        : IsUpToDate ? "Up to date"
         : "Update";
 
     /// <summary>Label for the update-available buttons, naming the target version
@@ -5222,22 +5321,28 @@ public partial class SettingsViewModel : ViewModelBase
         }
     }
 
+    /// <summary>Shortest time the pill shows "Checking…" so a fast answer never flashes.</summary>
+    private const int MinCheckingVisibleMs = 500;
+
     [RelayCommand]
     private async Task CheckForUpdateAsync()
     {
         if (_updateService is null || IsCheckingForUpdate) return;
 
-        // Reset state
+        // Reset state. IsUpToDate is deliberately NOT cleared here: re-checking while
+        // the pill still read "✓ Up to date" snapped it to accent, then "Checking…",
+        // then back to grey — the flicker. It only drops when the result says so.
+        _updateStatusGeneration++;
         IsUpdateAvailable = false;
         IsDownloadingUpdate = false;
         IsReadyToInstall = false;
-        IsUpToDate = false;
         DownloadProgress = 0;
         // The button itself now shows "Checking..." while polling, so keep the
         // separate status line empty for this state to avoid duplicate text.
         UpdateStatusText = "";
         IsCheckingForUpdate = true;
         _downloadedInstallerPath = null;
+        var started = Stopwatch.StartNew();
 
         try
         {
@@ -5246,6 +5351,11 @@ public partial class SettingsViewModel : ViewModelBase
             _updateCts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
 
             var update = await _updateService.CheckForUpdateAsync(IncludePrereleaseUpdates, _updateCts.Token);
+
+            // A cached/fast answer made the "Checking…" state a sub-frame flash. Hold
+            // it long enough to read as a deliberate state change.
+            var hold = MinCheckingVisibleMs - (int)started.ElapsedMilliseconds;
+            if (hold > 0) await Task.Delay(hold);
 
             if (update is null)
             {
@@ -5256,12 +5366,14 @@ public partial class SettingsViewModel : ViewModelBase
             }
             else if (update.InstallerApiUrl is null)
             {
+                IsUpToDate = false;
                 LatestVersionTag = update.TagName;
                 IsLatestPrerelease = update.IsPrerelease;
                 UpdateStatusText = $"{update.TagName} available — installer not found. Visit GitHub.";
             }
             else
             {
+                IsUpToDate = false;
                 LatestVersionTag = update.TagName;
                 IsLatestPrerelease = update.IsPrerelease;
                 UpdateStatusText = CanInstallInApp
@@ -5273,11 +5385,13 @@ public partial class SettingsViewModel : ViewModelBase
         }
         catch (OperationCanceledException)
         {
+            IsUpToDate = false;
             UpdateStatusText = "Update check timed out. Try again later.";
             _ = ClearUpdateStatusAfterDelay();
         }
         catch (Exception ex)
         {
+            IsUpToDate = false;
             UpdateStatusText = "Couldn't check for updates. Try again later.";
             _ = ClearUpdateStatusAfterDelay();
             DebugLog.Write("Updater", ex);
@@ -5379,9 +5493,15 @@ public partial class SettingsViewModel : ViewModelBase
         }
     }
 
+    // Bumped by every check so a clear timer from an EARLIER check can't fire in the
+    // middle of a later one (that flipped the pill back to accent mid-"Checking…").
+    private int _updateStatusGeneration;
+
     private async Task ClearUpdateStatusAfterDelay(int delayMs = 5000)
     {
+        var generation = _updateStatusGeneration;
         await Task.Delay(delayMs);
+        if (generation != _updateStatusGeneration) return;
         if (!IsUpdateAvailable && !IsDownloadingUpdate && !IsReadyToInstall)
         {
             UpdateStatusText = "";

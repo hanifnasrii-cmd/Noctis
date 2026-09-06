@@ -13,15 +13,38 @@
         WindowStartupLocation="CenterOwner">
 
     <Window.Styles>
+        <!-- Pill outline shared with Settings (SettingsView "(not set)" box): 1.5px translucent
+             mid-grey, layout-rounded. The Fluent templates restyle the border on hover/focus/press,
+             so the template parts are pinned too. Neutral buttons opt in via .pill-outline. -->
         <Style Selector="TextBox.pill">
             <Setter Property="CornerRadius" Value="999" />
             <Setter Property="Padding" Value="16,10" />
+            <Setter Property="BorderBrush" Value="#99A0A0A8" />
             <Setter Property="BorderThickness" Value="1.5" />
+            <Setter Property="UseLayoutRounding" Value="True" />
             <Setter Property="MinHeight" Value="0" />
             <Setter Property="FontSize" Value="14" />
         </Style>
         <Style Selector="TextBox.pill /template/ Border#PART_BorderElement">
             <Setter Property="CornerRadius" Value="999" />
+            <Setter Property="BorderBrush" Value="#99A0A0A8" />
+            <Setter Property="BorderThickness" Value="1.5" />
+            <Setter Property="UseLayoutRounding" Value="True" />
+        </Style>
+        <Style Selector="TextBox.pill:pointerover /template/ Border#PART_BorderElement">
+            <Setter Property="BorderBrush" Value="#99A0A0A8" />
+        </Style>
+        <Style Selector="TextBox.pill:focus /template/ Border#PART_BorderElement, TextBox.pill:focus-within /template/ Border#PART_BorderElement">
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentColorBrush}" />
+            <Setter Property="BorderThickness" Value="1.5" />
+        </Style>
+        <Style Selector="Button.pill-outline">
+            <Setter Property="BorderBrush" Value="#99A0A0A8" />
+            <Setter Property="BorderThickness" Value="1.5" />
+            <Setter Property="UseLayoutRounding" Value="True" />
+        </Style>
+        <Style Selector="Button.pill-outline:pointerover /template/ ContentPresenter#PART_ContentPresenter, Button.pill-outline:pressed /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="BorderBrush" Value="#99A0A0A8" />
         </Style>
         <Style Selector="Border.result-row">
             <Setter Property="Padding" Value="10" />
@@ -33,6 +56,19 @@
         </Style>
         <Style Selector="TextBlock.status.failed">
             <Setter Property="Foreground" Value="#FF8A80" />
+        </Style>
+        <!-- Round header X (same look as the Settings header close). -->
+        <Style Selector="Button.dialog-close">
+            <Setter Property="Width" Value="34" />
+            <Setter Property="Height" Value="34" />
+            <Setter Property="CornerRadius" Value="17" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundListMediumBrush}" />
+        </Style>
+        <Style Selector="Button.dialog-close:pointerover">
+            <Setter Property="RenderTransform" Value="scale(1)" />
         </Style>
     </Window.Styles>
 
@@ -48,11 +84,19 @@
                 BoxShadow="0 8 32 0 #80000000, 0 0 0 1 #33FFFFFF">
             <DockPanel>
                 <!-- Header -->
-                <StackPanel DockPanel.Dock="Top" Margin="24,20,24,12" Spacing="10">
-                    <StackPanel Spacing="2">
-                        <TextBlock Text="{loc:T YouTube.Title}" FontSize="20" FontWeight="Bold" HorizontalAlignment="Center" />
-                        <TextBlock Text="{loc:T YouTube.Subtitle}" FontSize="12" Opacity="0.6" TextWrapping="Wrap" TextAlignment="Center" />
-                    </StackPanel>
+                <StackPanel DockPanel.Dock="Top" Margin="24,18,24,12" Spacing="10">
+                    <!-- Centred title + one-line description, round X at the top-right. -->
+                    <Panel Margin="0,0,-6,0">
+                        <StackPanel Spacing="2" Margin="34,2,34,0">
+                            <TextBlock Text="{loc:T YouTube.Title}" FontSize="20" FontWeight="Bold" HorizontalAlignment="Center" />
+                            <TextBlock Text="{loc:T YouTube.Subtitle}" FontSize="12" Opacity="0.6" TextWrapping="Wrap" TextAlignment="Center" />
+                        </StackPanel>
+                        <Button Classes="dialog-close" Command="{Binding CloseCommand}"
+                                ToolTip.Tip="{loc:T Common.Close}"
+                                HorizontalAlignment="Right" VerticalAlignment="Top">
+                            <PathIcon Data="{StaticResource DismissIcon}" Width="12" Height="12" />
+                        </Button>
+                    </Panel>
                     <Grid ColumnDefinitions="*,Auto" IsEnabled="{Binding !ShowSetup}">
                         <TextBox Grid.Column="0" Classes="pill" x:Name="QueryBox"
                                  Text="{Binding Query}"
@@ -69,22 +113,20 @@
                     </Grid>
                 </StackPanel>
 
-                <!-- Footer -->
-                <Border DockPanel.Dock="Bottom" Padding="24,10,24,16">
-                    <Grid ColumnDefinitions="*,Auto">
-                        <StackPanel Grid.Column="0" Spacing="2" VerticalAlignment="Center">
-                            <TextBlock Text="{Binding StatusMessage}" FontSize="12" Opacity="0.7" TextTrimming="CharacterEllipsis"
-                                       IsVisible="{Binding StatusMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
-                            <StackPanel Orientation="Horizontal" Spacing="6" IsVisible="{Binding HasDestination}">
-                                <TextBlock Text="{loc:T YouTube.SavesTo}" FontSize="11" Opacity="0.5" VerticalAlignment="Center" />
-                                <TextBlock Text="{Binding DestinationFolder}" FontSize="11" Opacity="0.7" TextTrimming="CharacterEllipsis" MaxWidth="420" VerticalAlignment="Center" />
-                                <TextBlock Text="{Binding ToolVersionText}" FontSize="11" Opacity="0.4" VerticalAlignment="Center" Margin="8,0,0,0" />
-                            </StackPanel>
+                <!-- Sticky bar: status only (the header X closes; there is no primary action here). -->
+                <Border DockPanel.Dock="Bottom" Padding="24,12,24,16"
+                        Background="#09FFFFFF"
+                        BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                        BorderThickness="0,1,0,0">
+                    <StackPanel Spacing="2" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding StatusMessage}" FontSize="13" Opacity="0.8" TextTrimming="CharacterEllipsis"
+                                   IsVisible="{Binding StatusMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                        <StackPanel Orientation="Horizontal" Spacing="6" IsVisible="{Binding HasDestination}">
+                            <TextBlock Text="{loc:T YouTube.SavesTo}" FontSize="11" Opacity="0.5" VerticalAlignment="Center" />
+                            <TextBlock Text="{Binding DestinationFolder}" FontSize="11" Opacity="0.7" TextTrimming="CharacterEllipsis" MaxWidth="420" VerticalAlignment="Center" />
+                            <TextBlock Text="{Binding ToolVersionText}" FontSize="11" Opacity="0.4" VerticalAlignment="Center" Margin="8,0,0,0" />
                         </StackPanel>
-                        <Button Grid.Column="1" Content="{loc:T YouTube.Close}" Command="{Binding CloseCommand}"
-                                Width="100" Padding="0,8" FontWeight="Bold" HorizontalContentAlignment="Center"
-                                CornerRadius="999" Cursor="Hand" VerticalAlignment="Center" />
-                    </Grid>
+                    </StackPanel>
                 </Border>
 
                 <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto" Padding="24,0,24,8">

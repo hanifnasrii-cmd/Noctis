@@ -85,10 +85,36 @@
         <Style Selector="Button.word-toggle:pointerover">
             <Setter Property="Opacity" Value="1" />
         </Style>
+        <!-- Pill outline shared with Settings (SettingsView "(not set)" box): 1.5px translucent
+             mid-grey, layout-rounded. The Fluent templates restyle the border on hover/focus/press,
+             so the template parts are pinned too. Neutral buttons opt in via .pill-outline. -->
         <Style Selector="ComboBox.pill">
             <Setter Property="CornerRadius" Value="999" />
             <Setter Property="Padding" Value="12,6" />
             <Setter Property="MinHeight" Value="0" />
+            <Setter Property="BorderBrush" Value="#99A0A0A8" />
+            <Setter Property="BorderThickness" Value="1.5" />
+            <Setter Property="UseLayoutRounding" Value="True" />
+        </Style>
+        <Style Selector="ComboBox.pill /template/ Border#Background">
+            <Setter Property="CornerRadius" Value="999" />
+            <Setter Property="BorderBrush" Value="#99A0A0A8" />
+            <Setter Property="BorderThickness" Value="1.5" />
+            <Setter Property="UseLayoutRounding" Value="True" />
+        </Style>
+        <Style Selector="ComboBox.pill:pointerover /template/ Border#Background">
+            <Setter Property="BorderBrush" Value="#99A0A0A8" />
+        </Style>
+        <Style Selector="ComboBox.pill:focus /template/ Border#Background, ComboBox.pill:dropdownopen /template/ Border#Background">
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentColorBrush}" />
+        </Style>
+        <Style Selector="Button.pill-outline">
+            <Setter Property="BorderBrush" Value="#99A0A0A8" />
+            <Setter Property="BorderThickness" Value="1.5" />
+            <Setter Property="UseLayoutRounding" Value="True" />
+        </Style>
+        <Style Selector="Button.pill-outline:pointerover /template/ ContentPresenter#PART_ContentPresenter, Button.pill-outline:pressed /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="BorderBrush" Value="#99A0A0A8" />
         </Style>
     </Window.Styles>
 
@@ -111,7 +137,7 @@
                         <TextBlock Text="{loc:T LyricsStudio.Subtitle}" FontSize="12" Opacity="0.6" TextWrapping="Wrap" />
                     </StackPanel>
                     <Button Grid.Column="1" Content="{loc:T LyricsStudio.Close}" Command="{Binding CloseCommand}"
-                            Width="100" Padding="0,8" FontWeight="Bold" HorizontalContentAlignment="Center"
+                            Classes="pill-outline" Width="100" Padding="0,8" FontWeight="Bold" HorizontalContentAlignment="Center"
                             CornerRadius="999" Cursor="Hand" VerticalAlignment="Top" />
                 </Grid>
 
@@ -152,7 +178,7 @@
                                 <TextBlock Text="{Binding RunStatusText}" FontSize="11" Opacity="0.8" TextWrapping="Wrap" />
                             </StackPanel>
                             <Button Grid.Column="4" Command="{Binding DownloadModelCommand}" IsVisible="{Binding ShowModelDownload}"
-                                    Padding="14,8" CornerRadius="999" Cursor="Hand" VerticalAlignment="Center">
+                                    Classes="pill-outline" Padding="14,8" CornerRadius="999" Cursor="Hand" VerticalAlignment="Center">
                                 <TextBlock Text="{loc:T LyricsStudio.DownloadModel}" FontSize="12" FontWeight="SemiBold" />
                             </Button>
                             <Panel Grid.Column="5" VerticalAlignment="Center">
@@ -162,7 +188,7 @@
                                     <TextBlock Text="{Binding StartLabel}" FontWeight="SemiBold" />
                                 </Button>
                                 <Button Command="{Binding StopCommand}" IsVisible="{Binding IsRunning}"
-                                        Padding="20,9" CornerRadius="999" Cursor="Hand">
+                                        Classes="pill-outline" Padding="20,9" CornerRadius="999" Cursor="Hand">
                                     <TextBlock Text="{loc:T LyricsStudio.Stop}" FontWeight="SemiBold" />
                                 </Button>
                             </Panel>
@@ -228,10 +254,10 @@
                                                 <TextBlock Text="{loc:T LyricsStudio.Upgrade}" FontSize="12" FontWeight="SemiBold" />
                                             </Button>
                                             <Button Command="{Binding RedoAsTranscriptionCommand}" IsVisible="{Binding !ReviewIsTranscription}"
-                                                    Padding="12,6" CornerRadius="999" Cursor="Hand" ToolTip.Tip="{loc:T LyricsStudio.RedoTip}">
+                                                    Classes="pill-outline" Padding="12,6" CornerRadius="999" Cursor="Hand" ToolTip.Tip="{loc:T LyricsStudio.RedoTip}">
                                                 <TextBlock Text="{loc:T LyricsStudio.Redo}" FontSize="12" />
                                             </Button>
-                                            <Button Command="{Binding SkipCommand}" Padding="12,6" CornerRadius="999" Cursor="Hand">
+                                            <Button Command="{Binding SkipCommand}" Classes="pill-outline" Padding="12,6" CornerRadius="999" Cursor="Hand">
                                                 <TextBlock Text="{loc:T LyricsStudio.Skip}" FontSize="12" />
                                             </Button>
                                             <Button Command="{Binding SaveCommand}" IsEnabled="{Binding CanSave}"

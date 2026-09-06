@@ -12,6 +12,67 @@
         ShowInTaskbar="False"
         WindowStartupLocation="CenterOwner">
 
+    <Window.Styles>
+        <!-- Pill outline shared with Settings (SettingsView "(not set)" box): 1.5px translucent
+             mid-grey, layout-rounded. The Fluent templates restyle the border on hover/focus/press,
+             so the template parts are pinned too. Neutral buttons opt in via .pill-outline. -->
+        <Style Selector="TextBox">
+            <Setter Property="BorderBrush" Value="#99A0A0A8" />
+            <Setter Property="BorderThickness" Value="1.5" />
+            <Setter Property="UseLayoutRounding" Value="True" />
+        </Style>
+        <Style Selector="TextBox /template/ Border#PART_BorderElement">
+            <Setter Property="BorderBrush" Value="#99A0A0A8" />
+            <Setter Property="BorderThickness" Value="1.5" />
+            <Setter Property="UseLayoutRounding" Value="True" />
+        </Style>
+        <Style Selector="TextBox:pointerover /template/ Border#PART_BorderElement">
+            <Setter Property="BorderBrush" Value="#99A0A0A8" />
+        </Style>
+        <Style Selector="TextBox:focus /template/ Border#PART_BorderElement, TextBox:focus-within /template/ Border#PART_BorderElement">
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentColorBrush}" />
+            <Setter Property="BorderThickness" Value="1.5" />
+        </Style>
+        <Style Selector="Button.pill-outline">
+            <Setter Property="BorderBrush" Value="#99A0A0A8" />
+            <Setter Property="BorderThickness" Value="1.5" />
+            <Setter Property="UseLayoutRounding" Value="True" />
+        </Style>
+        <Style Selector="Button.pill-outline:pointerover /template/ ContentPresenter#PART_ContentPresenter, Button.pill-outline:pressed /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="BorderBrush" Value="#99A0A0A8" />
+        </Style>
+        <!-- Round header X (same look as the Settings header close). -->
+        <Style Selector="Button.dialog-close">
+            <Setter Property="Width" Value="34" />
+            <Setter Property="Height" Value="34" />
+            <Setter Property="CornerRadius" Value="17" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundListMediumBrush}" />
+        </Style>
+        <Style Selector="Button.dialog-close:pointerover">
+            <Setter Property="RenderTransform" Value="scale(1)" />
+        </Style>
+        <!-- Quiet secondary actions in the sticky bar: no fill, no border, dims until hovered.
+             The Fluent template paints a hover fill on the presenter, so pin it transparent. -->
+        <Style Selector="Button.text-btn">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="10,6" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="Opacity" Value="0.7" />
+            <Setter Property="Cursor" Value="Hand" />
+        </Style>
+        <Style Selector="Button.text-btn:pointerover">
+            <Setter Property="Opacity" Value="1" />
+        </Style>
+        <Style Selector="Button.text-btn:pointerover /template/ ContentPresenter#PART_ContentPresenter, Button.text-btn:pressed /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Opacity" Value="1" />
+        </Style>
+    </Window.Styles>
+
     <Border Background="#50000000">
         <Border CornerRadius="20"
                 ClipToBounds="True"
@@ -23,24 +84,31 @@
                 VerticalAlignment="Stretch"
                 BoxShadow="0 8 32 0 #80000000, 0 0 0 1 #33FFFFFF">
             <DockPanel>
-                <StackPanel DockPanel.Dock="Top" Margin="24,20,24,8" Spacing="2">
-                    <TextBlock Text="{loc:T Import.Title}" FontSize="20" FontWeight="Bold" HorizontalAlignment="Center" />
-                    <TextBlock Text="{loc:T Import.Subtitle}"
-                               FontSize="12" Opacity="0.6" HorizontalAlignment="Center" TextWrapping="Wrap" />
-                </StackPanel>
+                <!-- Header: centred title + one-line description, round X at the top-right. -->
+                <Panel DockPanel.Dock="Top" Margin="24,18,18,8">
+                    <StackPanel Spacing="2" Margin="34,2,34,0">
+                        <TextBlock Text="{loc:T Import.Title}" FontSize="20" FontWeight="Bold" HorizontalAlignment="Center" />
+                        <TextBlock Text="{loc:T Import.Subtitle}"
+                                   FontSize="12" Opacity="0.6" HorizontalAlignment="Center" TextWrapping="Wrap" />
+                    </StackPanel>
+                    <Button Classes="dialog-close" Command="{Binding CloseCommand}"
+                            ToolTip.Tip="{loc:T Common.Close}"
+                            HorizontalAlignment="Right" VerticalAlignment="Top">
+                        <PathIcon Data="{StaticResource DismissIcon}" Width="12" Height="12" />
+                    </Button>
+                </Panel>
 
-                <Border DockPanel.Dock="Bottom" Padding="24,12,24,16">
-                    <Grid ColumnDefinitions="*,Auto,Auto">
+                <!-- Sticky bar: status on the left, one primary on the right. -->
+                <Border DockPanel.Dock="Bottom" Padding="24,12,24,16"
+                        Background="#09FFFFFF"
+                        BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                        BorderThickness="0,1,0,0">
+                    <Grid ColumnDefinitions="*,Auto">
                         <TextBlock Grid.Column="0" Text="{Binding StatusMessage}"
-                                   FontSize="12" Opacity="0.7" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
-                        <Button Grid.Column="1" Content="{loc:T Common.Close}" Command="{Binding CloseCommand}"
-                                Width="90" Padding="0,8" FontWeight="Bold"
-                                Classes="danger-pill"
-                                HorizontalContentAlignment="Center" CornerRadius="999"
-                                Margin="0,0,8,0" Cursor="Hand" />
-                        <Button Grid.Column="2" Content="{loc:T Common.Create}" Command="{Binding CreateCommand}"
+                                   FontSize="13" Opacity="0.8" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                        <Button Grid.Column="1" Content="{loc:T Common.Create}" Command="{Binding CreateCommand}"
                                 IsEnabled="{Binding CanCreate}"
-                                Width="110" Padding="0,8"
+                                Padding="22,10" Margin="12,0,0,0"
                                 Classes="accent-btn"
                                 Background="{DynamicResource AccentButtonBackground}"
                                 Foreground="{DynamicResource AccentForegroundBrush}"
@@ -54,7 +122,7 @@
                     <StackPanel Spacing="12">
                         <StackPanel Orientation="Horizontal" Spacing="12">
                             <Button x:Name="ChooseFileButton" Content="{loc:T Import.ChooseFile}"
-                                    HorizontalAlignment="Left" Padding="14,8" CornerRadius="16" Cursor="Hand" />
+                                    Classes="pill-outline" HorizontalAlignment="Left" Padding="14,8" CornerRadius="16" Cursor="Hand" />
                             <TextBlock Text="{loc:T Import.DropHint}"
                                        FontSize="12" Opacity="0.55" VerticalAlignment="Center" />
                         </StackPanel>
@@ -69,7 +137,7 @@
                                 <TextBox Grid.Column="0" Text="{Binding LinkText}"
                                          Watermark="https://www.deezer.com/en/playlist/…  ·  https://tidal.com/playlist/…" />
                                 <Button Grid.Column="1" Content="{loc:T Import.LinkButton}" Command="{Binding ImportLinkCommand}"
-                                        IsEnabled="{Binding CanImportLink}"
+                                        IsEnabled="{Binding CanImportLink}" Classes="pill-outline"
                                         Padding="14,8" CornerRadius="16" Cursor="Hand" VerticalAlignment="Center" />
                             </Grid>
                             <!-- Spotify / Apple / TIDAL / YouTube / Amazon link: say exactly what works instead. -->

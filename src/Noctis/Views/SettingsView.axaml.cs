@@ -310,32 +310,12 @@ public partial class SettingsView : UserControl
             if (files.Count == 0) return;
 
             var sourcePath = files[0].Path.LocalPath;
-            if (string.IsNullOrWhiteSpace(sourcePath) || !System.IO.File.Exists(sourcePath))
+            if (string.IsNullOrWhiteSpace(sourcePath))
                 return;
 
-            // Copy the picked image into the data root's profile dir so the avatar
-            // survives the source being moved or deleted later.
-            var dir = System.IO.Path.Combine(Helpers.AppPaths.DataRoot, "profile");
-            System.IO.Directory.CreateDirectory(dir);
-            var ext = System.IO.Path.GetExtension(sourcePath);
-            var target = System.IO.Path.Combine(dir, "avatar" + ext);
-
-            // Task.Run: the filter admits large animated GIFs/WebPs (no size cap) and
-            // the source may sit on a slow share — a synchronous copy froze the window.
-            await Task.Run(() =>
-            {
-                // Remove stale avatars with a different extension so only one file is kept.
-                foreach (var existing in System.IO.Directory.EnumerateFiles(dir, "avatar.*"))
-                {
-                    if (!string.Equals(existing, target, StringComparison.OrdinalIgnoreCase))
-                    {
-                        try { System.IO.File.Delete(existing); } catch { }
-                    }
-                }
-
-                System.IO.File.Copy(sourcePath, target, overwrite: true);
-            });
-            vm.ProfileAvatarPath = target;
+            // The view model copies the picture into its profile folder under a unique
+            // name (see SetProfileAvatarAsync for why the name must change per pick).
+            await vm.SetProfileAvatarAsync(sourcePath);
         }
         catch (Exception ex)
         {

@@ -532,7 +532,7 @@ public sealed class NoctisServer : IAsyncDisposable
     private Sync.ILibrarySyncService RequireSync() =>
         _sync is { IsEnabled: true } sync
             ? sync
-            : throw new SubsonicException(SubsonicResponse.ErrNotAuthorized, "Sync is turned off on this computer (Settings → Account & Sync).");
+            : throw new SubsonicException(SubsonicResponse.ErrNotAuthorized, "Sync is turned off on this computer (Settings → Account & Devices).");
 
     private static JsonNode SyncItemToJson(Sync.SyncItem item)
     {

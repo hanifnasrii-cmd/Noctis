@@ -275,6 +275,8 @@ public partial class SettingsViewModel
     [ObservableProperty] private bool _isDownloadingLyricsModel;
     [ObservableProperty] private double _lyricsModelProgress;
     [ObservableProperty] private string _lyricsStudioStats = string.Empty;
+    /// <summary>Per-format song counts for the Lyrics Studio card, empty until the count finishes.</summary>
+    [ObservableProperty] private IReadOnlyList<LyricsStudioCount> _lyricsStudioCounts = Array.Empty<LyricsStudioCount>();
     [ObservableProperty] private string _lyricsStudioFfmpegStatus = string.Empty;
 
     private ILyricsStudioEngine? LyricsEngine => App.Services?.GetService<ILyricsStudioEngine>();
@@ -332,7 +334,7 @@ public partial class SettingsViewModel
         LyricsModelStatus = IsLyricsModelInstalled
             ? $"Installed · {LyricsStudioModel.Description}"
             : $"Not installed ({LyricsStudioModel.SizeText}) · {LyricsStudioModel.Description}";
-        LyricsStudioFfmpegStatus = engine.HasFfmpeg ? string.Empty : "ffmpeg is needed to decode songs — set its path under Audio → Audio tools.";
+        LyricsStudioFfmpegStatus = engine.HasFfmpeg ? string.Empty : "ffmpeg is needed to decode songs — set its path under Advanced → Helper programs.";
     }
 
     private CancellationTokenSource? _lyricsStatsCts;
@@ -347,23 +349,51 @@ public partial class SettingsViewModel
     {
         _lyricsStatsCts?.Cancel();
         var local = _library.Tracks.Where(t => t.SourceType == SourceType.Local).ToList();
-        if (local.Count == 0) { LyricsStudioStats = string.Empty; return; }
+        if (local.Count == 0) { LyricsStudioStats = string.Empty; LyricsStudioCounts = Array.Empty<LyricsStudioCount>(); return; }
 
         var cts = _lyricsStatsCts = new CancellationTokenSource();
         var ct = cts.Token;
         LyricsStudioStats = $"Counting lyrics across {local.Count} songs…";
         _ = Task.Run(() =>
         {
-            string text;
-            try { text = FormatLyricsStudioStats(ExistingLyricsLoader.DetectFormats(local, ct)); }
+            IReadOnlyList<LyricsStudioCount> counts;
+            try { counts = BuildLyricsStudioCounts(ExistingLyricsLoader.DetectFormats(local, ct)); }
             catch (OperationCanceledException) { return; }
             catch (Exception ex)
             {
                 DebugLogger.Warn(DebugLogger.Category.Lyrics, "LyricsStudio.StatsFailed", ex.Message);
-                text = string.Empty;
+                counts = Array.Empty<LyricsStudioCount>();
             }
-            Dispatcher.UIThread.Post(() => { if (!ct.IsCancellationRequested) LyricsStudioStats = text; });
+            Dispatcher.UIThread.Post(() =>
+            {
+                if (ct.IsCancellationRequested) return;
+                LyricsStudioCounts = counts;
+                LyricsStudioStats = string.Empty;
+            });
         }, ct);
+    }
+
+    /// <summary>The four format buckets the Lyrics Studio card shows as small stat tiles.</summary>
+    internal static IReadOnlyList<LyricsStudioCount> BuildLyricsStudioCounts(IReadOnlyList<LyricsFormat> formats)
+    {
+        int elrc = 0, lrc = 0, plain = 0, none = 0;
+        foreach (var f in formats)
+        {
+            switch (f)
+            {
+                case LyricsFormat.Elrc: elrc++; break;
+                case LyricsFormat.Lrc: lrc++; break;
+                case LyricsFormat.Plain: plain++; break;
+                default: none++; break;
+            }
+        }
+        return new[]
+        {
+            new LyricsStudioCount(elrc, Localization.Loc.T("LyricsStudioSettings.CountWord"), "ELRC"),
+            new LyricsStudioCount(lrc, Localization.Loc.T("LyricsStudioSettings.CountLine"), "LRC"),
+            new LyricsStudioCount(plain, Localization.Loc.T("LyricsStudioSettings.CountPlain"), ""),
+            new LyricsStudioCount(none, Localization.Loc.T("LyricsStudioSettings.CountNone"), ""),
+        };
     }
 
     internal static string FormatLyricsStudioStats(IReadOnlyList<LyricsFormat> formats)
@@ -472,3 +502,6 @@ public partial class SettingsViewModel
         }
     }
 }
+
+/// <summary>One bucket of the Lyrics Studio library count: how many songs, what format, and a short tag.</summary>
+public sealed record LyricsStudioCount(int Count, string Label, string Tag);

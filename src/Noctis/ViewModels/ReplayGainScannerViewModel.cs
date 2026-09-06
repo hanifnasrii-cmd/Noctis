@@ -64,7 +64,7 @@ public partial class ReplayGainScannerViewModel : ViewModelBase
         }
 
         if (!_service.IsAvailable)
-            StatusMessage = "ffmpeg not found — set the path in Settings → Audio Tools.";
+            StatusMessage = "ffmpeg not found — set the path in Settings → Advanced → Helper programs.";
 
         // Flag tracks that already carry ReplayGain tags so the user can tell a
         // re-scan from a first scan. Reading tags is file IO, so do it off the UI thread.

@@ -15,8 +15,10 @@
              Background="{DynamicResource AppMainBackground}">
 
     <UserControl.Resources>
-        <conv:PercentageToWidthConverter x:Key="PercentageToWidth" />
-        <conv:IconKeyToGeometryConverter x:Key="IconKeyToGeometry" />
+        <ResourceDictionary>
+            <conv:PercentageToWidthConverter x:Key="PercentageToWidth" />
+            <conv:IconKeyToGeometryConverter x:Key="IconKeyToGeometry" />
+        </ResourceDictionary>
     </UserControl.Resources>
 
     <UserControl.Styles>
@@ -41,8 +43,16 @@
             <Setter Property="Background" Value="{DynamicResource AccentButtonBackground}"/>
             <Setter Property="Foreground" Value="{DynamicResource AccentForegroundBrush}"/>
         </Style>
-        <Style Selector="Button.update-pill.up-to-date">
+        <Style Selector="Button.update-pill.up-to-date, Button.update-pill.checking">
             <Setter Property="Background" Value="#26FFFFFF"/>
+        </Style>
+        <!-- No brush/scale transitions on this pill: its state flips twice per click
+             (Update -> Checking -> Up to date) and each cross-fade read as a flicker. -->
+        <Style Selector="Button.update-pill, Button.update-pill:pointerover, Button.update-pill:pressed">
+            <Setter Property="Transitions">
+                <Transitions/>
+            </Setter>
+            <Setter Property="RenderTransform" Value="scale(1)"/>
         </Style>
 
         <!-- Circular loading spinner: a rotating arc shown during background work -->
@@ -409,6 +419,78 @@
         </Style>
         <Style Selector="Button.social-github:pointerover /template/ ContentPresenter">
             <Setter Property="Background" Value="#26F1C40F"/>
+        </Style>
+
+        <!-- About: three equal-width brand tiles (GitHub / Discord / Website). The tile
+             is a Button whose chrome is fully transparent; the wash Border underneath
+             carries the colour. Hover lifts the wash with a faint white layer, press
+             dips opacity (no scale, per the app's press convention). -->
+        <Style Selector="Button.brand-tile">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="CornerRadius" Value="16"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+            <Setter Property="VerticalAlignment" Value="Stretch"/>
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Setter Property="VerticalContentAlignment" Value="Stretch"/>
+            <Setter Property="Transitions">
+                <Transitions>
+                    <DoubleTransition Property="Opacity" Duration="0:0:0.1"/>
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="Button.brand-tile /template/ ContentPresenter">
+            <Setter Property="CornerRadius" Value="16"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+        </Style>
+        <Style Selector="Button.brand-tile:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="Transparent"/>
+        </Style>
+        <Style Selector="Button.brand-tile:pressed /template/ ContentPresenter">
+            <Setter Property="Background" Value="Transparent"/>
+        </Style>
+        <Style Selector="Button.brand-tile:pointerover">
+            <Setter Property="RenderTransform" Value="scale(1)"/>
+        </Style>
+        <Style Selector="Button.brand-tile:pressed">
+            <Setter Property="RenderTransform" Value="scale(1)"/>
+            <Setter Property="Opacity" Value="0.72"/>
+        </Style>
+        <Style Selector="Button.brand-tile Border.tile-lift">
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="Opacity" Value="0"/>
+            <Setter Property="IsHitTestVisible" Value="False"/>
+            <Setter Property="Transitions">
+                <Transitions>
+                    <DoubleTransition Property="Opacity" Duration="0:0:0.12"/>
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="Button.brand-tile:pointerover Border.tile-lift">
+            <Setter Property="Opacity" Value="0.07"/>
+        </Style>
+
+        <!-- Library > Tools: one row per tool, a plain monochrome glyph in front of the
+             title (same family as the rail icons). -->
+        <Style Selector="PathIcon.tool-icon">
+            <Setter Property="Width" Value="20"/>
+            <Setter Property="Height" Value="20"/>
+            <Setter Property="Opacity" Value="0.85"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Margin" Value="2,0,16,0"/>
+        </Style>
+        <!-- Sidebar bitmap icons (Folder / Playlist PNGs) drawn as an opacity mask so
+             they take the same colour and size as the geometry glyphs beside them. -->
+        <Style Selector="Border.tool-bitmap">
+            <Setter Property="Width" Value="20"/>
+            <Setter Property="Height" Value="20"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+            <Setter Property="Opacity" Value="0.85"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Margin" Value="2,0,16,0"/>
         </Style>
 
         <!-- Pill ComboBox -->
@@ -966,6 +1048,55 @@
         </Style>
         <Style Selector="Button.avatar-x:pointerover">
             <Setter Property="RenderTransform" Value="scale(1)"/>
+        </Style>
+        <Style Selector="Border.stat-pill">
+            <Setter Property="CornerRadius" Value="999"/>
+            <Setter Property="Padding" Value="10,0"/>
+            <Setter Property="Height" Value="24"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <!-- One TextBlock (two Runs) per pill with a fixed 14px box: number and label share a
+                 baseline, and a label with descenders (Lossy, playlists) can't grow the box. -->
+            <Setter Property="Margin" Value="0,0,6,6"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
+        </Style>
+        <!-- Lyrics Studio: model state chip, count tiles, amber callout -->
+        <Style Selector="Border.studio-state">
+            <Setter Property="CornerRadius" Value="999"/>
+            <Setter Property="Padding" Value="10,4"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
+            <Setter Property="Opacity" Value="0.75"/>
+        </Style>
+        <Style Selector="Border.studio-state Ellipse.studio-state-dot">
+            <Setter Property="Fill" Value="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+        </Style>
+        <Style Selector="Border.studio-state.installed">
+            <Setter Property="Opacity" Value="1"/>
+        </Style>
+        <Style Selector="Border.studio-state.installed Ellipse.studio-state-dot">
+            <Setter Property="Fill" Value="{DynamicResource AccentColorBrush}"/>
+        </Style>
+        <Style Selector="Border.studio-count">
+            <Setter Property="CornerRadius" Value="14"/>
+            <Setter Property="Padding" Value="14,10"/>
+            <Setter Property="Margin" Value="0,0,8,0"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
+        </Style>
+        <Style Selector="Border.studio-callout">
+            <Setter Property="CornerRadius" Value="12"/>
+            <Setter Property="Padding" Value="12,8"/>
+            <Setter Property="Background" Value="#1AE5A34D"/>
+        </Style>
+        <!-- The camera badge and the X only appear while the pointer is over the avatar. -->
+        <Style Selector="Panel.avatar-wrap Border.avatar-badge, Panel.avatar-wrap Button.avatar-x">
+            <Setter Property="Opacity" Value="0"/>
+            <Setter Property="Transitions">
+                <Transitions>
+                    <DoubleTransition Property="Opacity" Duration="0:0:0.12"/>
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="Panel.avatar-wrap:pointerover Border.avatar-badge, Panel.avatar-wrap:pointerover Button.avatar-x">
+            <Setter Property="Opacity" Value="1"/>
         </Style>
 
         <!-- ── Grouped rail + grouped cards (2026-09 revamp) ── -->
@@ -2280,24 +2411,35 @@
                         <TextBlock Text="{loc:T LyricsStudioSettings.Title}" FontSize="15" FontWeight="SemiBold"/>
                         <TextBlock Text="{loc:T LyricsStudioSettings.Description}" FontSize="12" Opacity="0.5" TextWrapping="Wrap"/>
                     </StackPanel>
-                    <!-- Model: picker + install action on one line, its status on the next. -->
+                    <!-- Model: picker + install state on one line, the action at the far right,
+                         and the model's one-line description (or download progress) under the picker. -->
                     <Grid ColumnDefinitions="110,*,Auto" ColumnSpacing="10">
                         <TextBlock Grid.Column="0" Text="{loc:T LyricsStudioSettings.Model}" FontSize="13" VerticalAlignment="Center"/>
-                        <ComboBox Grid.Column="1" Classes="pill-combo stable-popup" MinWidth="200" HorizontalAlignment="Left" VerticalAlignment="Center"
-                                  ItemsSource="{Binding LyricsModelOptions}" SelectedItem="{Binding LyricsStudioModel}">
-                            <ComboBox.ItemTemplate>
-                                <DataTemplate x:DataType="studio:WhisperModelInfo">
-                                    <StackPanel Orientation="Horizontal" Spacing="6">
-                                        <TextBlock Text="{Binding DisplayName}"/>
-                                        <TextBlock Text="{Binding SizeText}" Opacity="0.5" FontSize="11" VerticalAlignment="Center"/>
-                                    </StackPanel>
-                                </DataTemplate>
-                            </ComboBox.ItemTemplate>
-                        </ComboBox>
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                            <ComboBox Classes="pill-combo stable-popup" MinWidth="200" VerticalAlignment="Center"
+                                      ItemsSource="{Binding LyricsModelOptions}" SelectedItem="{Binding LyricsStudioModel}">
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate x:DataType="studio:WhisperModelInfo">
+                                        <StackPanel Orientation="Horizontal" Spacing="6">
+                                            <TextBlock Text="{Binding DisplayName}"/>
+                                            <TextBlock Text="{Binding SizeText}" Opacity="0.5" FontSize="11" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
+                            </ComboBox>
+                            <Border Classes="studio-state" Classes.installed="{Binding IsLyricsModelInstalled}" VerticalAlignment="Center">
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <Ellipse Classes="studio-state-dot" Width="6" Height="6" VerticalAlignment="Center"/>
+                                    <TextBlock Text="{loc:T LyricsStudioSettings.Installed}" FontSize="11.5" FontWeight="SemiBold" IsVisible="{Binding IsLyricsModelInstalled}"/>
+                                    <TextBlock Text="{loc:T LyricsStudioSettings.NotInstalled}" FontSize="11.5" FontWeight="SemiBold" IsVisible="{Binding !IsLyricsModelInstalled}"/>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
                         <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-                            <Button Classes="pill-action" Command="{Binding DownloadLyricsModelCommand}" IsVisible="{Binding !IsLyricsModelInstalled}" IsEnabled="{Binding !IsDownloadingLyricsModel}"
-                                    Padding="14,8" CornerRadius="999" Cursor="Hand">
-                                <TextBlock Text="{loc:T LyricsStudioSettings.Download}" FontSize="12"/>
+                            <Button Classes="accent-btn" Command="{Binding DownloadLyricsModelCommand}" IsVisible="{Binding !IsLyricsModelInstalled}" IsEnabled="{Binding !IsDownloadingLyricsModel}"
+                                    Padding="14,8" CornerRadius="999" Cursor="Hand"
+                                    Background="{DynamicResource AccentButtonBackground}" Foreground="{DynamicResource AccentForegroundBrush}">
+                                <TextBlock Text="{loc:T LyricsStudioSettings.Download}" FontSize="12" FontWeight="SemiBold"/>
                             </Button>
                             <Button Classes="pill-action" Command="{Binding DeleteLyricsModelCommand}" IsVisible="{Binding IsLyricsModelInstalled}"
                                     Padding="14,8" CornerRadius="999" Cursor="Hand">
@@ -2305,7 +2447,7 @@
                             </Button>
                         </StackPanel>
                     </Grid>
-                    <StackPanel Spacing="4" Margin="120,-6,0,0">
+                    <StackPanel Spacing="6" Margin="120,-6,0,0">
                         <TextBlock Text="{Binding LyricsModelStatus}" FontSize="11.5" Opacity="0.55" TextWrapping="Wrap"/>
                         <ProgressBar Value="{Binding LyricsModelProgress}" Minimum="0" Maximum="1" Height="3" CornerRadius="2" IsVisible="{Binding IsDownloadingLyricsModel}"/>
                     </StackPanel>
@@ -2314,8 +2456,11 @@
                         <ComboBox Grid.Column="1" Classes="pill-combo stable-popup" MinWidth="200" HorizontalAlignment="Left" VerticalAlignment="Center"
                                   ItemsSource="{Binding LyricsLanguageOptions}" SelectedItem="{Binding LyricsStudioLanguage}"/>
                     </Grid>
-                    <TextBlock Text="{Binding LyricsStudioFfmpegStatus}" FontSize="12" Foreground="#E5A34D" TextWrapping="Wrap"
-                               IsVisible="{Binding LyricsStudioFfmpegStatus, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+                    <!-- ffmpeg missing: an amber callout rather than a bare warning line. -->
+                    <Border Classes="studio-callout"
+                            IsVisible="{Binding LyricsStudioFfmpegStatus, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                        <TextBlock Text="{Binding LyricsStudioFfmpegStatus}" FontSize="12" Foreground="#E5A34D" TextWrapping="Wrap"/>
+                    </Border>
                 </StackPanel>
             </Border>
             <Border Classes="setting-row">
@@ -2337,18 +2482,42 @@
                 </Grid>
             </Border>
             <Border Classes="setting-row">
-                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
-                    <StackPanel Grid.Column="0" Spacing="2">
-                        <TextBlock Text="{loc:T LyricsStudioSettings.OpenTitle}" FontSize="15" FontWeight="SemiBold"/>
-                        <TextBlock Text="{loc:T LyricsStudioSettings.OpenHelp}" FontSize="12" Opacity="0.5" TextWrapping="Wrap"/>
-                        <TextBlock Text="{Binding LyricsStudioStats}" FontSize="12" Opacity="0.7" Margin="0,6,0,0" TextWrapping="Wrap"
-                                   IsVisible="{Binding LyricsStudioStats, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
-                    </StackPanel>
-                    <Button Grid.Column="1" Classes="accent-btn" Command="{Binding OpenLyricsStudioForMissingCommand}" Padding="16,8" CornerRadius="999" Cursor="Hand" VerticalAlignment="Center"
-                            Background="{DynamicResource AccentButtonBackground}" Foreground="{DynamicResource AccentForegroundBrush}">
-                        <TextBlock Text="{loc:T LyricsStudioSettings.Open}" FontSize="13" FontWeight="SemiBold"/>
-                    </Button>
-                </Grid>
+                <StackPanel Spacing="12">
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+                        <StackPanel Grid.Column="0" Spacing="2">
+                            <TextBlock Text="{loc:T LyricsStudioSettings.OpenTitle}" FontSize="15" FontWeight="SemiBold"/>
+                            <TextBlock Text="{loc:T LyricsStudioSettings.OpenHelp}" FontSize="12" Opacity="0.5" TextWrapping="Wrap"/>
+                        </StackPanel>
+                        <Button Grid.Column="1" Classes="accent-btn" Command="{Binding OpenLyricsStudioForMissingCommand}" Padding="16,8" CornerRadius="999" Cursor="Hand" VerticalAlignment="Center"
+                                Background="{DynamicResource AccentButtonBackground}" Foreground="{DynamicResource AccentForegroundBrush}">
+                            <TextBlock Text="{loc:T LyricsStudioSettings.Open}" FontSize="13" FontWeight="SemiBold"/>
+                        </Button>
+                    </Grid>
+                    <!-- Library count: four quiet tiles (one per lyric format) instead of a dotted sentence. -->
+                    <TextBlock Text="{Binding LyricsStudioStats}" FontSize="12" Opacity="0.5"
+                               IsVisible="{Binding LyricsStudioStats, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+                    <ItemsControl ItemsSource="{Binding LyricsStudioCounts}" IsVisible="{Binding LyricsStudioCounts.Count}" Margin="0,0,-8,0">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <UniformGrid Columns="4"/>
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="vm:LyricsStudioCount">
+                                <Border Classes="studio-count">
+                                    <StackPanel Spacing="1">
+                                        <StackPanel Orientation="Horizontal" Spacing="6">
+                                            <TextBlock Text="{Binding Count}" FontSize="20" FontWeight="SemiBold"/>
+                                            <TextBlock Text="{Binding Tag}" FontSize="10.5" FontWeight="SemiBold" Opacity="0.4" VerticalAlignment="Bottom" Margin="0,0,0,4"
+                                                       IsVisible="{Binding Tag, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+                                        </StackPanel>
+                                        <TextBlock Text="{Binding Label}" FontSize="11.5" Opacity="0.55"/>
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
             </Border>
 
             </StackPanel>
@@ -3104,121 +3273,113 @@
             </Border>
 
             <TextBlock Classes="section-title" Text="{loc:T Settings.Section.Tools}" Margin="0,16,0,8"/>
+            <!-- One group card, one row per tool: glyph, title + one-line description, action. -->
             <Border Classes="setting-card group-card">
             <StackPanel>
             <Border Classes="setting-row">
-                <Grid ColumnDefinitions="*,Auto">
-                    <StackPanel Grid.Column="0">
-                        <StackPanel Spacing="2">
-                            <TextBlock Text="{loc:T Settings.OrganizeFiles}" FontSize="15" FontWeight="SemiBold"/>
-                            <TextBlock Text="{loc:T Settings.RenameMoveFilesInto}"
-                                       FontSize="12" Opacity="0.5" TextWrapping="Wrap"/>
-                        </StackPanel>
+                <Grid ColumnDefinitions="Auto,*,Auto">
+                    <Border Grid.Column="0" Classes="tool-bitmap" RenderOptions.BitmapInterpolationMode="HighQuality">
+                        <Border.OpacityMask>
+                            <ImageBrush Source="avares://Noctis/Assets/Icons/Folder%20ICON.png" Stretch="Uniform"/>
+                        </Border.OpacityMask>
+                    </Border>
+                    <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center">
+                        <TextBlock Text="{loc:T Settings.OrganizeFiles}" FontSize="15" FontWeight="SemiBold"/>
+                        <TextBlock Text="{loc:T Settings.RenameMoveFilesInto}" FontSize="12" Opacity="0.5" TextWrapping="Wrap"/>
                     </StackPanel>
-                    <Button Grid.Column="1"
-                            Classes="pill-action"
-                            Command="{Binding OpenOrganizeFilesCommand}"
-                            Padding="14,8" CornerRadius="999" Cursor="Hand"
-                            VerticalAlignment="Center">
-                        <TextBlock Text="{loc:T Settings.Organize}" FontSize="13" VerticalAlignment="Center"/>
+                    <Button Grid.Column="2" Classes="pill-action" Command="{Binding OpenOrganizeFilesCommand}"
+                            Padding="14,8" CornerRadius="999" Cursor="Hand" VerticalAlignment="Center" Margin="12,0,0,0">
+                        <TextBlock Text="{loc:T Settings.Organize}" FontSize="13"/>
                     </Button>
                 </Grid>
             </Border>
             <Border Classes="setting-row">
-                <Grid ColumnDefinitions="*,Auto">
-                    <StackPanel Grid.Column="0">
-                        <StackPanel Spacing="2">
-                            <TextBlock Text="{loc:T Settings.FindDuplicates}" FontSize="15" FontWeight="SemiBold"/>
-                            <TextBlock Text="{loc:T Settings.FindDuplicateTracksRemove}"
-                                       FontSize="12" Opacity="0.5" TextWrapping="Wrap"/>
-                        </StackPanel>
+                <Grid ColumnDefinitions="Auto,*,Auto">
+                    <PathIcon Grid.Column="0" Classes="tool-icon" Data="{StaticResource CopyIcon}"/>
+                    <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center">
+                        <TextBlock Text="{loc:T Settings.FindDuplicates}" FontSize="15" FontWeight="SemiBold"/>
+                        <TextBlock Text="{loc:T Settings.FindDuplicateTracksRemove}" FontSize="12" Opacity="0.5" TextWrapping="Wrap"/>
                     </StackPanel>
-                    <Button Grid.Column="1"
-                            Classes="pill-action"
-                            Command="{Binding OpenDuplicateFinderCommand}"
-                            Padding="14,8" CornerRadius="999" Cursor="Hand"
-                            VerticalAlignment="Center">
-                        <TextBlock Text="{loc:T Settings.Find}" FontSize="13" VerticalAlignment="Center"/>
+                    <Button Grid.Column="2" Classes="pill-action" Command="{Binding OpenDuplicateFinderCommand}"
+                            Padding="14,8" CornerRadius="999" Cursor="Hand" VerticalAlignment="Center" Margin="12,0,0,0">
+                        <TextBlock Text="{loc:T Settings.Find}" FontSize="13"/>
                     </Button>
                 </Grid>
             </Border>
             <Border Classes="setting-row">
-                <Grid ColumnDefinitions="*,Auto">
-                    <StackPanel Grid.Column="0">
-                        <StackPanel Spacing="2">
-                            <TextBlock Text="{loc:T Settings.FindMetadata}" FontSize="15" FontWeight="SemiBold"/>
-                            <TextBlock Text="{loc:T Settings.IdentifyPoorlyTaggedTracks}"
-                                       FontSize="12" Opacity="0.5" TextWrapping="Wrap"/>
-                        </StackPanel>
+                <Grid ColumnDefinitions="Auto,*,Auto">
+                    <PathIcon Grid.Column="0" Classes="tool-icon" Data="{StaticResource TagIcon}"/>
+                    <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center">
+                        <TextBlock Text="{loc:T Settings.FindMetadata}" FontSize="15" FontWeight="SemiBold"/>
+                        <TextBlock Text="{loc:T Settings.IdentifyPoorlyTaggedTracks}" FontSize="12" Opacity="0.5" TextWrapping="Wrap"/>
                     </StackPanel>
-                    <Button Grid.Column="1"
-                            Classes="pill-action"
-                            Command="{Binding OpenMetadataFinderCommand}"
-                            Padding="14,8" CornerRadius="999" Cursor="Hand"
-                            VerticalAlignment="Center">
-                        <TextBlock Text="{loc:T Settings.Find}" FontSize="13" VerticalAlignment="Center"/>
+                    <Button Grid.Column="2" Classes="pill-action" Command="{Binding OpenMetadataFinderCommand}"
+                            Padding="14,8" CornerRadius="999" Cursor="Hand" VerticalAlignment="Center" Margin="12,0,0,0">
+                        <TextBlock Text="{loc:T Settings.Find}" FontSize="13"/>
                     </Button>
                 </Grid>
             </Border>
             <Border Classes="setting-row">
-                <Grid ColumnDefinitions="*,Auto">
-                    <StackPanel Grid.Column="0">
-                        <StackPanel Spacing="2">
-                            <TextBlock Text="{loc:T Settings.ImportPlaylist}" FontSize="15" FontWeight="SemiBold"/>
-                            <TextBlock Text="{loc:T Settings.ImportM3UExportifyCSV}"
-                                       FontSize="12" Opacity="0.5" TextWrapping="Wrap"/>
-                        </StackPanel>
+                <Grid ColumnDefinitions="Auto,*,Auto">
+                    <Border Grid.Column="0" Classes="tool-bitmap" RenderOptions.BitmapInterpolationMode="HighQuality">
+                        <Border.OpacityMask>
+                            <ImageBrush Source="avares://Noctis/Assets/Icons/Playlist%20icon.png" Stretch="Uniform"/>
+                        </Border.OpacityMask>
+                    </Border>
+                    <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center">
+                        <TextBlock Text="{loc:T Settings.ImportPlaylist}" FontSize="15" FontWeight="SemiBold"/>
+                        <TextBlock Text="{loc:T Settings.ImportM3UExportifyCSV}" FontSize="12" Opacity="0.5" TextWrapping="Wrap"/>
                     </StackPanel>
-                    <Button Grid.Column="1"
-                            Classes="pill-action"
-                            Command="{Binding OpenPlaylistImportCommand}"
-                            Padding="14,8" CornerRadius="999" Cursor="Hand"
-                            VerticalAlignment="Center">
-                        <TextBlock Text="{loc:T Settings.Import}" FontSize="13" VerticalAlignment="Center"/>
+                    <Button Grid.Column="2" Classes="pill-action" Command="{Binding OpenPlaylistImportCommand}"
+                            Padding="14,8" CornerRadius="999" Cursor="Hand" VerticalAlignment="Center" Margin="12,0,0,0">
+                        <TextBlock Text="{loc:T Settings.Import}" FontSize="13"/>
+                    </Button>
+                </Grid>
+            </Border>
+            </StackPanel>
+            </Border>
+
+            <!-- YouTube: its own card, header row then the two settings stacked. -->
+            <Border Classes="setting-card group-card">
+            <StackPanel>
+            <Border Classes="setting-row">
+                <Grid ColumnDefinitions="Auto,*,Auto">
+                    <PathIcon Grid.Column="0" Classes="tool-icon" Data="{StaticResource PlayIcon}"/>
+                    <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center">
+                        <TextBlock Text="{loc:T YouTubeSettings.Title}" FontSize="15" FontWeight="SemiBold"/>
+                        <TextBlock Text="{loc:T YouTubeSettings.Description}" FontSize="12" Opacity="0.5" TextWrapping="Wrap"/>
+                    </StackPanel>
+                    <Button Grid.Column="2" Classes="pill-action" Command="{Binding OpenYouTubeDownloaderCommand}"
+                            Padding="14,8" CornerRadius="999" Cursor="Hand" VerticalAlignment="Center" Margin="12,0,0,0">
+                        <TextBlock Text="{loc:T YouTubeSettings.Open}" FontSize="13"/>
                     </Button>
                 </Grid>
             </Border>
             <Border Classes="setting-row">
-                <StackPanel Spacing="12">
-                    <Grid ColumnDefinitions="*,Auto">
-                        <StackPanel Grid.Column="0" Spacing="2">
-                            <TextBlock Text="{loc:T YouTubeSettings.Title}" FontSize="15" FontWeight="SemiBold"/>
-                            <TextBlock Text="{loc:T YouTubeSettings.Description}" FontSize="12" Opacity="0.5" TextWrapping="Wrap"/>
-                        </StackPanel>
-                        <Button Grid.Column="1" Classes="pill-action" Command="{Binding OpenYouTubeDownloaderCommand}"
-                                Padding="14,8" CornerRadius="999" Cursor="Hand" VerticalAlignment="Center">
-                            <TextBlock Text="{loc:T YouTubeSettings.Open}" FontSize="13"/>
-                        </Button>
-                    </Grid>
-                    <Grid Classes="sub-setting" ColumnDefinitions="*,Auto">
-                        <StackPanel Grid.Column="0" Spacing="4">
-                            <TextBlock Text="{loc:T YouTubeSettings.Folder}" FontSize="13" FontWeight="SemiBold"/>
-                            <TextBox Text="{Binding YouTubeDownloadFolder}" Watermark="{Binding YouTubeDownloadFolderHint}"
-                                     CornerRadius="999" Padding="14,8" BorderThickness="1.5" MinHeight="0"/>
-                            <TextBlock Text="{loc:T YouTubeSettings.FolderHint}" FontSize="11" Opacity="0.5" TextWrapping="Wrap"/>
-                        </StackPanel>
-                        <Button Grid.Column="1" Content="{loc:T Settings.Browse}" Command="{Binding BrowseYouTubeFolderCommand}"
-                                Padding="14,8" CornerRadius="999" Margin="8,22,0,0" Cursor="Hand" VerticalAlignment="Top"/>
-                    </Grid>
-                    <Border Height="1" Background="{DynamicResource SystemControlForegroundBaseLowBrush}" Opacity="0.4"/>
-                    <StackPanel Spacing="6">
-                        <Grid ColumnDefinitions="*,Auto">
-                            <StackPanel Grid.Column="0" Spacing="2">
-                                <TextBlock Text="{loc:T YouTubeSettings.Tool}" FontSize="13" FontWeight="SemiBold"/>
-                                <TextBlock Text="{Binding YtDlpStatus}" FontSize="11" Opacity="0.6" TextWrapping="Wrap"/>
-                            </StackPanel>
-                            <Button Grid.Column="1" Classes="pill-action" Command="{Binding InstallYtDlpCommand}" IsEnabled="{Binding !IsInstallingYtDlp}"
-                                    Padding="14,8" CornerRadius="999" Cursor="Hand" VerticalAlignment="Center">
-                                <TextBlock Text="{loc:T YouTubeSettings.InstallUpdate}" FontSize="12"/>
-                            </Button>
-                        </Grid>
-                        <ProgressBar Value="{Binding YtDlpInstallProgress}" Minimum="0" Maximum="1" Height="3" CornerRadius="2" IsVisible="{Binding IsInstallingYtDlp}"/>
-                        <Grid ColumnDefinitions="*,Auto">
-                            <TextBox Grid.Column="0" Text="{Binding YtDlpPath}" Watermark="{loc:T YouTubeSettings.ToolPathHint}"
-                                     CornerRadius="999" Padding="14,8" BorderThickness="1.5" MinHeight="0"/>
-                        </Grid>
-                    </StackPanel>
-                </StackPanel>
+                <Grid ColumnDefinitions="150,*,Auto" RowDefinitions="Auto,Auto">
+                    <TextBlock Grid.Column="0" Grid.Row="0" Text="{loc:T YouTubeSettings.Folder}" FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                    <TextBox Grid.Column="1" Grid.Row="0" Text="{Binding YouTubeDownloadFolder}" Watermark="{Binding YouTubeDownloadFolderHint}"
+                             CornerRadius="999" Padding="14,8" BorderThickness="1.5" MinHeight="0" VerticalAlignment="Center"/>
+                    <Button Grid.Column="2" Grid.Row="0" Content="{loc:T Settings.Browse}" Command="{Binding BrowseYouTubeFolderCommand}"
+                            Padding="14,8" CornerRadius="999" Margin="8,0,0,0" Cursor="Hand" VerticalAlignment="Center"/>
+                    <TextBlock Grid.Column="1" Grid.Row="1" Grid.ColumnSpan="2" Text="{loc:T YouTubeSettings.FolderHint}"
+                               FontSize="11" Opacity="0.5" TextWrapping="Wrap" Margin="2,6,0,0"/>
+                </Grid>
+            </Border>
+            <Border Classes="setting-row">
+                <Grid ColumnDefinitions="150,*,Auto" RowDefinitions="Auto,Auto,Auto">
+                    <TextBlock Grid.Column="0" Grid.Row="0" Text="{loc:T YouTubeSettings.Tool}" FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                    <TextBox Grid.Column="1" Grid.Row="0" Text="{Binding YtDlpPath}" Watermark="{loc:T YouTubeSettings.ToolPathHint}"
+                             CornerRadius="999" Padding="14,8" BorderThickness="1.5" MinHeight="0" VerticalAlignment="Center"/>
+                    <Button Grid.Column="2" Grid.Row="0" Classes="pill-action" Command="{Binding InstallYtDlpCommand}" IsEnabled="{Binding !IsInstallingYtDlp}"
+                            Padding="14,8" CornerRadius="999" Margin="8,0,0,0" Cursor="Hand" VerticalAlignment="Center">
+                        <TextBlock Text="{loc:T YouTubeSettings.InstallUpdate}" FontSize="12"/>
+                    </Button>
+                    <TextBlock Grid.Column="1" Grid.Row="1" Grid.ColumnSpan="2" Text="{Binding YtDlpStatus}"
+                               FontSize="11" Opacity="0.5" TextWrapping="Wrap" Margin="2,6,0,0"/>
+                    <ProgressBar Grid.Column="1" Grid.Row="2" Grid.ColumnSpan="2" Value="{Binding YtDlpInstallProgress}" Minimum="0" Maximum="1"
+                                 Height="3" CornerRadius="2" Margin="0,6,0,0" IsVisible="{Binding IsInstallingYtDlp}"/>
+                </Grid>
             </Border>
             </StackPanel>
             </Border>
@@ -3736,8 +3897,8 @@
             <StackPanel>
             <Border Classes="setting-row">
                 <Grid ColumnDefinitions="Auto,*">
-                    <!-- Avatar: click to change; a camera badge says so, an X removes the picture. -->
-                    <Panel Grid.Column="0" Width="60" Height="60">
+                    <!-- Avatar: click to change; on hover a camera badge says so and an X removes the picture. -->
+                    <Panel Grid.Column="0" Classes="avatar-wrap" Width="60" Height="60" Background="Transparent">
                         <Button Classes="profile-avatar-btn"
                                 Background="Transparent" BorderThickness="0" Padding="0" Cursor="Hand"
                                 Width="56" Height="56" CornerRadius="999"
@@ -3761,10 +3922,12 @@
                             <PathIcon Data="{StaticResource CameraIcon}" Width="11" Height="11" Foreground="{DynamicResource AccentForegroundBrush}"/>
                         </Border>
                         <Button Classes="avatar-x" HorizontalAlignment="Left" VerticalAlignment="Top"
+                                HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
                                 Command="{Binding ClearProfileAvatarCommand}"
                                 ToolTip.Tip="{loc:T Settings.RemovePictureTip}"
                                 IsVisible="{Binding ProfileAvatarPath, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
-                            <PathIcon Data="{StaticResource DismissIcon}" Width="8" Height="8"/>
+                            <PathIcon Data="{StaticResource DismissIcon}" Width="8" Height="8" UseLayoutRounding="False"
+                                      HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Button>
                     </Panel>
                     <!-- Name: an editable box, the way a profile field reads. -->
@@ -4471,6 +4634,8 @@
                         </Button>
                     </StackPanel>
                     <TextBlock Text="{Binding Plugins.PluginsDirectory}" FontSize="11" Opacity="0.5" TextTrimming="CharacterEllipsis"/>
+                    <TextBlock Text="{Binding PluginsStatus}" FontSize="12" Opacity="0.7"
+                               IsVisible="{Binding PluginsStatus, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
                 </StackPanel>
             </Border>
 
@@ -4520,115 +4685,118 @@
 
             <StackPanel x:Name="StatisticsTabPanel" Classes="tab-page" IsVisible="{Binding IsStatisticsTabVisible}" Spacing="4">
 
-            <!-- One quiet card of big numbers, Wrap-style: no tiles inside tiles. -->
+            <!-- One card, two quiet rows of big numbers; the format mix is a pill strip under the library row. -->
             <Border Classes="setting-card" Padding="26,22">
                 <StackPanel Spacing="18">
                     <TextBlock Text="{loc:T Settings.MusicLibrary}" FontSize="12" FontWeight="SemiBold" Opacity="0.55"/>
                     <UniformGrid Columns="4">
                         <StackPanel Spacing="2">
-                            <TextBlock Text="{Binding TotalSongs}" FontSize="30" FontWeight="Bold"/>
+                            <TextBlock Text="{Binding TotalSongs}" FontSize="28" FontWeight="Bold"/>
                             <TextBlock Text="{loc:T Settings.Songs}" FontSize="12" Opacity="0.55"/>
                         </StackPanel>
                         <StackPanel Spacing="2">
-                            <TextBlock Text="{Binding TotalAlbums}" FontSize="30" FontWeight="Bold"/>
+                            <TextBlock Text="{Binding TotalAlbums}" FontSize="28" FontWeight="Bold"/>
                             <TextBlock Text="{loc:T Settings.Albums}" FontSize="12" Opacity="0.55"/>
                         </StackPanel>
                         <StackPanel Spacing="2">
-                            <TextBlock Text="{Binding TotalArtists}" FontSize="30" FontWeight="Bold"/>
+                            <TextBlock Text="{Binding TotalArtists}" FontSize="28" FontWeight="Bold"/>
                             <TextBlock Text="{loc:T Settings.Artists}" FontSize="12" Opacity="0.55"/>
                         </StackPanel>
                         <StackPanel Spacing="2">
-                            <TextBlock Text="{Binding TotalListeningTime}" FontSize="30" FontWeight="Bold" TextTrimming="CharacterEllipsis"/>
+                            <TextBlock Text="{Binding TotalListeningTime}" FontSize="28" FontWeight="Bold" TextTrimming="CharacterEllipsis"/>
                             <TextBlock Text="{loc:T Settings.TotalDuration}" FontSize="12" Opacity="0.55"/>
                         </StackPanel>
                     </UniformGrid>
-                    <StackPanel Orientation="Horizontal" Spacing="6" Opacity="0.7">
-                        <TextBlock Text="{Binding LosslessCount}" FontSize="12" FontWeight="SemiBold"/>
-                        <TextBlock Text="{loc:T Settings.Lossless}" FontSize="12"/>
-                        <TextBlock Text="·" FontSize="12" Opacity="0.5"/>
-                        <TextBlock Text="{Binding HiResCount}" FontSize="12" FontWeight="SemiBold"/>
-                        <TextBlock Text="{loc:T Settings.HiResLossless}" FontSize="12"/>
-                        <TextBlock Text="·" FontSize="12" Opacity="0.5"/>
-                        <TextBlock Text="{Binding LossyCount}" FontSize="12" FontWeight="SemiBold"/>
-                        <TextBlock Text="{loc:T Settings.Lossy}" FontSize="12"/>
-                        <TextBlock Text="·" FontSize="12" Opacity="0.5"/>
-                        <TextBlock Text="{Binding TotalPlaylists}" FontSize="12" FontWeight="SemiBold"/>
-                        <TextBlock Text="{loc:T Settings.Playlists2}" FontSize="12"/>
-                    </StackPanel>
+                    <WrapPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,-6,0,-6">
+                        <Border Classes="stat-pill">
+                            <TextBlock FontSize="11.5" Height="14" LineHeight="14" VerticalAlignment="Center"><Run Text="{Binding LosslessCount}" FontWeight="SemiBold"/><Run Text=" "/><Run Text="{loc:T Settings.Lossless}" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/></TextBlock>
+                        </Border>
+                        <Border Classes="stat-pill">
+                            <TextBlock FontSize="11.5" Height="14" LineHeight="14" VerticalAlignment="Center"><Run Text="{Binding HiResCount}" FontWeight="SemiBold"/><Run Text=" "/><Run Text="{loc:T Settings.HiResLossless}" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/></TextBlock>
+                        </Border>
+                        <Border Classes="stat-pill">
+                            <TextBlock FontSize="11.5" Height="14" LineHeight="14" VerticalAlignment="Center"><Run Text="{Binding LossyCount}" FontWeight="SemiBold"/><Run Text=" "/><Run Text="{loc:T Settings.Lossy}" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/></TextBlock>
+                        </Border>
+                        <Border Classes="stat-pill">
+                            <TextBlock FontSize="11.5" Height="14" LineHeight="14" VerticalAlignment="Center"><Run Text="{Binding TotalPlaylists}" FontWeight="SemiBold"/><Run Text=" "/><Run Text="{loc:T Settings.Playlists2}" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/></TextBlock>
+                        </Border>
+                    </WrapPanel>
 
                     <Border Height="1" Background="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
 
                     <TextBlock Text="{loc:T Settings.YourListening}" FontSize="12" FontWeight="SemiBold" Opacity="0.55"/>
                     <UniformGrid Columns="4">
                         <StackPanel Spacing="2">
-                            <TextBlock Text="{Binding TotalPlays}" FontSize="30" FontWeight="Bold"/>
+                            <TextBlock Text="{Binding TotalPlays}" FontSize="28" FontWeight="Bold" Foreground="{DynamicResource AccentTextBrush}"/>
                             <TextBlock Text="{loc:T Settings.TotalPlays}" FontSize="12" Opacity="0.55"/>
                         </StackPanel>
                         <StackPanel Spacing="2">
-                            <TextBlock Text="{Binding TimeListened}" FontSize="30" FontWeight="Bold" TextTrimming="CharacterEllipsis"/>
+                            <TextBlock Text="{Binding TimeListened}" FontSize="28" FontWeight="Bold" TextTrimming="CharacterEllipsis" Margin="0,0,16,0" Foreground="{DynamicResource AccentTextBrush}"/>
                             <TextBlock Text="{loc:T Settings.TimeListened}" FontSize="12" Opacity="0.55"/>
                         </StackPanel>
                         <StackPanel Spacing="2">
-                            <TextBlock Text="{Binding AvgTrackLength}" FontSize="30" FontWeight="Bold"/>
+                            <TextBlock Text="{Binding AvgTrackLength}" FontSize="28" FontWeight="Bold" Foreground="{DynamicResource AccentTextBrush}"/>
                             <TextBlock Text="{loc:T Settings.AvgTrackLength}" FontSize="12" Opacity="0.55"/>
                         </StackPanel>
                         <StackPanel Spacing="2">
-                            <TextBlock Text="{Binding LikedTracks}" FontSize="30" FontWeight="Bold"/>
+                            <TextBlock Text="{Binding LikedTracks}" FontSize="28" FontWeight="Bold" Foreground="{DynamicResource AccentTextBrush}"/>
                             <TextBlock Text="{loc:T Settings.LikedSongs}" FontSize="12" Opacity="0.55"/>
                         </StackPanel>
                     </UniformGrid>
                 </StackPanel>
             </Border>
 
-            <TextBlock Classes="section-title" Text="{loc:T Settings.Section.TopPlayed}" Margin="0,16,0,8"/>
-            <Grid ColumnDefinitions="*,12,*">
-                <Border Grid.Column="0" Classes="setting-card" VerticalAlignment="Top" Padding="22,18">
-                    <StackPanel Spacing="10">
+            <!-- Top played: one card, two columns split by a hairline, the full-page link in the header. -->
+            <Grid ColumnDefinitions="*,Auto" Margin="0,16,0,8">
+                <TextBlock Grid.Column="0" Classes="section-title" Text="{loc:T Settings.Section.TopPlayed}" Margin="0" VerticalAlignment="Center"/>
+                <Button Grid.Column="1" Classes="pill-action" Command="{Binding OpenStatisticsPageCommand}" Padding="12,5" CornerRadius="999" Cursor="Hand">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <TextBlock Text="{loc:T Settings.ViewAllStats}" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                        <PathIcon Data="{StaticResource ChevronRightIcon}" Width="9" Height="9" VerticalAlignment="Center" Opacity="0.7"/>
+                    </StackPanel>
+                </Button>
+            </Grid>
+            <Border Classes="setting-card" Padding="22,18">
+                <Grid ColumnDefinitions="*,1,*">
+                    <StackPanel Grid.Column="0" Spacing="10" Margin="0,0,20,0">
                         <TextBlock Text="{loc:T Settings.TopArtists}" FontSize="12" FontWeight="SemiBold" Opacity="0.55"/>
                         <TextBlock Text="{loc:T Settings.PlaySomeTracksSee}" FontSize="13" Opacity="0.4" IsVisible="{Binding !TopArtists.Count}"/>
                         <ItemsControl ItemsSource="{Binding TopArtists}">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate x:DataType="models:StatItem">
                                     <Grid ColumnDefinitions="24,*,Auto" Margin="0,5">
-                                        <TextBlock Grid.Column="0" Text="{Binding Rank}" FontSize="13" FontWeight="Bold"
-                                                   Foreground="{DynamicResource AccentTextBrush}" VerticalAlignment="Center"/>
+                                        <TextBlock Grid.Column="0" Text="{Binding Rank}" FontSize="12" FontWeight="SemiBold" Opacity="0.35" VerticalAlignment="Center"/>
                                         <TextBlock Grid.Column="1" Text="{Binding Label}" FontSize="14" FontWeight="SemiBold"
                                                    TextTrimming="CharacterEllipsis" MaxLines="1" VerticalAlignment="Center"/>
-                                        <TextBlock Grid.Column="2" Text="{Binding ValueLabel}" FontSize="12" Opacity="0.55"
-                                                   VerticalAlignment="Center" Margin="12,0,0,0"/>
+                                        <TextBlock Grid.Column="2" Text="{Binding ValueLabel}" FontSize="12" FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource AccentTextBrush}" VerticalAlignment="Center" Margin="12,0,0,0"/>
                                     </Grid>
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
                     </StackPanel>
-                </Border>
-                <Border Grid.Column="2" Classes="setting-card" VerticalAlignment="Top" Padding="22,18">
-                    <StackPanel Spacing="10">
+                    <Border Grid.Column="1" Background="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
+                    <StackPanel Grid.Column="2" Spacing="10" Margin="20,0,0,0">
                         <TextBlock Text="{loc:T Settings.TopAlbums}" FontSize="12" FontWeight="SemiBold" Opacity="0.55"/>
                         <TextBlock Text="{loc:T Settings.PlaySomeTracksSee2}" FontSize="13" Opacity="0.4" IsVisible="{Binding !TopAlbums.Count}"/>
                         <ItemsControl ItemsSource="{Binding TopAlbums}">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate x:DataType="models:StatItem">
                                     <Grid ColumnDefinitions="24,*,Auto" Margin="0,5">
-                                        <TextBlock Grid.Column="0" Text="{Binding Rank}" FontSize="13" FontWeight="Bold"
-                                                   Foreground="{DynamicResource AccentTextBrush}" VerticalAlignment="Center"/>
+                                        <TextBlock Grid.Column="0" Text="{Binding Rank}" FontSize="12" FontWeight="SemiBold" Opacity="0.35" VerticalAlignment="Center"/>
                                         <StackPanel Grid.Column="1" VerticalAlignment="Center">
                                             <TextBlock Text="{Binding Label}" FontSize="14" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" MaxLines="1"/>
                                             <TextBlock Text="{Binding SubLabel}" FontSize="11.5" Opacity="0.5" TextTrimming="CharacterEllipsis" MaxLines="1"/>
                                         </StackPanel>
-                                        <TextBlock Grid.Column="2" Text="{Binding ValueLabel}" FontSize="12" Opacity="0.55"
-                                                   VerticalAlignment="Center" Margin="12,0,0,0"/>
+                                        <TextBlock Grid.Column="2" Text="{Binding ValueLabel}" FontSize="12" FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource AccentTextBrush}" VerticalAlignment="Center" Margin="12,0,0,0"/>
                                     </Grid>
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
                     </StackPanel>
-                </Border>
-            </Grid>
-
-            <Button Classes="pill" Command="{Binding OpenStatisticsPageCommand}" HorizontalAlignment="Center" Margin="0,16,0,0" Padding="18,9">
-                <TextBlock Text="{loc:T Settings.ViewAllStats}" FontSize="13" FontWeight="SemiBold"/>
-            </Button>
+                </Grid>
+            </Border>
             </StackPanel>
 
             <StackPanel x:Name="AboutTabPanel" Classes="tab-page" IsVisible="{Binding IsAboutTabVisible}" Spacing="4">
@@ -4694,14 +4862,29 @@
                             <Button Command="{Binding CheckForUpdateCommand}"
                                     Classes="pill update-pill"
                                     Classes.up-to-date="{Binding IsUpToDate}"
+                                    Classes.checking="{Binding IsCheckingForUpdate}"
                                     VerticalAlignment="Center"
                                     Padding="16,6"
+                                    MinWidth="124"
+                                    HorizontalContentAlignment="Center"
                                     IsVisible="{Binding ShowCheckForUpdatesButton}">
                                 <StackPanel Orientation="Horizontal" Spacing="8">
-                                    <Ellipse Classes="loading-spinner"
-                                             Stroke="White"
-                                             IsVisible="{Binding IsCheckingForUpdate}"
-                                             VerticalAlignment="Center"/>
+                                    <!-- Fixed 14px slot: spinner while checking, tick when up to
+                                         date. Keeping the slot means the text never shifts. -->
+                                    <Panel Width="14" Height="14" VerticalAlignment="Center">
+                                        <Panel.IsVisible>
+                                            <MultiBinding Converter="{x:Static BoolConverters.Or}">
+                                                <Binding Path="IsCheckingForUpdate"/>
+                                                <Binding Path="IsUpToDate"/>
+                                            </MultiBinding>
+                                        </Panel.IsVisible>
+                                        <Ellipse Classes="loading-spinner"
+                                                 Stroke="White"
+                                                 IsVisible="{Binding IsCheckingForUpdate}"/>
+                                        <TextBlock Text="&#x2713;" FontSize="12" Foreground="White"
+                                                   HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                   IsVisible="{Binding IsUpToDate}"/>
+                                    </Panel>
                                     <TextBlock Text="{Binding CheckForUpdatesButtonText}"
                                                FontSize="12" Foreground="White"
                                                VerticalAlignment="Center"/>
@@ -4768,53 +4951,71 @@
                         </Button>
                     </StackPanel>
 
-                    <!-- Row 2: GitHub + Discord (brand-coloured icons, hover pill) -->
-                    <StackPanel Orientation="Horizontal" Spacing="4" Margin="-10,0,0,2">
-                        <Button Classes="social-link social-github"
-                                Command="{Binding OpenGitHubCommand}"
-                                HorizontalAlignment="Left">
-                            <StackPanel Orientation="Horizontal" Spacing="6">
-                                <PathIcon Data="{StaticResource StarIcon}"
-                                          Width="14" Height="14"
-                                          Foreground="#F1C40F" />
-                                <TextBlock Text="{loc:T Settings.StarGitHub}"
-                                           FontSize="12" Opacity="0.85"
-                                           VerticalAlignment="Center" />
-                            </StackPanel>
+                    <!-- Row 2: three equal-width brand tiles (GitHub / Discord / Website),
+                         each a solid brand fill (star yellow, Discord blurple, Noctis red)
+                         with the glyph and text in a contrasting colour. -->
+                    <UniformGrid Columns="3" Margin="0,6,0,2">
+                        <Button Classes="brand-tile" Command="{Binding OpenGitHubCommand}" Margin="0,0,5,0">
+                            <Grid>
+                                <Border CornerRadius="16" Background="#F1C40F"/>
+                                <Border Classes="tile-lift" CornerRadius="16"/>
+                                <StackPanel Margin="16,16,16,14">
+                                    <PathIcon Data="{StaticResource StarIcon}"
+                                              Width="24" Height="24"
+                                              Foreground="#1B1B1B"
+                                              HorizontalAlignment="Left"/>
+                                    <TextBlock Text="{loc:T Settings.StarGitHub}"
+                                               FontSize="13" FontWeight="SemiBold" Foreground="#1B1B1B"
+                                               TextWrapping="Wrap" Margin="0,10,0,0"/>
+                                    <TextBlock Text="{loc:T Settings.About.GitHubCaption}"
+                                               FontSize="12" Foreground="#1B1B1B" Opacity="0.78"
+                                               TextWrapping="Wrap" Margin="0,3,0,0"/>
+                                </StackPanel>
+                            </Grid>
                         </Button>
-                        <Button Classes="social-link social-discord"
-                                Command="{Binding OpenDiscordCommand}"
-                                Margin="-6,0,0,0"
-                                HorizontalAlignment="Left">
-                            <StackPanel Orientation="Horizontal" Spacing="6">
-                                <PathIcon Data="{StaticResource DiscordIcon}"
-                                          Width="14" Height="14"
-                                          Foreground="#5865F2" />
-                                <TextBlock Text="{loc:T Settings.JoinDiscord}"
-                                           FontSize="12" Opacity="0.85"
-                                           VerticalAlignment="Center" />
-                            </StackPanel>
+                        <Button Classes="brand-tile" Command="{Binding OpenDiscordCommand}" Margin="5,0,5,0">
+                            <Grid>
+                                <Border CornerRadius="16" Background="#5865F2"/>
+                                <Border Classes="tile-lift" CornerRadius="16"/>
+                                <StackPanel Margin="16,16,16,14">
+                                    <PathIcon Data="{StaticResource DiscordIcon}"
+                                              Width="24" Height="24"
+                                              Foreground="White"
+                                              HorizontalAlignment="Left"/>
+                                    <TextBlock Text="{loc:T Settings.JoinDiscord}"
+                                               FontSize="13" FontWeight="SemiBold" Foreground="White"
+                                               TextWrapping="Wrap" Margin="0,10,0,0"/>
+                                    <TextBlock Text="{loc:T Settings.About.DiscordCaption}"
+                                               FontSize="12" Foreground="White" Opacity="0.78"
+                                               TextWrapping="Wrap" Margin="0,3,0,0"/>
+                                </StackPanel>
+                            </Grid>
                         </Button>
-                        <Button Classes="social-link"
-                                Command="{Binding OpenWebsiteCommand}"
-                                Margin="-6,0,0,0"
-                                HorizontalAlignment="Left">
-                            <StackPanel Orientation="Horizontal" Spacing="6">
-                                <Image Source="avares://Noctis/Assets/Icons/Noctis%20Logo%20Padded.png"
-                                       Width="18" Height="18"
-                                       Stretch="Uniform"
-                                       RenderOptions.BitmapInterpolationMode="HighQuality" />
-                                <TextBlock Text="{loc:T Settings.OfficialWebsite}"
-                                           FontSize="12" Opacity="0.85"
-                                           VerticalAlignment="Center" />
-                            </StackPanel>
+                        <Button Classes="brand-tile" Command="{Binding OpenWebsiteCommand}" Margin="5,0,0,0">
+                            <Grid>
+                                <Border CornerRadius="16" Background="#E74856"/>
+                                <Border Classes="tile-lift" CornerRadius="16"/>
+                                <StackPanel Margin="16,16,16,14">
+                                    <!-- The real logo (red disc, white double note): on the red tile the
+                                         disc merges with the fill and the note reads as the glyph. -->
+                                    <Image Source="avares://Noctis/Assets/Icons/Noctis%20Logo%20Padded.png"
+                                           Width="28" Height="28" Margin="-2,-2,0,-2"
+                                           Stretch="Uniform" HorizontalAlignment="Left"
+                                           RenderOptions.BitmapInterpolationMode="HighQuality"/>
+                                    <TextBlock Text="{loc:T Settings.OfficialWebsite}"
+                                               FontSize="13" FontWeight="SemiBold" Foreground="White"
+                                               TextWrapping="Wrap" Margin="0,10,0,0"/>
+                                    <TextBlock Text="{loc:T Settings.About.WebsiteCaption}"
+                                               FontSize="12" Foreground="White" Opacity="0.78"
+                                               TextWrapping="Wrap" Margin="0,3,0,0"/>
+                                </StackPanel>
+                            </Grid>
                         </Button>
-                    </StackPanel>
-
+                    </UniformGrid>
 
                     <!-- Signature -->
                     <TextBlock Text="{loc:T Settings.YoursTrulyHeartached}"
-                               FontSize="12" Opacity="0.4"/>
+                               FontSize="12" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
                 </StackPanel>
             </Border>
 

@@ -154,7 +154,7 @@ public partial class LyricsStudioViewModel : ViewModelBase
         RefreshModelState();
         var queued = Queue.Count(i => i.Status == StudioStatus.Waiting);
         RunStatusText = !HasFfmpeg
-            ? "ffmpeg is needed to decode songs — set its path under Settings → Audio → Audio tools."
+            ? "ffmpeg is needed to decode songs — set its path under Settings → Advanced → Helper programs."
             : Queue.Count == 0 ? "No local songs selected."
             : restored == 0 ? $"{queued} song{(queued == 1 ? "" : "s")} queued."
             : $"{restored} restored from last time · {queued} queued.";
@@ -319,7 +319,7 @@ public partial class LyricsStudioViewModel : ViewModelBase
         if (!ReviewCanUpgrade || Selected is not { } item) return;
         if (!IsModelInstalled || !HasFfmpeg)
         {
-            RunStatusText = !HasFfmpeg ? "ffmpeg is needed to decode songs — set its path under Settings → Audio → Audio tools." : $"Download the {SelectedModel.DisplayName} model first.";
+            RunStatusText = !HasFfmpeg ? "ffmpeg is needed to decode songs — set its path under Settings → Advanced → Helper programs." : $"Download the {SelectedModel.DisplayName} model first.";
             return;
         }
         WordTimings = true;

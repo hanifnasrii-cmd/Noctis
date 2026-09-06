@@ -207,4 +207,71 @@ public class SettingsViewModelPersistenceTests : IDisposable
         Assert.Single(shortcuts.EnumerateObject());
         Assert.Equal("P", shortcuts.GetProperty("PlayPause").GetString());
     }
+
+    /// <summary>
+    /// The avatar picker copies the chosen image into the data root's profile folder, so
+    /// "Remove" must delete that copy — it used to only blank the path and leave the file
+    /// behind for good. A path outside the profile folder is the user's own file and must
+    /// never be touched.
+    /// </summary>
+    [AvaloniaFact]
+    public async Task ClearProfileAvatar_DeletesTheCopiedPicture_ButNeverAForeignFile()
+    {
+        var vm = CreateViewModel();
+        await vm.LoadAsync();
+
+        var profileDir = Path.Combine(_root, "profile");
+        Directory.CreateDirectory(profileDir);
+        var copied = Path.Combine(profileDir, "avatar.png");
+        await File.WriteAllBytesAsync(copied, new byte[] { 1, 2, 3 });
+
+        vm.ProfileAvatarPath = copied;
+        await vm.ClearProfileAvatarCommand.ExecuteAsync(null);
+
+        Assert.Equal(string.Empty, vm.ProfileAvatarPath);
+        Assert.False(File.Exists(copied));
+
+        var foreign = Path.Combine(_root, "my-photo.png");
+        await File.WriteAllBytesAsync(foreign, new byte[] { 1, 2, 3 });
+        vm.ProfileAvatarPath = foreign;
+        await vm.ClearProfileAvatarCommand.ExecuteAsync(null);
+
+        Assert.Equal(string.Empty, vm.ProfileAvatarPath);
+        Assert.True(File.Exists(foreign));
+    }
+
+    /// <summary>
+    /// Changing the picture used to overwrite the same "avatar.ext" file, so the bound
+    /// path stayed identical (no change notification) and the path-keyed image cache kept
+    /// showing the first picture. Every pick must land on a new path and drop the old copy.
+    /// </summary>
+    [AvaloniaFact]
+    public async Task SetProfileAvatar_UsesAFreshPathPerPick_AndLogsIt()
+    {
+        var vm = CreateViewModel();
+        await vm.LoadAsync();
+
+        var first = Path.Combine(_root, "one.png");
+        var second = Path.Combine(_root, "two.png");
+        await File.WriteAllBytesAsync(first, new byte[] { 1 });
+        await Task.Delay(5); // the copy name carries a millisecond stamp
+        await File.WriteAllBytesAsync(second, new byte[] { 2 });
+
+        await vm.SetProfileAvatarAsync(first);
+        var firstCopy = vm.ProfileAvatarPath;
+        await Task.Delay(5);
+        await vm.SetProfileAvatarAsync(second);
+        var secondCopy = vm.ProfileAvatarPath;
+
+        Assert.NotEqual(firstCopy, secondCopy);
+        Assert.StartsWith(vm.ProfileAvatarDirectory, secondCopy);
+        Assert.True(File.Exists(secondCopy));
+        Assert.False(File.Exists(firstCopy));
+        Assert.Equal(new byte[] { 2 }, await File.ReadAllBytesAsync(secondCopy));
+
+        // Profile edits are visible in the dev-mode session log.
+        Assert.Contains("[Profile] Avatar set", DebugLog.Snapshot());
+        await vm.ClearProfileAvatarCommand.ExecuteAsync(null);
+        Assert.Contains("[Profile] Avatar removed", DebugLog.Snapshot());
+    }
 }
