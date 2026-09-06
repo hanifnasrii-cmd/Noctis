@@ -36,6 +36,9 @@ public class IconKeyToGeometryConverter : IValueConverter
             ["SmartPlaylistIcon"] = "avares://Noctis/Assets/Icons/Playlist%20icon.png"
         };
 
+    /// <summary>True when <paramref name="key"/> names one of the bitmap sidebar icons (the Settings rail mixes these with geometry icons).</summary>
+    public static bool HasKey(string? key) => !string.IsNullOrWhiteSpace(key) && IconMap.ContainsKey(key);
+
     private static readonly ConcurrentDictionary<string, Bitmap?> BitmapCache = new();
     private const string FallbackUri = "avares://Noctis/Assets/Icons/Playlist%20icon.png";
 

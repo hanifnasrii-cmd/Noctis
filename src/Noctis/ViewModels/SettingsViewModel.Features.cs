@@ -144,9 +144,6 @@ public partial class SettingsViewModel
     }
 
     [RelayCommand]
-    private void OpenAccountSyncTab() => SelectSettingsTab(TabAccountSync);
-
-    [RelayCommand]
     private void ToggleChangePassword()
     {
         IsChangePasswordVisible = !IsChangePasswordVisible;
@@ -338,14 +335,43 @@ public partial class SettingsViewModel
         LyricsStudioFfmpegStatus = engine.HasFfmpeg ? string.Empty : "ffmpeg is needed to decode songs — set its path under Audio → Audio tools.";
     }
 
+    private CancellationTokenSource? _lyricsStatsCts;
+
+    /// <summary>
+    /// Counts the library's lyric formats off the UI thread. The count touches disk for
+    /// every local track (sidecar listing + stored lyrics), which froze the window for
+    /// seconds on large libraries when it ran inline on tab open. Re-opening the tab
+    /// cancels a pass still running.
+    /// </summary>
     private void RefreshLyricsStudioStats()
     {
+        _lyricsStatsCts?.Cancel();
         var local = _library.Tracks.Where(t => t.SourceType == SourceType.Local).ToList();
         if (local.Count == 0) { LyricsStudioStats = string.Empty; return; }
-        int elrc = 0, lrc = 0, plain = 0, none = 0;
-        foreach (var t in local)
+
+        var cts = _lyricsStatsCts = new CancellationTokenSource();
+        var ct = cts.Token;
+        LyricsStudioStats = $"Counting lyrics across {local.Count} songs…";
+        _ = Task.Run(() =>
         {
-            switch (LyricsFormatDetector.Detect(t))
+            string text;
+            try { text = FormatLyricsStudioStats(ExistingLyricsLoader.DetectFormats(local, ct)); }
+            catch (OperationCanceledException) { return; }
+            catch (Exception ex)
+            {
+                DebugLogger.Warn(DebugLogger.Category.Lyrics, "LyricsStudio.StatsFailed", ex.Message);
+                text = string.Empty;
+            }
+            Dispatcher.UIThread.Post(() => { if (!ct.IsCancellationRequested) LyricsStudioStats = text; });
+        }, ct);
+    }
+
+    internal static string FormatLyricsStudioStats(IReadOnlyList<LyricsFormat> formats)
+    {
+        int elrc = 0, lrc = 0, plain = 0, none = 0;
+        foreach (var f in formats)
+        {
+            switch (f)
             {
                 case LyricsFormat.Elrc: elrc++; break;
                 case LyricsFormat.Lrc: lrc++; break;
@@ -353,7 +379,7 @@ public partial class SettingsViewModel
                 default: none++; break;
             }
         }
-        LyricsStudioStats = $"{elrc} with word timings (ELRC) · {lrc} with line timings (LRC) · {plain} plain only · {none} without lyrics";
+        return $"{elrc} with word timings (ELRC) · {lrc} with line timings (LRC) · {plain} plain only · {none} without lyrics";
     }
 
     [RelayCommand]
@@ -429,12 +455,12 @@ public partial class SettingsViewModel
     /// <summary>Tab opened: refresh what the tab shows.</summary>
     private void OnFeatureTabOpened(string tab)
     {
-        if (tab == TabAccountSync)
+        if (tab == TabAccountDevices)
         {
             RefreshServerUsers();
             RefreshSyncStatus();
         }
-        else if (tab == TabLyricsStudio)
+        else if (tab == TabLyrics)
         {
             RefreshLyricsModelStatus();
             RefreshLyricsStudioStats();

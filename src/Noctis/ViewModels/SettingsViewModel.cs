@@ -65,26 +65,44 @@ public partial class SettingsViewModel : ViewModelBase
     public const string TabIntegrations = "Integrations";
     public const string TabPlugins = "Plugins";
     public const string TabAbout = "About";
-    public const string TabAccountSync = "Account & Sync";
-    public const string TabLyricsStudio = "Lyrics Studio";
+    public const string TabAccountDevices = "Account & Devices";
+    public const string TabPlayer = "Player";
+    public const string TabLyrics = "Lyrics";
+    public const string TabAdvanced = "Advanced";
 
     [ObservableProperty] private string _selectedSettingsTab = TabGeneral;
 
-    /// <summary>Rail entries in display order; IsSelected mirrors <see cref="SelectedSettingsTab"/>.</summary>
-    public IReadOnlyList<SettingsSection> Sections { get; } = new[]
+    /// <summary>
+    /// Rail groups in display order. Each page carries the StreamGeometry key the rail
+    /// draws before its label (Assets/Icons.axaml).
+    /// </summary>
+    public IReadOnlyList<SettingsSectionGroup> SectionGroups { get; } = BuildGroups();
+
+    /// <summary>Every rail entry, flat, in display order; IsSelected mirrors <see cref="SelectedSettingsTab"/>.</summary>
+    public IReadOnlyList<SettingsSection> Sections => _sections ??= SectionGroups.SelectMany(g => g.Sections).ToList();
+    private List<SettingsSection>? _sections;
+
+    private static IReadOnlyList<SettingsSectionGroup> BuildGroups()
     {
-        new SettingsSection(TabGeneral, "SettingsIcon") { IsSelected = true },
-        new SettingsSection(TabAppearance, "PaletteIcon"),
-        new SettingsSection(TabAudio, "SpeakerHighIcon"),
-        new SettingsSection(TabLibrary, "FolderIcon"),
-        new SettingsSection(TabAccountSync, "SyncIcon"),
-        new SettingsSection(TabLyricsStudio, "MicIcon"),
-        new SettingsSection(TabShortcuts, "KeyboardIcon"),
-        new SettingsSection(TabIntegrations, "PlugIcon"),
-        new SettingsSection(TabPlugins, "PuzzleIcon"),
-        new SettingsSection(TabStatistics, "StatisticsIcon"),
-        new SettingsSection(TabAbout, "InfoIcon"),
-    };
+        static SettingsSectionGroup G(string name, params (string Key, string Icon)[] pages) =>
+            new(name, pages.Select(p => new SettingsSection(p.Key, p.Icon, name)).ToList());
+        var groups = new[]
+        {
+            // Rail* keys are one icon family (Fluent regular) so every page reads at the same weight;
+            // RailFolderIcon is the open-folder shape the sidebar's Folders entry uses.
+            G("App", (TabGeneral, "RailSettingsIcon"), (TabAppearance, "RailPaletteIcon"), (TabPlayer, "RailPlayIcon"), (TabLyrics, "RailLyricsIcon"), (TabShortcuts, "RailKeyboardIcon")),
+            G("Playback", (TabAudio, "RailSpeakerIcon")),
+            G("Library", (TabLibrary, "RailFolderIcon"), (TabAdvanced, "RailWrenchIcon")),
+            G("Connect", (TabAccountDevices, "RailPersonIcon"), (TabIntegrations, "RailPlugIcon"), (TabPlugins, "RailPuzzleIcon")),
+            G("More", (TabStatistics, "RailStatsIcon"), (TabAbout, "RailInfoIcon")),
+        };
+        groups[0].Sections[0].IsSelected = true; // mirrors the TabGeneral default of SelectedSettingsTab
+        return groups;
+    }
+
+    /// <summary>One line under the page title. Resx key: Settings.Desc.&lt;tab without spaces/ampersand&gt;.</summary>
+    public string SelectedTabDescription =>
+        Loc.T("Settings.Desc." + SelectedSettingsTab.Replace(" & ", "").Replace(" ", ""));
 
     /// <summary>Text in the rail's search box. The view applies it to the card index.</summary>
     [ObservableProperty] private string _searchQuery = string.Empty;
@@ -99,10 +117,14 @@ public partial class SettingsViewModel : ViewModelBase
     public bool IsPluginsTabSelected => SelectedSettingsTab == TabPlugins;
     public bool IsPluginsTabVisible => IsPluginsTabSelected;
     public bool IsAboutTabSelected => SelectedSettingsTab == TabAbout;
-    public bool IsAccountSyncTabSelected => SelectedSettingsTab == TabAccountSync;
-    public bool IsAccountSyncTabVisible => IsAccountSyncTabSelected;
-    public bool IsLyricsStudioTabSelected => SelectedSettingsTab == TabLyricsStudio;
-    public bool IsLyricsStudioTabVisible => IsLyricsStudioTabSelected;
+    public bool IsAccountDevicesTabSelected => SelectedSettingsTab == TabAccountDevices;
+    public bool IsAccountDevicesTabVisible => IsAccountDevicesTabSelected;
+    public bool IsPlayerTabSelected => SelectedSettingsTab == TabPlayer;
+    public bool IsPlayerTabVisible => IsPlayerTabSelected;
+    public bool IsLyricsTabSelected => SelectedSettingsTab == TabLyrics;
+    public bool IsLyricsTabVisible => IsLyricsTabSelected;
+    public bool IsAdvancedTabSelected => SelectedSettingsTab == TabAdvanced;
+    public bool IsAdvancedTabVisible => IsAdvancedTabSelected;
 
     // ── Plugins tab ──
     /// <summary>The plugin host, attached by MainWindowViewModel once the player exists.</summary>
@@ -155,10 +177,15 @@ public partial class SettingsViewModel : ViewModelBase
         OnPropertyChanged(nameof(IsStatisticsTabVisible));
         OnPropertyChanged(nameof(IsIntegrationsTabVisible));
         OnPropertyChanged(nameof(IsAboutTabVisible));
-        OnPropertyChanged(nameof(IsAccountSyncTabSelected));
-        OnPropertyChanged(nameof(IsAccountSyncTabVisible));
-        OnPropertyChanged(nameof(IsLyricsStudioTabSelected));
-        OnPropertyChanged(nameof(IsLyricsStudioTabVisible));
+        OnPropertyChanged(nameof(IsAccountDevicesTabSelected));
+        OnPropertyChanged(nameof(IsAccountDevicesTabVisible));
+        OnPropertyChanged(nameof(IsPlayerTabSelected));
+        OnPropertyChanged(nameof(IsPlayerTabVisible));
+        OnPropertyChanged(nameof(IsLyricsTabSelected));
+        OnPropertyChanged(nameof(IsLyricsTabVisible));
+        OnPropertyChanged(nameof(IsAdvancedTabSelected));
+        OnPropertyChanged(nameof(IsAdvancedTabVisible));
+        OnPropertyChanged(nameof(SelectedTabDescription));
         OnFeatureTabOpened(value);
 
         // Transient validation hints (e.g. ListenBrainz "Token required") are tied to
@@ -195,6 +222,10 @@ public partial class SettingsViewModel : ViewModelBase
 
     partial void OnProfileNameChanged(string value) { if (_settingsLoaded) QueueSettingsSave(); }
     partial void OnProfileAvatarPathChanged(string value) { if (_settingsLoaded) _ = SaveAsync(); }
+
+    /// <summary>Back to the initial-letter placeholder; the picture file itself is left alone.</summary>
+    [RelayCommand]
+    private void ClearProfileAvatar() => ProfileAvatarPath = string.Empty;
 
     private AppSettings _settings;
 
@@ -1026,18 +1057,18 @@ public partial class SettingsViewModel : ViewModelBase
             if (IsRegisteredForAudioFiles)
             {
                 WindowsFileAssociations.Unregister();
-                FileTypesStatus = "Noctis removed from the Open-with list.";
+                TransientStatus.Show(nameof(FileTypesStatus), v => FileTypesStatus = v, "Noctis removed from the Open-with list.");
             }
             else
             {
                 WindowsFileAssociations.Register(exe);
-                FileTypesStatus = "Registered. Pick Noctis under Settings → Apps → Default apps, or right-click a song → Open with.";
+                TransientStatus.Show(nameof(FileTypesStatus), v => FileTypesStatus = v, "Registered. Pick Noctis under Settings → Apps → Default apps, or right-click a song → Open with.");
                 try { Process.Start(new ProcessStartInfo("ms-settings:defaultapps") { UseShellExecute = true }); } catch { }
             }
         }
         catch (Exception ex)
         {
-            FileTypesStatus = $"Couldn't update file types: {ex.Message}";
+            TransientStatus.Show(nameof(FileTypesStatus), v => FileTypesStatus = v, $"Couldn't update file types: {ex.Message}");
         }
         RefreshFileAssociationState();
     }
@@ -5477,7 +5508,7 @@ public partial class SettingsViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
-            DevStatusText = "Couldn't load releases. Try again later.";
+            TransientStatus.Show(nameof(DevStatusText), v => DevStatusText = v, "Couldn't load releases. Try again later.");
             ShowDevReleasesEmpty = DevReleases.Count == 0;
             DebugLog.Write("VersionManager", ex);
         }
@@ -5554,17 +5585,17 @@ public partial class SettingsViewModel : ViewModelBase
             }
             else
             {
-                DevStatusText = "Couldn't start installer. Download manually from GitHub.";
+                TransientStatus.Show(nameof(DevStatusText), v => DevStatusText = v, "Couldn't start installer. Download manually from GitHub.");
                 DebugLog.Write("VersionManager", "LaunchInstaller returned false.");
             }
         }
         catch (OperationCanceledException)
         {
-            DevStatusText = "Download cancelled.";
+            TransientStatus.Show(nameof(DevStatusText), v => DevStatusText = v, "Download cancelled.");
         }
         catch (Exception ex)
         {
-            DevStatusText = "Download failed. Try again.";
+            TransientStatus.Show(nameof(DevStatusText), v => DevStatusText = v, "Download failed. Try again.");
             DebugLog.Write("VersionManager", ex);
         }
         finally
@@ -5619,17 +5650,17 @@ public partial class SettingsViewModel : ViewModelBase
             var path = await _updateService.DownloadInstallerAsync(
                 item.Info, progress, _devCts.Token, destination);
 
-            DevStatusText = $"{item.TagName} saved to Downloads.";
+            TransientStatus.Show(nameof(DevStatusText), v => DevStatusText = v, $"{item.TagName} saved to Downloads.");
             DebugLog.Write("VersionManager", $"Downloaded {item.TagName} to {path}");
             Helpers.PlatformHelper.ShowInFileManager(path);
         }
         catch (OperationCanceledException)
         {
-            DevStatusText = "Download cancelled.";
+            TransientStatus.Show(nameof(DevStatusText), v => DevStatusText = v, "Download cancelled.");
         }
         catch (Exception ex)
         {
-            DevStatusText = "Download failed. Try again.";
+            TransientStatus.Show(nameof(DevStatusText), v => DevStatusText = v, "Download failed. Try again.");
             DebugLog.Write("VersionManager", ex);
         }
         finally

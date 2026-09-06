@@ -109,9 +109,10 @@
                 </StackPanel>
 
                 <Button Grid.Row="0" Grid.Column="1"
-                        Background="Transparent"
+                        Background="{DynamicResource SystemControlBackgroundListMediumBrush}"
                         BorderThickness="0"
                         Width="32" Height="32"
+                        CornerRadius="16"
                         Padding="0"
                         HorizontalAlignment="Right"
                         VerticalAlignment="Top"
@@ -133,6 +134,7 @@
                                 <ComboBox ItemsSource="{Binding AvailableYears}"
                                           SelectedItem="{Binding SelectedYear}"
                                           MinWidth="96"
+                                          CornerRadius="999" BorderThickness="1.5" BorderBrush="#99A0A0A8" UseLayoutRounding="True"
                                           VerticalAlignment="Center"
                                           ToolTip.Tip="{loc:T Wrap.BrowseSavedWrapYearsTip}"/>
                                 <Button Classes="share-pill" Classes.active="{Binding IsYearMode}"

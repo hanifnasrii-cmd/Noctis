@@ -142,6 +142,48 @@ public class SettingsSearchIndexTests
         }
     }
 
+    /// <summary>
+    /// Every rail page has a panel and the index keys hits by the page's rail key, so the
+    /// badge count lines up for all 13 pages (it never did for "Account &amp; Sync", whose
+    /// panel name differed from its key).
+    /// </summary>
+    [AvaloniaFact]
+    public async Task SettingsView_EveryRailPage_HasAPanel_AndIndexKeysMatchSectionKeys()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "NoctisTests", Guid.NewGuid().ToString("N"));
+        try
+        {
+            var vm = new SettingsViewModel(new PersistenceService(root), new FakeLibraryService(), new NoOpPlayHistory());
+            await vm.LoadAsync();
+            var view = new SettingsView { DataContext = vm };
+            var window = new Window { Width = 920, Height = 720, Content = view };
+            window.Show();
+
+            Assert.Equal(vm.Sections.Select(s => s.Key), SettingsView.TabPanels.Select(p => p.Tab));
+            foreach (var (tab, panelName) in SettingsView.TabPanels)
+                Assert.True(view.FindControl<Control>(panelName) is not null, $"{tab} has no panel {panelName}");
+
+            view.FindControl<TextBox>("SettingsSearchBox")!.Text = "a";
+            var tabsWithHits = view.SearchIndexForTests!.Entries.Select(e => e.Tab).Distinct().ToList();
+            Assert.Subset(vm.Sections.Select(s => s.Key).ToHashSet(), tabsWithHits.ToHashSet());
+            Assert.Contains(SettingsViewModel.TabAccountDevices, tabsWithHits);
+            Assert.Contains(SettingsViewModel.TabLyrics, tabsWithHits);
+            Assert.Contains(SettingsViewModel.TabAdvanced, tabsWithHits);
+
+            // Cards that moved: the Lyrics page owns Lyrics Studio, Advanced owns Developer Mode, About no longer does.
+            static bool Has(Control panel, string text) => panel.GetLogicalDescendants().OfType<TextBlock>().Any(t => t.Text == text);
+            Assert.True(Has(view.FindControl<Control>("LyricsTabPanel")!, "Open Lyrics Studio"));
+            Assert.True(Has(view.FindControl<Control>("AdvancedTabPanel")!, "Developer Mode"));
+            Assert.False(Has(view.FindControl<Control>("AboutTabPanel")!, "Developer Mode"));
+            Assert.True(Has(view.FindControl<Control>("LibraryTabPanel")!, "Group Artists By"));
+            Assert.True(Has(view.FindControl<Control>("PlayerTabPanel")!, "Mini Player Design"));
+        }
+        finally
+        {
+            try { Directory.Delete(root, true); } catch { }
+        }
+    }
+
     private sealed class NoOpPlayHistory : IPlayHistoryService
     {
         public System.Collections.Generic.IReadOnlyList<PlayHistoryEvent> Events => Array.Empty<PlayHistoryEvent>();

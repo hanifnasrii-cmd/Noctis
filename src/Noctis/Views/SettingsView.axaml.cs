@@ -89,18 +89,35 @@ public partial class SettingsView : UserControl
     internal SettingsSearchIndex? SearchIndexForTests => _searchIndex;
     internal void ApplySearchForTests() => ApplySearch();
 
-    private static readonly string[] TabPanelNames =
+    /// <summary>
+    /// Section key → x:Name of its page panel. The index is keyed by the section key so the
+    /// rail badge counts line up (they never did for "Account &amp; Sync", whose panel name
+    /// differed from its key).
+    /// </summary>
+    internal static readonly (string Tab, string PanelName)[] TabPanels =
     {
-        "General", "Appearance", "Audio", "Library", "AccountSync", "LyricsStudio", "Shortcuts", "Integrations", "Statistics", "About",
+        (SettingsViewModel.TabGeneral, "GeneralTabPanel"),
+        (SettingsViewModel.TabAppearance, "AppearanceTabPanel"),
+        (SettingsViewModel.TabPlayer, "PlayerTabPanel"),
+        (SettingsViewModel.TabLyrics, "LyricsTabPanel"),
+        (SettingsViewModel.TabShortcuts, "ShortcutsTabPanel"),
+        (SettingsViewModel.TabAudio, "AudioTabPanel"),
+        (SettingsViewModel.TabLibrary, "LibraryTabPanel"),
+        (SettingsViewModel.TabAdvanced, "AdvancedTabPanel"),
+        (SettingsViewModel.TabAccountDevices, "AccountSyncTabPanel"),
+        (SettingsViewModel.TabIntegrations, "IntegrationsTabPanel"),
+        (SettingsViewModel.TabPlugins, "PluginsTabPanel"),
+        (SettingsViewModel.TabStatistics, "StatisticsTabPanel"),
+        (SettingsViewModel.TabAbout, "AboutTabPanel"),
     };
 
     private SettingsSearchIndex EnsureSearchIndex()
     {
         if (_searchIndex is not null) return _searchIndex;
         var panels = new List<(string Tab, Control Panel)>();
-        foreach (var tab in TabPanelNames)
+        foreach (var (tab, name) in TabPanels)
         {
-            if (this.FindControl<Control>(tab + "TabPanel") is { } panel)
+            if (this.FindControl<Control>(name) is { } panel)
                 panels.Add((tab, panel));
         }
         return _searchIndex = SettingsSearchIndex.Build(panels);

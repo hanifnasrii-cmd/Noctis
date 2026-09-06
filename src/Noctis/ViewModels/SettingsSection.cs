@@ -12,6 +12,8 @@ public sealed partial class SettingsSection : ObservableObject
     public string Label => Key;
     /// <summary>StreamGeometry resource key from Assets/Icons.axaml.</summary>
     public string IconKey { get; }
+    /// <summary>Rail group header this page sits under ("App", "Playback", …).</summary>
+    public string Group { get; }
     public bool IsAbout => Key == SettingsViewModel.TabAbout;
 
     [ObservableProperty] private bool _isSelected;
@@ -21,11 +23,15 @@ public sealed partial class SettingsSection : ObservableObject
 
     public bool HasMatches => MatchCount > 0;
 
-    public SettingsSection(string key, string iconKey)
+    public SettingsSection(string key, string iconKey, string group = "")
     {
         Key = key;
         IconKey = iconKey;
+        Group = group;
     }
 
     partial void OnMatchCountChanged(int value) => OnPropertyChanged(nameof(HasMatches));
 }
+
+/// <summary>A rail group: its header and the pages under it, in display order.</summary>
+public sealed record SettingsSectionGroup(string Name, IReadOnlyList<SettingsSection> Sections);
