@@ -136,14 +136,26 @@ public static class MetadataHelper
     public static Task OpenLyricsStudioForLibrary(MainWindowViewModel main) =>
         OpenLyricsStudioForLibrary(main.Settings.GetSettings().LyricsStudioWordTimings);
 
-    public static Task OpenLyricsStudioForLibrary(bool wordTimings)
+    public static async Task OpenLyricsStudioForLibrary(bool wordTimings)
     {
         var library = App.Services!.GetRequiredService<ILibraryService>();
-        var tracks = library.Tracks
-            .Where(t => t.SourceType == SourceType.Local && !Services.LyricsStudio.LyricsFormatDetector.AlreadyHas(Services.LyricsStudio.LyricsFormatDetector.Detect(t), wordTimings))
-            .Take(40)
-            .ToList();
-        return tracks.Count == 0 ? Task.CompletedTask : OpenLyricsStudio(tracks);
+        var local = library.Tracks.Where(t => t.SourceType == SourceType.Local).ToList();
+        // Format detection reads disk per track — keep the library-wide pass off the UI thread.
+        var tracks = await Task.Run(() =>
+        {
+            // Chunked so the scan stops once 40 are found instead of touching the whole library.
+            const int chunk = 500;
+            var picked = new List<Track>(40);
+            for (var start = 0; start < local.Count && picked.Count < 40; start += chunk)
+            {
+                var slice = local.GetRange(start, Math.Min(chunk, local.Count - start));
+                var formats = Services.LyricsStudio.ExistingLyricsLoader.DetectFormats(slice);
+                for (var i = 0; i < slice.Count && picked.Count < 40; i++)
+                    if (!Services.LyricsStudio.LyricsFormatDetector.AlreadyHas(formats[i], wordTimings)) picked.Add(slice[i]);
+            }
+            return picked;
+        });
+        if (tracks.Count > 0) await OpenLyricsStudio(tracks);
     }
 
     /// <summary>Search YouTube / paste a link and download into the library folder.</summary>

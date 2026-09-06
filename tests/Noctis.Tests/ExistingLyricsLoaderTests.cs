@@ -93,6 +93,42 @@ public class ExistingLyricsLoaderTests : IDisposable
         Assert.Equal(LyricsFormat.Plain, ExistingLyricsLoader.DetectFormat(track));
     }
 
+    [Fact]
+    public void DetectFormats_BatchMatchesPerTrack_AcrossFoldersAndCasings()
+    {
+        var sub = Path.Combine(_dir, "sub");
+        Directory.CreateDirectory(sub);
+        Track Make(string dir, string stem) { var p = Path.Combine(dir, stem + ".flac"); File.WriteAllText(p, "x"); return new Track { Title = stem, FilePath = p, SourceType = SourceType.Local }; }
+
+        var elrc = Make(_dir, "a"); File.WriteAllText(Path.Combine(_dir, "a.elrc"), Elrc);
+        var lrc = Make(_dir, "b"); File.WriteAllText(Path.Combine(_dir, "b.LRC"), Lrc);
+        var plain = Make(sub, "c"); plain.Lyrics = "words";
+        var none = Make(sub, "d");
+        var embedded = Make(sub, "e"); embedded.SyncedLyrics = "[00:01.00]embedded";
+        var remote = new Track { Title = "r", FilePath = "http://x/y", SourceType = SourceType.Navidrome };
+        var tracks = new[] { elrc, lrc, plain, none, embedded, remote };
+
+        var batch = ExistingLyricsLoader.DetectFormats(tracks);
+
+        Assert.Equal(tracks.Length, batch.Count);
+        for (var i = 0; i < tracks.Length; i++)
+            Assert.Equal(ExistingLyricsLoader.DetectFormat(tracks[i]), batch[i]);
+        Assert.Equal(LyricsFormat.Elrc, batch[0]);
+        Assert.Equal(LyricsFormat.Lrc, batch[1]);
+        Assert.Equal(LyricsFormat.Plain, batch[2]);
+        Assert.Equal(LyricsFormat.None, batch[3]);
+        Assert.Equal(LyricsFormat.Lrc, batch[4]);
+    }
+
+    [Fact]
+    public void DetectFormats_Cancels()
+    {
+        var tracks = Enumerable.Range(0, 50).Select(i => new Track { FilePath = Path.Combine(_dir, $"t{i}.flac"), SourceType = SourceType.Local }).ToList();
+        using var cts = new CancellationTokenSource();
+        cts.Cancel();
+        Assert.Throws<OperationCanceledException>(() => ExistingLyricsLoader.DetectFormats(tracks, cts.Token));
+    }
+
     public void Dispose()
     {
         try { Directory.Delete(_dir, recursive: true); } catch { }

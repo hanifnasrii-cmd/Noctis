@@ -74,6 +74,69 @@ public static partial class ExistingLyricsLoader
         return LyricsFormatDetector.Detect(track.Lyrics, track.SyncedLyrics);
     }
 
+    /// <summary>
+    /// <see cref="DetectFormat"/> for a whole list, in order. Each folder is listed once and
+    /// its .elrc/.lrc names kept in a set, so a library-wide pass costs one directory
+    /// enumeration per folder instead of six <c>File.Exists</c> probes per track. Sidecar
+    /// text and stored lyrics are still read per track, so call this off the UI thread.
+    /// </summary>
+    public static IReadOnlyList<LyricsFormat> DetectFormats(IReadOnlyList<Track> tracks, CancellationToken ct = default)
+    {
+        var result = new LyricsFormat[tracks.Count];
+        var byDir = new Dictionary<string, Dictionary<string, string>?>(StringComparer.OrdinalIgnoreCase);
+        for (var i = 0; i < tracks.Count; i++)
+        {
+            ct.ThrowIfCancellationRequested();
+            var track = tracks[i];
+            var path = track.FilePath;
+            string? dir = null, stem = null;
+            if (!string.IsNullOrWhiteSpace(path))
+            {
+                try { dir = System.IO.Path.GetDirectoryName(path); stem = System.IO.Path.GetFileNameWithoutExtension(path); }
+                catch { /* malformed path: fall through to stored lyrics */ }
+            }
+            if (!string.IsNullOrEmpty(dir) && !string.IsNullOrEmpty(stem))
+            {
+                if (!byDir.TryGetValue(dir, out var sidecars))
+                    byDir[dir] = sidecars = ListSidecars(dir);
+                if (sidecars is not null && TryDetectSidecar(sidecars, stem, out var timed))
+                { result[i] = timed; continue; }
+            }
+            result[i] = LyricsFormatDetector.Detect(track.Lyrics, track.SyncedLyrics);
+        }
+        return result;
+    }
+
+    private static bool TryDetectSidecar(Dictionary<string, string> sidecars, string stem, out LyricsFormat format)
+    {
+        foreach (var ext in new[] { ".elrc", ".lrc" })
+        {
+            if (!sidecars.TryGetValue(stem + ext, out var file) || !TryRead(file, out var text)) continue;
+            var f = LyricsFormatDetector.Detect(null, text);
+            if (f is LyricsFormat.Elrc or LyricsFormat.Lrc) { format = f; return true; }
+        }
+        format = LyricsFormat.None;
+        return false;
+    }
+
+    /// <summary>Case-insensitive "stem.ext" → full path for every .lrc/.elrc in <paramref name="dir"/>; null when the folder can't be listed.</summary>
+    private static Dictionary<string, string>? ListSidecars(string dir)
+    {
+        try
+        {
+            if (!Directory.Exists(dir)) return null;
+            var map = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var file in Directory.EnumerateFiles(dir))
+            {
+                var ext = System.IO.Path.GetExtension(file);
+                if (ext.Equals(".lrc", StringComparison.OrdinalIgnoreCase) || ext.Equals(".elrc", StringComparison.OrdinalIgnoreCase))
+                    map.TryAdd(System.IO.Path.GetFileName(file), file);
+            }
+            return map;
+        }
+        catch { return null; }
+    }
+
     public static string? FindSidecar(string trackFilePath, string[] extensions)
     {
         var dir = System.IO.Path.GetDirectoryName(trackFilePath);
