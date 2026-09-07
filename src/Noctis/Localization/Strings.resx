@@ -164,7 +164,7 @@
   <data name="Settings.CustomColorTip" xml:space="preserve"><value>Custom Color</value><comment>ToolTip.Tip in SettingsView.axaml</comment></data>
   <data name="Settings.LiquidGlass" xml:space="preserve"><value>Liquid Glass</value><comment>Text in SettingsView.axaml</comment></data>
   <data name="Settings.BETA" xml:space="preserve"><value>BETA</value><comment>Text in SettingsView.axaml</comment></data>
-  <data name="Settings.FrostWindowTranslucentBlurred" xml:space="preserve"><value>Frost the window with translucent, blurred glass surfaces.</value><comment>Text in SettingsView.axaml</comment></data>
+  <data name="Settings.FrostWindowTranslucentBlurred" xml:space="preserve"><value>Frost the window, sidebar, settings and playback bar with translucent, blurred glass surfaces.</value><comment>Text in SettingsView.axaml</comment></data>
   <data name="Settings.AnimatedArtwork" xml:space="preserve"><value>Animated Artwork</value><comment>Text in SettingsView.axaml</comment></data>
   <data name="Settings.ShowAnimatedCoverArt" xml:space="preserve"><value>Show animated cover art when available.</value><comment>Text in SettingsView.axaml</comment></data>
   <data name="Settings.AlbumPageColour" xml:space="preserve"><value>Album Page Colour</value><comment>Text in SettingsView.axaml</comment></data>

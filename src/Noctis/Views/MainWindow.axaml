@@ -1310,20 +1310,33 @@
                 </DoubleTransition>
             </Transitions>
         </Border.Transitions>
-        <views:SidebarView HorizontalAlignment="Stretch"
-                           DataContext="{Binding Sidebar}" />
+        <!-- Liquid Glass host: off, paints the sidebar fill the view used to paint
+             itself; on, frosts the page content scrolling past under the rail. -->
+        <controls:GlassPanel Background="{DynamicResource IslandBackground}"
+                             CornerRadius="20"
+                             GlassTintOpacity="0.55">
+            <views:SidebarView HorizontalAlignment="Stretch"
+                               DataContext="{Binding Sidebar}" />
+        </controls:GlassPanel>
     </Border>
 
     <!-- Settings modal overlay (dark backdrop + centered popup card).
          Visibility and the fade/scale open-close animation are driven from
          code-behind (IsSettingsModalOpen handler) so the close can play before
          the overlay leaves the tree. -->
-    <Border Name="SettingsOverlay"
+    <!-- The dim scrim is a SIBLING of the overlay, not its Background, so it never sits
+         inside the overlay's fading opacity layer. The Settings sheet's GlassPanel snapshots
+         the surface beneath it; on the GPU backend that snapshot excludes whatever the
+         current opacity layer has drawn, so a scrim inside the layer was missing from the
+         blur and the frosted card flashed brighter than its surroundings during the fade
+         (the "transparent box" on close). Code-behind mirrors the overlay's Opacity /
+         IsVisible onto this scrim. -->
+    <Border Name="SettingsScrim"
             IsVisible="False"
             Opacity="0"
             Background="#A6000000"
-            ZIndex="100"
-            Tapped="OnSettingsBackdropTapped">
+            IsHitTestVisible="False"
+            ZIndex="99">
         <Border.Transitions>
             <Transitions>
                 <DoubleTransition Property="Opacity" Duration="0:0:0.18">
@@ -1333,12 +1346,57 @@
                 </DoubleTransition>
             </Transitions>
         </Border.Transitions>
+    </Border>
+    <!-- The overlay itself never fades (Opacity stays 1). Its opacity used to drive the
+         open/close animation, but the GPU backend does not apply an ancestor's opacity
+         layer to the GlassPanel's custom Skia draw: the frost stayed at full strength while
+         the card's text and the scrim had already faded out, leaving a "transparent box"
+         for the last frames of every close. So the three pieces fade on their own:
+         SettingsScrim (Opacity), SettingsGlass (its own Fade, applied inside the draw) and
+         SettingsCard (Opacity — it holds only content, no frost). -->
+    <Border Name="SettingsOverlay"
+            IsVisible="False"
+            Background="Transparent"
+            ZIndex="100"
+            Tapped="OnSettingsBackdropTapped">
+      <Panel>
+        <!-- Card fill / frost. A sibling UNDER the card with the card's exact geometry and
+             scale transform, so it is never inside the card's opacity layer. Off, it paints
+             the same AppMainBackground the card used to. -->
+        <controls:GlassPanel Name="SettingsGlass"
+                             Width="1000" MaxHeight="720" Margin="0,24"
+                             HorizontalAlignment="Center"
+                             VerticalAlignment="Stretch"
+                             CornerRadius="22"
+                             Background="{DynamicResource AppMainBackground}"
+                             GlassTintOpacity="0.3"
+                             BlurRadius="22"
+                             EdgeThickness="0"
+                             Fade="0"
+                             IsHitTestVisible="False"
+                             RenderTransformOrigin="50%,50%"
+                             RenderTransform="scale(0.96)">
+            <controls:GlassPanel.Transitions>
+                <Transitions>
+                    <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.18">
+                        <TransformOperationsTransition.Easing>
+                            <CubicEaseOut/>
+                        </TransformOperationsTransition.Easing>
+                    </TransformOperationsTransition>
+                    <DoubleTransition Property="Fade" Duration="0:0:0.18">
+                        <DoubleTransition.Easing>
+                            <CubicEaseOut/>
+                        </DoubleTransition.Easing>
+                    </DoubleTransition>
+                </Transitions>
+            </controls:GlassPanel.Transitions>
+        </controls:GlassPanel>
         <!-- Stretch + MaxHeight: the card is always min(720, window − margin) tall, whatever
              page is open. With VerticalAlignment=Center it sized to its content, so short
              pages (Plugins, Statistics) visibly shrank the whole dialog. -->
         <Border Name="SettingsCard"
                 Width="1000" MaxHeight="720" Margin="0,24"
-                Background="{DynamicResource AppMainBackground}"
+                Opacity="0"
                 BorderBrush="#22FFFFFF"
                 BorderThickness="1"
                 CornerRadius="22"
@@ -1355,9 +1413,7 @@
                             <CubicEaseOut/>
                         </TransformOperationsTransition.Easing>
                     </TransformOperationsTransition>
-                    <!-- Card-only fade: used by the stats back-arrow reopen, where the
-                         backdrop appears instantly but the card still animates in.
-                         Normal open/close never changes the card's own Opacity. -->
+                    <!-- Card fade for every open/close (see the overlay note above). -->
                     <DoubleTransition Property="Opacity" Duration="0:0:0.18">
                         <DoubleTransition.Easing>
                             <CubicEaseOut/>
@@ -1381,6 +1437,7 @@
                                 Background="Transparent"/>
             </Border>
         </Border>
+      </Panel>
     </Border>
 
     </Panel>

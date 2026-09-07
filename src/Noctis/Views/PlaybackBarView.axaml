@@ -462,11 +462,6 @@
                 VerticalAlignment="Center"
                 Height="50"
                 Width="626">
-            <!-- Glass fill: opaque colour with user-controlled opacity (Settings → Player Bar
-                 Opacity). Driving the brush opacity (not the Border's) keeps text/controls crisp. -->
-            <Border.Background>
-                <SolidColorBrush Color="#202020" Opacity="{Binding IslandBackgroundOpacity}"/>
-            </Border.Background>
             <!-- No Width transition: the compact (lyrics-page) and base widths belong to
                  two different bar instances, so there is never a width change worth
                  animating — the pill is simply born at whichever width its page needs.
@@ -479,6 +474,15 @@
                  user drags to resize the persistent bar (see the resize handlers in
                  code-behind). Grips overlay the pill's rounded ends via the negative
                  margins that reach back across the island's 12px padding. -->
+            <!-- Glass fill: opaque colour with user-controlled opacity (Settings → Player Bar
+                 Opacity). Driving the brush opacity (not the panel's) keeps text/controls crisp.
+                 With Liquid Glass on the same brush becomes the tint over a live frost of the
+                 content scrolling under the pill. Negative margin reaches back across the
+                 Border's 12px padding so the fill covers the whole pill as before. -->
+            <controls:GlassPanel CornerRadius="999" Margin="-12,0" Padding="12,0" BlurRadius="14">
+              <controls:GlassPanel.Background>
+                <SolidColorBrush Color="#202020" Opacity="{Binding IslandBackgroundOpacity}"/>
+              </controls:GlassPanel.Background>
             <Panel>
             <Grid HorizontalAlignment="Center">
                 <Grid.ColumnDefinitions>
@@ -1534,6 +1538,7 @@
                     PointerReleased="OnResizeGripReleased"
                     PointerCaptureLost="OnResizeGripCaptureLost"/>
             </Panel>
+            </controls:GlassPanel>
         </Border>
 
 </UserControl>

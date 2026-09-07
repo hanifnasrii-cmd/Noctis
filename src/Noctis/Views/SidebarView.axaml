@@ -9,7 +9,7 @@
              x:Class="Noctis.Views.SidebarView"
              x:Name="SidebarRoot"
              x:DataType="vm:SidebarViewModel"
-             Background="{DynamicResource IslandBackground}"
+             Background="Transparent"
              Foreground="{DynamicResource IslandForeground}">
 
     <UserControl.Resources>

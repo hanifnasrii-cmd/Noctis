@@ -6,6 +6,7 @@ using Avalonia.Media;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 using Avalonia.Platform.Storage;
+using Noctis.Helpers;
 using Noctis.Models;
 using Noctis.Services;
 using Noctis.ViewModels;
@@ -41,6 +42,8 @@ public partial class MainWindow : Window
     private DockPanel? _contentDockPanel;
     private DockPanel? _rootPanel;
     private Border? _settingsOverlay;
+    private Border? _settingsScrim;
+    private Controls.GlassPanel? _settingsGlass;
     private Border? _settingsCard;
     private Border? _queuePopupPanel;
     private MiniPlayerWindow? _miniPlayer;
@@ -226,6 +229,8 @@ public partial class MainWindow : Window
         {
             ClearValue(TransparencyLevelHintProperty);
             if (acrylic != null) acrylic.IsVisible = false;
+            // Every GlassPanel (sidebar, Settings sheet, island) drops back to its plain fill.
+            AppGlass.Clear();
             return;
         }
 
@@ -234,7 +239,6 @@ public partial class MainWindow : Window
         // built-in or custom — keeps its own tint behind the glass.
         var main = ResolveThemeColor("AppMainBackground", Color.Parse("#252525"));
         var sidebar = ResolveThemeColor("AppSidebarBackground", Color.Parse("#141414"));
-        var accent = ResolveThemeColor("AccentColorBrush", Color.Parse("#E74856"));
 
         TransparencyLevelHint = new[]
         {
@@ -267,18 +271,41 @@ public partial class MainWindow : Window
         {
             ["AppMainBackground"] = new SolidColorBrush(main, 0.35),
             ["AppSidebarBackground"] = new SolidColorBrush(sidebar, 0.55),
-
-            // Accent-filled action buttons (accent-btn / accent-pill: Settings Close,
-            // Save, Confirm, Create, Play All, the queue pills) frost along with the
-            // surfaces they sit on, instead of staying the one opaque slab on a glass
-            // panel. 0.55 keeps enough accent for AccentForegroundBrush to stay legible
-            // against whatever the acrylic pulls through. AccentBorderBrush is consumed
-            // only by these buttons, so re-pointing it here adds the glass edge without
-            // touching anything else.
-            ["AccentButtonBackground"] = new SolidColorBrush(accent, 0.55),
-            ["AccentBorderBrush"] = new SolidColorBrush(Colors.White, 0.35),
+            // Accent action buttons deliberately keep their solid accent fill: frosting
+            // them (2026-08-06) read as washed-out, muddy buttons and was reverted 09-07.
         };
         Resources.MergedDictionaries.Add(_liquidGlassOverlay);
+
+        // In-app frost: GlassPanel hosts (sidebar, Settings sheet, playback island) blur the
+        // app content beneath them. Dialog windows are left alone: an AcrylicBlur hint on a
+        // borderless transparent window painted the whole owner black on Win32 (09-07).
+        AppGlass.Set(true, main, sidebar);
+    }
+
+    /// <summary>Card fade/scale plus the glass underlay's own Fade/scale, always together so the
+    /// frost and the content it carries are never out of step (see SettingsOverlay in the XAML).</summary>
+    private void SetSettingsSheet(bool shown)
+    {
+        var scale = Avalonia.Media.Transformation.TransformOperations.Parse(shown ? "scale(1)" : "scale(0.96)");
+        if (_settingsCard != null)
+        {
+            _settingsCard.Opacity = shown ? 1 : 0;
+            _settingsCard.RenderTransform = scale;
+        }
+        if (_settingsGlass != null)
+        {
+            _settingsGlass.Fade = shown ? 1 : 0;
+            _settingsGlass.RenderTransform = scale;
+        }
+    }
+
+    /// <summary>Mirrors the Settings overlay's visibility/opacity onto the sibling scrim
+    /// (see SettingsScrim in the XAML for why it is not the overlay's Background).</summary>
+    private void SetSettingsScrim(bool? visible, double? opacity)
+    {
+        if (_settingsScrim == null) return;
+        if (visible is { } v) _settingsScrim.IsVisible = v;
+        if (opacity is { } o) _settingsScrim.Opacity = o;
     }
 
     /// <summary>Reads a theme surface color from Application resources for the active
@@ -313,10 +340,6 @@ public partial class MainWindow : Window
                 {
                     if (Avalonia.Application.Current is App app)
                         app.SetAccent(hex);
-                    // The frosted button fill is derived from the accent, so it has to be
-                    // re-derived here too — same reason as the theme handler above.
-                    if (_liquidGlassActive)
-                        ApplyLiquidGlass(true);
                 };
                 vm.Settings.AccentChanged += _accentChangedHandler;
 
@@ -354,6 +377,8 @@ public partial class MainWindow : Window
                 _contentDockPanel = this.FindControl<DockPanel>("ContentDockPanel");
                 _rootPanel = this.FindControl<DockPanel>("RootPanel");
                 _settingsOverlay = this.FindControl<Border>("SettingsOverlay");
+                _settingsScrim = this.FindControl<Border>("SettingsScrim");
+                _settingsGlass = this.FindControl<Controls.GlassPanel>("SettingsGlass");
                 _settingsCard = this.FindControl<Border>("SettingsCard");
                 _queuePopupPanel = this.FindControl<Border>("QueuePopupPanel");
 
@@ -458,22 +483,14 @@ public partial class MainWindow : Window
                                     // the restored section undimmed). The card itself still
                                     // plays the normal fade/scale entrance on top of it.
                                     mainVm2.SkipNextSettingsOpenAnimation = false;
-                                    var overlayTransitions = _settingsOverlay.Transitions;
-                                    var cardTransitions = _settingsCard.Transitions;
-                                    _settingsOverlay.Transitions = null;
-                                    _settingsCard.Transitions = null;
-                                    _settingsOverlay.Opacity = 1;
-                                    _settingsCard.Opacity = 0;
-                                    _settingsCard.RenderTransform =
-                                        Avalonia.Media.Transformation.TransformOperations.Parse("scale(0.96)");
+                                    var scrimTransitions = _settingsScrim?.Transitions;
+                                    if (_settingsScrim != null) _settingsScrim.Transitions = null;
+                                    SetSettingsScrim(visible: true, opacity: 1);
                                     _settingsOverlay.IsVisible = true;
                                     Avalonia.Threading.Dispatcher.UIThread.Post(() =>
                                     {
-                                        _settingsOverlay.Transitions = overlayTransitions;
-                                        _settingsCard.Transitions = cardTransitions;
-                                        _settingsCard.Opacity = 1;
-                                        _settingsCard.RenderTransform =
-                                            Avalonia.Media.Transformation.TransformOperations.Parse("scale(1)");
+                                        if (_settingsScrim != null) _settingsScrim.Transitions = scrimTransitions;
+                                        SetSettingsSheet(shown: true);
                                     }, Avalonia.Threading.DispatcherPriority.Render);
                                 }
                                 else
@@ -481,11 +498,11 @@ public partial class MainWindow : Window
                                     // Backdrop fades in while the card scales up; the settle
                                     // happens on the next frame so the transitions animate it.
                                     _settingsOverlay.IsVisible = true;
+                                    SetSettingsScrim(visible: true, opacity: null);
                                     Avalonia.Threading.Dispatcher.UIThread.Post(() =>
                                     {
-                                        _settingsOverlay.Opacity = 1;
-                                        _settingsCard.RenderTransform =
-                                            Avalonia.Media.Transformation.TransformOperations.Parse("scale(1)");
+                                        SetSettingsScrim(visible: null, opacity: 1);
+                                        SetSettingsSheet(shown: true);
                                     }, Avalonia.Threading.DispatcherPriority.Render);
                                 }
                             }
@@ -493,14 +510,16 @@ public partial class MainWindow : Window
                             {
                                 // Mirror of the open animation, then drop the overlay out
                                 // of the tree once the 180ms transitions have played.
-                                _settingsOverlay.Opacity = 0;
-                                _settingsCard.RenderTransform =
-                                    Avalonia.Media.Transformation.TransformOperations.Parse("scale(0.96)");
+                                SetSettingsScrim(visible: null, opacity: 0);
+                                SetSettingsSheet(shown: false);
                                 Avalonia.Threading.DispatcherTimer.RunOnce(() =>
                                 {
                                     if (_settingsOverlay != null &&
                                         DataContext is MainWindowViewModel m && !m.IsSettingsModalOpen)
+                                    {
                                         _settingsOverlay.IsVisible = false;
+                                        SetSettingsScrim(visible: false, opacity: null);
+                                    }
                                 }, TimeSpan.FromMilliseconds(200));
                             }
                         }

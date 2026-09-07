@@ -1695,12 +1695,7 @@
             <Border Classes="setting-row" IsVisible="{Binding IsLiquidGlassSupported}">
                 <Grid ColumnDefinitions="*,Auto">
                     <StackPanel Grid.Column="0" Spacing="2">
-                        <StackPanel Orientation="Horizontal" Spacing="8">
-                            <TextBlock Text="{loc:T Settings.LiquidGlass}" FontSize="15" FontWeight="SemiBold"/>
-                            <Border Classes="beta-badge">
-                                <TextBlock Classes="beta-badge-text" Text="{loc:T Settings.BETA}"/>
-                            </Border>
-                        </StackPanel>
+                        <TextBlock Text="{loc:T Settings.LiquidGlass}" FontSize="15" FontWeight="SemiBold"/>
                         <TextBlock Text="{loc:T Settings.FrostWindowTranslucentBlurred}"
                                    FontSize="12" Opacity="0.5" TextWrapping="Wrap"/>
                     </StackPanel>
