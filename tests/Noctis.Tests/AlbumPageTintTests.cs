@@ -36,7 +36,7 @@ public class AlbumPageTintTests
             => Task.CompletedTask;
     }
 
-    /// <summary>A 120×120 PNG with a solid border colour and a contrasting centre block,
+    /// <summary>A 120Ã—120 PNG with a solid border colour and a contrasting centre block,
     /// so edge-ring extraction is distinguishable from a whole-image average.</summary>
     private static string WriteCover(SKColor edge, SKColor centre)
     {
@@ -124,13 +124,43 @@ public class AlbumPageTintTests
     }
 
     [AvaloniaFact]
-    public void TintBrush_IsTheColourAtTheTopAndDarkerAtTheBottom()
+    public void TintBrush_IsTheFlatCoverColour()
     {
         var c = Color.FromRgb(0x40, 0x80, 0xC0);
         var brush = AlbumDetailViewModel.BuildTintBrush(c);
-        Assert.Equal(c, brush.GradientStops[0].Color);
-        var bottom = brush.GradientStops[^1].Color;
-        Assert.True(bottom.R < c.R && bottom.G < c.G && bottom.B < c.B);
+        Assert.Equal(c, brush.Color); // iTunes-style flat panel, no gradient
+    }
+
+    /// <summary>Real library covers are mostly 1500–3000px PNGs saved under a .jpg name
+    /// (whatever the tagger/API handed us). PNG cannot decode subsampled, so asking the codec
+    /// for a quarter-size decode returned null and the page silently never tinted (every
+    /// cover in a 400-file sample of a real library came back null, 2026-09-07).</summary>
+    [Theory]
+    [InlineData(SKEncodedImageFormat.Png, 1500)]
+    [InlineData(SKEncodedImageFormat.Png, 3000)]
+    [InlineData(SKEncodedImageFormat.Jpeg, 1425)] // odd size: codec rounds its scaled dims
+    public void EdgeExtractor_FullSizeCovers_StillTint(SKEncodedImageFormat format, int size)
+    {
+        using var bmp = new SKBitmap(size, size);
+        using (var canvas = new SKCanvas(bmp))
+        {
+            canvas.Clear(new SKColor(0xF2, 0xC1, 0xD1));
+            using var paint = new SKPaint { Color = new SKColor(0x10, 0x20, 0x30) };
+            canvas.DrawRect(new SKRect(size / 6f, size / 6f, size * 5 / 6f, size * 5 / 6f), paint);
+        }
+        using var image = SKImage.FromBitmap(bmp);
+        using var data = image.Encode(format, 90);
+        var path = Path.Combine(Path.GetTempPath(), $"noctis-tint-{Guid.NewGuid():N}.jpg");
+        using (var fs = File.Create(path)) data.SaveTo(fs);
+        try
+        {
+            var color = DominantColorExtractor.ExtractEdgeBackgroundColorFromFile(path);
+            Assert.NotNull(color);
+            Assert.InRange(color!.Value.R, 0xE0, 0xFF);
+            Assert.InRange(color.Value.G, 0xB0, 0xD0);
+            Assert.InRange(color.Value.B, 0xC0, 0xE0);
+        }
+        finally { File.Delete(path); }
     }
 
     [Fact]

@@ -9,7 +9,7 @@
              Background="{DynamicResource AppMainBackground}">
 
     <UserControl.Resources>
-        <conv:PercentageToWidthConverter x:Key="PercentageToWidth" />
+        <conv:FractionOfWidthConverter x:Key="FractionOfWidth" />
     </UserControl.Resources>
 
     <UserControl.Styles>
@@ -230,8 +230,14 @@
                                                     CornerRadius="999" ClipToBounds="True" Margin="8,0"
                                                     Background="{DynamicResource SystemControlBackgroundBaseLowBrush}">
                                                 <Border Background="{DynamicResource AccentColorBrush}" CornerRadius="999"
-                                                        HorizontalAlignment="Left"
-                                                        Width="{Binding Percentage, Converter={StaticResource PercentageToWidth}, ConverterParameter=400}"/>
+                                                        HorizontalAlignment="Left">
+                                                    <Border.Width>
+                                                        <MultiBinding Converter="{StaticResource FractionOfWidth}">
+                                                            <Binding Path="Percentage"/>
+                                                            <Binding Path="$parent[Border].Bounds.Width"/>
+                                                        </MultiBinding>
+                                                    </Border.Width>
+                                                </Border>
                                             </Border>
                                             <TextBlock Grid.Column="2" Text="{Binding ValueLabel}"
                                                        FontSize="12" Opacity="0.6" VerticalAlignment="Center"
@@ -320,8 +326,14 @@
                                                 <Border Height="5" CornerRadius="999" ClipToBounds="True"
                                                         Background="{DynamicResource SystemControlBackgroundBaseLowBrush}">
                                                     <Border Background="{DynamicResource AccentColorBrush}" CornerRadius="999"
-                                                            HorizontalAlignment="Left"
-                                                            Width="{Binding Percentage, Converter={StaticResource PercentageToWidth}, ConverterParameter=400}"/>
+                                                            HorizontalAlignment="Left">
+                                                        <Border.Width>
+                                                            <MultiBinding Converter="{StaticResource FractionOfWidth}">
+                                                                <Binding Path="Percentage"/>
+                                                                <Binding Path="$parent[Border].Bounds.Width"/>
+                                                            </MultiBinding>
+                                                        </Border.Width>
+                                                    </Border>
                                                 </Border>
                                             </StackPanel>
                                         </DataTemplate>

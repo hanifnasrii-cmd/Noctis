@@ -55,6 +55,9 @@ public sealed class TrackContextMenuBuilder
     public MenuItem Rate { get; private set; } = null!;
     private readonly MenuItem[] _rateItems = new MenuItem[6];
     public MenuItem SendToFolder { get; private set; } = null!;
+    public MenuItem LyricsBackground { get; private set; } = null!;
+    public MenuItem LyricsBackgroundChoose { get; private set; } = null!;
+    public MenuItem LyricsBackgroundClear { get; private set; } = null!;
     public MenuItem ShowFolder { get; private set; } = null!;
     public MenuItem OpenWith { get; private set; } = null!;
     public MenuItem Remove { get; private set; } = null!;
@@ -169,6 +172,16 @@ public sealed class TrackContextMenuBuilder
         Lyrics.Items.Add(RemoveLyrics);
         items.Add(Lyrics);
 
+        // Lyrics Background Video ▸ — this song's own clip behind the lyrics page (static
+        // commands, so no per-view wiring; "Use default" shows only when the song has one).
+        LyricsBackground = new MenuItem { Header = "Lyrics Background Video" };
+        LyricsBackground.Icon = CreatePngIcon("avares://Noctis/Assets/Icons/Lyrics%20ICON.png");
+        LyricsBackgroundChoose = new MenuItem { Header = "Choose video for this song…", Command = LyricsBackgroundOverrides.ChooseForTrackCommand };
+        LyricsBackground.Items.Add(LyricsBackgroundChoose);
+        LyricsBackgroundClear = new MenuItem { Header = "Use default video", Command = LyricsBackgroundOverrides.ClearForTrackCommand };
+        LyricsBackground.Items.Add(LyricsBackgroundClear);
+        items.Add(LyricsBackground);
+
         // Send to Folder (MusicBee's Send To → Folder): copies the selection to a drive/folder.
         SendToFolder = new MenuItem { Header = "Send to Folder…", IsVisible = false };
         SendToFolder.Icon = CreatePngIcon("avares://Noctis/Assets/Icons/Folder%20ICON.png");
@@ -250,6 +263,10 @@ public sealed class TrackContextMenuBuilder
         BindOptional(LyricsStudio, lyricsStudioCommand, track);
         BindOptional(RemoveLyrics, removeLyricsCommand, track);
         BindOptional(SendToFolder, sendToFolderCommand, track);
+
+        LyricsBackgroundChoose.CommandParameter = track;
+        LyricsBackgroundClear.CommandParameter = track;
+        LyricsBackgroundClear.IsVisible = LyricsBackgroundOverrides.HasOverride(LyricsBackgroundOverrides.KeyForTrack(track));
 
         // Play
         Play.Header = "Play";

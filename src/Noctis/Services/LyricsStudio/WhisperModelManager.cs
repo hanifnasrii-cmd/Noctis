@@ -2,6 +2,8 @@ using Whisper.net.Ggml;
 
 namespace Noctis.Services.LyricsStudio;
 
+/// <summary>Tiny and Small are no longer offered (2026-09-07: two choices are enough);
+/// the names stay so an old saved preference still parses and maps onto the pair.</summary>
 public enum WhisperModelSize { Tiny, Base, Small, Medium }
 
 public sealed record WhisperModelInfo(WhisperModelSize Size, string DisplayName, string FileName, long ApproxBytes, string Description)
@@ -20,10 +22,16 @@ public sealed class WhisperModelManager
 {
     public static readonly IReadOnlyList<WhisperModelInfo> Catalog = new[]
     {
-        new WhisperModelInfo(WhisperModelSize.Tiny, "Tiny", "ggml-tiny.bin", 77_691_713L, "Fastest. Rough timing, misses words in dense mixes."),
-        new WhisperModelInfo(WhisperModelSize.Base, "Base", "ggml-base.bin", 147_951_465L, "Good balance for syncing lyrics you already have."),
-        new WhisperModelInfo(WhisperModelSize.Small, "Small", "ggml-small.bin", 487_601_967L, "Accurate transcription; a few minutes per song on a laptop."),
+        new WhisperModelInfo(WhisperModelSize.Base, "Base", "ggml-base.bin", 147_951_465L, "Quick. Times lyrics you already have."),
         new WhisperModelInfo(WhisperModelSize.Medium, "Medium", "ggml-medium.bin", 1_533_774_781L, "Most accurate. Slow without a fast CPU."),
+    };
+
+    /// <summary>Folds the retired sizes onto the offered pair: Tiny → Base, Small → Medium.</summary>
+    public static WhisperModelSize Normalize(WhisperModelSize size) => size switch
+    {
+        WhisperModelSize.Tiny => WhisperModelSize.Base,
+        WhisperModelSize.Small => WhisperModelSize.Medium,
+        _ => size,
     };
 
     private readonly string _directory;
@@ -35,10 +43,10 @@ public sealed class WhisperModelManager
 
     public string Directory => _directory;
 
-    public static WhisperModelInfo Info(WhisperModelSize size) => Catalog.First(m => m.Size == size);
+    public static WhisperModelInfo Info(WhisperModelSize size) => Catalog.First(m => m.Size == Normalize(size));
 
     public static WhisperModelSize Parse(string? name) =>
-        Enum.TryParse<WhisperModelSize>(name, ignoreCase: true, out var size) ? size : WhisperModelSize.Base;
+        Enum.TryParse<WhisperModelSize>(name, ignoreCase: true, out var size) ? Normalize(size) : WhisperModelSize.Base;
 
     public string PathFor(WhisperModelSize size) => Path.Combine(_directory, Info(size).FileName);
 

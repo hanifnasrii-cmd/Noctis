@@ -486,6 +486,7 @@
               IsVisible="{Binding Player.LyricsBackgroundMediaPath, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
             <controls:VideoBackdrop x:Name="MediaBackdrop"
                                     Source="{Binding Player.LyricsBackgroundMediaPath}"
+                                    IsPaused="{Binding Player.LyricsBackgroundHoldsWhilePaused}"
                                     IsActive="{Binding $self.IsVisible}" />
             <Rectangle Fill="#8C000000"/>
         </Grid>

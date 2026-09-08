@@ -29,7 +29,6 @@
   <data name="Settings.Language.Title" xml:space="preserve"><value>Idioma</value></data>
   <data name="Settings.Language.Description" xml:space="preserve"><value>El idioma de los menús y etiquetas de la app. Las traducciones las hace la comunidad; ayuda en el enlace de abajo.</value></data>
   <data name="Settings.Language.System" xml:space="preserve"><value>Idioma del sistema</value></data>
-  <data name="Settings.Language.Help" xml:space="preserve"><value>Ayuda a traducir Noctis</value></data>
 
   <data name="Visualizer.Title" xml:space="preserve"><value>Visualizador</value></data>
   <data name="Visualizer.Empty" xml:space="preserve"><value>Reproduce algo para verlo moverse.</value></data>

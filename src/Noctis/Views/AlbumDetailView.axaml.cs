@@ -400,7 +400,7 @@ public partial class AlbumDetailView : UserControl
         if (_bgHandler != null)
         {
             newVm.PropertyChanged += _bgHandler;
-            AlbumGradientBg.Opacity = newVm.BackgroundBrush != null ? 1 : 0;
+            AlbumTintBg.Opacity = newVm.BackgroundBrush != null ? 1 : 0;
         }
 
         if (newVm.SavedScrollOffset > 0)
@@ -433,12 +433,12 @@ public partial class AlbumDetailView : UserControl
         if (DataContext is AlbumDetailViewModel vm2)
         {
             if (vm2.BackgroundBrush != null)
-                AlbumGradientBg.Opacity = 1;
+                AlbumTintBg.Opacity = 1;
 
             _bgHandler = (_, args) =>
             {
                 if (args.PropertyName == nameof(AlbumDetailViewModel.BackgroundBrush))
-                    AlbumGradientBg.Opacity = ((AlbumDetailViewModel)DataContext!).BackgroundBrush != null ? 1 : 0;
+                    AlbumTintBg.Opacity = ((AlbumDetailViewModel)DataContext!).BackgroundBrush != null ? 1 : 0;
             };
             vm2.PropertyChanged += _bgHandler;
         }

@@ -197,26 +197,30 @@
     </UserControl.Styles>
 
     <Grid>
-    <!-- Dynamic gradient background from album dominant color -->
-    <Border x:Name="AlbumGradientBg"
-            Background="{Binding BackgroundBrush}"
-            IsHitTestVisible="False"
-            Opacity="0">
-        <Border.Transitions>
-            <Transitions>
-                <DoubleTransition Property="Opacity" Duration="0:0:0.16">
-                    <DoubleTransition.Easing><CubicEaseOut/></DoubleTransition.Easing>
-                </DoubleTransition>
-            </Transitions>
-        </Border.Transitions>
-    </Border>
-
     <ScrollViewer x:Name="TrackScrollViewer"
                   VerticalScrollBarVisibility="Auto"
                   HorizontalScrollBarVisibility="Disabled"
                   IsHitTestVisible="{Binding !IsAlbumDescriptionOpen}">
-    <StackPanel TextElement.Foreground="{Binding PageForegroundBrush}"
-                Margin="0,0,0,115">
+    <StackPanel Margin="0,0,0,115">
+
+        <!-- Album block: header, tracks and footer facts sit on one flat panel of the
+             cover's edge colour, the way iTunes' expanded album view did. Other Versions
+             and More By below stay on the app background with theme text. The fill is
+             its own layer (faded in from code-behind) so the fade never hides content. -->
+        <Grid>
+        <Border x:Name="AlbumTintBg"
+                Background="{Binding BackgroundBrush}"
+                IsHitTestVisible="False"
+                Opacity="0">
+            <Border.Transitions>
+                <Transitions>
+                    <DoubleTransition Property="Opacity" Duration="0:0:0.16">
+                        <DoubleTransition.Easing><CubicEaseOut/></DoubleTransition.Easing>
+                    </DoubleTransition>
+                </Transitions>
+            </Border.Transitions>
+        </Border>
+        <StackPanel TextElement.Foreground="{Binding PageForegroundBrush}">
 
         <!-- Album header -->
         <Grid ColumnDefinitions="Auto,*,Auto"
@@ -396,7 +400,11 @@
                         Command="{Binding OpenAlbumDescriptionCommand}"
                         ToolTip.Tip="{loc:T AlbumDetail.OpenFullAlbumDescriptionTip}"
                         IsVisible="{Binding HasAlbumDescription}">
-                    <TextBlock Text="{Binding AlbumDescription}"
+                    <!-- Explicit Foreground: the Button's theme resets it to the theme text,
+                         which is white on a light cover's panel (Goodbye & Good Riddance). -->
+                    <TextBlock x:Name="AlbumDescriptionText"
+                               Text="{Binding AlbumDescription}"
+                               Foreground="{Binding PageForegroundBrush}"
                                FontSize="14"
                                Opacity="0.72"
                                TextWrapping="Wrap"
@@ -582,6 +590,17 @@
                                 <PathIcon Data="{StaticResource EditIcon}" Width="14" Height="14" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" />
                             </MenuItem.Icon>
                         </MenuItem>
+                        <MenuItem Header="{loc:T AlbumDetail.LyricsBackgroundVideo}">
+                            <MenuItem.Icon>
+                                <Border Width="14" Height="14" Background="{DynamicResource SystemControlForegroundBaseHighBrush}" RenderOptions.BitmapInterpolationMode="HighQuality"><Border.OpacityMask><ImageBrush Source="avares://Noctis/Assets/Icons/Lyrics%20ICON.png" Stretch="Uniform" /></Border.OpacityMask></Border>
+                            </MenuItem.Icon>
+                            <MenuItem Header="{loc:T AlbumDetail.ChooseAlbumVideo}"
+                                      Command="{x:Static helpers:LyricsBackgroundOverrides.ChooseForAlbumCommand}"
+                                      CommandParameter="{Binding Album}" />
+                            <MenuItem Header="{loc:T AlbumDetail.UseDefaultVideo}"
+                                      Command="{x:Static helpers:LyricsBackgroundOverrides.ClearForAlbumCommand}"
+                                      CommandParameter="{Binding Album}" />
+                        </MenuItem>
                         <MenuItem Header="{loc:T AlbumDetail.ConvertAlbum}"
                                   Command="{Binding ConvertAlbumCommand}">
                             <MenuItem.Icon>
@@ -626,6 +645,7 @@
                                    IsVisible="{Binding $parent[UserControl].((vm:AlbumDetailViewModel)DataContext).HasMultipleDiscs}" />
                         <ListBox Classes="track-list"
                                  ItemsSource="{Binding Tracks}"
+                                 Foreground="{Binding $parent[UserControl].((vm:AlbumDetailViewModel)DataContext).PageForegroundBrush}"
                                  ScrollViewer.VerticalScrollBarVisibility="Disabled">
             <!-- Non-virtualizing panel: this ListBox is nested inside an outer
                  ScrollViewer (TrackScrollViewer), so VirtualizingStackPanel can't
@@ -773,8 +793,9 @@
             </ItemsControl.ItemTemplate>
         </ItemsControl>
 
-        <!-- Album footer: release date, track count + duration, copyright (Apple Music style) -->
-        <StackPanel Margin="0,24,0,4" Spacing="3"
+        <!-- Album footer: release date, track count + duration, copyright (Apple Music style).
+             The bottom margin is the coloured panel's breathing room under the facts. -->
+        <StackPanel Margin="0,24,0,28" Spacing="3"
                     TextElement.Foreground="{Binding PageForegroundBrush}">
             <TextBlock Text="{Binding Album.ReleaseDateFormatted}"
                        FontSize="13"
@@ -795,13 +816,19 @@
                        IsVisible="{Binding Album.HasCopyright}" />
         </StackPanel>
 
+        </StackPanel>
+        </StackPanel>
+        </Grid>
+
+        <!-- Related sections: app background, theme foreground (not the tint's). -->
+        <StackPanel x:Name="RelatedSections" Margin="10,0,16,0">
+
         <!-- Other Versions: same artist, normalized base title (Deluxe/Explicit/Clean/Remaster/etc.) -->
         <StackPanel Margin="0,28,0,0" Spacing="10"
                     IsVisible="{Binding HasOtherVersions}">
             <TextBlock Text="{loc:T AlbumDetail.OtherVersions}"
                        FontSize="20"
-                       FontWeight="Bold"
-                       Foreground="{Binding PageForegroundBrush}" />
+                       FontWeight="Bold" />
             <Grid>
             <ScrollViewer x:Name="OtherVersionsScroll"
                           HorizontalScrollBarVisibility="Hidden"
@@ -1016,8 +1043,7 @@
                            Text="{Binding MoreByArtistTitle}"
                            FontSize="20"
                            FontWeight="Bold"
-                           VerticalAlignment="Center"
-                           Foreground="{Binding PageForegroundBrush}" />
+                           VerticalAlignment="Center" />
                 <Button Grid.Column="1"
                         Classes="no-hover-scale see-discography"
                         Background="Transparent"
@@ -1031,8 +1057,7 @@
                     <TextBlock Text="{loc:T AlbumDetail.SeeDiscography}"
                                FontSize="13"
                                FontWeight="SemiBold"
-                               Opacity="0.7"
-                               Foreground="{Binding PageForegroundBrush}" />
+                               Opacity="0.7" />
                 </Button>
             </Grid>
             <Grid>

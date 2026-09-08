@@ -543,6 +543,14 @@ public class AppSettings
     /// artwork background shows as usual.</summary>
     public string LyricsBackgroundMediaPath { get; set; } = "";
 
+    /// <summary>Per-song / per-album lyrics background clips: "track:{id}" or "album:{id}"
+    /// → a copy under the data root (see Helpers.LyricsBackgroundOverrides). A song's own
+    /// clip beats its album's, which beats <see cref="LyricsBackgroundMediaPath"/>.</summary>
+    public Dictionary<string, string>? LyricsBackgroundMediaOverrides { get; set; }
+
+    /// <summary>Freeze the lyrics background video while playback is paused (off = keep looping).</summary>
+    public bool LyricsBackgroundPausesWithPlayback { get; set; }
+
     /// <summary>Opt-in fullscreen focus — dims everything but the active line and its
     /// closest neighbors while the lyrics page is fullscreen.</summary>
     public bool LyricsFullScreenFocusEnabled { get; set; }

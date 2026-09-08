@@ -37,7 +37,6 @@
   <data name="Settings.Language.Title" xml:space="preserve"><value>Language</value></data>
   <data name="Settings.Language.Description" xml:space="preserve"><value>Menus and labels. Translations are made by the community.</value></data>
   <data name="Settings.Language.System" xml:space="preserve"><value>System language</value><comment>Picker entry: follow the OS language</comment></data>
-  <data name="Settings.Language.Help" xml:space="preserve"><value>Help translate Noctis</value><comment>Button</comment></data>
 
   <!-- Visualizer page -->
   <data name="Visualizer.Title" xml:space="preserve"><value>Visualizer</value></data>
@@ -128,6 +127,13 @@
   <data name="Settings.PreRelease" xml:space="preserve"><value>Pre-Release</value><comment>Text in SettingsView.axaml</comment></data>
   <data name="Settings.InstallRestart" xml:space="preserve"><value>Install &amp; Restart</value><comment>Text in SettingsView.axaml</comment></data>
   <data name="Settings.Cancel" xml:space="preserve"><value>Cancel</value><comment>Text in SettingsView.axaml</comment></data>
+  <data name="Settings.ShowRecentReleasesOnly" xml:space="preserve"><value>Show recent releases only</value><comment>Advanced: collapses the release history</comment></data>
+  <data name="Settings.LyricsBackgroundPerSongHint" xml:space="preserve"><value>Right-click a song or album to give it its own video.</value><comment>Appearance: under Lyrics Background Video</comment></data>
+  <data name="Settings.PauseVideoWithPlayback" xml:space="preserve"><value>Pause Video With Playback</value><comment>Appearance toggle title</comment></data>
+  <data name="Settings.PauseVideoWithPlaybackDesc" xml:space="preserve"><value>Freeze the background video while the song is paused.</value><comment>Appearance toggle description</comment></data>
+  <data name="AlbumDetail.LyricsBackgroundVideo" xml:space="preserve"><value>Lyrics Background Video</value><comment>Album page menu</comment></data>
+  <data name="AlbumDetail.ChooseAlbumVideo" xml:space="preserve"><value>Choose video for this album…</value><comment>Album page menu</comment></data>
+  <data name="AlbumDetail.UseDefaultVideo" xml:space="preserve"><value>Use default video</value><comment>Album page menu</comment></data>
   <data name="Settings.StarGitHub" xml:space="preserve"><value>Star on GitHub</value><comment>Text in SettingsView.axaml</comment></data>
   <data name="Settings.JoinDiscord" xml:space="preserve"><value>Join Discord</value><comment>Text in SettingsView.axaml</comment></data>
   <data name="Settings.OfficialWebsite" xml:space="preserve"><value>Official Website</value><comment>Text in SettingsView.axaml</comment></data>
@@ -1499,36 +1505,35 @@
   <data name="LyricsStudioSettings.NotInstalled" xml:space="preserve"><value>Not installed</value><comment>Model state chip</comment></data>
 
   <data name="LyricsStudio.Title" xml:space="preserve"><value>Lyrics Studio</value><comment>Dialog title</comment></data>
-  <data name="LyricsStudio.Subtitle" xml:space="preserve"><value>Times your lyrics against the recording, or transcribes when there are none. Review each song, fix any word, then save.</value><comment>Dialog subtitle</comment></data>
-  <data name="LyricsStudio.Close" xml:space="preserve"><value>Close</value><comment>Dialog button</comment></data>
+  <data name="LyricsStudio.Subtitle" xml:space="preserve"><value>Times lyrics to the recording, or transcribes when there are none.</value><comment>Dialog subtitle</comment></data>
   <data name="LyricsStudio.Model" xml:space="preserve"><value>Model</value><comment>Footer label</comment></data>
   <data name="LyricsStudio.Language" xml:space="preserve"><value>Language</value><comment>Footer label</comment></data>
-  <data name="LyricsStudio.WordTimings" xml:space="preserve"><value>Word timings (ELRC)</value><comment>Footer checkbox</comment></data>
-  <data name="LyricsStudio.SkipAlreadyTimed" xml:space="preserve"><value>Skip songs that already have this format</value><comment>Footer checkbox</comment></data>
-  <data name="LyricsStudio.SkipAlreadyTimedTip" xml:space="preserve"><value>ELRC (a time for every word) and LRC (one time per line) are different formats. With word timings on, songs that only have line-timed LRC are still processed; songs that already have ELRC are left alone.</value><comment>Footer checkbox tooltip</comment></data>
-  <data name="LyricsStudio.TranscribeOnly" xml:space="preserve"><value>Ignore existing lyrics, transcribe</value><comment>Footer checkbox</comment></data>
+  <data name="LyricsStudio.WordTimings" xml:space="preserve"><value>Word timings</value><comment>Footer checkbox</comment></data>
+  <data name="LyricsStudio.SkipAlreadyTimed" xml:space="preserve"><value>Skip songs already in this format</value><comment>Footer checkbox</comment></data>
+  <data name="LyricsStudio.SkipAlreadyTimedTip" xml:space="preserve"><value>Word timings (ELRC) and line timings (LRC) are different formats. Songs that only have line timings are still processed.</value><comment>Footer checkbox tooltip</comment></data>
+  <data name="LyricsStudio.TranscribeOnly" xml:space="preserve"><value>Transcribe from scratch</value><comment>Footer checkbox</comment></data>
   <data name="LyricsStudio.DownloadModel" xml:space="preserve"><value>Download model</value><comment>Footer button</comment></data>
   <data name="LyricsStudio.Start" xml:space="preserve"><value>Start</value><comment>Footer button</comment></data>
   <data name="LyricsStudio.Stop" xml:space="preserve"><value>Stop</value><comment>Footer button</comment></data>
-  <data name="LyricsStudio.NeedsFfmpeg" xml:space="preserve"><value>ffmpeg is needed to decode songs. Set its path under Settings → Advanced → Helper programs, then reopen Lyrics Studio.</value><comment>Banner</comment></data>
+  <data name="LyricsStudio.NeedsFfmpeg" xml:space="preserve"><value>ffmpeg is needed to decode audio. Set its path in Settings › Advanced › Helper programs.</value><comment>Banner</comment></data>
   <data name="LyricsStudio.Queue" xml:space="preserve"><value>SONGS</value><comment>Queue column header</comment></data>
   <data name="LyricsStudio.ReviewEmptyTitle" xml:space="preserve"><value>Nothing to review yet</value><comment>Review pane empty state</comment></data>
-  <data name="LyricsStudio.ReviewEmptyBody" xml:space="preserve"><value>Pick a song. Songs that already have synced lyrics open here right away; press Start for the rest. Check the words, nudge the timing and save.</value><comment>Review pane empty state</comment></data>
-  <data name="LyricsStudio.Upgrade" xml:space="preserve"><value>Upgrade to word timings</value><comment>Review button, shown for line-level lyrics</comment></data>
-  <data name="LyricsStudio.UpgradeTip" xml:space="preserve"><value>Runs the speech model over this song and times every word of the loaded lines (ELRC). The line-level LRC is kept alongside.</value><comment>Review button tooltip</comment></data>
-  <data name="LyricsStudio.ReviewHint" xml:space="preserve"><value>Click a time to hear that line. Edit any text in place. Tinted lines were not heard clearly — check them first.</value><comment>Review pane hint</comment></data>
+  <data name="LyricsStudio.ReviewEmptyBody" xml:space="preserve"><value>Pick a song, press Start, then check the words and save.</value><comment>Review pane empty state</comment></data>
+  <data name="LyricsStudio.Upgrade" xml:space="preserve"><value>Time every word</value><comment>Review button, shown for line-level lyrics</comment></data>
+  <data name="LyricsStudio.UpgradeTip" xml:space="preserve"><value>Times every word of these lines. The line-level file is kept.</value><comment>Review button tooltip</comment></data>
+  <data name="LyricsStudio.ReviewHint" xml:space="preserve"><value>Click a time to hear that line. Edit text in place. Tinted lines need a second look.</value><comment>Review pane hint</comment></data>
   <data name="LyricsStudio.NudgeEarlier" xml:space="preserve"><value>All lines 0.1 s earlier</value><comment>Tooltip</comment></data>
   <data name="LyricsStudio.NudgeLater" xml:space="preserve"><value>All lines 0.1 s later</value><comment>Tooltip</comment></data>
   <data name="LyricsStudio.Redo" xml:space="preserve"><value>Transcribe instead</value><comment>Review button</comment></data>
-  <data name="LyricsStudio.RedoTip" xml:space="preserve"><value>Ignore the found lyrics and write down what is actually sung</value><comment>Tooltip</comment></data>
+  <data name="LyricsStudio.RedoTip" xml:space="preserve"><value>Ignore these lyrics and transcribe what is sung</value><comment>Tooltip</comment></data>
   <data name="LyricsStudio.Skip" xml:space="preserve"><value>Skip</value><comment>Review button</comment></data>
   <data name="LyricsStudio.Save" xml:space="preserve"><value>Save lyrics</value><comment>Review button</comment></data>
   <data name="LyricsStudio.Words" xml:space="preserve"><value>Words</value><comment>Per-line toggle that opens the word strip</comment></data>
-  <data name="LyricsStudio.WordsTip" xml:space="preserve"><value>Show each word with its time. Click a word to hear it; nudge or tap to retime it.</value><comment>Word toggle tooltip</comment></data>
+  <data name="LyricsStudio.WordsTip" xml:space="preserve"><value>Show each word with its time. Click one to hear it.</value><comment>Word toggle tooltip</comment></data>
   <data name="LyricsStudio.WordEarlier" xml:space="preserve"><value>Selected word 50 ms earlier (its neighbours stay put)</value><comment>Word nudge tooltip</comment></data>
   <data name="LyricsStudio.WordLater" xml:space="preserve"><value>Selected word 50 ms later (its neighbours stay put)</value><comment>Word nudge tooltip</comment></data>
   <data name="LyricsStudio.TapWords" xml:space="preserve"><value>Tap words</value><comment>Starts tap-to-time for one line</comment></data>
-  <data name="LyricsStudio.TapTip" xml:space="preserve"><value>Plays the line; press Space (or Tap) as each word is sung. One more tap after the last word marks the line end.</value><comment>Tap button tooltip</comment></data>
+  <data name="LyricsStudio.TapTip" xml:space="preserve"><value>Plays the line. Press Space or Tap on each word; one more tap ends the line.</value><comment>Tap button tooltip</comment></data>
   <data name="LyricsStudio.Tap" xml:space="preserve"><value>Tap</value><comment>Tap bar button</comment></data>
   <data name="LyricsStudio.TapCancel" xml:space="preserve"><value>Done</value><comment>Tap bar leave button</comment></data>
   <data name="LyricsStudio.PlayFromHere" xml:space="preserve"><value>Play from here</value><comment>Time pill tooltip</comment></data>

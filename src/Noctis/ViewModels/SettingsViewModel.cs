@@ -541,9 +541,6 @@ public partial class SettingsViewModel : ViewModelBase
         if (_settingsLoaded) _ = SaveAsync();
     }
 
-    [RelayCommand]
-    private void OpenTranslationHelp() => PlatformHelper.OpenUrl("https://crowdin.com/project/noctis");
-
     public VisualizerStyle LyricsVisualizerStyleMode => VisualizerStyles.Parse(LyricsVisualizerStyle);
     public bool IsVisualizerStyleBars { get => LyricsVisualizerStyleMode == VisualizerStyle.Bars; set { if (value) LyricsVisualizerStyle = nameof(VisualizerStyle.Bars); } }
     public bool IsVisualizerStyleMirror { get => LyricsVisualizerStyleMode == VisualizerStyle.Mirror; set { if (value) LyricsVisualizerStyle = nameof(VisualizerStyle.Mirror); } }
@@ -557,6 +554,11 @@ public partial class SettingsViewModel : ViewModelBase
     public bool HasLyricsBackgroundMedia => !string.IsNullOrEmpty(LyricsBackgroundMediaPath);
     public string LyricsBackgroundMediaName =>
         string.IsNullOrEmpty(LyricsBackgroundMediaPath) ? "None" : Path.GetFileName(LyricsBackgroundMediaPath);
+    /// <summary>Per-song / per-album clips ("track:{id}" / "album:{id}" → copied file); see
+    /// Helpers.LyricsBackgroundOverrides for the menus that fill it.</summary>
+    private Dictionary<string, string> _lyricsBackgroundOverrides = new(StringComparer.OrdinalIgnoreCase);
+    /// <summary>Freeze the lyrics background video while playback is paused.</summary>
+    [ObservableProperty] private bool _lyricsBackgroundPausesWithPlayback;
     [ObservableProperty] private bool _lyricsFullScreenFocusEnabled;
     [ObservableProperty] private bool _lyricsJoinSplitWords;
 
@@ -1805,6 +1807,10 @@ public partial class SettingsViewModel : ViewModelBase
             LyricsBackgroundMediaPath = File.Exists(_settings.LyricsBackgroundMediaPath)
                 ? _settings.LyricsBackgroundMediaPath
                 : string.Empty;
+            _lyricsBackgroundOverrides = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var (key, path) in _settings.LyricsBackgroundMediaOverrides ?? new Dictionary<string, string>())
+                if (!string.IsNullOrEmpty(path) && File.Exists(path)) _lyricsBackgroundOverrides[key] = path;
+            LyricsBackgroundPausesWithPlayback = _settings.LyricsBackgroundPausesWithPlayback;
             LyricsFullScreenFocusEnabled = _settings.LyricsFullScreenFocusEnabled;
             LyricsJoinSplitWords = _settings.LyricsJoinSplitWords;
             MinimizeToTray = _settings.MinimizeToTray;
@@ -2187,6 +2193,8 @@ public partial class SettingsViewModel : ViewModelBase
         _settings.LyricsVisualizerStyle = LyricsVisualizerStyle;
         _settings.LyricsVisualizerArtworkColor = LyricsVisualizerArtworkColor;
         _settings.LyricsBackgroundMediaPath = LyricsBackgroundMediaPath ?? string.Empty;
+        _settings.LyricsBackgroundMediaOverrides = new Dictionary<string, string>(_lyricsBackgroundOverrides);
+        _settings.LyricsBackgroundPausesWithPlayback = LyricsBackgroundPausesWithPlayback;
         _settings.LyricsFullScreenFocusEnabled = LyricsFullScreenFocusEnabled;
         _settings.LyricsJoinSplitWords = LyricsJoinSplitWords;
         _settings.MinimizeToTray = MinimizeToTray;
@@ -2430,7 +2438,9 @@ public partial class SettingsViewModel : ViewModelBase
         _player.LyricsVisualizerEnabled = LyricsVisualizerEnabled;
         _player.LyricsVisualizerStyle = LyricsVisualizerStyle;
         _player.LyricsVisualizerArtworkColor = LyricsVisualizerArtworkColor;
-        _player.LyricsBackgroundMediaPath = LyricsBackgroundMediaPath ?? string.Empty;
+        _player.SetLyricsBackgroundSources(LyricsBackgroundMediaPath ?? string.Empty,
+            new Dictionary<string, string>(_lyricsBackgroundOverrides, StringComparer.OrdinalIgnoreCase));
+        _player.LyricsBackgroundPausesWithPlayback = LyricsBackgroundPausesWithPlayback;
         _player.LyricsFullScreenFocusEnabled = LyricsFullScreenFocusEnabled;
         _player.LyricsJoinSplitWords = LyricsJoinSplitWords;
         Controls.MarqueeTextBlock.GlobalCoverFlowScrollEnabled = CoverFlowMarqueeEnabled;
@@ -3284,6 +3294,55 @@ public partial class SettingsViewModel : ViewModelBase
 
     partial void OnLyricsBackgroundMediaPathChanged(string value)
     {
+        ApplyPlayerSettings();
+        if (_settingsLoaded) _ = SaveAsync();
+    }
+
+    partial void OnLyricsBackgroundPausesWithPlaybackChanged(bool value)
+    {
+        ApplyPlayerSettings();
+        if (_settingsLoaded) _ = SaveAsync();
+    }
+
+    public bool HasLyricsBackgroundOverride(string key)
+        => _lyricsBackgroundOverrides.TryGetValue(key, out var path) && File.Exists(path);
+
+    /// <summary>Stores a song's or album's own lyrics background clip: copied under the data
+    /// root as lyrics_background/{key}.{ext} (a previous pick with another extension is
+    /// dropped), recorded under the key, pushed to the player and saved.</summary>
+    public async Task SetLyricsBackgroundOverrideAsync(string key, string sourcePath)
+    {
+        if (string.IsNullOrWhiteSpace(key) || string.IsNullOrWhiteSpace(sourcePath) || !File.Exists(sourcePath)) return;
+        var dir = Path.Combine(AppPaths.DataRoot, "lyrics_background");
+        var ext = Path.GetExtension(sourcePath).ToLowerInvariant();
+        var stem = key.Replace(':', '_');
+        var target = Path.Combine(dir, stem + ext);
+        await Task.Run(() =>
+        {
+            Directory.CreateDirectory(dir);
+            foreach (var existing in Directory.EnumerateFiles(dir, stem + ".*"))
+            {
+                if (!string.Equals(existing, target, StringComparison.OrdinalIgnoreCase))
+                {
+                    try { File.Delete(existing); } catch { }
+                }
+            }
+            File.Copy(sourcePath, target, overwrite: true);
+        });
+        _lyricsBackgroundOverrides[key] = target;
+        // Same file picked again for the song that is playing: bounce through empty so the
+        // backdrop restarts on the new copy (same trick as the default clip).
+        if (_player != null && string.Equals(_player.LyricsBackgroundMediaPath, target, StringComparison.OrdinalIgnoreCase))
+            _player.LyricsBackgroundMediaPath = string.Empty;
+        ApplyPlayerSettings();
+        if (_settingsLoaded) _ = SaveAsync();
+    }
+
+    /// <summary>Drops a song's or album's own clip (and its copy) so it falls back to the default.</summary>
+    public void ClearLyricsBackgroundOverride(string key)
+    {
+        if (!_lyricsBackgroundOverrides.Remove(key, out var path)) return;
+        _ = Task.Run(() => { try { File.Delete(path); } catch { } });
         ApplyPlayerSettings();
         if (_settingsLoaded) _ = SaveAsync();
     }
@@ -5530,7 +5589,10 @@ public partial class SettingsViewModel : ViewModelBase
 
     public bool HasHiddenReleases => HiddenReleaseCount > 0;
 
-    public string ShowOlderVersionsLabel => $"Show {HiddenReleaseCount} older versions";
+    public string ShowOlderVersionsLabel => $"Show full release history ({HiddenReleaseCount} older)";
+
+    /// <summary>True once the full history is expanded; shows the collapse control.</summary>
+    [ObservableProperty] private bool _isReleaseHistoryExpanded;
 
     [ObservableProperty] private bool _isLoadingReleases;
     [ObservableProperty] private bool _showDevReleasesEmpty;
@@ -5622,6 +5684,7 @@ public partial class SettingsViewModel : ViewModelBase
             foreach (var item in _allReleases.Take(VisibleReleaseLimit))
                 DevReleases.Add(item);
             HiddenReleaseCount = Math.Max(0, _allReleases.Count - VisibleReleaseLimit);
+            IsReleaseHistoryExpanded = false;
 
             ShowDevReleasesEmpty = DevReleases.Count == 0;
             DebugLog.Write("VersionManager", $"Loaded {_allReleases.Count} releases from GitHub.");
@@ -5645,6 +5708,17 @@ public partial class SettingsViewModel : ViewModelBase
         foreach (var item in _allReleases.Skip(DevReleases.Count))
             DevReleases.Add(item);
         HiddenReleaseCount = 0;
+        IsReleaseHistoryExpanded = true;
+    }
+
+    /// <summary>Collapses the version list back to the newest few releases.</summary>
+    [RelayCommand]
+    private void HideOlderReleases()
+    {
+        while (DevReleases.Count > VisibleReleaseLimit)
+            DevReleases.RemoveAt(DevReleases.Count - 1);
+        HiddenReleaseCount = Math.Max(0, _allReleases.Count - VisibleReleaseLimit);
+        IsReleaseHistoryExpanded = false;
     }
 
     /// <summary>

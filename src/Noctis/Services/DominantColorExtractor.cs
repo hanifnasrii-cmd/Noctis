@@ -637,6 +637,10 @@ public static class DominantColorExtractor
     /// histogram, weighted average of the winning non-noise bucket, gentle saturation
     /// floor, natural lightness kept. Cached per path; null when the file can't be read.
     /// </summary>
+    /// <summary>Largest decode the edge extractor will allocate (a codec that cannot
+    /// subsample decodes at native size); beyond this the page simply stays untinted.</summary>
+    private const int MaxEdgeDecodeDimension = 8192;
+
     public static Color? ExtractEdgeBackgroundColorFromFile(string? artworkPath)
     {
         if (string.IsNullOrEmpty(artworkPath)) return null;
@@ -649,12 +653,18 @@ public static class DominantColorExtractor
             if (codec == null) return null;
             var info = codec.Info;
             // Ask the codec for a subsampled decode so a huge cover never allocates at
-            // native size (same guard as ShareCardRenderer.LoadArtwork).
+            // native size (same guard as ShareCardRenderer.LoadArtwork). The decode only
+            // succeeds at a size the codec itself reports for that scale: JPEG rounds its
+            // 1/2..1/8 steps, and PNG (what most library covers are, whatever their
+            // extension says) cannot subsample at all and reports its native size. Asking
+            // for width/sample directly returned null for both, so the page never tinted.
             var longest = Math.Max(info.Width, info.Height);
             var sample = 1;
             while (longest / sample > 512) sample *= 2;
+            var scaled = sample > 1 ? codec.GetScaledDimensions(1f / sample) : info.Size;
+            if (Math.Max(scaled.Width, scaled.Height) > MaxEdgeDecodeDimension) return null;
             using var raw = SkiaSharp.SKBitmap.Decode(codec, new SkiaSharp.SKImageInfo(
-                Math.Max(1, info.Width / sample), Math.Max(1, info.Height / sample),
+                Math.Max(1, scaled.Width), Math.Max(1, scaled.Height),
                 SkiaSharp.SKColorType.Bgra8888, SkiaSharp.SKAlphaType.Premul));
             if (raw == null) return null;
             using var small = raw.Resize(new SkiaSharp.SKImageInfo(sampleSize, sampleSize,

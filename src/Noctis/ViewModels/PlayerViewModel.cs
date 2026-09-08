@@ -52,6 +52,7 @@ public partial class PlayerViewModel : ViewModelBase
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(PlayPauseTooltip))]
     [NotifyPropertyChangedFor(nameof(IsPlaying))]
+    [NotifyPropertyChangedFor(nameof(LyricsBackgroundHoldsWhilePaused))]
     private PlaybackState _state = PlaybackState.Stopped;
     [ObservableProperty] private TimeSpan _position;
     [ObservableProperty] private TimeSpan _duration;
@@ -182,6 +183,48 @@ public partial class PlayerViewModel : ViewModelBase
     /// <summary>Looping video/GIF the lyrics page paints behind the lyrics (empty = none).
     /// Driven by Settings like the flags above; the page's VideoBackdrop binds it.</summary>
     [ObservableProperty] private string _lyricsBackgroundMediaPath = string.Empty;
+    private string _lyricsBackgroundDefaultPath = string.Empty;
+    private IReadOnlyDictionary<string, string> _lyricsBackgroundOverrides = new Dictionary<string, string>();
+    /// <summary>Settings: freeze the background video while playback is paused.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(LyricsBackgroundHoldsWhilePaused))]
+    private bool _lyricsBackgroundPausesWithPlayback;
+    /// <summary>What the lyrics page's VideoBackdrop binds as IsPaused.</summary>
+    public bool LyricsBackgroundHoldsWhilePaused => LyricsBackgroundPausesWithPlayback && !IsPlaying;
+
+    /// <summary>Settings hands over the default clip and the per-song/per-album overrides;
+    /// <see cref="LyricsBackgroundMediaPath"/> is re-resolved for the current track.</summary>
+    public void SetLyricsBackgroundSources(string defaultPath, IReadOnlyDictionary<string, string> overrides)
+    {
+        _lyricsBackgroundDefaultPath = defaultPath ?? string.Empty;
+        _lyricsBackgroundOverrides = overrides ?? new Dictionary<string, string>();
+        ResolveLyricsBackground();
+    }
+
+    /// <summary>The song's own clip, else its album's, else the default; a recorded clip whose
+    /// file is gone is skipped so the page never binds a dead path.</summary>
+    public string ResolveLyricsBackgroundFor(Track? track)
+    {
+        if (track != null)
+        {
+            if (TryOverride(Helpers.LyricsBackgroundOverrides.KeyForTrack(track), out var own)) return own;
+            if (TryOverride(Helpers.LyricsBackgroundOverrides.KeyForAlbumId(track.AlbumId), out var album)) return album;
+        }
+        return _lyricsBackgroundDefaultPath;
+
+        bool TryOverride(string key, out string path)
+        {
+            if (_lyricsBackgroundOverrides.TryGetValue(key, out var p) && !string.IsNullOrEmpty(p) && File.Exists(p))
+            {
+                path = p;
+                return true;
+            }
+            path = string.Empty;
+            return false;
+        }
+    }
+
+    private void ResolveLyricsBackground() => LyricsBackgroundMediaPath = ResolveLyricsBackgroundFor(CurrentTrack);
     /// <summary>Opt-in fullscreen lyrics focus — dims all but the active line and its
     /// closest neighbors while the lyrics page is fullscreen. Driven by Settings.</summary>
     [ObservableProperty] private bool _lyricsFullScreenFocusEnabled;
@@ -1311,6 +1354,7 @@ public partial class PlayerViewModel : ViewModelBase
     partial void OnCurrentTrackChanged(Track? value)
     {
         OnPropertyChanged(nameof(HasContent));
+        ResolveLyricsBackground();
         // Re-apply ReplayGain so the new track's RG tags take effect. The
         // player already reads tags at Play() time, but settings or playback
         // path changes can leave us here without a Play() call.

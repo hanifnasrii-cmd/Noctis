@@ -16,12 +16,20 @@
 
     <UserControl.Resources>
         <ResourceDictionary>
-            <conv:PercentageToWidthConverter x:Key="PercentageToWidth" />
             <conv:IconKeyToGeometryConverter x:Key="IconKeyToGeometry" />
         </ResourceDictionary>
     </UserControl.Resources>
 
     <UserControl.Styles>
+        <!-- The page scrollbar sits at the card's right edge, and the card clips its
+             children to a 21px rounded rect (MainWindow SettingsCard). At the top the
+             header row keeps the bar clear of the corner; at the bottom nothing did, so
+             the last ~20px of track and thumb were cut off by the curve. Inset the bar
+             by the corner radius; the content itself still scrolls to the card edge. -->
+        <Style Selector="ScrollViewer#SettingsScrollViewer /template/ ScrollBar:vertical">
+            <Setter Property="Margin" Value="2,0,0,21"/>
+        </Style>
+
         <!-- Section header style -->
         <Style Selector="TextBlock.section-title">
             <Setter Property="FontSize" Value="13"/>
@@ -1271,12 +1279,6 @@
                                   CornerRadius="999"
                                   Padding="14,8"/>
                     </Grid>
-                    <Button Classes="pill-action"
-                            Command="{Binding OpenTranslationHelpCommand}"
-                            HorizontalAlignment="Left"
-                            Padding="14,8" CornerRadius="999" Cursor="Hand">
-                        <TextBlock Text="{loc:T Settings.Language.Help}" FontSize="13"/>
-                    </Button>
                 </StackPanel>
             </Border>
             </StackPanel>
@@ -2316,6 +2318,8 @@
                         <TextBlock Text="{loc:T Settings.LyricsBackgroundVideo}" FontSize="15" FontWeight="SemiBold"/>
                         <TextBlock Text="{loc:T Settings.LoopVideoGIFBehind}"
                                    FontSize="12" Opacity="0.5" TextWrapping="Wrap"/>
+                        <TextBlock Text="{loc:T Settings.LyricsBackgroundPerSongHint}"
+                                   FontSize="12" Opacity="0.5" TextWrapping="Wrap"/>
                         <TextBlock Text="{Binding LyricsBackgroundMediaName}"
                                    FontSize="12" Opacity="0.7" Margin="0,4,0,0"
                                    TextTrimming="CharacterEllipsis"
@@ -2338,6 +2342,18 @@
                                 Command="{Binding ClearLyricsBackgroundMediaCommand}"
                                 IsVisible="{Binding HasLyricsBackgroundMedia}"/>
                     </StackPanel>
+                </Grid>
+            </Border>
+            <Border Classes="setting-row">
+                <Grid ColumnDefinitions="*,Auto">
+                    <StackPanel Grid.Column="0" Spacing="2">
+                        <TextBlock Text="{loc:T Settings.PauseVideoWithPlayback}" FontSize="15" FontWeight="SemiBold"/>
+                        <TextBlock Text="{loc:T Settings.PauseVideoWithPlaybackDesc}"
+                                   FontSize="12" Opacity="0.5" TextWrapping="Wrap"/>
+                    </StackPanel>
+                    <controls:LottieToggle Grid.Column="1"
+                                          IsChecked="{Binding LyricsBackgroundPausesWithPlayback}"
+                                          VerticalAlignment="Center"/>
                 </Grid>
             </Border>
             <Border Classes="setting-row">
@@ -3821,6 +3837,17 @@
                                        FontSize="12"
                                        FontWeight="SemiBold"/>
                         </Button>
+                        <!-- Collapse back to the newest releases (sits under the expanded list) -->
+                        <Button IsVisible="{Binding IsReleaseHistoryExpanded}"
+                                Command="{Binding HideOlderReleasesCommand}"
+                                Padding="14,6"
+                                CornerRadius="999"
+                                HorizontalAlignment="Center"
+                                Cursor="Hand">
+                            <TextBlock Text="{loc:T Settings.ShowRecentReleasesOnly}"
+                                       FontSize="12"
+                                       FontWeight="SemiBold"/>
+                        </Button>
 
                         <!-- Download status / progress -->
                         <StackPanel x:Name="DevDownloadPanel" Spacing="10">
@@ -4955,9 +4982,13 @@
                                 <Border CornerRadius="16" Background="#F1C40F"/>
                                 <Border Classes="tile-lift" CornerRadius="16"/>
                                 <StackPanel Margin="16,16,16,14">
+                                    <!-- GitHub-gold star on the star-yellow tile (user ask 2026-09-07). The
+                                         two hues are a near match, so a tight dark shadow lifts the star off
+                                         the tile the way a sticker sits on paper. -->
                                     <PathIcon Data="{StaticResource StarIcon}"
                                               Width="24" Height="24"
-                                              Foreground="#1B1B1B"
+                                              Foreground="#F5C518"
+                                              Effect="drop-shadow(0 1 3 #B0000000)"
                                               HorizontalAlignment="Left"/>
                                     <TextBlock Text="{loc:T Settings.StarGitHub}"
                                                FontSize="13" FontWeight="SemiBold" Foreground="#1B1B1B"

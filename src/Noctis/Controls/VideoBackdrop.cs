@@ -52,6 +52,17 @@ public sealed class VideoBackdrop : Control
         set => SetValue(IsActiveProperty, value);
     }
 
+    /// <summary>Holds the clip on its current frame (Settings: pause the video with playback).
+    /// Combined with the window-minimized park; the decoder resumes where it stopped.</summary>
+    public static readonly StyledProperty<bool> IsPausedProperty =
+        AvaloniaProperty.Register<VideoBackdrop, bool>(nameof(IsPaused));
+
+    public bool IsPaused
+    {
+        get => GetValue(IsPausedProperty);
+        set => SetValue(IsPausedProperty, value);
+    }
+
     /// <summary>Long-side cap for the decode buffer.</summary>
     public const int MaxLongSide = 960;
 
@@ -107,7 +118,7 @@ public sealed class VideoBackdrop : Control
         if (minimized == _windowMinimized) return;
         _windowMinimized = minimized;
         // Park the decoder while the window can't be seen; resume where it left off.
-        _session?.SetPaused(minimized);
+        _session?.SetPaused(minimized || IsPaused);
     }
 
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
@@ -115,6 +126,8 @@ public sealed class VideoBackdrop : Control
         base.OnPropertyChanged(change);
         if (change.Property == SourceProperty || change.Property == IsActiveProperty)
             Refresh();
+        else if (change.Property == IsPausedProperty)
+            _session?.SetPaused(IsPaused || _windowMinimized);
     }
 
     public override void Render(DrawingContext context)
@@ -141,7 +154,7 @@ public sealed class VideoBackdrop : Control
         if (!active || string.IsNullOrEmpty(source)) return;
 
         var generation = _generation;
-        var startPaused = _windowMinimized;
+        var startPaused = _windowMinimized || IsPaused;
         ThreadPool.QueueUserWorkItem(_ =>
         {
             Session session;

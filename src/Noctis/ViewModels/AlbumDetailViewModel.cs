@@ -408,25 +408,9 @@ public partial class AlbumDetailViewModel : ViewModelBase, IDisposable
             : Color.FromArgb(0x1F, 0xFF, 0xFF, 0xFF));
     }
 
-    /// <summary>The page background for a tint: the colour itself at the top, easing
-    /// ~18% darker toward the bottom so a long track list doesn't read as one flat
-    /// slab (Apple's desktop album page has the same gentle fall-off).</summary>
-    public static LinearGradientBrush BuildTintBrush(Color color)
-    {
-        static byte Darken(byte c) => (byte)(c * 0.82);
-        var bottom = Color.FromRgb(Darken(color.R), Darken(color.G), Darken(color.B));
-        return new LinearGradientBrush
-        {
-            StartPoint = new Avalonia.RelativePoint(0, 0, Avalonia.RelativeUnit.Relative),
-            EndPoint = new Avalonia.RelativePoint(0, 1, Avalonia.RelativeUnit.Relative),
-            GradientStops =
-            {
-                new GradientStop(color, 0),
-                new GradientStop(color, 0.35),
-                new GradientStop(bottom, 1),
-            }
-        };
-    }
+    /// <summary>The album block's fill for a tint: the cover's edge colour, flat, the way
+    /// iTunes' expanded album view painted it (user ask 2026-09-07: no gradient).</summary>
+    public static SolidColorBrush BuildTintBrush(Color color) => new(color);
 
     private void BuildRelatedSections()
     {
