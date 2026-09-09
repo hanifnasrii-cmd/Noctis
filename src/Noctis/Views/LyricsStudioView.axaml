@@ -3,6 +3,7 @@
              xmlns:loc="using:Noctis.Localization"
              xmlns:vm="using:Noctis.ViewModels"
              xmlns:views="using:Noctis.Views"
+             xmlns:controls="using:Noctis.Controls"
              x:Class="Noctis.Views.LyricsStudioView"
              x:DataType="vm:LyricsStudioPageViewModel">
 
@@ -44,6 +45,36 @@
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
         </Grid>
+
+        <!-- Lyrics Background Video: the clip behind the lyrics page and its pause toggle.
+             Moved here from Settings > Lyrics (user ask 09-08). Binds the app's SettingsViewModel
+             through the window; the Modify button opens the same picker Settings used. -->
+        <Border DockPanel.Dock="Top" CornerRadius="16" Padding="18,12" Margin="0,0,0,12"
+                Background="{DynamicResource SystemControlBackgroundListLowBrush}"
+                DataContext="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).Settings}"
+                x:DataType="vm:SettingsViewModel">
+            <Grid ColumnDefinitions="*,Auto,Auto">
+                <StackPanel Grid.Column="0" Spacing="2" VerticalAlignment="Center">
+                    <TextBlock Text="{loc:T Settings.LyricsBackgroundVideo}" FontSize="15" FontWeight="SemiBold"/>
+                    <TextBlock Text="{loc:T Settings.LoopVideoGIFBehind}" FontSize="12" Opacity="0.5" TextWrapping="Wrap"/>
+                    <TextBlock Text="{loc:T Settings.LyricsBackgroundPerSongHint}" FontSize="12" Opacity="0.5" TextWrapping="Wrap"/>
+                    <TextBlock Text="{Binding LyricsBackgroundMediaName}" FontSize="12" Opacity="0.7" Margin="0,4,0,0"
+                               TextTrimming="CharacterEllipsis" IsVisible="{Binding HasLyricsBackgroundMedia}"/>
+                </StackPanel>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center" Margin="24,0,20,0"
+                            ToolTip.Tip="{loc:T Settings.PauseVideoWithPlaybackDesc}">
+                    <TextBlock Text="{loc:T Settings.PauseVideoWithPlayback}" FontSize="12.5" FontWeight="SemiBold" Opacity="0.85" VerticalAlignment="Center"/>
+                    <controls:LottieToggle IsChecked="{Binding LyricsBackgroundPausesWithPlayback}" VerticalAlignment="Center"/>
+                </StackPanel>
+                <Button Grid.Column="2" Classes="accent-btn"
+                        Content="{loc:T Settings.Modify}"
+                        Padding="16,6" CornerRadius="999"
+                        Background="{DynamicResource AccentButtonBackground}"
+                        Foreground="{DynamicResource AccentForegroundBrush}"
+                        FontWeight="SemiBold" Cursor="Hand" VerticalAlignment="Center"
+                        Click="OnModifyLyricsBackgroundClick"/>
+            </Grid>
+        </Border>
 
         <!-- Body -->
         <Border CornerRadius="20" ClipToBounds="True" Background="{DynamicResource SystemControlBackgroundListLowBrush}" Margin="0,0,0,20">

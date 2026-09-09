@@ -96,6 +96,9 @@ public partial class App : Application
                 }
             },
             Avalonia.Interactivity.RoutingStrategies.Tunnel);
+
+        // Every ComboBox drop-down eases open (fade + glide), matching the Settings folds.
+        Noctis.Helpers.ComboBoxDropDownAnimator.Install();
     }
 
     public override void OnFrameworkInitializationCompleted()

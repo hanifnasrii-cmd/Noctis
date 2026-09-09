@@ -83,6 +83,23 @@ public class LocalizationTests : IDisposable
         Assert.True(missing.Count == 0, "Keys used in XAML but missing from Strings.resx: " + string.Join(", ", missing));
     }
 
+    /// <summary>
+    /// GenerateResource dedupes names case-insensitively ("Duplicate resource name … ignored"),
+    /// so a key that differs from another only by case is silently dropped from the compiled
+    /// resources and renders as its raw key (Settings.Username next to Settings.USERNAME did).
+    /// </summary>
+    [Fact]
+    public void EnglishKeys_AreUniqueIgnoringCase()
+    {
+        var path = Path.Combine(FindRepoRoot(), "src", "Noctis", "Localization", "Strings.resx");
+        var clashes = ReadKeys(path)
+            .GroupBy(k => k, StringComparer.OrdinalIgnoreCase)
+            .Where(g => g.Count() > 1)
+            .Select(g => string.Join(" / ", g))
+            .ToList();
+        Assert.True(clashes.Count == 0, "Keys that differ only by case (the later one is dropped by resgen): " + string.Join(", ", clashes));
+    }
+
     [Fact]
     public void TranslationFiles_OnlyContainEnglishKeys()
     {

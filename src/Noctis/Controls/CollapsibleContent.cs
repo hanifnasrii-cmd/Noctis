@@ -42,10 +42,24 @@ public class CollapsibleContent : Decorator
     public static readonly StyledProperty<double> RevealProperty =
         AvaloniaProperty.Register<CollapsibleContent, double>(nameof(Reveal), defaultValue: 1.0);
 
+    /// <summary>
+    /// Pixels the body glides down from as it opens (and back up as it shuts). 0, the
+    /// default, keeps the plain fold the Home sections use; the Settings sub-menus set a
+    /// few pixels so a block reads as sliding out from under its control.
+    /// </summary>
+    public static readonly StyledProperty<double> LiftProperty =
+        AvaloniaProperty.Register<CollapsibleContent, double>(nameof(Lift));
+
     public bool IsOpen
     {
         get => GetValue(IsOpenProperty);
         set => SetValue(IsOpenProperty, value);
+    }
+
+    public double Lift
+    {
+        get => GetValue(LiftProperty);
+        set => SetValue(LiftProperty, value);
     }
 
     public double Reveal
@@ -69,6 +83,9 @@ public class CollapsibleContent : Decorator
     /// <summary>Natural (unfolded) size of the child, from the last measure.</summary>
     private Size _childNatural;
 
+    /// <summary>The glide (see <see cref="Lift"/>); Y is written from the reveal.</summary>
+    private readonly Avalonia.Media.TranslateTransform _lift = new();
+
     /// <summary>
     /// Transitions stay off until the first layout pass has run. A section restored
     /// folded from settings must come up folded, not play its collapse on startup.
@@ -80,6 +97,7 @@ public class CollapsibleContent : Decorator
         // The fold is this clip. Decorator is not a Border, so this is the plain
         // rectangular clip it looks like (Border would round it by CornerRadius).
         ClipToBounds = true;
+        RenderTransform = _lift;
     }
 
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
@@ -139,6 +157,7 @@ public class CollapsibleContent : Decorator
         {
             var reveal = Math.Clamp(change.GetNewValue<double>(), 0, 1);
             Opacity = reveal;
+            _lift.Y = -Lift * (1 - reveal);
             InvalidateMeasure();
 
             if (reveal <= ShutEpsilon && !IsOpen) IsVisible = false;

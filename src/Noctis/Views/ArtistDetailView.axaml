@@ -755,7 +755,7 @@
                         <UniformGrid Rows="1">
                             <Border Classes="library-stat">
                                 <StackPanel Spacing="2">
-                                    <TextBlock Classes="fact-label" Text="{loc:T ArtistDetail.RELEASES}" />
+                                    <TextBlock Classes="fact-label" Text="{loc:T ArtistDetail.ReleasesFact}" />
                                     <TextBlock Classes="fact-value" FontWeight="SemiBold" Text="{Binding ReleaseCount}" />
                                 </StackPanel>
                             </Border>
@@ -782,7 +782,7 @@
                                 <StackPanel Spacing="2">
                                     <TextBlock Classes="fact-label" Text="{loc:T ArtistDetail.FAVORITED}" />
                                     <TextBlock Classes="fact-value" FontWeight="SemiBold">
-                                        <Run Text="{Binding FavoriteCount}" /><Run Text="{loc:T ArtistDetail.Songs}" />
+                                        <Run Text="{Binding FavoriteCount}" /><Run Text="{loc:T ArtistDetail.SongsSuffix}" />
                                     </TextBlock>
                                 </StackPanel>
                             </Border>

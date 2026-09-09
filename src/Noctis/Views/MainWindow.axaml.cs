@@ -509,7 +509,7 @@ public partial class MainWindow : Window
                             else
                             {
                                 // Mirror of the open animation, then drop the overlay out
-                                // of the tree once the 180ms transitions have played.
+                                // of the tree once the 140ms transitions have played.
                                 SetSettingsScrim(visible: null, opacity: 0);
                                 SetSettingsSheet(shown: false);
                                 Avalonia.Threading.DispatcherTimer.RunOnce(() =>
@@ -520,7 +520,7 @@ public partial class MainWindow : Window
                                         _settingsOverlay.IsVisible = false;
                                         SetSettingsScrim(visible: false, opacity: null);
                                     }
-                                }, TimeSpan.FromMilliseconds(200));
+                                }, TimeSpan.FromMilliseconds(150));
                             }
                         }
                     }

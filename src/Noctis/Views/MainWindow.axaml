@@ -1339,7 +1339,7 @@
             ZIndex="99">
         <Border.Transitions>
             <Transitions>
-                <DoubleTransition Property="Opacity" Duration="0:0:0.18">
+                <DoubleTransition Property="Opacity" Duration="0:0:0.14">
                     <DoubleTransition.Easing>
                         <CubicEaseOut/>
                     </DoubleTransition.Easing>
@@ -1378,12 +1378,12 @@
                              RenderTransform="scale(0.96)">
             <controls:GlassPanel.Transitions>
                 <Transitions>
-                    <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.18">
+                    <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.14">
                         <TransformOperationsTransition.Easing>
                             <CubicEaseOut/>
                         </TransformOperationsTransition.Easing>
                     </TransformOperationsTransition>
-                    <DoubleTransition Property="Fade" Duration="0:0:0.18">
+                    <DoubleTransition Property="Fade" Duration="0:0:0.14">
                         <DoubleTransition.Easing>
                             <CubicEaseOut/>
                         </DoubleTransition.Easing>
@@ -1408,13 +1408,13 @@
                 BoxShadow="0 24 60 0 #80000000">
             <Border.Transitions>
                 <Transitions>
-                    <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.18">
+                    <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.14">
                         <TransformOperationsTransition.Easing>
                             <CubicEaseOut/>
                         </TransformOperationsTransition.Easing>
                     </TransformOperationsTransition>
                     <!-- Card fade for every open/close (see the overlay note above). -->
-                    <DoubleTransition Property="Opacity" Duration="0:0:0.18">
+                    <DoubleTransition Property="Opacity" Duration="0:0:0.14">
                         <DoubleTransition.Easing>
                             <CubicEaseOut/>
                         </DoubleTransition.Easing>

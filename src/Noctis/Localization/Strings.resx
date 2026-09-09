@@ -344,9 +344,9 @@
   <data name="Settings.SERVERADDRESS" xml:space="preserve"><value>SERVER ADDRESS</value><comment>Text in SettingsView.axaml</comment></data>
   <data name="Settings.HttpsMusicExampleCom" xml:space="preserve"><value>https://music.example.com</value><comment>Watermark in SettingsView.axaml</comment></data>
   <data name="Settings.USERNAME" xml:space="preserve"><value>USERNAME</value><comment>Text in SettingsView.axaml</comment></data>
-  <data name="Settings.Username" xml:space="preserve"><value>Username</value><comment>Watermark in SettingsView.axaml</comment></data>
+  <data name="Settings.UsernameWatermark" xml:space="preserve"><value>Username</value><comment>Watermark in SettingsView.axaml</comment></data>
   <data name="Settings.PASSWORD" xml:space="preserve"><value>PASSWORD</value><comment>Text in SettingsView.axaml</comment></data>
-  <data name="Settings.Password" xml:space="preserve"><value>Password</value><comment>Watermark in SettingsView.axaml</comment></data>
+  <data name="Settings.PasswordWatermark" xml:space="preserve"><value>Password</value><comment>Watermark in SettingsView.axaml</comment></data>
   <data name="Settings.Connecting" xml:space="preserve"><value>Connecting…</value><comment>Text in SettingsView.axaml</comment></data>
   <data name="Settings.Disconnect" xml:space="preserve"><value>Disconnect</value><comment>Text in SettingsView.axaml</comment></data>
   <data name="Settings.LYRICS" xml:space="preserve"><value>LYRICS</value><comment>Text in SettingsView.axaml</comment></data>
@@ -427,7 +427,6 @@
   <data name="Settings.Lossy" xml:space="preserve"><value>Lossy</value><comment>Text in SettingsView.axaml</comment></data>
   <data name="Settings.Playlists2" xml:space="preserve"><value>playlists</value><comment>Text in SettingsView.axaml</comment></data>
   <data name="Settings.LISTENING" xml:space="preserve"><value>LISTENING</value><comment>Text in SettingsView.axaml</comment></data>
-  <data name="Settings.Listening" xml:space="preserve"><value>Your Listening</value><comment>Text in SettingsView.axaml</comment></data>
   <data name="Settings.TotalPlays" xml:space="preserve"><value>Total Plays</value><comment>Text in SettingsView.axaml</comment></data>
   <data name="Settings.TimeListened" xml:space="preserve"><value>Time Listened</value><comment>Text in SettingsView.axaml</comment></data>
   <data name="Settings.AvgTrackLength" xml:space="preserve"><value>Avg Track Length</value><comment>Text in SettingsView.axaml</comment></data>
@@ -544,12 +543,12 @@
   <data name="ArtistDetail.ACTIVE" xml:space="preserve"><value>ACTIVE</value><comment>Text in ArtistDetailView.axaml</comment></data>
   <data name="ArtistDetail.GENRES" xml:space="preserve"><value>GENRES</value><comment>Text in ArtistDetailView.axaml</comment></data>
   <data name="ArtistDetail.LIBRARY" xml:space="preserve"><value>IN YOUR LIBRARY</value><comment>Text in ArtistDetailView.axaml</comment></data>
-  <data name="ArtistDetail.RELEASES" xml:space="preserve"><value>RELEASES</value><comment>Text in ArtistDetailView.axaml</comment></data>
+  <data name="ArtistDetail.ReleasesFact" xml:space="preserve"><value>RELEASES</value><comment>Text in ArtistDetailView.axaml</comment></data>
   <data name="ArtistDetail.SONGS" xml:space="preserve"><value>SONGS</value><comment>Text in ArtistDetailView.axaml</comment></data>
   <data name="ArtistDetail.TOTALLENGTH" xml:space="preserve"><value>TOTAL LENGTH</value><comment>Text in ArtistDetailView.axaml</comment></data>
   <data name="ArtistDetail.MOSTPLAYED" xml:space="preserve"><value>MOST PLAYED</value><comment>Text in ArtistDetailView.axaml</comment></data>
   <data name="ArtistDetail.FAVORITED" xml:space="preserve"><value>FAVORITED</value><comment>Text in ArtistDetailView.axaml</comment></data>
-  <data name="ArtistDetail.Songs" xml:space="preserve"><value> songs</value><comment>Text in ArtistDetailView.axaml</comment></data>
+  <data name="ArtistDetail.SongsSuffix" xml:space="preserve"><value> songs</value><comment>Text in ArtistDetailView.axaml</comment></data>
   <data name="ArtistDetail.SINCE" xml:space="preserve"><value>SINCE</value><comment>Text in ArtistDetailView.axaml</comment></data>
 
   <!-- AudioCdView.axaml (auto-migrated) -->

@@ -142,9 +142,9 @@
         <Style Selector="Border.server-pill-shell">
             <Setter Property="CornerRadius" Value="999"/>
             <Setter Property="BorderThickness" Value="1.5"/>
-            <!-- Same quiet outline as the rail's search box (plain TextBox theme brushes). -->
-            <Setter Property="BorderBrush" Value="{DynamicResource TextControlBorderBrush}"/>
-            <Setter Property="Background" Value="{DynamicResource TextControlBackground}"/>
+            <!-- Same grey stroke as every other Settings pill box (user ask 09-08). -->
+            <Setter Property="BorderBrush" Value="#99A0A0A8"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundChromeWhiteBrush}"/>
             <Setter Property="UseLayoutRounding" Value="True"/>
         </Style>
         <!-- Focus parity: the field boxes turn accent on :focus, the shell follows suit. -->
@@ -153,7 +153,8 @@
         </Style>
         <Style Selector="ComboBox.server-pill">
             <Setter Property="CornerRadius" Value="999"/>
-            <Setter Property="Padding" Value="14,10"/>
+            <Setter Property="Padding" Value="16,11"/>
+            <Setter Property="FontSize" Value="13"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="BorderBrush" Value="Transparent"/>
             <Setter Property="Background" Value="Transparent"/>
@@ -262,30 +263,34 @@
                 </ControlTemplate>
             </Setter>
         </Style>
-        <!-- Selection cards (mini player design, artwork medium, cover flow layout) shade
-             on hover like the Settings buttons; the checked card keeps its accent border. -->
+        <!-- Cards shade on hover like the Settings buttons; the checked card keeps its
+             accent border. -->
+        <Style Selector="RadioButton.transition-card:pointerover /template/ Border#card">
+            <Setter Property="Background" Value="{DynamicResource SettingsButtonHoverBrush}"/>
+        </Style>
+        <!-- Every card picker (transition style, upmix, visualizer, mini player design,
+             artwork medium, cover flow layout, group-artists): the press dip the theme
+             tiles get from the app-wide Button style, and the accent ring fades in
+             instead of snapping (user ask 09-08). -->
+        <Style Selector="RadioButton.transition-card">
+            <Setter Property="RenderTransformOrigin" Value="50%,50%"/>
+            <Setter Property="RenderTransform" Value="scale(1)"/>
+            <Setter Property="Transitions">
+                <Transitions>
+                    <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.12" Easing="CubicEaseOut"/>
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="RadioButton.transition-card:pressed">
+            <Setter Property="RenderTransform" Value="scale(0.96)"/>
+        </Style>
         <Style Selector="RadioButton.transition-card /template/ Border#card">
             <Setter Property="Transitions">
                 <Transitions>
                     <BrushTransition Property="Background" Duration="0:0:0.16"/>
+                    <BrushTransition Property="BorderBrush" Duration="0:0:0.2" Easing="CubicEaseOut"/>
                 </Transitions>
             </Setter>
-        </Style>
-        <Style Selector="RadioButton.transition-card:pointerover /template/ Border#card">
-            <Setter Property="Background" Value="{DynamicResource SettingsButtonHoverBrush}"/>
-        </Style>
-        <!-- Selection cards (transition style, upmix, group-artists, mini player design,
-             artwork medium, cover flow layout) shade on hover like the Settings buttons;
-             the checked card keeps its accent border. -->
-        <Style Selector="RadioButton.transition-card /template/ Border#card">
-            <Setter Property="Transitions">
-                <Transitions>
-                    <BrushTransition Property="Background" Duration="0:0:0.16"/>
-                </Transitions>
-            </Setter>
-        </Style>
-        <Style Selector="RadioButton.transition-card:pointerover /template/ Border#card">
-            <Setter Property="Background" Value="{DynamicResource SettingsButtonHoverBrush}"/>
         </Style>
         <Style Selector="RadioButton.transition-card:checked /template/ Border#card">
             <Setter Property="BorderBrush" Value="{DynamicResource AccentColorBrush}"/>
@@ -377,6 +382,12 @@
             <Setter Property="BorderBrush" Value="Transparent"/>
             <Setter Property="BorderThickness" Value="2"/>
             <Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="Transitions">
+                <Transitions>
+                    <BrushTransition Property="Background" Duration="0:0:0.16"/>
+                    <BrushTransition Property="BorderBrush" Duration="0:0:0.2" Easing="CubicEaseOut"/>
+                </Transitions>
+            </Setter>
         </Style>
         <!-- Theme tiles shade on hover like every other Settings button (the active
              tile keeps its accent border; only the fill changes). -->
@@ -676,16 +687,17 @@
              (the earlier square-corner artifact came from leaving PART_BorderElement unstyled). -->
         <Style Selector="TextBox.metadata-info-field">
             <Setter Property="CornerRadius" Value="999" />
-            <Setter Property="Padding" Value="14,10" />
+            <Setter Property="Padding" Value="16,11" />
+            <Setter Property="FontSize" Value="13" />
             <Setter Property="BorderThickness" Value="1.5" />
-            <Setter Property="BorderBrush" Value="{DynamicResource TextControlBorderBrush}" />
+            <Setter Property="BorderBrush" Value="#99A0A0A8" />
             <Setter Property="UseLayoutRounding" Value="True" />
-            <Setter Property="Background" Value="{DynamicResource TextControlBackground}" />
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundChromeWhiteBrush}" />
         </Style>
         <Style Selector="TextBox.metadata-info-field /template/ Border#PART_BorderElement">
             <Setter Property="CornerRadius" Value="999" />
             <Setter Property="BorderThickness" Value="1.5" />
-            <Setter Property="BorderBrush" Value="{DynamicResource TextControlBorderBrush}" />
+            <Setter Property="BorderBrush" Value="#99A0A0A8" />
             <Setter Property="UseLayoutRounding" Value="True" />
         </Style>
         <Style Selector="TextBox.metadata-info-field:focus /template/ Border#PART_BorderElement">
@@ -912,7 +924,7 @@
         <Style Selector="Button.rail-item">
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="CornerRadius" Value="12"/>
+            <Setter Property="CornerRadius" Value="999"/>
             <Setter Property="Padding" Value="12,9"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="HorizontalAlignment" Value="Stretch"/>
@@ -920,7 +932,7 @@
         </Style>
         <Style Selector="Button.rail-item /template/ ContentPresenter">
             <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="CornerRadius" Value="12"/>
+            <Setter Property="CornerRadius" Value="999"/>
         </Style>
         <Style Selector="Button.rail-item:pointerover /template/ ContentPresenter">
             <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundListMediumBrush}"/>
@@ -988,14 +1000,14 @@
             <Setter Property="RenderTransform" Value="translateY(0px)"/>
             <Setter Property="Transitions">
                 <Transitions>
-                    <DoubleTransition Property="Opacity" Duration="0:0:0.25" Easing="CubicEaseOut"/>
-                    <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.25" Easing="CubicEaseOut"/>
+                    <DoubleTransition Property="Opacity" Duration="0:0:0.16" Easing="CubicEaseOut"/>
+                    <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.16" Easing="CubicEaseOut"/>
                 </Transitions>
             </Setter>
         </Style>
         <Style Selector="StackPanel.tab-page[IsVisible=False]">
             <Setter Property="Opacity" Value="0"/>
-            <Setter Property="RenderTransform" Value="translateY(10px)"/>
+            <Setter Property="RenderTransform" Value="translateY(6px)"/>
         </Style>
         <!-- ── Pill BOXES in Settings (text fields and combo boxes, never buttons): one mid-grey
              stroke, 1.5px, layout-rounded so both control types rasterise it identically. The
@@ -1082,15 +1094,15 @@
 
         <!-- Profile: name in a rounded box (Claude-style field), avatar badges. -->
         <Style Selector="TextBox.profile-name">
-            <Setter Property="CornerRadius" Value="10"/>
-            <Setter Property="Padding" Value="12,8"/>
+            <Setter Property="CornerRadius" Value="999"/>
+            <Setter Property="Padding" Value="14,8"/>
             <Setter Property="FontSize" Value="14"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="MinHeight" Value="0"/>
             <Setter Property="Background" Value="#22000000"/>
         </Style>
         <Style Selector="TextBox.profile-name /template/ Border#PART_BorderElement">
-            <Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="CornerRadius" Value="999"/>
         </Style>
         <Style Selector="Border.avatar-badge">
             <Setter Property="Width" Value="22"/>
@@ -1175,6 +1187,9 @@
         </Style>
         <Style Selector="Border.setting-row:nth-child(1)">
             <Setter Property="BorderThickness" Value="0"/>
+        </Style>
+        <Style Selector="Border.setting-row.divided">
+            <Setter Property="BorderThickness" Value="0,1,0,0"/>
         </Style>
         <Style Selector="Button.settings-close">
             <Setter Property="Width" Value="34"/>
@@ -2260,7 +2275,8 @@
                                   SelectedItem="{Binding SelectedFlowingOption, Mode=TwoWay}"/>
                     </Grid>
                     <!-- Kawarp knobs (GitHub #58): only while a Kawarp style is chosen. -->
-                    <StackPanel Spacing="8" IsVisible="{Binding IsKawarpStyle}">
+                    <controls:CollapsibleContent IsOpen="{Binding IsKawarpStyle}" Lift="6">
+                    <StackPanel Spacing="8">
                         <Grid ColumnDefinitions="110,*,Auto">
                             <TextBlock Grid.Column="0" Text="{loc:T Settings.KawarpWarp}" FontSize="12" Opacity="0.7" VerticalAlignment="Center"/>
                             <Slider Grid.Column="1" Classes="accent-slider" Minimum="0" Maximum="3" TickFrequency="0.1" IsSnapToTickEnabled="True"
@@ -2276,6 +2292,7 @@
                                        VerticalAlignment="Center" Margin="12,0,0,0" MinWidth="28" TextAlignment="Right"/>
                         </Grid>
                     </StackPanel>
+                    </controls:CollapsibleContent>
                 </StackPanel>
             </Border>
             <Border Classes="setting-row">
@@ -2300,7 +2317,8 @@
                                               IsChecked="{Binding LyricsVisualizerArtworkColor}"
                                               VerticalAlignment="Center"/>
                     </Grid>
-                    <Grid ColumnDefinitions="*,*,*" ColumnSpacing="8" IsVisible="{Binding LyricsVisualizerEnabled}">
+                    <controls:CollapsibleContent IsOpen="{Binding LyricsVisualizerEnabled}" Lift="6">
+                    <Grid ColumnDefinitions="*,*,*" ColumnSpacing="8">
                         <RadioButton Grid.Column="0" Classes="transition-card medium-card"
                                      GroupName="LyricsVisualizerStyle"
                                      IsChecked="{Binding IsVisualizerStyleBars, Mode=TwoWay}"
@@ -2342,47 +2360,8 @@
                             </StackPanel>
                         </RadioButton>
                     </Grid>
+                    </controls:CollapsibleContent>
                 </StackPanel>
-            </Border>
-            <Border Classes="setting-row">
-                <Grid ColumnDefinitions="*,Auto">
-                    <StackPanel Grid.Column="0" Spacing="2">
-                        <TextBlock Text="{loc:T Settings.LyricsBackgroundVideo}" FontSize="15" FontWeight="SemiBold"/>
-                        <TextBlock Text="{loc:T Settings.LoopVideoGIFBehind}"
-                                   FontSize="12" Opacity="0.5" TextWrapping="Wrap"/>
-                        <TextBlock Text="{loc:T Settings.LyricsBackgroundPerSongHint}"
-                                   FontSize="12" Opacity="0.5" TextWrapping="Wrap"/>
-                        <TextBlock Text="{Binding LyricsBackgroundMediaName}"
-                                   FontSize="12" Opacity="0.7" Margin="0,4,0,0"
-                                   TextTrimming="CharacterEllipsis"
-                                   IsVisible="{Binding HasLyricsBackgroundMedia}"/>
-                    </StackPanel>
-                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                        <!-- Modify opens the picker: the default clip plus a searchable list of
-                             songs and albums that carry their own (user ask 09-07). -->
-                        <Button Classes="accent-btn"
-                                Content="{loc:T Settings.Modify}"
-                                Padding="16,6"
-                                CornerRadius="999"
-                                Background="{DynamicResource AccentButtonBackground}"
-                                Foreground="{DynamicResource AccentForegroundBrush}"
-                                FontWeight="SemiBold"
-                                Cursor="Hand"
-                                Click="OnModifyLyricsBackgroundClick"/>
-                    </StackPanel>
-                </Grid>
-            </Border>
-            <Border Classes="setting-row">
-                <Grid ColumnDefinitions="*,Auto">
-                    <StackPanel Grid.Column="0" Spacing="2">
-                        <TextBlock Text="{loc:T Settings.PauseVideoWithPlayback}" FontSize="15" FontWeight="SemiBold"/>
-                        <TextBlock Text="{loc:T Settings.PauseVideoWithPlaybackDesc}"
-                                   FontSize="12" Opacity="0.5" TextWrapping="Wrap"/>
-                    </StackPanel>
-                    <controls:LottieToggle Grid.Column="1"
-                                          IsChecked="{Binding LyricsBackgroundPausesWithPlayback}"
-                                          VerticalAlignment="Center"/>
-                </Grid>
             </Border>
             <Border Classes="setting-row">
                 <Grid ColumnDefinitions="*,Auto">
@@ -2525,11 +2504,12 @@
                             <TextBlock Text="{loc:T Settings.SongTransitions}" FontSize="15" FontWeight="SemiBold"/>
                             <TextBlock Text="{loc:T Settings.SongsBlendSmoothlyInto}"
                                        FontSize="12" Opacity="0.5" TextWrapping="Wrap"/>
-                            <TextBlock Text="{loc:T Settings.UnavailableWhileExclusiveMode}"
-                                       IsVisible="{Binding ExclusiveAudioEnabled}"
-                                       FontSize="12" FontWeight="SemiBold"
-                                       Foreground="{DynamicResource AccentColorBrush}"
-                                       TextWrapping="Wrap" Margin="0,4,0,0"/>
+                            <controls:CollapsibleContent IsOpen="{Binding ExclusiveAudioEnabled}" Lift="6">
+                                <TextBlock Text="{loc:T Settings.UnavailableWhileExclusiveMode}"
+                                           FontSize="12" FontWeight="SemiBold"
+                                           Foreground="{DynamicResource AccentColorBrush}"
+                                           TextWrapping="Wrap" Margin="0,4,0,0"/>
+                            </controls:CollapsibleContent>
                         </StackPanel>
                         <controls:LottieToggle Grid.Column="1"
                                               IsChecked="{Binding SongTransitionsEnabled}"
@@ -2560,8 +2540,9 @@
                             </StackPanel>
                         </RadioButton>
 
-                        <!-- Crossfade Duration (only for the Crossfade style) -->
-                        <StackPanel Classes="sub-setting" Spacing="6" Margin="2,4,0,0" IsVisible="{Binding IsCrossfadeStyle}">
+                        <!-- Crossfade Duration (only for the Crossfade style): slides open under the card -->
+                        <controls:CollapsibleContent IsOpen="{Binding IsCrossfadeStyle}" Lift="6">
+                        <StackPanel Classes="sub-setting" Spacing="6" Margin="2,4,0,0">
                             <Grid ColumnDefinitions="*,Auto">
                                 <TextBlock Grid.Column="0" Text="{loc:T Settings.CrossfadeDuration}" FontSize="13" FontWeight="SemiBold"
                                            VerticalAlignment="Center"/>
@@ -2589,6 +2570,7 @@
                                            MinWidth="74" TextAlignment="Right" Margin="12,0,0,0"/>
                             </Grid>
                         </StackPanel>
+                        </controls:CollapsibleContent>
                     </StackPanel>
                 </StackPanel>
             </Border>
@@ -2652,9 +2634,10 @@
                         <TextBlock Text="{loc:T Settings.ExclusiveMode}" FontSize="15" FontWeight="SemiBold"/>
                         <TextBlock Text="{loc:T Settings.BitPerfectOutputBypasses}"
                                    FontSize="12" Opacity="0.5" TextWrapping="Wrap"/>
-                        <TextBlock Text="{Binding ExclusiveAudioStatus}"
-                                   IsVisible="{Binding ExclusiveAudioStatus, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
-                                   FontSize="12" Opacity="0.8" TextWrapping="Wrap" Margin="0,4,0,0"/>
+                        <controls:CollapsibleContent IsOpen="{Binding ExclusiveAudioStatus, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" Lift="6">
+                            <TextBlock Text="{Binding ExclusiveAudioStatus}"
+                                       FontSize="12" Opacity="0.8" TextWrapping="Wrap" Margin="0,4,0,0"/>
+                        </controls:CollapsibleContent>
                     </StackPanel>
                     <controls:LottieToggle Grid.Column="1"
                                           IsChecked="{Binding ExclusiveAudioEnabled}"
@@ -3517,7 +3500,8 @@
                                            VerticalAlignment="Center"/>
                             </Button>
                         </Grid>
-                        <StackPanel IsVisible="{Binding IsResetConfirmVisible}" Spacing="8">
+                        <controls:CollapsibleContent IsOpen="{Binding IsResetConfirmVisible}" Lift="6">
+                        <StackPanel Spacing="8">
                             <TextBlock Text="{loc:T Settings.AreYouSureAction}"
                                        FontSize="13" Foreground="#E74856"/>
                             <TextBlock Text="{Binding ResetConfirmDetail}"
@@ -3539,6 +3523,7 @@
                                         Cursor="Hand"/>
                             </StackPanel>
                         </StackPanel>
+                        </controls:CollapsibleContent>
                     </StackPanel>
 
                     <Border Height="1" Background="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" Opacity="0.2"/>
@@ -3639,7 +3624,8 @@
                                               VerticalAlignment="Center"/>
                     </Grid>
 
-                    <StackPanel Spacing="10" IsVisible="{Binding DeveloperMode}">
+                    <controls:CollapsibleContent IsOpen="{Binding DeveloperMode}" Lift="6">
+                    <StackPanel Spacing="10">
 
                         <!-- ── Version manager ── -->
                         <Grid ColumnDefinitions="*,Auto" Margin="0,6,0,0">
@@ -3814,6 +3800,7 @@
                         </Border>
 
                     </StackPanel>
+                    </controls:CollapsibleContent>
                 </StackPanel>
             </Border>
             </StackPanel>
@@ -3875,7 +3862,8 @@
             <Border Classes="setting-row">
                 <StackPanel Spacing="14">
                     <!-- No account yet -->
-                    <StackPanel Spacing="12" IsVisible="{Binding !HasPrimaryAccount}">
+                    <controls:CollapsibleContent IsOpen="{Binding !HasPrimaryAccount}" Lift="6">
+                    <StackPanel Spacing="12">
                         <StackPanel Spacing="2">
                             <TextBlock Text="{loc:T AccountSync.CreateTitle}" FontSize="15" FontWeight="SemiBold"/>
                             <TextBlock Text="{loc:T AccountSync.CreateHelp}" FontSize="12" Opacity="0.5" TextWrapping="Wrap"/>
@@ -3889,9 +3877,11 @@
                             </Button>
                         </Grid>
                     </StackPanel>
+                    </controls:CollapsibleContent>
 
                     <!-- Account exists -->
-                    <StackPanel Spacing="14" IsVisible="{Binding HasPrimaryAccount}">
+                    <controls:CollapsibleContent IsOpen="{Binding HasPrimaryAccount}" Lift="6">
+                    <StackPanel Spacing="14">
                         <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="14">
                             <Border Grid.Column="0" Width="52" Height="52" CornerRadius="26" Background="{DynamicResource AccentColorBrush}" Opacity="0.9">
                                 <TextBlock Text="{Binding PrimaryAccountInitial}" FontSize="22" FontWeight="Bold"
@@ -3919,15 +3909,18 @@
                         </Grid>
 
                         <!-- Change password (inline) -->
-                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8" IsVisible="{Binding IsChangePasswordVisible}">
+                        <controls:CollapsibleContent IsOpen="{Binding IsChangePasswordVisible}" Lift="6">
+                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
                             <TextBox Grid.Column="0" Text="{Binding ChangePasswordValue}" PasswordChar="•" Watermark="{loc:T AccountSync.NewPassword}" CornerRadius="999" Padding="14,8" BorderThickness="1.5" MinHeight="0"/>
                             <Button Grid.Column="1" Classes="pill-action" Command="{Binding ChangePrimaryPasswordCommand}" Padding="14,8" CornerRadius="999" Cursor="Hand">
                                 <TextBlock Text="{loc:T AccountSync.Save}" FontSize="12"/>
                             </Button>
                         </Grid>
+                        </controls:CollapsibleContent>
 
                         <!-- Pairing: address + QR + fingerprint, or the switch to turn the server on -->
-                        <Border Background="#18000000" CornerRadius="12" Padding="14,12" IsVisible="{Binding IsPairingVisible}">
+                        <controls:CollapsibleContent IsOpen="{Binding IsPairingVisible}" Lift="6">
+                        <Border Background="#18000000" CornerRadius="12" Padding="14,12">
                             <StackPanel Spacing="10">
                                 <StackPanel Spacing="10" IsVisible="{Binding NoctisServerUrl, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
                                     <TextBlock Text="{loc:T AccountSync.PairHelp}" FontSize="12" Opacity="0.6" TextWrapping="Wrap"/>
@@ -3960,10 +3953,13 @@
                                 </StackPanel>
                             </StackPanel>
                         </Border>
+                        </controls:CollapsibleContent>
                     </StackPanel>
+                    </controls:CollapsibleContent>
 
                     <!-- Freshly issued key: visible once, never stored in clear -->
-                    <Border Background="#1AFFFFFF" CornerRadius="8" Padding="12,10" IsVisible="{Binding HasIssuedApiKey}">
+                    <controls:CollapsibleContent IsOpen="{Binding HasIssuedApiKey}" Lift="6">
+                    <Border Background="#1AFFFFFF" CornerRadius="8" Padding="12,10">
                         <StackPanel Spacing="6">
                             <TextBlock FontSize="12" TextWrapping="Wrap">
                                 <Run Text="{loc:T Server.ApiKeyFor}"/> <Run Text="{Binding IssuedApiKeyUser}" FontWeight="SemiBold"/>
@@ -3980,6 +3976,7 @@
                             </StackPanel>
                         </StackPanel>
                     </Border>
+                    </controls:CollapsibleContent>
                     <!-- Fixed-height slot: the message appearing and leaving must not reflow the
                          card (it read as the page shaking). -->
                     <Panel MinHeight="18">
@@ -4005,7 +4002,8 @@
                     <Border Background="#18000000" CornerRadius="10" Padding="12,10">
                         <StackPanel Spacing="8">
                             <TextBlock Text="{Binding SyncStatusText}" FontSize="12" Opacity="0.8" TextWrapping="Wrap"/>
-                            <ItemsControl ItemsSource="{Binding SyncDevices}" IsVisible="{Binding HasSyncDevices}">
+                            <controls:CollapsibleContent IsOpen="{Binding HasSyncDevices}" Lift="6">
+                            <ItemsControl ItemsSource="{Binding SyncDevices}">
                                 <ItemsControl.ItemsPanel>
                                     <ItemsPanelTemplate><StackPanel Spacing="4"/></ItemsPanelTemplate>
                                 </ItemsControl.ItemsPanel>
@@ -4019,6 +4017,7 @@
                                     </DataTemplate>
                                 </ItemsControl.ItemTemplate>
                             </ItemsControl>
+                            </controls:CollapsibleContent>
                         </StackPanel>
                     </Border>
                     <Grid Classes="sub-setting" ColumnDefinitions="140,*" IsEnabled="{Binding SyncEnabled}">
@@ -4143,7 +4142,8 @@
                                           Margin="12,0,0,0"/>
                 </Grid>
             </Border>
-            <Border Classes="setting-row" IsVisible="{Binding DiscordRichPresenceEnabled}">
+            <controls:CollapsibleContent IsOpen="{Binding DiscordRichPresenceEnabled}" Lift="6">
+            <Border Classes="setting-row divided">
                 <Grid ColumnDefinitions="*,Auto">
                     <StackPanel Grid.Column="0" Spacing="2">
                         <TextBlock Text="{loc:T Settings.ShowAlbumDiscord}" FontSize="15" FontWeight="SemiBold"/>
@@ -4156,6 +4156,7 @@
                                           Margin="12,0,0,0"/>
                 </Grid>
             </Border>
+            </controls:CollapsibleContent>
             </StackPanel>
             </Border>
 
@@ -4236,7 +4237,8 @@
                     </Grid>
 
                     <!-- Enable Scrobbling (when connected) -->
-                    <Grid IsVisible="{Binding IsLastFmConnected}" ColumnDefinitions="*,Auto" Margin="54,0,0,0">
+                    <controls:CollapsibleContent IsOpen="{Binding IsLastFmConnected}" Lift="6">
+                    <Grid ColumnDefinitions="*,Auto" Margin="54,0,0,0">
                         <TextBlock Grid.Column="0"
                                    Text="{loc:T Settings.EnableScrobbling}"
                                    FontSize="13"
@@ -4245,6 +4247,7 @@
                                               IsChecked="{Binding LastFmScrobblingEnabled}"
                                               VerticalAlignment="Center"/>
                     </Grid>
+                    </controls:CollapsibleContent>
                 </StackPanel>
             </Border>
             <Border Classes="setting-row">
@@ -4280,15 +4283,15 @@
                             <!-- Token row lives inside the same StackPanel as the title so it sits
                                  right under the description instead of leaving a gap. The Connect
                                  button is hoisted to column 2 (top-right) to match the Last.fm card. -->
-                            <StackPanel IsVisible="{Binding !IsListenBrainzConnected}"
-                                        Margin="-2,6,0,0"
+                            <controls:CollapsibleContent IsOpen="{Binding !IsListenBrainzConnected}" Lift="6" Margin="-2,0,0,0">
+                            <StackPanel
+                                        Margin="0,6,0,0"
                                         Spacing="4">
                                 <TextBox x:Name="ListenBrainzTokenBox"
                                          Classes="metadata-info-field"
                                          Text="{Binding ListenBrainzToken}"
                                          PasswordChar="•"
                                          Watermark="{loc:T Settings.ListenBrainzUserToken}"
-                                         FontSize="12"
                                          Width="280"
                                          HorizontalAlignment="Left"/>
                                 <!-- Inline validation error (e.g. "Token required"), semantically red. -->
@@ -4298,6 +4301,7 @@
                                            FontSize="11"
                                            Margin="8,0,0,0"/>
                             </StackPanel>
+                            </controls:CollapsibleContent>
                         </StackPanel>
 
                         <!-- Not connected state (top-right, mirrors the Last.fm Connect button) -->
@@ -4338,7 +4342,8 @@
                     </Grid>
 
                     <!-- Enable Scrobbling (when connected) -->
-                    <Grid IsVisible="{Binding IsListenBrainzConnected}" ColumnDefinitions="*,Auto" Margin="54,0,0,0">
+                    <controls:CollapsibleContent IsOpen="{Binding IsListenBrainzConnected}" Lift="6">
+                    <Grid ColumnDefinitions="*,Auto" Margin="54,0,0,0">
                         <TextBlock Grid.Column="0"
                                    Text="{loc:T Settings.EnableScrobbling}"
                                    FontSize="13"
@@ -4347,6 +4352,7 @@
                                               IsChecked="{Binding ListenBrainzScrobblingEnabled}"
                                               VerticalAlignment="Center"/>
                     </Grid>
+                    </controls:CollapsibleContent>
                 </StackPanel>
             </Border>
             </StackPanel>
@@ -4421,7 +4427,8 @@
                                        HorizontalAlignment="Left" Margin="-2,0,0,0"/>
 
                             <!-- Connected summary -->
-                            <StackPanel IsVisible="{Binding IsMediaServerConnected}" Spacing="3" Margin="-2,8,0,0">
+                            <controls:CollapsibleContent IsOpen="{Binding IsMediaServerConnected}" Lift="6" Margin="-2,0,0,0">
+                            <StackPanel Spacing="3" Margin="0,8,0,0">
                                 <StackPanel Orientation="Horizontal" Spacing="6">
                                     <TextBlock Classes="server-field-label" Text="{loc:T Settings.TYPE}" Width="68" VerticalAlignment="Center"/>
                                     <TextBlock Text="{Binding MediaServerType}" FontSize="12" Opacity="0.85" VerticalAlignment="Center"/>
@@ -4435,14 +4442,18 @@
                                     <TextBlock Text="{Binding MediaServerUsername}" FontSize="12" Opacity="0.85" VerticalAlignment="Center"/>
                                 </StackPanel>
                             </StackPanel>
+                            </controls:CollapsibleContent>
 
                             <!-- Connection form (hidden while connected): labeled 2×2 grid,
                                  Enter in any field submits. -->
-                            <!-- Fixed width so long input scrolls inside the boxes instead of
-                                 growing them (left-aligned grids size star columns to content). -->
-                            <Grid IsVisible="{Binding !IsMediaServerConnected}"
+                            <!-- Stretched across the column so the star columns split the width
+                                 and long input scrolls inside the boxes. Left-aligned, the grid
+                                 sized its star columns to content and the boxes resized on every
+                                 keystroke. -->
+                            <controls:CollapsibleContent IsOpen="{Binding !IsMediaServerConnected}" Lift="6" Margin="-2,0,0,0">
+                            <Grid
                                   ColumnDefinitions="*,12,*" RowDefinitions="Auto,Auto"
-                                  Width="560" HorizontalAlignment="Left" Margin="-2,10,0,0">
+                                  HorizontalAlignment="Stretch" Margin="0,10,0,0">
                                 <StackPanel Grid.Row="0" Grid.Column="0" Spacing="4" Margin="0,0,0,10">
                                     <TextBlock Classes="server-field-label" Text="{loc:T Settings.SERVERTYPE}"/>
                                     <Border Classes="server-pill-shell">
@@ -4458,8 +4469,7 @@
                                     <TextBox Classes="metadata-info-field"
                                              Text="{Binding MediaServerUrl}"
                                              Watermark="{loc:T Settings.HttpsMusicExampleCom}"
-                                             IsEnabled="{Binding !IsMediaServerBusy}"
-                                             FontSize="12">
+                                             IsEnabled="{Binding !IsMediaServerBusy}">
                                         <TextBox.KeyBindings>
                                             <KeyBinding Gesture="Enter" Command="{Binding ConnectMediaServerCommand}"/>
                                         </TextBox.KeyBindings>
@@ -4469,9 +4479,8 @@
                                     <TextBlock Classes="server-field-label" Text="{loc:T Settings.USERNAME}"/>
                                     <TextBox Classes="metadata-info-field"
                                              Text="{Binding MediaServerUsername}"
-                                             Watermark="{loc:T Settings.Username}"
-                                             IsEnabled="{Binding !IsMediaServerBusy}"
-                                             FontSize="12">
+                                             Watermark="{loc:T Settings.UsernameWatermark}"
+                                             IsEnabled="{Binding !IsMediaServerBusy}">
                                         <TextBox.KeyBindings>
                                             <KeyBinding Gesture="Enter" Command="{Binding ConnectMediaServerCommand}"/>
                                         </TextBox.KeyBindings>
@@ -4482,15 +4491,15 @@
                                     <TextBox Classes="metadata-info-field"
                                              Text="{Binding MediaServerPassword}"
                                              PasswordChar="•"
-                                             Watermark="{loc:T Settings.Password}"
-                                             IsEnabled="{Binding !IsMediaServerBusy}"
-                                             FontSize="12">
+                                             Watermark="{loc:T Settings.PasswordWatermark}"
+                                             IsEnabled="{Binding !IsMediaServerBusy}">
                                         <TextBox.KeyBindings>
                                             <KeyBinding Gesture="Enter" Command="{Binding ConnectMediaServerCommand}"/>
                                         </TextBox.KeyBindings>
                                     </TextBox>
                                 </StackPanel>
                             </Grid>
+                            </controls:CollapsibleContent>
 
                             <!-- Status line: dot follows the state (green connected, red error),
                                  spinner while a connection attempt is running. -->
