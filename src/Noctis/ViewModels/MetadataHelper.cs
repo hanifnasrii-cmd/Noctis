@@ -1,4 +1,4 @@
-using System.Linq;
+﻿using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
@@ -114,8 +114,14 @@ public static class MetadataHelper
     public static async Task OpenLyricsStudio(IReadOnlyList<Track> tracks)
     {
         if (tracks == null || tracks.Count == 0) return;
+        await ShowDialogOwned(new LyricsStudioDialog(CreateLyricsStudioViewModel(tracks)));
+    }
+
+    /// <summary>The Studio over a track list, wired to the app's engine, writer and prefs (dialog and sidebar page).</summary>
+    public static LyricsStudioViewModel CreateLyricsStudioViewModel(IReadOnlyList<Track> tracks)
+    {
         var main = App.Services!.GetService<MainWindowViewModel>();
-        var vm = new LyricsStudioViewModel(
+        return new LyricsStudioViewModel(
             tracks,
             App.Services!.GetRequiredService<Services.LyricsStudio.ILyricsStudioEngine>(),
             App.Services!.GetRequiredService<Services.Lyrics.LyricsWriter>(),
@@ -125,7 +131,6 @@ public static class MetadataHelper
             s => { if (main is not null) main.Settings.ApplyLyricsStudioSettings(s); },
             new Services.LyricsStudio.LyricsStudioDraftStore(
                 Path.Combine(App.Services!.GetRequiredService<IPersistenceService>().DataDirectory, "lyrics_studio_drafts")));
-        await ShowDialogOwned(new LyricsStudioDialog(vm));
     }
 
     /// <summary>

@@ -1,4 +1,4 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -10,7 +10,7 @@ using Noctis.Services.LyricsStudio;
 namespace Noctis.ViewModels;
 
 /// <summary>Lyrics Studio choices the user changes inside the dialog; persisted by Settings.</summary>
-public sealed record LyricsStudioPrefs(string Model, string Language, bool WordTimings, bool SkipAlreadyTimed);
+public sealed record LyricsStudioPrefs(string Model, string Language, bool WordTimings, bool SkipAlreadyTimed, bool EmbedTags);
 
 public sealed record SpeechLanguageOption(string Code, string Name)
 {
@@ -61,6 +61,8 @@ public partial class LyricsStudioViewModel : ViewModelBase
     [ObservableProperty] private bool _transcribeOnly;
     /// <summary>Leave alone songs that already carry the format being written (ELRC when word timings are on; LRC or ELRC when off).</summary>
     [ObservableProperty] private bool _skipAlreadyTimed;
+    /// <summary>Also write the plain lyrics into the audio file's tags on save (was a Settings toggle).</summary>
+    [ObservableProperty] private bool _embedTags;
 
     // ── Model state ──
     [ObservableProperty] private bool _isModelInstalled;
@@ -133,6 +135,7 @@ public partial class LyricsStudioViewModel : ViewModelBase
         _selectedLanguage = Languages.FirstOrDefault(l => l.Code.Equals(s.LyricsStudioLanguage, StringComparison.OrdinalIgnoreCase)) ?? Languages[0];
         _wordTimings = s.LyricsStudioWordTimings;
         _skipAlreadyTimed = s.LyricsStudioSkipAlreadyTimed;
+        _embedTags = s.LyricsStudioEmbedTags;
         _loadingPrefs = false;
 
         var restored = 0;
@@ -190,6 +193,7 @@ public partial class LyricsStudioViewModel : ViewModelBase
     partial void OnSelectedLanguageChanged(SpeechLanguageOption value) => PersistPrefs();
     partial void OnWordTimingsChanged(bool value) { PersistPrefs(); OnPropertyChanged(nameof(ReviewConfidenceText)); }
     partial void OnSkipAlreadyTimedChanged(bool value) => PersistPrefs();
+    partial void OnEmbedTagsChanged(bool value) => PersistPrefs();
     partial void OnIsRunningChanged(bool value) { RaiseStartState(); OnPropertyChanged(nameof(ReviewCanUpgrade)); }
     partial void OnIsModelInstalledChanged(bool value) { RaiseStartState(); OnPropertyChanged(nameof(ShowModelDownload)); }
     partial void OnIsDownloadingModelChanged(bool value) => OnPropertyChanged(nameof(ShowModelDownload));
@@ -261,8 +265,17 @@ public partial class LyricsStudioViewModel : ViewModelBase
     private void PersistPrefs()
     {
         if (_loadingPrefs) return;
-        try { _savePrefs(new LyricsStudioPrefs(SelectedModel.Size.ToString(), SelectedLanguage.Code, WordTimings, SkipAlreadyTimed)); }
+        try { _savePrefs(new LyricsStudioPrefs(SelectedModel.Size.ToString(), SelectedLanguage.Code, WordTimings, SkipAlreadyTimed, EmbedTags)); }
         catch { /* preferences are a convenience */ }
+    }
+
+    /// <summary>Removes the selected model's files (the Settings card that offered this is gone).</summary>
+    [RelayCommand]
+    private void DeleteModel()
+    {
+        if (IsRunning || IsDownloadingModel) return;
+        try { _engine.Models.Delete(SelectedModel.Size); } catch { /* best effort */ }
+        RefreshModelState();
     }
 
     private void RefreshModelState()
@@ -427,8 +440,7 @@ public partial class LyricsStudioViewModel : ViewModelBase
         var lines = ReviewLines.Select(l => l.ToAlignedLine()).Where(l => l.Text.Length > 0).ToList();
         var plain = TimedLyricsBuilder.BuildPlain(lines);
         var synced = WordTimings ? TimedLyricsBuilder.BuildElrc(lines) : TimedLyricsBuilder.BuildLrc(lines);
-        bool embed;
-        try { embed = _settings().LyricsStudioEmbedTags; } catch { embed = false; }
+        var embed = EmbedTags;
         try
         {
             var outcome = _writer.SaveDetailed(item.Track, plain, synced, embed, replaceForeignSidecar: true);

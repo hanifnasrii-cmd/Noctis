@@ -1,4 +1,4 @@
-<Styles xmlns="https://github.com/avaloniaui"
+﻿<Styles xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:helpers="using:Noctis.Helpers"
         xmlns:controls="using:Noctis.Controls">
@@ -30,6 +30,8 @@
                     <SolidColorBrush x:Key="AccentButtonBackground" Color="{StaticResource SystemAccentColor}" />
                     <SolidColorBrush x:Key="AccentForegroundBrush" Color="White" />
                     <SolidColorBrush x:Key="AccentBorderBrush" Color="{StaticResource SystemAccentColorDark1}" />
+                    <!-- Hover shade for accent-filled buttons in Settings (App.SetAccent re-derives it). -->
+                    <SolidColorBrush x:Key="AccentColorBrushDark1" Color="{StaticResource SystemAccentColorDark1}" />
                     <SolidColorBrush x:Key="AccentTextBrush" Color="{StaticResource SystemAccentColor}" />
                     <SolidColorBrush x:Key="AccentTextExactBrush" Color="{StaticResource SystemAccentColor}" />
                     <SolidColorBrush x:Key="NowPlayingRowBrush" Color="{StaticResource SystemAccentColor}" />
@@ -98,6 +100,9 @@
                     <!-- Filter chips (release type, etc.) -->
                     <SolidColorBrush x:Key="ChipBackground" Color="#1AFFFFFF" />
                     <SolidColorBrush x:Key="ChipHoverBackground" Color="#28FFFFFF" />
+                    <!-- Settings hover shade: every clickable button in Settings (and the dialogs
+                         it opens) darkens in place on hover, the way the accent buttons do. -->
+                    <SolidColorBrush x:Key="SettingsButtonHoverBrush" Color="#33000000" />
 
                     <!-- Glass pill buttons (Sort / options) — neutral gray, theme-aware -->
                     <SolidColorBrush x:Key="GlassPillBackground" Color="#26FFFFFF" />
@@ -142,6 +147,8 @@
                     <SolidColorBrush x:Key="AccentButtonBackground" Color="{StaticResource SystemAccentColor}" />
                     <SolidColorBrush x:Key="AccentForegroundBrush" Color="White" />
                     <SolidColorBrush x:Key="AccentBorderBrush" Color="{StaticResource SystemAccentColorDark1}" />
+                    <!-- Hover shade for accent-filled buttons in Settings (App.SetAccent re-derives it). -->
+                    <SolidColorBrush x:Key="AccentColorBrushDark1" Color="{StaticResource SystemAccentColorDark1}" />
                     <SolidColorBrush x:Key="AccentTextBrush" Color="{StaticResource SystemAccentColor}" />
                     <SolidColorBrush x:Key="AccentTextExactBrush" Color="{StaticResource SystemAccentColor}" />
                     <SolidColorBrush x:Key="NowPlayingRowBrush" Color="{StaticResource SystemAccentColor}" />
@@ -217,6 +224,9 @@
                     <!-- Filter chips (release type, etc.) -->
                     <SolidColorBrush x:Key="ChipBackground" Color="#14000000" />
                     <SolidColorBrush x:Key="ChipHoverBackground" Color="#22000000" />
+                    <!-- Settings hover shade: every clickable button in Settings (and the dialogs
+                         it opens) darkens in place on hover, the way the accent buttons do. -->
+                    <SolidColorBrush x:Key="SettingsButtonHoverBrush" Color="#14000000" />
 
                     <!-- Glass pill buttons (Sort / options) — neutral gray, theme-aware -->
                     <SolidColorBrush x:Key="GlassPillBackground" Color="#18000000" />
@@ -1078,6 +1088,22 @@
         <Setter Property="RenderTransform" Value="scale(1.045)"/>
     </Style>
 
+    <!-- Dialogs opened while Settings is up (DialogHelper.SizeToOwner tags them settings-popup):
+         no hover zoom anywhere in the Settings section, and accent buttons darken on hover
+         so the pointer is seen to be over them (user ask 09-07). -->
+    <Style Selector="Window.settings-popup Button:pointerover">
+        <Setter Property="RenderTransform" Value="scale(1)"/>
+    </Style>
+    <Style Selector="Window.settings-popup Button.pill:pointerover">
+        <Setter Property="RenderTransform" Value="scale(1)"/>
+    </Style>
+    <Style Selector="Window.settings-popup ComboBox.pill-combo:pointerover">
+        <Setter Property="RenderTransform" Value="scale(1)"/>
+    </Style>
+    <Style Selector="Window.settings-popup CheckBox.metadata-pill-checkbox:pointerover /template/ Border#IndicatorBorder">
+        <Setter Property="RenderTransform" Value="scale(1)"/>
+    </Style>
+
     <Style Selector="Button.album-tile:pointerover">
         <Setter Property="RenderTransform" Value="scale(1)"/>
     </Style>
@@ -1136,6 +1162,17 @@
     <Style Selector="Button.pill:pressed /template/ ContentPresenter">
         <Setter Property="Background" Value="{TemplateBinding Background}" />
         <Setter Property="Foreground" Value="{TemplateBinding Foreground}" />
+    </Style>
+
+    <!-- Dialogs opened from Settings (settings-popup): the same hover shade as the Settings
+         page itself — grey/transparent buttons take the translucent SettingsButtonHoverBrush
+         wash, accent buttons darken to AccentColorBrushDark1. Declared after the pill rules
+         above so it wins the cascade; a dialog's own Border.Styles still override it. -->
+    <Style Selector="Window.settings-popup Button:pointerover /template/ ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource SettingsButtonHoverBrush}"/>
+    </Style>
+    <Style Selector="Window.settings-popup Button.accent-btn:pointerover /template/ ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource AccentColorBrushDark1}"/>
     </Style>
 
     <!-- Search TextBox styling: strip all chrome so the pill container controls the look -->

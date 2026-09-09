@@ -1,4 +1,4 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Net.Sockets;
@@ -90,7 +90,7 @@ public partial class SettingsViewModel : ViewModelBase
         {
             // Rail* keys are one icon family (Fluent regular) so every page reads at the same weight;
             // RailFolderIcon is the open-folder shape the sidebar's Folders entry uses.
-            G("App", (TabGeneral, "RailSettingsIcon"), (TabAppearance, "RailPaletteIcon"), (TabPlayer, "RailPlayIcon"), (TabLyrics, "RailLyricsIcon"), (TabShortcuts, "RailKeyboardIcon")),
+            G("App", (TabGeneral, "RailSettingsIcon"), (TabAppearance, "RailPaletteIcon"), (TabPlayer, "RailPlayIcon"), (TabLyrics, "LyricsBubbleIcon"), (TabShortcuts, "RailKeyboardIcon")),
             G("Playback", (TabAudio, "RailSpeakerIcon")),
             G("Library", (TabLibrary, "RailFolderIcon"), (TabAdvanced, "RailWrenchIcon")),
             G("Connect", (TabAccountDevices, "RailPersonIcon"), (TabIntegrations, "RailPlugIcon"), (TabPlugins, "RailPuzzleIcon")),
@@ -832,8 +832,13 @@ public partial class SettingsViewModel : ViewModelBase
             OnPropertyChanged(nameof(HasServerUsers));
             RaiseAccountDerivedProperties();
         }
-        catch (Exception ex) { ServerUserError = ex.Message; }
+        catch (Exception ex) { ShowServerUserError(ex.Message); }
     }
+
+    /// <summary>Account errors ("Invalid user name or password.") leave on their own like
+    /// every other confirmation text in Settings (<see cref="TransientStatus"/>).</summary>
+    private void ShowServerUserError(string message)
+        => TransientStatus.Show(nameof(ServerUserError), v => ServerUserError = v, message);
 
     [RelayCommand]
     private void AddServerUser()
@@ -849,7 +854,7 @@ public partial class SettingsViewModel : ViewModelBase
             NewServerUserPassword = string.Empty;
             RefreshServerUsers();
         }
-        catch (Exception ex) { ServerUserError = ex.Message; }
+        catch (Exception ex) { ShowServerUserError(ex.Message); }
     }
 
     [RelayCommand]
@@ -862,7 +867,7 @@ public partial class SettingsViewModel : ViewModelBase
             if (IssuedApiKeyUser == user.Name) { IssuedApiKey = string.Empty; IssuedApiKeyUser = string.Empty; }
             RefreshServerUsers();
         }
-        catch (Exception ex) { ServerUserError = ex.Message; }
+        catch (Exception ex) { ShowServerUserError(ex.Message); }
     }
 
     [RelayCommand]
@@ -875,7 +880,7 @@ public partial class SettingsViewModel : ViewModelBase
             IssuedApiKeyUser = user.Name;
             RefreshServerUsers();
         }
-        catch (Exception ex) { ServerUserError = ex.Message; }
+        catch (Exception ex) { ShowServerUserError(ex.Message); }
     }
 
     [RelayCommand]
@@ -3307,6 +3312,15 @@ public partial class SettingsViewModel : ViewModelBase
     public bool HasLyricsBackgroundOverride(string key)
         => _lyricsBackgroundOverrides.TryGetValue(key, out var path) && File.Exists(path);
 
+    /// <summary>Keys ("track:{id}" / "album:{id}") whose own clip is still on disk; feeds the
+    /// Settings › Lyrics Background Video › Modify picker.</summary>
+    public IEnumerable<string> LyricsBackgroundOverrideKeys
+        => _lyricsBackgroundOverrides.Where(kv => File.Exists(kv.Value)).Select(kv => kv.Key).ToList();
+
+    /// <summary>The stored clip for a key, or null when it uses the default.</summary>
+    public string? GetLyricsBackgroundOverridePath(string key)
+        => _lyricsBackgroundOverrides.TryGetValue(key, out var path) && File.Exists(path) ? path : null;
+
     /// <summary>Stores a song's or album's own lyrics background clip: copied under the data
     /// root as lyrics_background/{key}.{ext} (a previous pick with another extension is
     /// dropped), recorded under the key, pushed to the player and saved.</summary>
@@ -5589,7 +5603,7 @@ public partial class SettingsViewModel : ViewModelBase
 
     public bool HasHiddenReleases => HiddenReleaseCount > 0;
 
-    public string ShowOlderVersionsLabel => $"Show full release history ({HiddenReleaseCount} older)";
+    public string ShowOlderVersionsLabel => Localization.Loc.T("Settings.SeeMoreReleases");
 
     /// <summary>True once the full history is expanded; shows the collapse control.</summary>
     [ObservableProperty] private bool _isReleaseHistoryExpanded;

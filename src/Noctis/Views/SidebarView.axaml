@@ -1,4 +1,4 @@
-<UserControl xmlns="https://github.com/avaloniaui"
+﻿<UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:loc="using:Noctis.Localization"
              xmlns:vm="using:Noctis.ViewModels"
@@ -309,12 +309,19 @@
                                                 HorizontalAlignment="Center"
                                                 VerticalAlignment="Center"
                                                 RenderOptions.BitmapInterpolationMode="HighQuality"
-                                                Background="{DynamicResource IslandForeground}">
+                                                Background="{DynamicResource IslandForeground}"
+                                                IsVisible="{Binding IconGlyph, Converter={x:Static helpers:IconKeyConverter.IsBitmap}}">
                                             <Border.OpacityMask>
                                                 <ImageBrush Source="{Binding IconGlyph, Converter={StaticResource IconKeyToGeometry}}"
                                                             Stretch="Uniform" />
                                             </Border.OpacityMask>
                                         </Border>
+                                        <!-- Geometry icons (Visualizer, Lyrics Studio): same 20px box as the PNG masks. -->
+                                        <PathIcon Width="20" Height="20"
+                                                  HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                  Foreground="{DynamicResource IslandForeground}"
+                                                  Data="{Binding IconGlyph, Converter={x:Static helpers:IconKeyConverter.Instance}}"
+                                                  IsVisible="{Binding IconGlyph, Converter={x:Static helpers:IconKeyConverter.IsGeometry}}" />
                                         <!-- Update-available dot (top-right of icon; visible in
                                              both expanded and icon-only rail) -->
                                         <Ellipse Width="8" Height="8"

@@ -1,4 +1,4 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Threading;
@@ -47,7 +47,8 @@ public partial class SidebarViewModel : ViewModelBase
         new NavItem { Key = "artists", Label = Loc.T("Nav.Artists"), IconGlyph = "ArtistsIcon" },
         new NavItem { Key = "folders", Label = Loc.T("Nav.Folders"), IconGlyph = "FoldersIcon" },
         new NavItem { Key = "playlists", Label = Loc.T("Nav.Playlists"), IconGlyph = "PlaylistsIcon" },
-        new NavItem { Key = "visualizer", Label = Loc.T("Nav.Visualizer"), IconGlyph = "VisualizerIcon" },
+        new NavItem { Key = "visualizer", Label = Loc.T("Nav.Visualizer"), IconGlyph = "SidebarVisualizerIcon" },
+        new NavItem { Key = "lyricsstudio", Label = Loc.T("Nav.LyricsStudio"), IconGlyph = "SidebarLyricsStudioIcon" },
         new NavItem { Key = "settings", Label = Loc.T("Nav.Settings"), IconGlyph = "SettingsIcon" },
     };
 
@@ -61,7 +62,7 @@ public partial class SidebarViewModel : ViewModelBase
     public static string LabelKey(string navKey) => navKey switch
     {
         "home" => "Nav.Home", "songs" => "Nav.Songs", "albums" => "Nav.Albums", "artists" => "Nav.Artists",
-        "folders" => "Nav.Folders", "playlists" => "Nav.Playlists", "visualizer" => "Nav.Visualizer",
+        "folders" => "Nav.Folders", "playlists" => "Nav.Playlists", "visualizer" => "Nav.Visualizer", "lyricsstudio" => "Nav.LyricsStudio",
         "settings" => "Nav.Settings", "favorites" => "Nav.Favorites", "server" => "Nav.Server", "cd" => "Nav.AudioCd",
         _ => navKey,
     };

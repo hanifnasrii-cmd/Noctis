@@ -1,4 +1,4 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -324,6 +324,7 @@ public partial class SettingsViewModel
         LyricsStudioLanguage = LyricsStudioViewModel.Languages.FirstOrDefault(l => l.Code == prefs.Language) ?? LyricsStudioViewModel.Languages[0];
         LyricsStudioWordTimings = prefs.WordTimings;
         LyricsStudioSkipAlreadyTimed = prefs.SkipAlreadyTimed;
+        LyricsStudioEmbedTags = prefs.EmbedTags;
     }
 
     private void RefreshLyricsModelStatus()
@@ -489,11 +490,6 @@ public partial class SettingsViewModel
         {
             RefreshServerUsers();
             RefreshSyncStatus();
-        }
-        else if (tab == TabLyrics)
-        {
-            RefreshLyricsModelStatus();
-            RefreshLyricsStudioStats();
         }
         else if (tab == TabLibrary)
         {

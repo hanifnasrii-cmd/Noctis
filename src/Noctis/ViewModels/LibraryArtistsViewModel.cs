@@ -1,4 +1,4 @@
-using Avalonia.Threading;
+﻿using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Noctis.Helpers;
@@ -398,6 +398,9 @@ public partial class LibraryArtistsViewModel : ViewModelBase, ISearchable, IDisp
         if (source.Contains(query, StringComparison.OrdinalIgnoreCase))
             return true;
 
+        // Empty for a punctuation-only query ("&"): every key contains "", which matched everyone.
+        if (queryNoSpaces.Length == 0)
+            return false;
         return RemoveWhitespace(source).Contains(queryNoSpaces, StringComparison.OrdinalIgnoreCase);
     }
 
@@ -409,18 +412,20 @@ public partial class LibraryArtistsViewModel : ViewModelBase, ISearchable, IDisp
         var normalized = source.Trim();
         var normalizedNoSpaces = RemoveWhitespace(normalized);
 
+        var hasKey = queryNoSpaces.Length > 0; // empty for punctuation-only queries
+
         if (string.Equals(normalized, query, StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(normalizedNoSpaces, queryNoSpaces, StringComparison.OrdinalIgnoreCase))
+            (hasKey && string.Equals(normalizedNoSpaces, queryNoSpaces, StringComparison.OrdinalIgnoreCase)))
             return 0;
 
         if (normalized.StartsWith(query, StringComparison.OrdinalIgnoreCase) ||
-            normalizedNoSpaces.StartsWith(queryNoSpaces, StringComparison.OrdinalIgnoreCase))
+            (hasKey && normalizedNoSpaces.StartsWith(queryNoSpaces, StringComparison.OrdinalIgnoreCase)))
             return 1;
 
         if (normalized.Contains(query, StringComparison.OrdinalIgnoreCase))
             return 2;
 
-        if (normalizedNoSpaces.Contains(queryNoSpaces, StringComparison.OrdinalIgnoreCase))
+        if (hasKey && normalizedNoSpaces.Contains(queryNoSpaces, StringComparison.OrdinalIgnoreCase))
             return 3;
 
         return 1000;

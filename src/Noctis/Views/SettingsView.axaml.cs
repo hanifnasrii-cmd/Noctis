@@ -13,6 +13,8 @@ using Noctis.Helpers;
 using System.Collections.Generic;
 using System.Linq;
 using Noctis.ViewModels;
+using Noctis.Services;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Noctis.Views;
 
@@ -323,39 +325,29 @@ public partial class SettingsView : UserControl
         }
     }
 
-    private async void OnPickLyricsBackgroundClick(object? sender, RoutedEventArgs e)
+    private async void OnModifyLyricsBackgroundClick(object? sender, RoutedEventArgs e)
     {
         // async void: an escaped exception would crash the app.
         try
         {
             if (DataContext is not SettingsViewModel vm) return;
+            var library = App.Services?.GetService<ILibraryService>();
+            if (library == null) return;
 
-            var topLevel = TopLevel.GetTopLevel(this);
-            if (topLevel == null) return;
-
-            var files = await topLevel.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+            var dialog = new LyricsBackgroundPickerDialog
             {
-                Title = "Choose Lyrics Background",
-                AllowMultiple = false,
-                FileTypeFilter = new[]
-                {
-                    new FilePickerFileType("Video or GIF")
-                    {
-                        Patterns = new[] { "*.mp4", "*.webm", "*.m4v", "*.mov", "*.mkv", "*.gif" }
-                    },
-                    new FilePickerFileType("All files") { Patterns = new[] { "*" } }
-                }
-            });
-
-            if (files.Count == 0) return;
-            var sourcePath = files[0].TryGetLocalPath();
-            if (string.IsNullOrWhiteSpace(sourcePath)) return;
-
-            await vm.SetLyricsBackgroundMediaAsync(sourcePath);
+                DataContext = new LyricsBackgroundPickerViewModel(vm, library)
+            };
+            if (TopLevel.GetTopLevel(this) is Window owner)
+            {
+                DialogHelper.SizeToOwner(dialog, owner);
+                await dialog.ShowDialog(owner);
+            }
+            else dialog.Show();
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"[SettingsView] Lyrics background pick failed: {ex.Message}");
+            System.Diagnostics.Debug.WriteLine($"[SettingsView] Lyrics background picker failed: {ex.Message}");
         }
     }
 

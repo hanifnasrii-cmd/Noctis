@@ -1188,7 +1188,9 @@ public partial class LibraryAlbumsViewModel : ViewModelBase, ISearchable, IDispo
         if (source.Contains(query, StringComparison.OrdinalIgnoreCase))
             return true;
 
-        if (sourceKey.Contains(queryNoSpaces, StringComparison.OrdinalIgnoreCase))
+        // queryNoSpaces is empty for a punctuation-only query ("&", "**"); every key
+        // contains "" so that matched the whole library. Only the raw check above counts then.
+        if (queryNoSpaces.Length > 0 && sourceKey.Contains(queryNoSpaces, StringComparison.OrdinalIgnoreCase))
             return true;
 
         // Word-level match: every word in the query must appear somewhere in the source
@@ -1234,18 +1236,20 @@ public partial class LibraryAlbumsViewModel : ViewModelBase, ISearchable, IDispo
         // RemoveWhitespace(source.Trim()) result without the per-call allocations.
         var normalized = source.Trim();
 
+        var hasKey = queryNoSpaces.Length > 0; // empty for punctuation-only queries
+
         if (string.Equals(normalized, query, StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(sourceKey, queryNoSpaces, StringComparison.OrdinalIgnoreCase))
+            (hasKey && string.Equals(sourceKey, queryNoSpaces, StringComparison.OrdinalIgnoreCase)))
             return 0;
 
         if (normalized.StartsWith(query, StringComparison.OrdinalIgnoreCase) ||
-            sourceKey.StartsWith(queryNoSpaces, StringComparison.OrdinalIgnoreCase))
+            (hasKey && sourceKey.StartsWith(queryNoSpaces, StringComparison.OrdinalIgnoreCase)))
             return 1;
 
         if (normalized.Contains(query, StringComparison.OrdinalIgnoreCase))
             return 2;
 
-        if (sourceKey.Contains(queryNoSpaces, StringComparison.OrdinalIgnoreCase))
+        if (hasKey && sourceKey.Contains(queryNoSpaces, StringComparison.OrdinalIgnoreCase))
             return 3;
 
         // Word-level match: all query words found in source

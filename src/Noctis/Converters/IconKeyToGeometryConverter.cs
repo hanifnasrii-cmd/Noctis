@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Globalization;
@@ -31,7 +31,8 @@ public class IconKeyToGeometryConverter : IValueConverter
             ["SettingsIcon"] = "avares://Noctis/Assets/Icons/Settings%20ICON.png",
             ["ServerIcon"] = "avares://Noctis/Assets/Icons/Server%20ICON.png",
             ["CdIcon"] = "avares://Noctis/Assets/Icons/Albums%20ICON.png",
-            ["VisualizerIcon"] = "avares://Noctis/Assets/Icons/Lyrics%20ICON.png",
+            // The player island's lyrics bubble, reused by the Settings rail for the Lyrics page.
+            ["LyricsBubbleIcon"] = "avares://Noctis/Assets/Icons/Lyrics%20ICON.png",
             // Fallback for smart playlist rows in sidebar.
             ["SmartPlaylistIcon"] = "avares://Noctis/Assets/Icons/Playlist%20icon.png"
         };

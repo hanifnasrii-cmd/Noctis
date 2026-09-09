@@ -95,15 +95,17 @@
 
                     <!-- Listening, the numbers that change: one accent row. -->
                     <UniformGrid Columns="4">
+                        <!-- Two-line tiles centre vertically; the streak tile keeps its
+                             "Longest:" sub-line and stays top-anchored so it can grow (user ask 09-07). -->
                         <Border Classes="stat-card">
-                            <StackPanel Spacing="4">
+                            <StackPanel Spacing="4" VerticalAlignment="Center">
                                 <TextBlock Text="{Binding TotalPlays}" FontSize="26" FontWeight="Bold"
                                            Foreground="{DynamicResource AccentTextBrush}"/>
                                 <TextBlock Text="{loc:T Statistics.TotalPlays}" FontSize="12" Opacity="0.5"/>
                             </StackPanel>
                         </Border>
                         <Border Classes="stat-card">
-                            <StackPanel Spacing="4">
+                            <StackPanel Spacing="4" VerticalAlignment="Center">
                                 <TextBlock Text="{Binding ListeningTime}" FontSize="26" FontWeight="Bold"
                                            Foreground="{DynamicResource AccentTextBrush}"/>
                                 <TextBlock Text="{loc:T Statistics.ListeningTime}" FontSize="12" Opacity="0.5"/>
@@ -118,7 +120,7 @@
                             </StackPanel>
                         </Border>
                         <Border Classes="stat-card">
-                            <StackPanel Spacing="4">
+                            <StackPanel Spacing="4" VerticalAlignment="Center">
                                 <TextBlock Text="{Binding PlaysThisWeekText}" FontSize="26" FontWeight="Bold"
                                            Foreground="{DynamicResource AccentTextBrush}"/>
                                 <TextBlock Text="{loc:T Statistics.PlaysWeek}" FontSize="12" Opacity="0.5"/>

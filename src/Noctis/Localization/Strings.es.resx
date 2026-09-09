@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- Español. Las claves que falten aquí se muestran en inglés (Strings.resx). -->
   <resheader name="resmimetype">
@@ -21,6 +21,7 @@
   <data name="Nav.Folders" xml:space="preserve"><value>Carpetas</value></data>
   <data name="Nav.Playlists" xml:space="preserve"><value>Listas</value></data>
   <data name="Nav.Visualizer" xml:space="preserve"><value>Visualizador</value></data>
+  <data name="Nav.LyricsStudio" xml:space="preserve"><value>Estudio de letras</value></data>
   <data name="Nav.Settings" xml:space="preserve"><value>Ajustes</value></data>
   <data name="Nav.Favorites" xml:space="preserve"><value>Favoritos</value></data>
   <data name="Nav.Server" xml:space="preserve"><value>Servidor</value></data>

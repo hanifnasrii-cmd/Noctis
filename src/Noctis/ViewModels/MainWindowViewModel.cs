@@ -202,6 +202,7 @@ public partial class MainWindowViewModel : ViewModelBase
     private readonly ServerViewModel _serverVm;
     private readonly AudioCdViewModel _audioCdVm;
     private readonly VisualizerViewModel _visualizerVm;
+    private readonly LyricsStudioPageViewModel _lyricsStudioPageVm;
 
     /// <summary>Plugin host (Settings → Plugins; lyrics-page visual layers).</summary>
     public PluginHost Plugins { get; }
@@ -309,6 +310,8 @@ public partial class MainWindowViewModel : ViewModelBase
         // service polls for drive/disc changes once the shell is up.
         _audioCdVm = new AudioCdViewModel(audioCd, Player);
         _visualizerVm = new VisualizerViewModel(Player, Settings);
+        _lyricsStudioPageVm = new LyricsStudioPageViewModel(library,
+            () => Settings.GetSettings().LyricsStudioWordTimings, MetadataHelper.CreateLyricsStudioViewModel);
 
         // Plugins load once settings are read so the disabled list is honoured on the first pass.
         Plugins = new PluginHost(Player, persistence.DataDirectory, () => Settings.GetSettings(),
@@ -1287,7 +1290,7 @@ public partial class MainWindowViewModel : ViewModelBase
         // regardless of the tab they were opened from (the tab name doesn't change on
         // detail pages).
         TopBar.IsSearchVisible = CurrentView is MoreByArtistViewModel or ArtistDetailViewModel
-            || (!_isCoverFlowMode && TopBar.CurrentTabName is not ("Home" or "Settings" or "Lyrics" or "Visualizer"));
+            || (!_isCoverFlowMode && TopBar.CurrentTabName is not ("Home" or "Settings" or "Lyrics" or "Visualizer" or "Lyrics Studio"));
 
         // Cover Flow is an overlay on the current section, so Back leaves it (the only
         // exit used to be the "Library" segment in the top bar, which read as a trap).
@@ -1613,6 +1616,8 @@ public partial class MainWindowViewModel : ViewModelBase
             return GetSectionBackButtonText("cd");
         if (ReferenceEquals(view, _visualizerVm))
             return GetSectionBackButtonText("visualizer");
+        if (ReferenceEquals(view, _lyricsStudioPageVm))
+            return GetSectionBackButtonText("lyricsstudio");
         if (ReferenceEquals(view, Settings))
             return GetSectionBackButtonText("settings");
         if (view is AlbumDetailViewModel)
@@ -1673,6 +1678,8 @@ public partial class MainWindowViewModel : ViewModelBase
             return "cd";
         if (ReferenceEquals(view, _visualizerVm))
             return "visualizer";
+        if (ReferenceEquals(view, _lyricsStudioPageVm))
+            return "lyricsstudio";
         if (ReferenceEquals(view, Settings))
             return "settings";
 
@@ -1800,6 +1807,7 @@ public partial class MainWindowViewModel : ViewModelBase
                 "server" => RefreshAndReturnServer(_serverVm),
                 "cd" => RefreshAndReturnAudioCd(_audioCdVm),
                 "visualizer" => _visualizerVm,
+                "lyricsstudio" => RefreshAndReturnLyricsStudio(),
                 "settings" => RefreshAndReturnSettings(),
                 _ when key.StartsWith("playlist:") => CreatePlaylistView(key),
                 _ => _homeVm
@@ -1840,6 +1848,7 @@ public partial class MainWindowViewModel : ViewModelBase
             "server" => "Server",
             "cd" => "Audio CD",
             "visualizer" => "Visualizer",
+            "lyricsstudio" => "Lyrics Studio",
             "settings" => "Settings",
             _ when key.StartsWith("playlist:") => "Playlist",
             _ => "Library"
@@ -1863,6 +1872,14 @@ public partial class MainWindowViewModel : ViewModelBase
             TopBar.ShowArtistSort(_artistsVm.SetSortCommand, _artistsVm.SortLabel, _artistsVm.SortMode, _artistsVm.SortAscending);
 
         RefreshBackButton();
+    }
+
+    /// <summary>Sidebar Lyrics Studio: re-scans the library for songs missing the chosen format
+    /// unless a run or a review is in progress (then the page keeps its work).</summary>
+    private LyricsStudioPageViewModel RefreshAndReturnLyricsStudio()
+    {
+        _ = _lyricsStudioPageVm.RefreshAsync();
+        return _lyricsStudioPageVm;
     }
 
     private LyricsViewModel EnsureLyricsAndReturn(LyricsViewModel vm)
@@ -2401,6 +2418,7 @@ public partial class MainWindowViewModel : ViewModelBase
         if (CurrentView == _serverVm) return "server";
         if (CurrentView == _audioCdVm) return "cd";
         if (CurrentView == _visualizerVm) return "visualizer";
+        if (CurrentView == _lyricsStudioPageVm) return "lyricsstudio";
         if (CurrentView == Settings) return "settings";
         if (CurrentView is AlbumDetailViewModel) return "albums";
         if (CurrentView is MoreByArtistViewModel) return "artists";

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -170,9 +170,10 @@ public class SettingsSearchIndexTests
             Assert.Contains(SettingsViewModel.TabLyrics, tabsWithHits);
             Assert.Contains(SettingsViewModel.TabAdvanced, tabsWithHits);
 
-            // Cards that moved: the Lyrics page owns Lyrics Studio, Advanced owns Developer Mode, About no longer does.
+            // Cards that moved: Lyrics Studio left Settings for its own sidebar section (09-08),
+            // Advanced owns Developer Mode, About no longer does.
             static bool Has(Control panel, string text) => panel.GetLogicalDescendants().OfType<TextBlock>().Any(t => t.Text == text);
-            Assert.True(Has(view.FindControl<Control>("LyricsTabPanel")!, "Open Lyrics Studio"));
+            Assert.False(Has(view.FindControl<Control>("LyricsTabPanel")!, "Open Lyrics Studio"));
             Assert.True(Has(view.FindControl<Control>("AdvancedTabPanel")!, "Developer Mode"));
             Assert.False(Has(view.FindControl<Control>("AboutTabPanel")!, "Developer Mode"));
             Assert.True(Has(view.FindControl<Control>("LibraryTabPanel")!, "Group Artists By"));

@@ -1,0 +1,68 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:loc="using:Noctis.Localization"
+             xmlns:vm="using:Noctis.ViewModels"
+             xmlns:views="using:Noctis.Views"
+             x:Class="Noctis.Views.LyricsStudioView"
+             x:DataType="vm:LyricsStudioPageViewModel">
+
+    <!-- Sidebar section: page header with the per-format counts, then the shared Studio
+         surface (LyricsStudioPanel) over the songs that still lack the chosen format. -->
+    <UserControl.Styles>
+        <Style Selector="Border.studio-count">
+            <Setter Property="CornerRadius" Value="14"/>
+            <Setter Property="Padding" Value="14,10"/>
+            <Setter Property="Margin" Value="0,0,8,0"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
+        </Style>
+    </UserControl.Styles>
+
+    <DockPanel Margin="24,20,24,0">
+        <!-- Header -->
+        <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto" Margin="0,0,0,14">
+            <StackPanel Grid.Column="0" Spacing="2" VerticalAlignment="Center">
+                <TextBlock Text="{loc:T LyricsStudio.Title}" FontSize="26" FontWeight="Bold"/>
+                <TextBlock Text="{loc:T LyricsStudio.Subtitle}" FontSize="13" Opacity="0.6" TextWrapping="Wrap"/>
+            </StackPanel>
+            <ItemsControl Grid.Column="1" ItemsSource="{Binding Counts}" IsVisible="{Binding HasCounts}" VerticalAlignment="Center">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate><StackPanel Orientation="Horizontal"/></ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:LyricsStudioCount">
+                        <Border Classes="studio-count" MinWidth="96">
+                            <StackPanel Spacing="1">
+                                <StackPanel Orientation="Horizontal" Spacing="5">
+                                    <TextBlock Text="{Binding Count}" FontSize="18" FontWeight="SemiBold"/>
+                                    <TextBlock Text="{Binding Tag}" FontSize="10.5" FontWeight="SemiBold" Opacity="0.4" VerticalAlignment="Bottom" Margin="0,0,0,3"
+                                               IsVisible="{Binding Tag, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+                                </StackPanel>
+                                <TextBlock Text="{Binding Label}" FontSize="11" Opacity="0.55"/>
+                            </StackPanel>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </Grid>
+
+        <!-- Body -->
+        <Border CornerRadius="20" ClipToBounds="True" Background="{DynamicResource SystemControlBackgroundListLowBrush}" Margin="0,0,0,20">
+            <Panel>
+                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="8" IsVisible="{Binding IsLoading}">
+                    <TextBlock Text="{Binding StatusText}" FontSize="13" Opacity="0.6" TextAlignment="Center"/>
+                </StackPanel>
+                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="6" MaxWidth="420" IsVisible="{Binding ShowEmpty}">
+                    <TextBlock Text="{loc:T LyricsStudio.Title}" FontSize="15" FontWeight="SemiBold" TextAlignment="Center" Opacity="0.7"/>
+                    <TextBlock Text="{Binding StatusText}" FontSize="12" Opacity="0.5" TextWrapping="Wrap" TextAlignment="Center"/>
+                </StackPanel>
+                <ContentControl Content="{Binding Studio}" IsVisible="{Binding Studio, Converter={x:Static ObjectConverters.IsNotNull}}">
+                    <ContentControl.ContentTemplate>
+                        <DataTemplate x:DataType="vm:LyricsStudioViewModel">
+                            <views:LyricsStudioPanel ShowHeader="False" Margin="0,8,0,0"/>
+                        </DataTemplate>
+                    </ContentControl.ContentTemplate>
+                </ContentControl>
+            </Panel>
+        </Border>
+    </DockPanel>
+</UserControl>

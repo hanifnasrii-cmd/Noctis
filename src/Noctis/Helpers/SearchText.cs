@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Globalization;
 using System.Text;
 
@@ -48,8 +48,11 @@ public static class SearchText
         if (source.Contains(query, StringComparison.OrdinalIgnoreCase))
             return true;
 
+        // A query made only of punctuation ("&", "**") folds to an empty key, and every key
+        // "contains" the empty string — that matched the whole library. The raw substring
+        // check above is the only way such a query can match.
         var nq = Normalize(query);
-        if (nq.Length == 0) return true;
+        if (nq.Length == 0) return false;
         return Normalize(source).Contains(nq, StringComparison.Ordinal);
     }
 }

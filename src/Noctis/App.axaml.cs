@@ -56,6 +56,7 @@ public partial class App : Application
             [typeof(ServerViewModel)] = () => new ServerView(),
             [typeof(AudioCdViewModel)] = () => new AudioCdView(),
             [typeof(VisualizerViewModel)] = () => new VisualizerView(),
+            [typeof(LyricsStudioPageViewModel)] = () => new LyricsStudioView(),
         });
         DataTemplates.Insert(0, cachedLocator);
         CachedLocator = cachedLocator;

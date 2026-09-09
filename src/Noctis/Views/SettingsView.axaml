@@ -1,4 +1,4 @@
-<UserControl xmlns="https://github.com/avaloniaui"
+﻿<UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:loc="using:Noctis.Localization"
              xmlns:plugins="using:Noctis.Services.Plugins"
@@ -45,6 +45,17 @@
             <Setter Property="Opacity" Value="0.4"/>
         </Style>
 
+        <!-- Hover shade for EVERY clickable button in Settings (user ask 09-08): the same
+             "darken in place" the accent Modify button does. Grey and transparent buttons
+             take a translucent black wash (SettingsButtonHoverBrush, per theme); accent /
+             danger buttons darken to AccentColorBrushDark1 in their own rules below. This
+             rule is declared first on purpose: Avalonia styles cascade by order, so every
+             class-specific :pointerover rule after it (rail, brand tiles, social links,
+             swatch, avatar, preset chips) keeps its own look. Toggles are not Buttons. -->
+        <Style Selector="Button:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource SettingsButtonHoverBrush}"/>
+        </Style>
+
         <!-- About-tab update pill: accent by default, subdued while showing the
              transient "✓ Up to date" confirmation so it stops reading as a CTA. -->
         <Style Selector="Button.update-pill">
@@ -61,6 +72,16 @@
                 <Transitions/>
             </Setter>
             <Setter Property="RenderTransform" Value="scale(1)"/>
+        </Style>
+        <Style Selector="Button.update-pill:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource AccentColorBrushDark1}"/>
+        </Style>
+        <Style Selector="Button.update-pill.up-to-date:pointerover /template/ ContentPresenter, Button.update-pill.checking:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource SettingsButtonHoverBrush}"/>
+        </Style>
+        <!-- About-tab red update pills (hard-coded #E74856, not the accent): darken like Modify. -->
+        <Style Selector="Button.red-pill:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="#C73E4C"/>
         </Style>
 
         <!-- Circular loading spinner: a rotating arc shown during background work -->
@@ -241,6 +262,31 @@
                 </ControlTemplate>
             </Setter>
         </Style>
+        <!-- Selection cards (mini player design, artwork medium, cover flow layout) shade
+             on hover like the Settings buttons; the checked card keeps its accent border. -->
+        <Style Selector="RadioButton.transition-card /template/ Border#card">
+            <Setter Property="Transitions">
+                <Transitions>
+                    <BrushTransition Property="Background" Duration="0:0:0.16"/>
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="RadioButton.transition-card:pointerover /template/ Border#card">
+            <Setter Property="Background" Value="{DynamicResource SettingsButtonHoverBrush}"/>
+        </Style>
+        <!-- Selection cards (transition style, upmix, group-artists, mini player design,
+             artwork medium, cover flow layout) shade on hover like the Settings buttons;
+             the checked card keeps its accent border. -->
+        <Style Selector="RadioButton.transition-card /template/ Border#card">
+            <Setter Property="Transitions">
+                <Transitions>
+                    <BrushTransition Property="Background" Duration="0:0:0.16"/>
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="RadioButton.transition-card:pointerover /template/ Border#card">
+            <Setter Property="Background" Value="{DynamicResource SettingsButtonHoverBrush}"/>
+        </Style>
         <Style Selector="RadioButton.transition-card:checked /template/ Border#card">
             <Setter Property="BorderBrush" Value="{DynamicResource AccentColorBrush}"/>
         </Style>
@@ -285,8 +331,19 @@
                 </Transitions>
             </Setter>
         </Style>
+        <!-- No hover zoom anywhere in Settings (user ask 09-07): buttons highlight in
+             place. Overrides the app-wide Button / Button.pill :pointerover scale. -->
         <Style Selector="Button:pointerover">
-            <Setter Property="RenderTransform" Value="scale(1.045)"/>
+            <Setter Property="RenderTransform" Value="scale(1)"/>
+        </Style>
+        <Style Selector="Button.pill:pointerover">
+            <Setter Property="RenderTransform" Value="scale(1)"/>
+        </Style>
+        <!-- Accent buttons lose their zoom, so they darken on hover instead (the global
+             accent-btn hover keeps the resting colour). Same shade as Styles.axaml's
+             settings-popup rule. -->
+        <Style Selector="Button.accent-btn:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource AccentColorBrushDark1}"/>
         </Style>
         <!-- The QR thumbnail must not grow on hover: a moving code reads as decoration,
              and phones scan it in place. The press dip stays for click feedback. -->
@@ -321,8 +378,10 @@
             <Setter Property="BorderThickness" Value="2"/>
             <Setter Property="CornerRadius" Value="10"/>
         </Style>
+        <!-- Theme tiles shade on hover like every other Settings button (the active
+             tile keeps its accent border; only the fill changes). -->
         <Style Selector="Button.theme-btn:pointerover /template/ ContentPresenter">
-            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundListLowBrush}"/>
+            <Setter Property="Background" Value="{DynamicResource SettingsButtonHoverBrush}"/>
         </Style>
 
         <!-- Profile avatar button: round, no rectangular hover overlay -->
@@ -572,7 +631,7 @@
             </Setter>
         </Style>
         <Style Selector="ComboBox.pill-combo:pointerover">
-            <Setter Property="RenderTransform" Value="scale(1.05)"/>
+            <Setter Property="RenderTransform" Value="scale(1)"/>
         </Style>
         <Style Selector="ComboBox.pill-combo.stable-popup:pointerover">
             <Setter Property="RenderTransform" Value="scale(1)"/>
@@ -1066,33 +1125,6 @@
                  baseline, and a label with descenders (Lossy, playlists) can't grow the box. -->
             <Setter Property="Margin" Value="0,0,6,6"/>
             <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
-        </Style>
-        <!-- Lyrics Studio: model state chip, count tiles, amber callout -->
-        <Style Selector="Border.studio-state">
-            <Setter Property="CornerRadius" Value="999"/>
-            <Setter Property="Padding" Value="10,4"/>
-            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
-            <Setter Property="Opacity" Value="0.75"/>
-        </Style>
-        <Style Selector="Border.studio-state Ellipse.studio-state-dot">
-            <Setter Property="Fill" Value="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
-        </Style>
-        <Style Selector="Border.studio-state.installed">
-            <Setter Property="Opacity" Value="1"/>
-        </Style>
-        <Style Selector="Border.studio-state.installed Ellipse.studio-state-dot">
-            <Setter Property="Fill" Value="{DynamicResource AccentColorBrush}"/>
-        </Style>
-        <Style Selector="Border.studio-count">
-            <Setter Property="CornerRadius" Value="14"/>
-            <Setter Property="Padding" Value="14,10"/>
-            <Setter Property="Margin" Value="0,0,8,0"/>
-            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
-        </Style>
-        <Style Selector="Border.studio-callout">
-            <Setter Property="CornerRadius" Value="12"/>
-            <Setter Property="Padding" Value="12,8"/>
-            <Setter Property="Background" Value="#1AE5A34D"/>
         </Style>
         <!-- The camera badge and the X only appear while the pointer is over the avatar. -->
         <Style Selector="Panel.avatar-wrap Border.avatar-badge, Panel.avatar-wrap Button.avatar-x">
@@ -2326,21 +2358,17 @@
                                    IsVisible="{Binding HasLyricsBackgroundMedia}"/>
                     </StackPanel>
                     <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                        <!-- Modify opens the picker: the default clip plus a searchable list of
+                             songs and albums that carry their own (user ask 09-07). -->
                         <Button Classes="accent-btn"
-                                Content="{loc:T Settings.Choose}"
+                                Content="{loc:T Settings.Modify}"
                                 Padding="16,6"
                                 CornerRadius="999"
                                 Background="{DynamicResource AccentButtonBackground}"
                                 Foreground="{DynamicResource AccentForegroundBrush}"
                                 FontWeight="SemiBold"
                                 Cursor="Hand"
-                                Click="OnPickLyricsBackgroundClick"/>
-                        <Button Content="{loc:T Settings.Remove}"
-                                Padding="14,6"
-                                CornerRadius="999"
-                                Cursor="Hand"
-                                Command="{Binding ClearLyricsBackgroundMediaCommand}"
-                                IsVisible="{Binding HasLyricsBackgroundMedia}"/>
+                                Click="OnModifyLyricsBackgroundClick"/>
                     </StackPanel>
                 </Grid>
             </Border>
@@ -2413,126 +2441,6 @@
             </StackPanel>
             </Border>
 
-            <TextBlock Classes="section-title" Text="{loc:T Settings.Section.LyricsStudio}" Margin="0,16,0,8"/>
-            <Border Classes="setting-card group-card">
-            <StackPanel>
-            <Border Classes="setting-row">
-                <StackPanel Spacing="14">
-                    <StackPanel Spacing="2">
-                        <TextBlock Text="{loc:T LyricsStudioSettings.Title}" FontSize="15" FontWeight="SemiBold"/>
-                        <TextBlock Text="{loc:T LyricsStudioSettings.Description}" FontSize="12" Opacity="0.5" TextWrapping="Wrap"/>
-                    </StackPanel>
-                    <!-- Model: picker + install state on one line, the action at the far right,
-                         and the model's one-line description (or download progress) under the picker. -->
-                    <Grid ColumnDefinitions="110,*,Auto" ColumnSpacing="10">
-                        <TextBlock Grid.Column="0" Text="{loc:T LyricsStudioSettings.Model}" FontSize="13" VerticalAlignment="Center"/>
-                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
-                            <ComboBox Classes="pill-combo stable-popup" MinWidth="200" VerticalAlignment="Center"
-                                      ItemsSource="{Binding LyricsModelOptions}" SelectedItem="{Binding LyricsStudioModel}">
-                                <ComboBox.ItemTemplate>
-                                    <DataTemplate x:DataType="studio:WhisperModelInfo">
-                                        <StackPanel Orientation="Horizontal" Spacing="6">
-                                            <TextBlock Text="{Binding DisplayName}"/>
-                                            <TextBlock Text="{Binding SizeText}" Opacity="0.5" FontSize="11" VerticalAlignment="Center"/>
-                                        </StackPanel>
-                                    </DataTemplate>
-                                </ComboBox.ItemTemplate>
-                            </ComboBox>
-                            <Border Classes="studio-state" Classes.installed="{Binding IsLyricsModelInstalled}" VerticalAlignment="Center">
-                                <StackPanel Orientation="Horizontal" Spacing="6">
-                                    <Ellipse Classes="studio-state-dot" Width="6" Height="6" VerticalAlignment="Center"/>
-                                    <TextBlock Text="{loc:T LyricsStudioSettings.Installed}" FontSize="11.5" FontWeight="SemiBold" IsVisible="{Binding IsLyricsModelInstalled}"/>
-                                    <TextBlock Text="{loc:T LyricsStudioSettings.NotInstalled}" FontSize="11.5" FontWeight="SemiBold" IsVisible="{Binding !IsLyricsModelInstalled}"/>
-                                </StackPanel>
-                            </Border>
-                        </StackPanel>
-                        <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-                            <Button Classes="accent-btn" Command="{Binding DownloadLyricsModelCommand}" IsVisible="{Binding !IsLyricsModelInstalled}" IsEnabled="{Binding !IsDownloadingLyricsModel}"
-                                    Padding="14,8" CornerRadius="999" Cursor="Hand"
-                                    Background="{DynamicResource AccentButtonBackground}" Foreground="{DynamicResource AccentForegroundBrush}">
-                                <TextBlock Text="{loc:T LyricsStudioSettings.Download}" FontSize="12" FontWeight="SemiBold"/>
-                            </Button>
-                            <Button Classes="pill-action" Command="{Binding DeleteLyricsModelCommand}" IsVisible="{Binding IsLyricsModelInstalled}"
-                                    Padding="14,8" CornerRadius="999" Cursor="Hand">
-                                <TextBlock Text="{loc:T LyricsStudioSettings.Delete}" FontSize="12"/>
-                            </Button>
-                        </StackPanel>
-                    </Grid>
-                    <StackPanel Spacing="6" Margin="120,-6,0,0">
-                        <TextBlock Text="{Binding LyricsModelStatus}" FontSize="11.5" Opacity="0.55" TextWrapping="Wrap"/>
-                        <ProgressBar Value="{Binding LyricsModelProgress}" Minimum="0" Maximum="1" Height="3" CornerRadius="2" IsVisible="{Binding IsDownloadingLyricsModel}"/>
-                    </StackPanel>
-                    <Grid ColumnDefinitions="110,*" ColumnSpacing="10">
-                        <TextBlock Grid.Column="0" Text="{loc:T LyricsStudioSettings.Language}" FontSize="13" VerticalAlignment="Center"/>
-                        <ComboBox Grid.Column="1" Classes="pill-combo stable-popup" MinWidth="200" HorizontalAlignment="Left" VerticalAlignment="Center"
-                                  ItemsSource="{Binding LyricsLanguageOptions}" SelectedItem="{Binding LyricsStudioLanguage}"/>
-                    </Grid>
-                    <!-- ffmpeg missing: an amber callout rather than a bare warning line. -->
-                    <Border Classes="studio-callout"
-                            IsVisible="{Binding LyricsStudioFfmpegStatus, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
-                        <TextBlock Text="{Binding LyricsStudioFfmpegStatus}" FontSize="12" Foreground="#E5A34D" TextWrapping="Wrap"/>
-                    </Border>
-                </StackPanel>
-            </Border>
-            <Border Classes="setting-row">
-                <Grid ColumnDefinitions="*,Auto">
-                    <StackPanel Grid.Column="0" Spacing="2">
-                        <TextBlock Text="{loc:T LyricsStudioSettings.WordTimings}" FontSize="15" FontWeight="SemiBold"/>
-                        <TextBlock Text="{loc:T LyricsStudioSettings.WordTimingsHint}" FontSize="12" Opacity="0.5" TextWrapping="Wrap"/>
-                    </StackPanel>
-                    <controls:LottieToggle Grid.Column="1" IsChecked="{Binding LyricsStudioWordTimings}" VerticalAlignment="Center"/>
-                </Grid>
-            </Border>
-            <Border Classes="setting-row">
-                <Grid ColumnDefinitions="*,Auto">
-                    <StackPanel Grid.Column="0" Spacing="2">
-                        <TextBlock Text="{loc:T LyricsStudioSettings.EmbedTags}" FontSize="15" FontWeight="SemiBold"/>
-                        <TextBlock Text="{loc:T LyricsStudioSettings.EmbedTagsHint}" FontSize="12" Opacity="0.5" TextWrapping="Wrap"/>
-                    </StackPanel>
-                    <controls:LottieToggle Grid.Column="1" IsChecked="{Binding LyricsStudioEmbedTags}" VerticalAlignment="Center"/>
-                </Grid>
-            </Border>
-            <Border Classes="setting-row">
-                <StackPanel Spacing="12">
-                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
-                        <StackPanel Grid.Column="0" Spacing="2">
-                            <TextBlock Text="{loc:T LyricsStudioSettings.OpenTitle}" FontSize="15" FontWeight="SemiBold"/>
-                            <TextBlock Text="{loc:T LyricsStudioSettings.OpenHelp}" FontSize="12" Opacity="0.5" TextWrapping="Wrap"/>
-                        </StackPanel>
-                        <Button Grid.Column="1" Classes="accent-btn" Command="{Binding OpenLyricsStudioForMissingCommand}" Padding="16,8" CornerRadius="999" Cursor="Hand" VerticalAlignment="Center"
-                                Background="{DynamicResource AccentButtonBackground}" Foreground="{DynamicResource AccentForegroundBrush}">
-                            <TextBlock Text="{loc:T LyricsStudioSettings.Open}" FontSize="13" FontWeight="SemiBold"/>
-                        </Button>
-                    </Grid>
-                    <!-- Library count: four quiet tiles (one per lyric format) instead of a dotted sentence. -->
-                    <TextBlock Text="{Binding LyricsStudioStats}" FontSize="12" Opacity="0.5"
-                               IsVisible="{Binding LyricsStudioStats, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
-                    <ItemsControl ItemsSource="{Binding LyricsStudioCounts}" IsVisible="{Binding LyricsStudioCounts.Count}" Margin="0,0,-8,0">
-                        <ItemsControl.ItemsPanel>
-                            <ItemsPanelTemplate>
-                                <UniformGrid Columns="4"/>
-                            </ItemsPanelTemplate>
-                        </ItemsControl.ItemsPanel>
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate x:DataType="vm:LyricsStudioCount">
-                                <Border Classes="studio-count">
-                                    <StackPanel Spacing="1">
-                                        <StackPanel Orientation="Horizontal" Spacing="6">
-                                            <TextBlock Text="{Binding Count}" FontSize="20" FontWeight="SemiBold"/>
-                                            <TextBlock Text="{Binding Tag}" FontSize="10.5" FontWeight="SemiBold" Opacity="0.4" VerticalAlignment="Bottom" Margin="0,0,0,4"
-                                                       IsVisible="{Binding Tag, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
-                                        </StackPanel>
-                                        <TextBlock Text="{Binding Label}" FontSize="11.5" Opacity="0.55"/>
-                                    </StackPanel>
-                                </Border>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-                </StackPanel>
-            </Border>
-
-            </StackPanel>
-            </Border>
             </StackPanel>
 
             <StackPanel x:Name="ShortcutsTabPanel" Classes="tab-page" IsVisible="{Binding IsShortcutsTabVisible}" Spacing="4">
@@ -2614,12 +2522,7 @@
                 <StackPanel Spacing="14">
                     <Grid ColumnDefinitions="*,Auto">
                         <StackPanel Grid.Column="0" Spacing="2">
-                            <StackPanel Orientation="Horizontal" Spacing="8">
-                                <TextBlock Text="{loc:T Settings.SongTransitions}" FontSize="15" FontWeight="SemiBold"/>
-                                <Border Classes="beta-badge">
-                                    <TextBlock Classes="beta-badge-text" Text="{loc:T Settings.BETA}"/>
-                                </Border>
-                            </StackPanel>
+                            <TextBlock Text="{loc:T Settings.SongTransitions}" FontSize="15" FontWeight="SemiBold"/>
                             <TextBlock Text="{loc:T Settings.SongsBlendSmoothlyInto}"
                                        FontSize="12" Opacity="0.5" TextWrapping="Wrap"/>
                             <TextBlock Text="{loc:T Settings.UnavailableWhileExclusiveMode}"
@@ -3840,6 +3743,10 @@
                         <!-- Collapse back to the newest releases (sits under the expanded list) -->
                         <Button IsVisible="{Binding IsReleaseHistoryExpanded}"
                                 Command="{Binding HideOlderReleasesCommand}"
+                                Classes="accent-btn"
+                                Background="{DynamicResource AccentButtonBackground}"
+                                Foreground="{DynamicResource AccentForegroundBrush}"
+                                BorderThickness="0"
                                 Padding="14,6"
                                 CornerRadius="999"
                                 HorizontalAlignment="Center"
@@ -4073,8 +3980,12 @@
                             </StackPanel>
                         </StackPanel>
                     </Border>
-                    <TextBlock Text="{Binding ServerUserError}" FontSize="12" Foreground="#FF6B6B" TextWrapping="Wrap"
-                               IsVisible="{Binding ServerUserError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+                    <!-- Fixed-height slot: the message appearing and leaving must not reflow the
+                         card (it read as the page shaking). -->
+                    <Panel MinHeight="18">
+                        <TextBlock Text="{Binding ServerUserError}" FontSize="12" Foreground="#FF6B6B" TextWrapping="Wrap"
+                                   IsVisible="{Binding ServerUserError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+                    </Panel>
                 </StackPanel>
             </Border>
             </StackPanel>
@@ -4289,7 +4200,7 @@
                         <Button Grid.Column="2" Grid.Row="0"
                                 IsVisible="{Binding !IsLastFmConnected}"
                                 Content="{loc:T Settings.Connect}"
-                                Classes="pill-action"
+                                Classes="pill-action accent-btn"
                                 Command="{Binding LoginLastFmCommand}"
                                 Padding="14,8"
                                 CornerRadius="999"
@@ -4393,7 +4304,7 @@
                         <Button Grid.Column="2" Grid.Row="0"
                                 IsVisible="{Binding !IsListenBrainzConnected}"
                                 Content="{loc:T Settings.Connect}"
-                                Classes="pill-action"
+                                Classes="pill-action accent-btn"
                                 Command="{Binding TestListenBrainzCommand}"
                                 Padding="14,8"
                                 CornerRadius="999"
@@ -4474,7 +4385,7 @@
                             IsVisible="{Binding !IsTidalConnected}"
                             IsEnabled="{Binding !IsTidalBusy}"
                             Content="{loc:T Settings.Connect}"
-                            Classes="pill-action"
+                            Classes="pill-action accent-btn"
                             Command="{Binding ConnectTidalCommand}"
                             Padding="14,8" CornerRadius="999" Cursor="Hand" VerticalAlignment="Center">
                         <Button.Template>
@@ -4603,7 +4514,7 @@
                         <Button Grid.Column="1"
                                 IsVisible="{Binding !IsMediaServerConnected}"
                                 IsEnabled="{Binding !IsMediaServerBusy}"
-                                Classes="pill-action"
+                                Classes="pill-action accent-btn"
                                 Command="{Binding ConnectMediaServerCommand}"
                                 Padding="14,8" CornerRadius="999" Cursor="Hand"
                                 VerticalAlignment="Top" Margin="0,4,0,0">
@@ -4916,7 +4827,7 @@
                             <!-- Update Available button (replaces Check when a new release is detected).
                                  In-app installer path: Inno install (incl. winget/Chocolatey). -->
                             <Button Command="{Binding DownloadUpdateCommand}"
-                                    Classes="pill"
+                                    Classes="pill red-pill"
                                     VerticalAlignment="Center"
                                     Padding="16,6"
                                     Background="#E74856"
@@ -4928,7 +4839,7 @@
                             <!-- Scoop / portable copies can't safely run the in-app installer;
                                  open the GitHub release instead and surface the update command. -->
                             <Button Command="{Binding OpenLatestReleaseCommand}"
-                                    Classes="pill"
+                                    Classes="pill red-pill"
                                     VerticalAlignment="Center"
                                     Padding="16,6"
                                     Background="#E74856"
@@ -4940,7 +4851,7 @@
 
                             <!-- Install & Restart button (replaces Update when ready) -->
                             <Button Command="{Binding InstallUpdateCommand}"
-                                    Classes="pill"
+                                    Classes="pill red-pill"
                                     VerticalAlignment="Center"
                                     Padding="16,6"
                                     Background="#E74856"

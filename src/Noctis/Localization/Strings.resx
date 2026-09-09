@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!--
     English UI strings — the fallback every other language falls back to.
@@ -28,6 +28,7 @@
   <data name="Nav.Folders" xml:space="preserve"><value>Folders</value><comment>Sidebar</comment></data>
   <data name="Nav.Playlists" xml:space="preserve"><value>Playlists</value><comment>Sidebar</comment></data>
   <data name="Nav.Visualizer" xml:space="preserve"><value>Visualizer</value><comment>Sidebar</comment></data>
+  <data name="Nav.LyricsStudio" xml:space="preserve"><value>Lyrics Studio</value><comment>Sidebar</comment></data>
   <data name="Nav.Settings" xml:space="preserve"><value>Settings</value><comment>Sidebar</comment></data>
   <data name="Nav.Favorites" xml:space="preserve"><value>Favorites</value><comment>Sidebar</comment></data>
   <data name="Nav.Server" xml:space="preserve"><value>Server</value><comment>Sidebar, media server section</comment></data>
@@ -127,7 +128,7 @@
   <data name="Settings.PreRelease" xml:space="preserve"><value>Pre-Release</value><comment>Text in SettingsView.axaml</comment></data>
   <data name="Settings.InstallRestart" xml:space="preserve"><value>Install &amp; Restart</value><comment>Text in SettingsView.axaml</comment></data>
   <data name="Settings.Cancel" xml:space="preserve"><value>Cancel</value><comment>Text in SettingsView.axaml</comment></data>
-  <data name="Settings.ShowRecentReleasesOnly" xml:space="preserve"><value>Show recent releases only</value><comment>Advanced: collapses the release history</comment></data>
+  <data name="Settings.ShowRecentReleasesOnly" xml:space="preserve"><value>See recent releases</value><comment>Advanced: collapses the release history</comment></data>
   <data name="Settings.LyricsBackgroundPerSongHint" xml:space="preserve"><value>Right-click a song or album to give it its own video.</value><comment>Appearance: under Lyrics Background Video</comment></data>
   <data name="Settings.PauseVideoWithPlayback" xml:space="preserve"><value>Pause Video With Playback</value><comment>Appearance toggle title</comment></data>
   <data name="Settings.PauseVideoWithPlaybackDesc" xml:space="preserve"><value>Freeze the background video while the song is paused.</value><comment>Appearance toggle description</comment></data>
@@ -238,6 +239,22 @@
   <data name="Settings.LyricsBackgroundVideo" xml:space="preserve"><value>Lyrics Background Video</value><comment>Text in SettingsView.axaml</comment></data>
   <data name="Settings.LoopVideoGIFBehind" xml:space="preserve"><value>Loop a video or GIF behind the lyrics instead of the blurred cover.</value><comment>Text in SettingsView.axaml</comment></data>
   <data name="Settings.Choose" xml:space="preserve"><value>Choose</value><comment>Content in SettingsView.axaml</comment></data>
+  <data name="LyricsBackground.Title" xml:space="preserve"><value>Lyrics Background Video</value><comment>Picker dialog title</comment></data>
+  <data name="LyricsBackground.Subtitle" xml:space="preserve"><value>Loop a video or GIF behind the lyrics. Search for songs and albums to give them their own.</value><comment>Picker dialog subtitle</comment></data>
+  <data name="LyricsBackground.DefaultVideo" xml:space="preserve"><value>Default video</value><comment>Picker: the clip every song without its own uses</comment></data>
+  <data name="LyricsBackground.NoDefaultVideo" xml:space="preserve"><value>None. Songs without their own video show the blurred cover.</value><comment>Picker: no default clip</comment></data>
+  <data name="LyricsBackground.ChooseVideo" xml:space="preserve"><value>Choose video</value><comment>Picker: pick a file</comment></data>
+  <data name="LyricsBackground.Remove" xml:space="preserve"><value>Remove</value><comment>Picker: drop the default clip</comment></data>
+  <data name="LyricsBackground.UseDefault" xml:space="preserve"><value>Use default</value><comment>Picker: drop a song's or album's own clip</comment></data>
+  <data name="LyricsBackground.SearchWatermark" xml:space="preserve"><value>Search songs and albums…</value><comment>Picker search box</comment></data>
+  <data name="LyricsBackground.WithOwnVideo" xml:space="preserve"><value>WITH THEIR OWN VIDEO</value><comment>Picker: header over the list when not searching</comment></data>
+  <data name="LyricsBackground.PromptTitle" xml:space="preserve"><value>No song or album has its own video yet</value><comment>Picker: empty state</comment></data>
+  <data name="LyricsBackground.PromptBody" xml:space="preserve"><value>Search above and choose a video for any song or album. Everything else plays the default.</value><comment>Picker: empty state body</comment></data>
+  <data name="LyricsBackground.Song" xml:space="preserve"><value>SONG</value><comment>Picker row chip</comment></data>
+  <data name="LyricsBackground.Album" xml:space="preserve"><value>ALBUM</value><comment>Picker row chip</comment></data>
+  <data name="LyricsBackground.UsesDefault" xml:space="preserve"><value>Uses the default video</value><comment>Picker row status</comment></data>
+  <data name="Settings.Modify" xml:space="preserve"><value>Modify</value><comment>Appearance: opens the lyrics background video picker</comment></data>
+  <data name="Settings.SeeMoreReleases" xml:space="preserve"><value>See more releases</value><comment>Advanced: expands the release history</comment></data>
   <data name="Settings.Remove" xml:space="preserve"><value>Remove</value><comment>Content in SettingsView.axaml</comment></data>
   <data name="Settings.FullscreenLyricsFocus" xml:space="preserve"><value>Fullscreen Lyrics Focus</value><comment>Text in SettingsView.axaml</comment></data>
   <data name="Settings.DimAllButCurrent" xml:space="preserve"><value>Dim every line except the current one and its neighbours.</value><comment>Text in SettingsView.axaml</comment></data>

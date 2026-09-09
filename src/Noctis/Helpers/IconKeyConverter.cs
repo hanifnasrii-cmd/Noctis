@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Globalization;
 using Avalonia;
 using Avalonia.Data.Converters;
@@ -20,6 +20,9 @@ public sealed class IconKeyConverter : IValueConverter
 
     /// <summary>True when the key is one of the bitmap sidebar icons rather than a geometry.</summary>
     public static readonly FuncValueConverter<string?, bool> IsBitmap = new(Noctis.Converters.IconKeyToGeometryConverter.HasKey);
+
+    /// <summary>The inverse: the key names a StreamGeometry drawn with a PathIcon (sidebar + rail).</summary>
+    public static readonly FuncValueConverter<string?, bool> IsGeometry = new(k => !Noctis.Converters.IconKeyToGeometryConverter.HasKey(k));
 
     public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
     {

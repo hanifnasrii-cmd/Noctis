@@ -176,13 +176,13 @@ public sealed class ServerUserStore
     private static string ValidateName(string name)
     {
         name = (name ?? "").Trim();
-        if (name.Length is < 1 or > 64) throw new ArgumentException("User name must be 1–64 characters.");
+        if (name.Length is < 1 or > 64) throw new ArgumentException("Invalid user name or password.");
         if (name.Any(c => char.IsControl(c) || c is '/' or '\\' or ':' or '?' or '&' or '=')) throw new ArgumentException("User name contains characters that are not allowed.");
         return name;
     }
 
     private static void ValidatePassword(string password)
     {
-        if (password is null || password.Length < 8) throw new ArgumentException("Password must be at least 8 characters.");
+        if (password is null || password.Length < 8) throw new ArgumentException("Invalid user name or password.");
     }
 }
