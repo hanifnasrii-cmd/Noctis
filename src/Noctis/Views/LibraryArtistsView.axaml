@@ -99,9 +99,9 @@
                                                         ClipToBounds="True"
                                                         HorizontalAlignment="Center">
                                                     <Panel>
-                                                        <PathIcon Data="{StaticResource ArtistsIcon}"
-                                                                  Width="44"
-                                                                  Height="44"
+                                                        <!-- Path shapes, not PathIcon: PathIcon is a templated control and the two per tile
+                                                             cost ~3.6ms of every realized row of seven (09-12 scroll-hitch probe). -->
+                                                        <Path Data="{StaticResource ArtistsIcon}" Stretch="Uniform" Fill="{DynamicResource SystemControlForegroundBaseHighBrush}" Width="44" Height="44"
                                                                   HorizontalAlignment="Center"
                                                                   VerticalAlignment="Center"
                                                                   Opacity="0.35" />
@@ -121,9 +121,7 @@
                                                         HorizontalAlignment="Right" VerticalAlignment="Bottom"
                                                         Margin="0,0,2,2"
                                                         IsVisible="{Binding IsFavorite}">
-                                                    <PathIcon Data="{StaticResource StarIcon}"
-                                                              Width="15" Height="15"
-                                                              Foreground="{DynamicResource AccentColorBrush}"
+                                                    <Path Data="{StaticResource StarIcon}" Stretch="Uniform" Width="15" Height="15" Fill="{DynamicResource AccentColorBrush}"
                                                               HorizontalAlignment="Center"
                                                               VerticalAlignment="Center" />
                                                 </Border>

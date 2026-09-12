@@ -186,9 +186,10 @@
                                                                           RenderOptions.BitmapInterpolationMode="HighQuality"
                                                                           IsVisible="{Binding ArtworkPath, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
                                                     <!-- Heart overlay -->
-                                                    <PathIcon Data="{StaticResource HeartFillIcon}"
+                                                    <!-- Path, not PathIcon: templated icons cost ~0.25ms each per realized tile (09-12). -->
+                                                    <Path Data="{StaticResource HeartFillIcon}" Stretch="Uniform"
                                                              Width="22" Height="22"
-                                                             Foreground="#E74856"
+                                                             Fill="#E74856"
                                                              HorizontalAlignment="Right"
                                                              VerticalAlignment="Bottom"
                                                              Margin="0,0,8,8" />

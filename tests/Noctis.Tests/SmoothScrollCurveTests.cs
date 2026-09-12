@@ -43,7 +43,7 @@ public class SmoothScrollCurveTests
                 target += Step;
 
             var previous = position;
-            position = SmoothScrollBehavior.Advance(position, target, dt, SettleMs, ref velocity);
+            position = SmoothScrollBehavior.Advance(position, target, dt, SettleMs, Step, ref velocity);
             speeds.Add((position - previous) / dt);
         }
 
@@ -128,7 +128,7 @@ public class SmoothScrollCurveTests
 
         // One notch from rest, integrated for 500ms.
         for (var elapsed = 0.0; elapsed < 0.5 - 1e-9; elapsed += dt)
-            position = SmoothScrollBehavior.Advance(position, Step, dt, SettleMs, ref velocity);
+            position = SmoothScrollBehavior.Advance(position, Step, dt, SettleMs, Step, ref velocity);
 
         // Solved rather than Euler-stepped, so the frame rate must not change where it lands.
         Assert.Equal(219.66, position, precision: 2);
@@ -146,7 +146,7 @@ public class SmoothScrollCurveTests
         {
             if (i % 6 == 0 && i < 30)
                 target += Step;
-            position = SmoothScrollBehavior.Advance(position, target, dt, SettleMs, ref velocity);
+            position = SmoothScrollBehavior.Advance(position, target, dt, SettleMs, Step, ref velocity);
             peak = Math.Max(peak, position);
         }
 
@@ -164,7 +164,7 @@ public class SmoothScrollCurveTests
 
         for (var i = 0; i < 300; i++)
         {
-            position = SmoothScrollBehavior.Advance(position, Step, dt, SettleMs, ref velocity);
+            position = SmoothScrollBehavior.Advance(position, Step, dt, SettleMs, Step, ref velocity);
             if (Math.Abs(Step - position) < 0.5 && Math.Abs(velocity) < 20)
             {
                 landedMs = (i + 1) * dt * 1000;
@@ -173,5 +173,91 @@ public class SmoothScrollCurveTests
         }
 
         Assert.InRange(landedMs, SettleMs * 0.8, SettleMs * 1.4);
+    }
+}
+
+/// <summary>
+/// A fast flick (many notches in a burst) has to read as the notches themselves, not as a
+/// coast. With fixed stiffness the spring settles in the same TIME whatever the distance, so a
+/// burst that ran the target far ahead kept sailing after the wheel stopped — the "loose
+/// automatic scroll" on the Artists grid (user, 09-12). The lag cap keeps the content within a
+/// notch or two of the wheel, and once the wheel stops it lands like a single notch would.
+/// </summary>
+public class SmoothScrollBurstTests
+{
+    private const double Step = 220.0;
+    private const double SettleMs = 380.0;
+
+    /// <summary>12 notches, one per frame at 60fps (a flick), then the wheel stops.</summary>
+    private static (double maxLag, double overshoot, double stopMsAfterLastNotch, double lagAtLastNotch)
+        Flick(bool capped)
+    {
+        var dt = 1.0 / 60.0;
+        var step = capped ? Step : double.PositiveInfinity;
+        double position = 0, velocity = 0, target = 0;
+        double maxLag = 0, peak = 0, lagAtLast = 0;
+        var stopMs = -1.0;
+        const int Notches = 12;
+
+        for (var i = 0; i < 240; i++)
+        {
+            if (i < Notches) target += Step;
+            position = SmoothScrollBehavior.Advance(position, target, dt, SettleMs, step, ref velocity);
+            var lag = target - position;
+            maxLag = Math.Max(maxLag, lag);
+            peak = Math.Max(peak, position);
+            if (i == Notches - 1) lagAtLast = lag;
+            if (i >= Notches && stopMs < 0 && Math.Abs(lag) < 0.5 && Math.Abs(velocity) < 20)
+                stopMs = (i - Notches + 1) * dt * 1000;
+        }
+
+        return (maxLag, peak - target, stopMs, lagAtLast);
+    }
+
+    [Fact]
+    public void FlickTracksTheWheel_AndStopsLikeASingleNotch()
+    {
+        var (maxLag, overshoot, stopMs, _) = Flick(capped: true);
+
+        // Never more than a few notches behind the wheel while it is turning (this flick is the
+        // extreme, one notch per frame; ordinary flicks sit nearer 1.5).
+        Assert.True(maxLag <= 2.8 * Step, $"content fell {maxLag / Step:F2} notches behind the wheel");
+        // The stop is the ordinary single-notch settle, not a long coast.
+        Assert.InRange(stopMs, 0, SettleMs * 1.4);
+        Assert.True(overshoot < 0.5, $"overshot by {overshoot:F2}px");
+    }
+
+    [Fact]
+    public void LagCapIsWhatFixesIt_TheUncappedSpringCoasts()
+    {
+        var (maxLag, _, _, lagAtLast) = Flick(capped: false);
+
+        // Without the cap the same flick leaves most of the travel still to come after the
+        // wheel has stopped — that remaining distance IS the coast.
+        Assert.True(lagAtLast > 5 * Step,
+            $"uncapped lag at the last notch is only {lagAtLast / Step:F2} notches; the burst test would not guard anything");
+        Assert.True(maxLag > 5 * Step);
+    }
+
+    [Fact]
+    public void VelocityStaysContinuous_AcrossTheCap()
+    {
+        // No frame may jump: the stiffness change must show up as acceleration, never as a
+        // discontinuity in speed (which is the choppiness the spring was introduced to fix).
+        var dt = 1.0 / 60.0;
+        double position = 0, velocity = 0, target = 0, previousSpeed = 0, worstJump = 0;
+
+        for (var i = 0; i < 240; i++)
+        {
+            if (i < 12) target += Step;
+            var previous = position;
+            position = SmoothScrollBehavior.Advance(position, target, dt, SettleMs, Step, ref velocity);
+            var speed = (position - previous) / dt;
+            if (i > 0) worstJump = Math.Max(worstJump, Math.Abs(speed - previousSpeed));
+            previousSpeed = speed;
+        }
+
+        // Per-frame speed change stays well under the peak speed itself (~Step per frame).
+        Assert.True(worstJump < Step * 60 * 0.5, $"speed jumped {worstJump:F0} px/s in one frame");
     }
 }

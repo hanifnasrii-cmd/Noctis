@@ -52,11 +52,19 @@ public class ComboBoxDropDownAnimatorTests
             // In flight: the posted rest state is being transitioned to, not snapped.
             Assert.True(body.Opacity < 1, $"opacity {body.Opacity} should still be fading in");
 
-            // The 180ms transition lands on the resting values.
+            // The open lands on the resting values. The fade is timed to finish a touch before
+            // the transform (so no hard edge shows mid-motion), so wait for both.
             Tick(() => body.Opacity >= 1, TimeSpan.FromSeconds(2));
             Assert.Equal(1, body.Opacity);
-            var rest = Avalonia.Media.Transformation.TransformOperations.Parse("translateY(0px)");
-            Assert.Equal(rest.Value, ((Avalonia.Media.Transformation.TransformOperations)body.RenderTransform!).Value);
+            var rest = Avalonia.Media.Transformation.TransformOperations.Parse("scale(1) translateY(0px)");
+            static bool AtRest(Control c, Avalonia.Matrix target)
+            {
+                var m = ((Avalonia.Media.Transformation.TransformOperations)c.RenderTransform!).Value;
+                return Math.Abs(m.M11 - target.M11) < 1e-3 && Math.Abs(m.M22 - target.M22) < 1e-3
+                    && Math.Abs(m.M31 - target.M31) < 1e-3 && Math.Abs(m.M32 - target.M32) < 1e-3;
+            }
+            Tick(() => AtRest(body, rest.Value), TimeSpan.FromSeconds(2));
+            Assert.True(AtRest(body, rest.Value), $"transform still in flight: {((Avalonia.Media.Transformation.TransformOperations)body.RenderTransform!).Value}");
 
             // Closing via the box (Escape / item click) is held open for the fade-out.
             box.IsDropDownOpen = false;

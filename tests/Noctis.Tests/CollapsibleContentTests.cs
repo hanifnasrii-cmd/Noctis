@@ -230,6 +230,126 @@ public class CollapsibleContentTests
     }
 
     /// <summary>
+    /// The Glide reveal is opt-in per instance. Only the Settings crossfade-duration block
+    /// asks for it; every other collapsible must keep the exact fold it had, so the default
+    /// stays Fold and its cubic curve.
+    /// </summary>
+    [AvaloniaFact]
+    public void Glide_IsOptIn_AndTheDefaultFoldIsUnchanged()
+    {
+        var host = BuildHost();
+        Assert.Equal(CollapsibleMotion.Fold, host.Motion);
+
+        host.Reveal = 0.5;
+        // Fold ties opacity and slide linearly to the height.
+        Assert.Equal(0.5, host.Opacity, 3);
+    }
+
+    /// <summary>
+    /// Mid-reveal is where the two motions actually differ, so assert there rather than at
+    /// the ends, which both land on the same values either way.
+    /// </summary>
+    [AvaloniaFact]
+    public void Glide_LandsOpacityAndSlideAheadOfTheHeight()
+    {
+        var host = BuildHost();
+        host.Motion = CollapsibleMotion.Glide;
+        host.Lift = 10;
+
+        host.Reveal = 0.5;
+        Layout(host);
+
+        // Height is still the plain fraction of the child — the clip is unchanged.
+        Assert.Equal(ChildHeight / 2, host.DesiredSize.Height, 3);
+
+        // Opacity is well past the height it would track under Fold: the body is readable
+        // for most of the reveal instead of washing in at half strength.
+        Assert.True(host.Opacity > 0.9,
+            $"glide opacity at half-open was {host.Opacity:F2}; it should be nearly landed");
+
+        // The slide has all but settled while the panel is still growing.
+        var lift = Assert.IsType<Avalonia.Media.TranslateTransform>(host.RenderTransform);
+        Assert.True(lift.Y > -3.0 && lift.Y < 0,
+            $"glide slide at half-open was {lift.Y:F2}px; it should be settling, not halfway");
+
+        // Both ends still rest exactly where the fold does.
+        host.Reveal = 1;
+        Assert.Equal(1, host.Opacity, 3);
+        Assert.Equal(0, lift.Y, 3);
+
+        host.Reveal = 0;
+        Assert.Equal(0, host.Opacity, 3);
+        Assert.Equal(-10, lift.Y, 3);
+    }
+
+    /// <summary>
+    /// Glide retimes the one transition rather than adding a second, and retimes it per
+    /// direction: the open is the longer, decelerating curve and the close is shorter and
+    /// eases in and out. The curve is swapped BEFORE the target is written, so the toggle
+    /// starts on the new curve rather than re-curving a running fold.
+    /// </summary>
+    [AvaloniaFact]
+    public void Glide_RetimesTheSingleTransition_PerDirection()
+    {
+        var host = BuildHost();
+        host.Motion = CollapsibleMotion.Glide;
+        var window = new Window { Width = 400, Height = 400, Content = host };
+        window.Show();
+        for (var i = 0; i < 5; i++) { Dispatcher.UIThread.RunJobs(); AvaloniaHeadlessPlatform.ForceRenderTimerTick(); }
+
+        var transition = Assert.IsType<DoubleTransition>(Assert.Single(host.Transitions!));
+
+        host.IsOpen = false;
+        var close = Assert.IsType<Noctis.Helpers.CubicBezierEase>(transition.Easing);
+        var closeDuration = transition.Duration;
+        // Ease-in-out: symmetric about the midpoint, so it neither snaps shut nor drags.
+        Assert.Equal(0.5, close.Ease(0.5), 2);
+        Assert.True(close.Ease(0.15) < 0.15, "the close should ease in, not start at speed");
+
+        host.IsOpen = true;
+        var open = Assert.IsType<Noctis.Helpers.CubicBezierEase>(transition.Easing);
+        Assert.NotSame(close, open);
+        Assert.True(transition.Duration > closeDuration,
+            $"open {transition.Duration.TotalMilliseconds}ms should outlast close {closeDuration.TotalMilliseconds}ms");
+        // Decelerating: most of the travel is done by the midpoint and it never overshoots.
+        Assert.True(open.Ease(0.5) > 0.85, $"open at half time was {open.Ease(0.5):F2}; it should be nearly landed");
+        foreach (var t in new[] { 0.7, 0.85, 0.95 })
+            Assert.InRange(open.Ease(t), open.Ease(t - 0.1), 1.0);
+    }
+
+    /// <summary>
+    /// End-to-end on the real path: the glide has to reach each rest value and stay there,
+    /// same as the fold does.
+    /// </summary>
+    [AvaloniaFact]
+    public void Glide_SettlesAtEachEnd_AndStaysThere()
+    {
+        var host = BuildHost();
+        host.Motion = CollapsibleMotion.Glide;
+        host.Lift = 10;
+        var window = new Window { Width = 400, Height = 400, Content = host };
+        window.Show();
+        Pump(6);
+
+        host.IsOpen = false;
+        Pump(36);
+        Assert.Equal(0, host.Reveal, 2);
+        Assert.False(host.IsVisible);
+
+        Pump(20);
+        Assert.Equal(0, host.Reveal, 2);
+
+        host.IsOpen = true;
+        Pump(36);
+        Assert.Equal(1, host.Reveal, 2);
+        Assert.Equal(1, host.Opacity, 2);
+        Assert.True(host.IsVisible);
+
+        Pump(20);
+        Assert.Equal(1, host.Reveal, 2);
+    }
+
+    /// <summary>
     /// Transitions run off the wall clock, so ticks have to be spaced in real time or
     /// the animation sits at its start value forever.
     /// </summary>

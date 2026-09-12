@@ -41,9 +41,17 @@ namespace Noctis.Helpers;
 /// </remarks>
 public static class ComboBoxDropDownAnimator
 {
-    private static readonly TimeSpan Duration = TimeSpan.FromMilliseconds(180);
-    private static readonly TransformOperations Start = TransformOperations.Parse("translateY(-6px)");
-    private static readonly TransformOperations Rest = TransformOperations.Parse("translateY(0px)");
+    // Our own bezier, not Avalonia.SplineEasing: see CubicBezierEase for why.
+    // Open: a longer, decelerating settle (expo-style curve, no overshoot). Close: shorter,
+    // eases in so the list "lets go" before it fades. Scale is anchored at the top centre so
+    // the sheet grows out of the box instead of sliding in as a slab.
+    private static readonly TimeSpan OpenDuration = TimeSpan.FromMilliseconds(320);
+    private static readonly TimeSpan CloseDuration = TimeSpan.FromMilliseconds(220);
+    private static readonly Avalonia.Animation.Easings.Easing OpenEase = new CubicBezierEase(0.16, 1.0, 0.3, 1.0);
+    private static readonly Avalonia.Animation.Easings.Easing CloseEase = new CubicBezierEase(0.4, 0.0, 0.7, 0.4);
+    private static readonly TransformOperations Start = TransformOperations.Parse("scale(0.94) translateY(-4px)");
+    private static readonly TransformOperations Rest = TransformOperations.Parse("scale(1) translateY(0px)");
+    private static readonly TransformOperations End = TransformOperations.Parse("scale(0.97) translateY(-2px)");
     private static readonly ConditionalWeakTable<ComboBox, State> States = new();
     private static bool _installed;
 
@@ -171,23 +179,22 @@ public static class ComboBoxDropDownAnimator
     private static Popup? FindPopup(ComboBox box) =>
         box.GetVisualDescendants().OfType<Popup>().FirstOrDefault(p => p.Name == "PART_Popup");
 
-    private static void EnsureTransitions(Control body)
+    /// <summary>Open and close get their own curves, so the transition set is rebuilt per
+    /// phase. The fade lands a touch before the transform so the sheet never shows a hard
+    /// edge while it is still moving.</summary>
+    private static Transitions Build(TimeSpan duration, Avalonia.Animation.Easings.Easing ease) => new()
     {
-        body.Transitions ??= new Transitions
-        {
-            new DoubleTransition { Property = Visual.OpacityProperty, Duration = Duration, Easing = new CubicEaseOut() },
-            new TransformOperationsTransition { Property = Visual.RenderTransformProperty, Duration = Duration, Easing = new CubicEaseOut() },
-        };
-    }
+        new DoubleTransition { Property = Visual.OpacityProperty, Duration = duration * 0.85, Easing = ease },
+        new TransformOperationsTransition { Property = Visual.RenderTransformProperty, Duration = duration, Easing = ease },
+    };
 
     private static void AnimateIn(Control body)
     {
-        var transitions = body.Transitions;
         body.Transitions = null;
+        body.RenderTransformOrigin = new RelativePoint(0.5, 0, RelativeUnit.Relative);
         body.Opacity = 0;
         body.RenderTransform = Start;
-        body.Transitions = transitions;
-        EnsureTransitions(body);
+        body.Transitions = Build(OpenDuration, OpenEase);
 
         Dispatcher.UIThread.Post(() =>
         {
@@ -198,11 +205,11 @@ public static class ComboBoxDropDownAnimator
 
     private static void AnimateOut(Control body)
     {
-        EnsureTransitions(body);
+        body.Transitions = Build(CloseDuration, CloseEase);
         Dispatcher.UIThread.Post(() =>
         {
             body.Opacity = 0;
-            body.RenderTransform = Start;
+            body.RenderTransform = End;
         }, DispatcherPriority.Render);
     }
 }
