@@ -448,16 +448,22 @@
 
                 <!-- Carousel area -->
                 <Grid HorizontalAlignment="Stretch"
-                      Height="460"
+                      Height="490"
                       Margin="0,0"
                       IsVisible="{Binding !IsCollageMode}">
 
-                    <!-- 15-item carousel: centre + 7 each side. Every slot is a CoverFlowCard
-                         (glass frame, square cover, frosted title/artist caption INSIDE the
-                         card). Side cards tilt toward the centre with a real 3D rotate
-                         (Rotate3DTransform, perspective Depth), then scale and slide out;
-                         the centre card faces the viewer, larger and unwashed. The slot
-                         geometry is fixed — a skip swaps the CONTENT one slot over, nothing
+                    <!-- 15-item carousel: centre + 7 each side, spaced like the iOS-style
+                         reference (the +-1 card shows about half the centre width, +-2 a
+                         third, then a gentle taper so the row spans the page). Every slot
+                         is a CoverFlowCard (glass frame, square cover, title/artist caption
+                         INSIDE the card), all the same 360px size so the caption type
+                         matches across cards. Side cards tilt toward the centre with a real
+                         3D rotate (Rotate3DTransform, perspective Depth), then scale and
+                         slide out so each peeks from behind its inner neighbour; the centre
+                         card faces the viewer, unwashed. Slabs frost live under Liquid
+                         Glass on the five inner cards only (CardBlurRadius 0 = tint-only
+                         on the rest: each blur is a per-frame surface snapshot). The slot
+                         geometry is fixed: a skip swaps the CONTENT one slot over, nothing
                          animates (each Cover Flow step is a real track skip). -->
                     <Grid HorizontalAlignment="Center" VerticalAlignment="Center"
                           ClipToBounds="False">
@@ -466,119 +472,133 @@
 
                         <!-- Position -7 -->
                         <ctrl:CoverFlowCard Classes="flow-card side"
+                                            ArtworkSize="360"
+                                            CardBlurRadius="0"
                                             ArtworkPath="{Binding Prev7ArtworkPath}"
                                             Title="{Binding Prev7Track.Title, FallbackValue=''}"
                                             Artist="{Binding Prev7Track.Artist, FallbackValue=''}"
-                                            Dim="0.54"
+                                            Dim="0.46"
                                             IsVisible="{Binding Prev7ArtworkPath, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
                                             ZIndex="1">
                             <ctrl:CoverFlowCard.RenderTransform>
                                 <TransformGroup>
-                                    <Rotate3DTransform AngleY="-34" Depth="800" />
-                                    <ScaleTransform ScaleX="0.56" ScaleY="0.56" />
-                                    <TranslateTransform X="-690" />
+                                    <Rotate3DTransform AngleY="-40" Depth="1800" />
+                                    <ScaleTransform ScaleX="0.53" ScaleY="0.53" />
+                                    <TranslateTransform X="-755" />
                                 </TransformGroup>
                             </ctrl:CoverFlowCard.RenderTransform>
                         </ctrl:CoverFlowCard>
 
                         <!-- Position -6 -->
                         <ctrl:CoverFlowCard Classes="flow-card side"
+                                            ArtworkSize="360"
+                                            CardBlurRadius="0"
                                             ArtworkPath="{Binding Prev6ArtworkPath}"
                                             Title="{Binding Prev6Track.Title, FallbackValue=''}"
                                             Artist="{Binding Prev6Track.Artist, FallbackValue=''}"
-                                            Dim="0.46"
+                                            Dim="0.38"
                                             IsVisible="{Binding Prev6ArtworkPath, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
                                             ZIndex="2">
                             <ctrl:CoverFlowCard.RenderTransform>
                                 <TransformGroup>
-                                    <Rotate3DTransform AngleY="-34" Depth="800" />
-                                    <ScaleTransform ScaleX="0.6" ScaleY="0.6" />
-                                    <TranslateTransform X="-635" />
+                                    <Rotate3DTransform AngleY="-40" Depth="1800" />
+                                    <ScaleTransform ScaleX="0.57" ScaleY="0.57" />
+                                    <TranslateTransform X="-699" />
                                 </TransformGroup>
                             </ctrl:CoverFlowCard.RenderTransform>
                         </ctrl:CoverFlowCard>
 
                         <!-- Position -5 -->
                         <ctrl:CoverFlowCard Classes="flow-card side"
+                                            ArtworkSize="360"
+                                            CardBlurRadius="0"
                                             ArtworkPath="{Binding Prev5ArtworkPath}"
                                             Title="{Binding Prev5Track.Title, FallbackValue=''}"
                                             Artist="{Binding Prev5Track.Artist, FallbackValue=''}"
-                                            Dim="0.38"
+                                            Dim="0.3"
                                             IsVisible="{Binding Prev5ArtworkPath, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
                                             ZIndex="3">
                             <ctrl:CoverFlowCard.RenderTransform>
                                 <TransformGroup>
-                                    <Rotate3DTransform AngleY="-34" Depth="800" />
-                                    <ScaleTransform ScaleX="0.64" ScaleY="0.64" />
-                                    <TranslateTransform X="-575" />
+                                    <Rotate3DTransform AngleY="-40" Depth="1800" />
+                                    <ScaleTransform ScaleX="0.61" ScaleY="0.61" />
+                                    <TranslateTransform X="-636" />
                                 </TransformGroup>
                             </ctrl:CoverFlowCard.RenderTransform>
                         </ctrl:CoverFlowCard>
 
                         <!-- Position -4 -->
                         <ctrl:CoverFlowCard Classes="flow-card side"
+                                            ArtworkSize="360"
+                                            CardBlurRadius="0"
                                             ArtworkPath="{Binding OffPreviousArtworkPath}"
                                             Title="{Binding OffPreviousTrack.Title, FallbackValue=''}"
                                             Artist="{Binding OffPreviousTrack.Artist, FallbackValue=''}"
-                                            Dim="0.3"
+                                            Dim="0.22"
                                             IsVisible="{Binding OffPreviousArtworkPath, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
                                             ZIndex="4">
                             <ctrl:CoverFlowCard.RenderTransform>
                                 <TransformGroup>
-                                    <Rotate3DTransform AngleY="-34" Depth="800" />
-                                    <ScaleTransform ScaleX="0.69" ScaleY="0.69" />
-                                    <TranslateTransform X="-510" />
+                                    <Rotate3DTransform AngleY="-40" Depth="1800" />
+                                    <ScaleTransform ScaleX="0.66" ScaleY="0.66" />
+                                    <TranslateTransform X="-564" />
                                 </TransformGroup>
                             </ctrl:CoverFlowCard.RenderTransform>
                         </ctrl:CoverFlowCard>
 
                         <!-- Position -3 -->
                         <ctrl:CoverFlowCard Classes="flow-card side"
+                                            ArtworkSize="360"
+                                            CardBlurRadius="0"
                                             ArtworkPath="{Binding EdgePreviousArtworkPath}"
                                             Title="{Binding EdgePreviousTrack.Title, FallbackValue=''}"
                                             Artist="{Binding EdgePreviousTrack.Artist, FallbackValue=''}"
-                                            Dim="0.22"
+                                            Dim="0.14"
                                             IsVisible="{Binding EdgePreviousArtworkPath, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
                                             ZIndex="5">
                             <ctrl:CoverFlowCard.RenderTransform>
                                 <TransformGroup>
-                                    <Rotate3DTransform AngleY="-34" Depth="800" />
-                                    <ScaleTransform ScaleX="0.74" ScaleY="0.74" />
-                                    <TranslateTransform X="-440" />
+                                    <Rotate3DTransform AngleY="-40" Depth="1800" />
+                                    <ScaleTransform ScaleX="0.71" ScaleY="0.71" />
+                                    <TranslateTransform X="-481" />
                                 </TransformGroup>
                             </ctrl:CoverFlowCard.RenderTransform>
                         </ctrl:CoverFlowCard>
 
                         <!-- Position -2 -->
                         <ctrl:CoverFlowCard Classes="flow-card side"
+                                            ArtworkSize="360"
+                                            CardBlurRadius="18"
                                             ArtworkPath="{Binding FarPreviousArtworkPath}"
                                             Title="{Binding FarPreviousTrack.Title, FallbackValue=''}"
                                             Artist="{Binding FarPreviousTrack.Artist, FallbackValue=''}"
-                                            Dim="0.14"
+                                            Dim="0.06"
                                             IsVisible="{Binding FarPreviousArtworkPath, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
                                             ZIndex="6">
                             <ctrl:CoverFlowCard.RenderTransform>
                                 <TransformGroup>
-                                    <Rotate3DTransform AngleY="-34" Depth="800" />
-                                    <ScaleTransform ScaleX="0.8" ScaleY="0.8" />
-                                    <TranslateTransform X="-362" />
+                                    <Rotate3DTransform AngleY="-40" Depth="1800" />
+                                    <ScaleTransform ScaleX="0.77" ScaleY="0.77" />
+                                    <TranslateTransform X="-383" />
                                 </TransformGroup>
                             </ctrl:CoverFlowCard.RenderTransform>
                         </ctrl:CoverFlowCard>
 
                         <!-- Position -1 -->
                         <ctrl:CoverFlowCard Classes="flow-card side"
+                                            ArtworkSize="360"
+                                            CardBlurRadius="18"
                                             ArtworkPath="{Binding PreviousArtworkPath}"
                                             Title="{Binding PreviousTrack.Title, FallbackValue=''}"
                                             Artist="{Binding PreviousTrack.Artist, FallbackValue=''}"
-                                            Dim="0.06"
+                                            Dim="0"
                                             IsVisible="{Binding PreviousArtworkPath, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
                                             ZIndex="7">
                             <ctrl:CoverFlowCard.RenderTransform>
                                 <TransformGroup>
-                                    <Rotate3DTransform AngleY="-34" Depth="800" />
-                                    <ScaleTransform ScaleX="0.88" ScaleY="0.88" />
-                                    <TranslateTransform X="-278" />
+                                    <Rotate3DTransform AngleY="-40" Depth="1800" />
+                                    <ScaleTransform ScaleX="0.84" ScaleY="0.84" />
+                                    <TranslateTransform X="-254" />
                                 </TransformGroup>
                             </ctrl:CoverFlowCard.RenderTransform>
                         </ctrl:CoverFlowCard>
@@ -588,7 +608,6 @@
                                             Classes="flow-card centre"
                                             ArtworkSize="360"
                                             DecodeWidth="768"
-                                            CardCornerRadius="20"
                                             ArtworkPath="{Binding CenterArtworkPath}"
                                             Title="{Binding CenterTitle}"
                                             Artist="{Binding CenterArtist}"
@@ -614,119 +633,133 @@
 
                         <!-- Position +1 -->
                         <ctrl:CoverFlowCard Classes="flow-card side"
+                                            ArtworkSize="360"
+                                            CardBlurRadius="18"
                                             ArtworkPath="{Binding NextArtworkPath}"
                                             Title="{Binding NextTrack.Title, FallbackValue=''}"
                                             Artist="{Binding NextTrack.Artist, FallbackValue=''}"
-                                            Dim="0.06"
+                                            Dim="0"
                                             IsVisible="{Binding NextArtworkPath, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
                                             ZIndex="7">
                             <ctrl:CoverFlowCard.RenderTransform>
                                 <TransformGroup>
-                                    <Rotate3DTransform AngleY="34" Depth="800" />
-                                    <ScaleTransform ScaleX="0.88" ScaleY="0.88" />
-                                    <TranslateTransform X="278" />
+                                    <Rotate3DTransform AngleY="40" Depth="1800" />
+                                    <ScaleTransform ScaleX="0.84" ScaleY="0.84" />
+                                    <TranslateTransform X="254" />
                                 </TransformGroup>
                             </ctrl:CoverFlowCard.RenderTransform>
                         </ctrl:CoverFlowCard>
 
                         <!-- Position +2 -->
                         <ctrl:CoverFlowCard Classes="flow-card side"
+                                            ArtworkSize="360"
+                                            CardBlurRadius="18"
                                             ArtworkPath="{Binding FarNextArtworkPath}"
                                             Title="{Binding FarNextTrack.Title, FallbackValue=''}"
                                             Artist="{Binding FarNextTrack.Artist, FallbackValue=''}"
-                                            Dim="0.14"
+                                            Dim="0.06"
                                             IsVisible="{Binding FarNextArtworkPath, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
                                             ZIndex="6">
                             <ctrl:CoverFlowCard.RenderTransform>
                                 <TransformGroup>
-                                    <Rotate3DTransform AngleY="34" Depth="800" />
-                                    <ScaleTransform ScaleX="0.8" ScaleY="0.8" />
-                                    <TranslateTransform X="362" />
+                                    <Rotate3DTransform AngleY="40" Depth="1800" />
+                                    <ScaleTransform ScaleX="0.77" ScaleY="0.77" />
+                                    <TranslateTransform X="383" />
                                 </TransformGroup>
                             </ctrl:CoverFlowCard.RenderTransform>
                         </ctrl:CoverFlowCard>
 
                         <!-- Position +3 -->
                         <ctrl:CoverFlowCard Classes="flow-card side"
+                                            ArtworkSize="360"
+                                            CardBlurRadius="0"
                                             ArtworkPath="{Binding EdgeNextArtworkPath}"
                                             Title="{Binding EdgeNextTrack.Title, FallbackValue=''}"
                                             Artist="{Binding EdgeNextTrack.Artist, FallbackValue=''}"
-                                            Dim="0.22"
+                                            Dim="0.14"
                                             IsVisible="{Binding EdgeNextArtworkPath, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
                                             ZIndex="5">
                             <ctrl:CoverFlowCard.RenderTransform>
                                 <TransformGroup>
-                                    <Rotate3DTransform AngleY="34" Depth="800" />
-                                    <ScaleTransform ScaleX="0.74" ScaleY="0.74" />
-                                    <TranslateTransform X="440" />
+                                    <Rotate3DTransform AngleY="40" Depth="1800" />
+                                    <ScaleTransform ScaleX="0.71" ScaleY="0.71" />
+                                    <TranslateTransform X="481" />
                                 </TransformGroup>
                             </ctrl:CoverFlowCard.RenderTransform>
                         </ctrl:CoverFlowCard>
 
                         <!-- Position +4 -->
                         <ctrl:CoverFlowCard Classes="flow-card side"
+                                            ArtworkSize="360"
+                                            CardBlurRadius="0"
                                             ArtworkPath="{Binding OffNextArtworkPath}"
                                             Title="{Binding OffNextTrack.Title, FallbackValue=''}"
                                             Artist="{Binding OffNextTrack.Artist, FallbackValue=''}"
-                                            Dim="0.3"
+                                            Dim="0.22"
                                             IsVisible="{Binding OffNextArtworkPath, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
                                             ZIndex="4">
                             <ctrl:CoverFlowCard.RenderTransform>
                                 <TransformGroup>
-                                    <Rotate3DTransform AngleY="34" Depth="800" />
-                                    <ScaleTransform ScaleX="0.69" ScaleY="0.69" />
-                                    <TranslateTransform X="510" />
+                                    <Rotate3DTransform AngleY="40" Depth="1800" />
+                                    <ScaleTransform ScaleX="0.66" ScaleY="0.66" />
+                                    <TranslateTransform X="564" />
                                 </TransformGroup>
                             </ctrl:CoverFlowCard.RenderTransform>
                         </ctrl:CoverFlowCard>
 
                         <!-- Position +5 -->
                         <ctrl:CoverFlowCard Classes="flow-card side"
+                                            ArtworkSize="360"
+                                            CardBlurRadius="0"
                                             ArtworkPath="{Binding Next5ArtworkPath}"
                                             Title="{Binding Next5Track.Title, FallbackValue=''}"
                                             Artist="{Binding Next5Track.Artist, FallbackValue=''}"
-                                            Dim="0.38"
+                                            Dim="0.3"
                                             IsVisible="{Binding Next5ArtworkPath, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
                                             ZIndex="3">
                             <ctrl:CoverFlowCard.RenderTransform>
                                 <TransformGroup>
-                                    <Rotate3DTransform AngleY="34" Depth="800" />
-                                    <ScaleTransform ScaleX="0.64" ScaleY="0.64" />
-                                    <TranslateTransform X="575" />
+                                    <Rotate3DTransform AngleY="40" Depth="1800" />
+                                    <ScaleTransform ScaleX="0.61" ScaleY="0.61" />
+                                    <TranslateTransform X="636" />
                                 </TransformGroup>
                             </ctrl:CoverFlowCard.RenderTransform>
                         </ctrl:CoverFlowCard>
 
                         <!-- Position +6 -->
                         <ctrl:CoverFlowCard Classes="flow-card side"
+                                            ArtworkSize="360"
+                                            CardBlurRadius="0"
                                             ArtworkPath="{Binding Next6ArtworkPath}"
                                             Title="{Binding Next6Track.Title, FallbackValue=''}"
                                             Artist="{Binding Next6Track.Artist, FallbackValue=''}"
-                                            Dim="0.46"
+                                            Dim="0.38"
                                             IsVisible="{Binding Next6ArtworkPath, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
                                             ZIndex="2">
                             <ctrl:CoverFlowCard.RenderTransform>
                                 <TransformGroup>
-                                    <Rotate3DTransform AngleY="34" Depth="800" />
-                                    <ScaleTransform ScaleX="0.6" ScaleY="0.6" />
-                                    <TranslateTransform X="635" />
+                                    <Rotate3DTransform AngleY="40" Depth="1800" />
+                                    <ScaleTransform ScaleX="0.57" ScaleY="0.57" />
+                                    <TranslateTransform X="699" />
                                 </TransformGroup>
                             </ctrl:CoverFlowCard.RenderTransform>
                         </ctrl:CoverFlowCard>
 
                         <!-- Position +7 -->
                         <ctrl:CoverFlowCard Classes="flow-card side"
+                                            ArtworkSize="360"
+                                            CardBlurRadius="0"
                                             ArtworkPath="{Binding Next7ArtworkPath}"
                                             Title="{Binding Next7Track.Title, FallbackValue=''}"
                                             Artist="{Binding Next7Track.Artist, FallbackValue=''}"
-                                            Dim="0.54"
+                                            Dim="0.46"
                                             IsVisible="{Binding Next7ArtworkPath, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
                                             ZIndex="1">
                             <ctrl:CoverFlowCard.RenderTransform>
                                 <TransformGroup>
-                                    <Rotate3DTransform AngleY="34" Depth="800" />
-                                    <ScaleTransform ScaleX="0.56" ScaleY="0.56" />
-                                    <TranslateTransform X="690" />
+                                    <Rotate3DTransform AngleY="40" Depth="1800" />
+                                    <ScaleTransform ScaleX="0.53" ScaleY="0.53" />
+                                    <TranslateTransform X="755" />
                                 </TransformGroup>
                             </ctrl:CoverFlowCard.RenderTransform>
                         </ctrl:CoverFlowCard>

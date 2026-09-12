@@ -50,7 +50,10 @@ public class GlassPanel : Decorator
     public static readonly StyledProperty<double?> GlassTintOpacityProperty =
         AvaloniaProperty.Register<GlassPanel, double?>(nameof(GlassTintOpacity));
 
-    /// <summary>Blur radius in logical pixels; scaled to device pixels at render time.</summary>
+    /// <summary>Blur radius in logical pixels; scaled to device pixels at render time.
+    /// 0 (or less) skips the backdrop snapshot entirely: the panel is then a plain
+    /// translucent tint over whatever is beneath — no per-frame surface copy, so cheap
+    /// enough for many small hosts (the far Cover Flow cards).</summary>
     public static readonly StyledProperty<double> BlurRadiusProperty =
         AvaloniaProperty.Register<GlassPanel, double>(nameof(BlurRadius), 18);
 
@@ -116,7 +119,7 @@ public class GlassPanel : Decorator
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
         base.OnPropertyChanged(change);
-        if (change.Property == UseAppGlassProperty || change.Property == IsGlassActiveProperty)
+        if (change.Property == UseAppGlassProperty || change.Property == IsGlassActiveProperty || change.Property == BlurRadiusProperty)
             EnsurePump();
     }
 
@@ -130,7 +133,9 @@ public class GlassPanel : Decorator
     /// </summary>
     private void EnsurePump()
     {
-        if (_pumping || !_attached || !EffectiveGlassActive) return;
+        // Tint-only panels (BlurRadius 0) never snapshot, so a partial redraw cannot
+        // double-frost them: no pump needed.
+        if (_pumping || !_attached || !EffectiveGlassActive || BlurRadius <= 0) return;
         if (TopLevel.GetTopLevel(this) is not { } top) return;
         _pumping = true;
         top.RequestAnimationFrame(OnFrame);
@@ -138,7 +143,7 @@ public class GlassPanel : Decorator
 
     private void OnFrame(TimeSpan _)
     {
-        if (!_attached || !EffectiveGlassActive || TopLevel.GetTopLevel(this) is not { } top)
+        if (!_attached || !EffectiveGlassActive || BlurRadius <= 0 || TopLevel.GetTopLevel(this) is not { } top)
         {
             _pumping = false;
             InvalidateVisual();
@@ -176,7 +181,8 @@ public class GlassPanel : Decorator
         }
 
         // The fade is folded into every layer here rather than applied as Opacity: see Fade.
-        context.Custom(new GlassBackdropOp(rect, CornerRadius, BlurRadius, fade));
+        if (BlurRadius > 0)
+            context.Custom(new GlassBackdropOp(rect, CornerRadius, BlurRadius, fade));
 
         var (tint, opacity) = ResolveTint();
         opacity *= fade;
@@ -209,6 +215,19 @@ public static class GlassBlur
     /// </summary>
     public static bool Draw(SKCanvas canvas, SKSurface surface, SKRect deviceRect, SKRoundRect clip, float sigma, float alpha = 1f)
     {
+        using var path = new SKPath();
+        path.AddRoundRect(clip);
+        return Draw(canvas, surface, deviceRect, path, sigma, alpha);
+    }
+
+    /// <summary>
+    /// Same as the rounded-rect overload, clipping to an arbitrary device-space
+    /// <paramref name="clip"/> path — the host's rounded rect run through its full render
+    /// matrix, so a panel under a rotate/perspective transform (a tilted Cover Flow card)
+    /// frosts exactly its own tilted outline instead of an axis-aligned box around it.
+    /// </summary>
+    public static bool Draw(SKCanvas canvas, SKSurface surface, SKRect deviceRect, SKPath clip, float sigma, float alpha = 1f)
+    {
         sigma = Math.Clamp(sigma, 0.5f, MaxSigma);
         alpha = Math.Clamp(alpha, 0f, 1f);
         if (alpha <= 0f) return true;
@@ -224,7 +243,7 @@ public static class GlassBlur
 
         canvas.Save();
         canvas.SetMatrix(SKMatrix.Identity);
-        canvas.ClipRoundRect(clip, SKClipOperation.Intersect, antialias: true);
+        canvas.ClipPath(clip, SKClipOperation.Intersect, antialias: true);
         using var filter = SKImageFilter.CreateBlur(sigma, sigma, SKShaderTileMode.Clamp);
         using var paint = new SKPaint
         {
@@ -268,19 +287,25 @@ internal sealed class GlassBackdropOp : ICustomDrawOperation
         // No surface (rendering into an intermediate layer): the tint alone carries the look.
         if (surface is null) return;
 
+        // Build the rounded rect in LOCAL space and push it through the full matrix
+        // (DPI, scale, and any rotate/perspective the host sits under) so the clip is
+        // the panel's true outline on screen; the blur source is that path's bounds.
         var m = canvas.TotalMatrix;
-        var dev = m.MapRect(new SKRect((float)Bounds.X, (float)Bounds.Y, (float)Bounds.Right, (float)Bounds.Bottom));
-        var scale = Math.Abs(m.ScaleX) > 0.01f ? Math.Abs(m.ScaleX) : 1f;
-
-        var rr = new SKRoundRect();
-        rr.SetRectRadii(dev, new[]
+        var local = new SKRoundRect();
+        local.SetRectRadii(new SKRect((float)Bounds.X, (float)Bounds.Y, (float)Bounds.Right, (float)Bounds.Bottom), new[]
         {
-            new SKPoint((float)_corners.TopLeft * scale, (float)_corners.TopLeft * scale),
-            new SKPoint((float)_corners.TopRight * scale, (float)_corners.TopRight * scale),
-            new SKPoint((float)_corners.BottomRight * scale, (float)_corners.BottomRight * scale),
-            new SKPoint((float)_corners.BottomLeft * scale, (float)_corners.BottomLeft * scale),
+            new SKPoint((float)_corners.TopLeft, (float)_corners.TopLeft),
+            new SKPoint((float)_corners.TopRight, (float)_corners.TopRight),
+            new SKPoint((float)_corners.BottomRight, (float)_corners.BottomRight),
+            new SKPoint((float)_corners.BottomLeft, (float)_corners.BottomLeft),
         });
+        using var path = new SKPath();
+        path.AddRoundRect(local);
+        path.Transform(m);
+        var dev = path.Bounds;
+        var scale = Math.Max(Math.Abs(m.ScaleX), Math.Abs(m.ScaleY));
+        if (scale < 0.01f) scale = 1f;
 
-        GlassBlur.Draw(canvas, surface, dev, rr, (float)(_blurRadius * scale), (float)_fade);
+        GlassBlur.Draw(canvas, surface, dev, path, (float)(_blurRadius * scale), (float)_fade);
     }
 }

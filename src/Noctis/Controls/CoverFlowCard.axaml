@@ -32,8 +32,15 @@
         </Style>
     </UserControl.Styles>
 
-    <!-- Shadow lives on an UNCLIPPED outer border (ClipToBounds would cut it); the inner
-         border clips the artwork/caption to the rounded glass frame and draws the light edge. -->
+    <!-- Three rings, each doing ONE job:
+         Shadow  - unclipped, carries the BoxShadow (ClipToBounds would cut it).
+         Frame   - draws the 2px light rim only; NOT clipped, so the rim's rounded
+                   corners render at full strength (a clipped stroke loses its corner
+                   arcs, worse still under the side cards' 3D tilt + scale).
+         Clip    - clips the slab at radius - rim, inside the rim.
+         Inside: ONE glass slab (CardGlass) under everything - the artwork sits inset on
+         it with its own rounded corners and the caption rests on the same surface, the
+         way the reference cards read as a single piece of frosted glass. -->
     <Border x:Name="Shadow"
             CornerRadius="{Binding #Root.CardCornerRadius}"
             BoxShadow="0 18 44 0 #8C000000"
@@ -41,14 +48,28 @@
             VerticalAlignment="Center">
         <Border x:Name="Frame"
                 CornerRadius="{Binding #Root.CardCornerRadius}"
-                ClipToBounds="True"
-                BorderThickness="1.5"
-                BorderBrush="#73FFFFFF"
-                Background="#33FFFFFF">
+                BorderThickness="2"
+                BorderBrush="#8CFFFFFF">
+          <Border x:Name="Clip"
+                  CornerRadius="{Binding #Root.InnerCornerRadius}"
+                  ClipToBounds="True">
             <Panel>
+                <!-- The slab. Liquid Glass OFF: an opaque grey fill (it must not be
+                     see-through then: the neighbouring cards pass behind the centre card
+                     and would show as sharp notches). ON: frosts and tints what is beneath. -->
+                <controls:GlassPanel x:Name="CardGlass"
+                                     Background="#FF343440"
+                                     GlassTint="#2E2E38"
+                                     GlassTintOpacity="{Binding #Root.CardTintOpacity}"
+                                     BlurRadius="{Binding #Root.CardBlurRadius}"
+                                     EdgeThickness="0" />
                 <Grid RowDefinitions="Auto,Auto">
-                    <!-- Artwork: square, edge-to-edge inside the frame -->
-                    <Panel Grid.Row="0" x:Name="ArtworkPanel"
+                    <!-- Artwork: square, inset on the slab with its own rounded corners -->
+                    <Border Grid.Row="0" x:Name="ArtworkFrame"
+                            Margin="{Binding #Root.ArtworkMargin}"
+                            CornerRadius="{Binding #Root.ArtworkCornerRadius}"
+                            ClipToBounds="True">
+                    <Panel x:Name="ArtworkPanel"
                            Width="{Binding #Root.ArtworkSize}"
                            Height="{Binding #Root.ArtworkSize}">
                         <Border Background="#2A2A31" />
@@ -65,21 +86,20 @@
                                               IsVisible="{Binding #Root.ArtworkPath, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
                         <ContentPresenter Content="{Binding #Root.Overlay}" />
                     </Panel>
+                    </Border>
 
                     <!-- Frosted caption strip: title + artist, every card carries its own -->
+                    <!-- Caption: title + artist resting on the slab under the artwork -->
                     <Border Grid.Row="1" x:Name="Caption"
-                            Background="#E61B1B24"
-                            BorderThickness="0,1,0,0"
-                            BorderBrush="#2EFFFFFF"
-                            Padding="14,9,14,11">
-                        <StackPanel Spacing="1">
+                            Padding="16,10,16,18">
+                        <StackPanel Spacing="2">
                             <!-- Auto columns, not a horizontal StackPanel: that measures the
                                  title at infinite width and CharacterEllipsis never trims. -->
                             <Grid ColumnDefinitions="Auto,Auto" HorizontalAlignment="Center">
                                 <TextBlock x:Name="TitleText"
                                            Grid.Column="0"
                                            Text="{Binding #Root.Title}"
-                                           FontSize="15"
+                                           FontSize="{Binding #Root.TitleFontSize}"
                                            FontWeight="SemiBold"
                                            Foreground="White"
                                            TextTrimming="CharacterEllipsis"
@@ -93,15 +113,15 @@
                                         IsVisible="{Binding #Root.IsExplicit}">
                                     <TextBlock Text="E"
                                                Classes="explicit-badge-text compact"
-                                               FontSize="9"
+                                               FontSize="10"
                                                Opacity="0.9" />
                                 </Border>
                             </Grid>
                             <!-- Artist: a link when the host gives a command, plain text otherwise -->
                             <TextBlock x:Name="ArtistText"
                                        Text="{Binding #Root.Artist}"
-                                       FontSize="13"
-                                       Foreground="#B8FFFFFF"
+                                       FontSize="{Binding #Root.ArtistFontSize}"
+                                       Foreground="#C9FFFFFF"
                                        TextTrimming="CharacterEllipsis"
                                        TextAlignment="Center"
                                        MaxWidth="{Binding #Root.TitleMaxWidth}"
@@ -112,8 +132,8 @@
                                     Command="{Binding #Root.ArtistCommand}"
                                     IsVisible="{Binding #Root.ArtistCommand, Converter={x:Static ObjectConverters.IsNotNull}}">
                                 <TextBlock Text="{Binding #Root.Artist}"
-                                           FontSize="13"
-                                           Foreground="#B8FFFFFF"
+                                           FontSize="{Binding #Root.ArtistFontSize}"
+                                           Foreground="#C9FFFFFF"
                                            TextTrimming="CharacterEllipsis"
                                            TextAlignment="Center"
                                            MaxWidth="{Binding #Root.TitleMaxWidth}" />
@@ -128,6 +148,7 @@
                         Opacity="{Binding #Root.Dim}"
                         IsHitTestVisible="False" />
             </Panel>
+          </Border>
         </Border>
     </Border>
 

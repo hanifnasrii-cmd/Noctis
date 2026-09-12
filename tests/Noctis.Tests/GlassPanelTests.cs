@@ -85,6 +85,25 @@ public class GlassPanelTests
         Assert.True(RowContrast(a, 60, 60, 140) > RowContrast(b, 60, 60, 140));
     }
 
+    [Fact]
+    public void Draw_PathClip_FollowsARotatedOutline()
+    {
+        // A tilted host (Cover Flow side card) hands the blur its rounded rect run through
+        // the render matrix. Pixels inside the rotated shape soften; a corner of the
+        // axis-aligned bounding box that lies OUTSIDE the rotated shape stays crisp.
+        using var surface = Stripes();
+        using var path = new SKPath();
+        path.AddRect(new SKRect(60, 50, 180, 110));
+        path.Transform(SKMatrix.CreateRotationDegrees(30, 120, 80));
+        var box = path.Bounds; // ~ (53,24)-(187,136): its top-left corner is outside the shape
+        var cornerY = (int)box.Top + 2;
+        var before = RowContrast(surface, cornerY, (int)box.Left + 2, (int)box.Left + 12);
+        Assert.True(before > 200);
+        Assert.True(GlassBlur.Draw(surface.Canvas, surface, box, path, sigma: 6));
+        Assert.Equal(before, RowContrast(surface, cornerY, (int)box.Left + 2, (int)box.Left + 12));
+        Assert.True(RowContrast(surface, 80, 100, 140) < before / 4, "inside the rotated clip should soften");
+    }
+
     [AvaloniaFact] // same UI thread as the panel tests: AppGlass is process-wide state
     public void AppGlass_PublishesStateAndRaisesChanged()
     {
