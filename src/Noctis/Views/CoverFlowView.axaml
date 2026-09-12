@@ -35,6 +35,13 @@
             <Setter Property="RenderTransform" Value="scale(1)"/>
         </Style>
 
+        <!-- Carousel cards (CoverFlowCard): pivot tilt/scale about the card centre. -->
+        <Style Selector="ctrl|CoverFlowCard.flow-card">
+            <Setter Property="RenderTransformOrigin" Value="50%,50%"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+
         <!-- Tilted cards in the now-playing pile. Rotation is per-card (RenderTransform
              on the element); this holds the shared shape. No hover/transition on purpose. -->
         <Style Selector="Border.pile-card">
@@ -445,379 +452,295 @@
                       Margin="0,0"
                       IsVisible="{Binding !IsCollageMode}">
 
-                    <!-- 15-item carousel: center + 7 each side -->
-                    <!-- Solid artwork + subtle dark overlay for depth (no transparency/see-through) -->
+                    <!-- 15-item carousel: centre + 7 each side. Every slot is a CoverFlowCard
+                         (glass frame, square cover, frosted title/artist caption INSIDE the
+                         card). Side cards tilt toward the centre with a real 3D rotate
+                         (Rotate3DTransform, perspective Depth), then scale and slide out;
+                         the centre card faces the viewer, larger and unwashed. The slot
+                         geometry is fixed — a skip swaps the CONTENT one slot over, nothing
+                         animates (each Cover Flow step is a real track skip). -->
                     <Grid HorizontalAlignment="Center" VerticalAlignment="Center"
                           ClipToBounds="False">
 
                         <!-- ═══ PREVIOUS SIDE (history) ═══ -->
 
-                        <!-- Position -7 (farthest left) -->
-                        <Border Width="320" Height="320"
-                                CornerRadius="6"
-                                ClipToBounds="True"
-                                IsVisible="{Binding Prev7ArtworkPath, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Center"
-                                ZIndex="1"
-                                RenderTransformOrigin="50%,50%">
-                            <Border.RenderTransform>
+                        <!-- Position -7 -->
+                        <ctrl:CoverFlowCard Classes="flow-card side"
+                                            ArtworkPath="{Binding Prev7ArtworkPath}"
+                                            Title="{Binding Prev7Track.Title, FallbackValue=''}"
+                                            Artist="{Binding Prev7Track.Artist, FallbackValue=''}"
+                                            Dim="0.54"
+                                            IsVisible="{Binding Prev7ArtworkPath, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                                            ZIndex="1">
+                            <ctrl:CoverFlowCard.RenderTransform>
                                 <TransformGroup>
-                                    <ScaleTransform ScaleX="0.42" ScaleY="0.42" />
-                                    <TranslateTransform X="-960" />
+                                    <Rotate3DTransform AngleY="-34" Depth="800" />
+                                    <ScaleTransform ScaleX="0.56" ScaleY="0.56" />
+                                    <TranslateTransform X="-690" />
                                 </TransformGroup>
-                            </Border.RenderTransform>
-                            <Panel>
-                                <ctrl:CachedImage SourcePath="{Binding Prev7ArtworkPath}" Stretch="UniformToFill" />
-                                <Border Background="#000" Opacity="0.55" />
-                            </Panel>
-                        </Border>
+                            </ctrl:CoverFlowCard.RenderTransform>
+                        </ctrl:CoverFlowCard>
 
                         <!-- Position -6 -->
-                        <Border Width="320" Height="320"
-                                CornerRadius="6"
-                                ClipToBounds="True"
-                                IsVisible="{Binding Prev6ArtworkPath, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Center"
-                                ZIndex="2"
-                                RenderTransformOrigin="50%,50%">
-                            <Border.RenderTransform>
+                        <ctrl:CoverFlowCard Classes="flow-card side"
+                                            ArtworkPath="{Binding Prev6ArtworkPath}"
+                                            Title="{Binding Prev6Track.Title, FallbackValue=''}"
+                                            Artist="{Binding Prev6Track.Artist, FallbackValue=''}"
+                                            Dim="0.46"
+                                            IsVisible="{Binding Prev6ArtworkPath, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                                            ZIndex="2">
+                            <ctrl:CoverFlowCard.RenderTransform>
                                 <TransformGroup>
-                                    <ScaleTransform ScaleX="0.46" ScaleY="0.46" />
-                                    <TranslateTransform X="-840" />
+                                    <Rotate3DTransform AngleY="-34" Depth="800" />
+                                    <ScaleTransform ScaleX="0.6" ScaleY="0.6" />
+                                    <TranslateTransform X="-635" />
                                 </TransformGroup>
-                            </Border.RenderTransform>
-                            <Panel>
-                                <ctrl:CachedImage SourcePath="{Binding Prev6ArtworkPath}" Stretch="UniformToFill" />
-                                <Border Background="#000" Opacity="0.48" />
-                            </Panel>
-                        </Border>
+                            </ctrl:CoverFlowCard.RenderTransform>
+                        </ctrl:CoverFlowCard>
 
                         <!-- Position -5 -->
-                        <Border Width="320" Height="320"
-                                CornerRadius="6"
-                                ClipToBounds="True"
-                                IsVisible="{Binding Prev5ArtworkPath, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Center"
-                                ZIndex="3"
-                                RenderTransformOrigin="50%,50%">
-                            <Border.RenderTransform>
+                        <ctrl:CoverFlowCard Classes="flow-card side"
+                                            ArtworkPath="{Binding Prev5ArtworkPath}"
+                                            Title="{Binding Prev5Track.Title, FallbackValue=''}"
+                                            Artist="{Binding Prev5Track.Artist, FallbackValue=''}"
+                                            Dim="0.38"
+                                            IsVisible="{Binding Prev5ArtworkPath, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                                            ZIndex="3">
+                            <ctrl:CoverFlowCard.RenderTransform>
                                 <TransformGroup>
-                                    <ScaleTransform ScaleX="0.50" ScaleY="0.50" />
-                                    <TranslateTransform X="-730" />
+                                    <Rotate3DTransform AngleY="-34" Depth="800" />
+                                    <ScaleTransform ScaleX="0.64" ScaleY="0.64" />
+                                    <TranslateTransform X="-575" />
                                 </TransformGroup>
-                            </Border.RenderTransform>
-                            <Panel>
-                                <ctrl:CachedImage SourcePath="{Binding Prev5ArtworkPath}" Stretch="UniformToFill" />
-                                <Border Background="#000" Opacity="0.40" />
-                            </Panel>
-                        </Border>
+                            </ctrl:CoverFlowCard.RenderTransform>
+                        </ctrl:CoverFlowCard>
 
                         <!-- Position -4 -->
-                        <Border Width="320" Height="320"
-                                CornerRadius="8"
-                                ClipToBounds="True"
-                                IsVisible="{Binding OffPreviousArtworkPath, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Center"
-                                ZIndex="4"
-                                RenderTransformOrigin="50%,50%">
-                            <Border.RenderTransform>
+                        <ctrl:CoverFlowCard Classes="flow-card side"
+                                            ArtworkPath="{Binding OffPreviousArtworkPath}"
+                                            Title="{Binding OffPreviousTrack.Title, FallbackValue=''}"
+                                            Artist="{Binding OffPreviousTrack.Artist, FallbackValue=''}"
+                                            Dim="0.3"
+                                            IsVisible="{Binding OffPreviousArtworkPath, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                                            ZIndex="4">
+                            <ctrl:CoverFlowCard.RenderTransform>
                                 <TransformGroup>
-                                    <ScaleTransform ScaleX="0.55" ScaleY="0.55" />
-                                    <TranslateTransform X="-625" />
+                                    <Rotate3DTransform AngleY="-34" Depth="800" />
+                                    <ScaleTransform ScaleX="0.69" ScaleY="0.69" />
+                                    <TranslateTransform X="-510" />
                                 </TransformGroup>
-                            </Border.RenderTransform>
-                            <Panel>
-                                <ctrl:CachedImage SourcePath="{Binding OffPreviousArtworkPath}" Stretch="UniformToFill" />
-                                <Border Background="#000" Opacity="0.32" />
-                            </Panel>
-                        </Border>
+                            </ctrl:CoverFlowCard.RenderTransform>
+                        </ctrl:CoverFlowCard>
 
                         <!-- Position -3 -->
-                        <Border Width="320" Height="320"
-                                CornerRadius="8"
-                                ClipToBounds="True"
-                                IsVisible="{Binding EdgePreviousArtworkPath, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Center"
-                                ZIndex="5"
-                                RenderTransformOrigin="50%,50%">
-                            <Border.RenderTransform>
+                        <ctrl:CoverFlowCard Classes="flow-card side"
+                                            ArtworkPath="{Binding EdgePreviousArtworkPath}"
+                                            Title="{Binding EdgePreviousTrack.Title, FallbackValue=''}"
+                                            Artist="{Binding EdgePreviousTrack.Artist, FallbackValue=''}"
+                                            Dim="0.22"
+                                            IsVisible="{Binding EdgePreviousArtworkPath, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                                            ZIndex="5">
+                            <ctrl:CoverFlowCard.RenderTransform>
                                 <TransformGroup>
-                                    <ScaleTransform ScaleX="0.60" ScaleY="0.60" />
-                                    <TranslateTransform X="-525" />
+                                    <Rotate3DTransform AngleY="-34" Depth="800" />
+                                    <ScaleTransform ScaleX="0.74" ScaleY="0.74" />
+                                    <TranslateTransform X="-440" />
                                 </TransformGroup>
-                            </Border.RenderTransform>
-                            <Panel>
-                                <ctrl:CachedImage SourcePath="{Binding EdgePreviousArtworkPath}" Stretch="UniformToFill" />
-                                <Border Background="#000" Opacity="0.24" />
-                            </Panel>
-                        </Border>
+                            </ctrl:CoverFlowCard.RenderTransform>
+                        </ctrl:CoverFlowCard>
 
                         <!-- Position -2 -->
-                        <Border Width="320" Height="320"
-                                CornerRadius="10"
-                                ClipToBounds="True"
-                                IsVisible="{Binding FarPreviousArtworkPath, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Center"
-                                ZIndex="6"
-                                RenderTransformOrigin="50%,50%">
-                            <Border.RenderTransform>
+                        <ctrl:CoverFlowCard Classes="flow-card side"
+                                            ArtworkPath="{Binding FarPreviousArtworkPath}"
+                                            Title="{Binding FarPreviousTrack.Title, FallbackValue=''}"
+                                            Artist="{Binding FarPreviousTrack.Artist, FallbackValue=''}"
+                                            Dim="0.14"
+                                            IsVisible="{Binding FarPreviousArtworkPath, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                                            ZIndex="6">
+                            <ctrl:CoverFlowCard.RenderTransform>
                                 <TransformGroup>
-                                    <ScaleTransform ScaleX="0.68" ScaleY="0.68" />
-                                    <TranslateTransform X="-400" />
+                                    <Rotate3DTransform AngleY="-34" Depth="800" />
+                                    <ScaleTransform ScaleX="0.8" ScaleY="0.8" />
+                                    <TranslateTransform X="-362" />
                                 </TransformGroup>
-                            </Border.RenderTransform>
-                            <Panel>
-                                <ctrl:CachedImage SourcePath="{Binding FarPreviousArtworkPath}" Stretch="UniformToFill" />
-                                <Border Background="#000" Opacity="0.16" />
-                            </Panel>
-                        </Border>
+                            </ctrl:CoverFlowCard.RenderTransform>
+                        </ctrl:CoverFlowCard>
 
                         <!-- Position -1 -->
-                        <Border Width="320" Height="320"
-                                CornerRadius="10"
-                                ClipToBounds="True"
-                                IsVisible="{Binding PreviousArtworkPath, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Center"
-                                ZIndex="7"
-                                RenderTransformOrigin="50%,50%">
-                            <Border.RenderTransform>
+                        <ctrl:CoverFlowCard Classes="flow-card side"
+                                            ArtworkPath="{Binding PreviousArtworkPath}"
+                                            Title="{Binding PreviousTrack.Title, FallbackValue=''}"
+                                            Artist="{Binding PreviousTrack.Artist, FallbackValue=''}"
+                                            Dim="0.06"
+                                            IsVisible="{Binding PreviousArtworkPath, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                                            ZIndex="7">
+                            <ctrl:CoverFlowCard.RenderTransform>
                                 <TransformGroup>
-                                    <ScaleTransform ScaleX="0.80" ScaleY="0.80" />
-                                    <TranslateTransform X="-280" />
+                                    <Rotate3DTransform AngleY="-34" Depth="800" />
+                                    <ScaleTransform ScaleX="0.88" ScaleY="0.88" />
+                                    <TranslateTransform X="-278" />
                                 </TransformGroup>
-                            </Border.RenderTransform>
-                            <Panel>
-                                <ctrl:CachedImage SourcePath="{Binding PreviousArtworkPath}" Stretch="UniformToFill" />
-                                <Border Background="#000" Opacity="0.08" />
-                            </Panel>
-                        </Border>
+                            </ctrl:CoverFlowCard.RenderTransform>
+                        </ctrl:CoverFlowCard>
 
-                        <!-- ═══ CENTER COVER ═══ -->
-                        <Border x:Name="CenterCover"
-                                Width="440" Height="440"
-                                CornerRadius="12"
-                                ClipToBounds="True"
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Center"
-                                ZIndex="15">
-                            <Panel>
-                                <!-- Placeholder when no artwork -->
-                                <TextBlock Text="{loc:T CoverFlow.Text}"
-                                           FontSize="100"
-                                           HorizontalAlignment="Center"
-                                           VerticalAlignment="Center"
-                                           Opacity="0.15"
-                                           IsVisible="{Binding CenterArtworkPath, Converter={x:Static StringConverters.IsNullOrEmpty}}" />
-                                <ctrl:CachedImage SourcePath="{Binding CenterArtworkPath}"
-                                                  Stretch="UniformToFill"
-                                                  RenderOptions.BitmapInterpolationMode="HighQuality"
-                                                  IsVisible="{Binding CenterArtworkPath, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
-                                <ctrl:AnimatedCoverImage
-                                    Source="{Binding Player.CurrentAnimatedCoverPath}"
-                                    IsActive="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).Settings.EnableAnimatedCovers, FallbackValue=False}" />
-                                <!-- Favorite heart overlay on the center album cover -->
-                                <ctrl:HeartIcon Size="24" ShowWhenOff="False"
-                                                HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,12,12"
-                                                IsFavorite="{Binding CenterIsFavorite}" />
-                            </Panel>
-                        </Border>
+                        <!-- ═══ CENTER CARD ═══ -->
+                        <ctrl:CoverFlowCard x:Name="CenterCard"
+                                            Classes="flow-card centre"
+                                            ArtworkSize="360"
+                                            DecodeWidth="768"
+                                            CardCornerRadius="20"
+                                            ArtworkPath="{Binding CenterArtworkPath}"
+                                            Title="{Binding CenterTitle}"
+                                            Artist="{Binding CenterArtist}"
+                                            IsExplicit="{Binding CenterIsExplicit}"
+                                            ArtistCommand="{Binding GoToArtistCommand}"
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Center"
+                                            ZIndex="15">
+                            <ctrl:CoverFlowCard.Overlay>
+                                <Panel>
+                                    <ctrl:AnimatedCoverImage
+                                        Source="{Binding Player.CurrentAnimatedCoverPath}"
+                                        IsActive="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).Settings.EnableAnimatedCovers, FallbackValue=False}" />
+                                    <!-- Favorite heart overlay on the centre cover -->
+                                    <ctrl:HeartIcon Size="24" ShowWhenOff="False"
+                                                    HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,12,12"
+                                                    IsFavorite="{Binding CenterIsFavorite}" />
+                                </Panel>
+                            </ctrl:CoverFlowCard.Overlay>
+                        </ctrl:CoverFlowCard>
 
                         <!-- ═══ NEXT SIDE (UpNext queue) ═══ -->
 
                         <!-- Position +1 -->
-                        <Border Width="320" Height="320"
-                                CornerRadius="10"
-                                ClipToBounds="True"
-                                IsVisible="{Binding NextArtworkPath, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Center"
-                                ZIndex="7"
-                                RenderTransformOrigin="50%,50%">
-                            <Border.RenderTransform>
+                        <ctrl:CoverFlowCard Classes="flow-card side"
+                                            ArtworkPath="{Binding NextArtworkPath}"
+                                            Title="{Binding NextTrack.Title, FallbackValue=''}"
+                                            Artist="{Binding NextTrack.Artist, FallbackValue=''}"
+                                            Dim="0.06"
+                                            IsVisible="{Binding NextArtworkPath, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                                            ZIndex="7">
+                            <ctrl:CoverFlowCard.RenderTransform>
                                 <TransformGroup>
-                                    <ScaleTransform ScaleX="0.80" ScaleY="0.80" />
-                                    <TranslateTransform X="280" />
+                                    <Rotate3DTransform AngleY="34" Depth="800" />
+                                    <ScaleTransform ScaleX="0.88" ScaleY="0.88" />
+                                    <TranslateTransform X="278" />
                                 </TransformGroup>
-                            </Border.RenderTransform>
-                            <Panel>
-                                <ctrl:CachedImage SourcePath="{Binding NextArtworkPath}" Stretch="UniformToFill" />
-                                <Border Background="#000" Opacity="0.08" />
-                            </Panel>
-                        </Border>
+                            </ctrl:CoverFlowCard.RenderTransform>
+                        </ctrl:CoverFlowCard>
 
                         <!-- Position +2 -->
-                        <Border Width="320" Height="320"
-                                CornerRadius="10"
-                                ClipToBounds="True"
-                                IsVisible="{Binding FarNextArtworkPath, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Center"
-                                ZIndex="6"
-                                RenderTransformOrigin="50%,50%">
-                            <Border.RenderTransform>
+                        <ctrl:CoverFlowCard Classes="flow-card side"
+                                            ArtworkPath="{Binding FarNextArtworkPath}"
+                                            Title="{Binding FarNextTrack.Title, FallbackValue=''}"
+                                            Artist="{Binding FarNextTrack.Artist, FallbackValue=''}"
+                                            Dim="0.14"
+                                            IsVisible="{Binding FarNextArtworkPath, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                                            ZIndex="6">
+                            <ctrl:CoverFlowCard.RenderTransform>
                                 <TransformGroup>
-                                    <ScaleTransform ScaleX="0.68" ScaleY="0.68" />
-                                    <TranslateTransform X="400" />
+                                    <Rotate3DTransform AngleY="34" Depth="800" />
+                                    <ScaleTransform ScaleX="0.8" ScaleY="0.8" />
+                                    <TranslateTransform X="362" />
                                 </TransformGroup>
-                            </Border.RenderTransform>
-                            <Panel>
-                                <ctrl:CachedImage SourcePath="{Binding FarNextArtworkPath}" Stretch="UniformToFill" />
-                                <Border Background="#000" Opacity="0.16" />
-                            </Panel>
-                        </Border>
+                            </ctrl:CoverFlowCard.RenderTransform>
+                        </ctrl:CoverFlowCard>
 
                         <!-- Position +3 -->
-                        <Border Width="320" Height="320"
-                                CornerRadius="8"
-                                ClipToBounds="True"
-                                IsVisible="{Binding EdgeNextArtworkPath, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Center"
-                                ZIndex="5"
-                                RenderTransformOrigin="50%,50%">
-                            <Border.RenderTransform>
+                        <ctrl:CoverFlowCard Classes="flow-card side"
+                                            ArtworkPath="{Binding EdgeNextArtworkPath}"
+                                            Title="{Binding EdgeNextTrack.Title, FallbackValue=''}"
+                                            Artist="{Binding EdgeNextTrack.Artist, FallbackValue=''}"
+                                            Dim="0.22"
+                                            IsVisible="{Binding EdgeNextArtworkPath, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                                            ZIndex="5">
+                            <ctrl:CoverFlowCard.RenderTransform>
                                 <TransformGroup>
-                                    <ScaleTransform ScaleX="0.60" ScaleY="0.60" />
-                                    <TranslateTransform X="525" />
+                                    <Rotate3DTransform AngleY="34" Depth="800" />
+                                    <ScaleTransform ScaleX="0.74" ScaleY="0.74" />
+                                    <TranslateTransform X="440" />
                                 </TransformGroup>
-                            </Border.RenderTransform>
-                            <Panel>
-                                <ctrl:CachedImage SourcePath="{Binding EdgeNextArtworkPath}" Stretch="UniformToFill" />
-                                <Border Background="#000" Opacity="0.24" />
-                            </Panel>
-                        </Border>
+                            </ctrl:CoverFlowCard.RenderTransform>
+                        </ctrl:CoverFlowCard>
 
                         <!-- Position +4 -->
-                        <Border Width="320" Height="320"
-                                CornerRadius="8"
-                                ClipToBounds="True"
-                                IsVisible="{Binding OffNextArtworkPath, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Center"
-                                ZIndex="4"
-                                RenderTransformOrigin="50%,50%">
-                            <Border.RenderTransform>
+                        <ctrl:CoverFlowCard Classes="flow-card side"
+                                            ArtworkPath="{Binding OffNextArtworkPath}"
+                                            Title="{Binding OffNextTrack.Title, FallbackValue=''}"
+                                            Artist="{Binding OffNextTrack.Artist, FallbackValue=''}"
+                                            Dim="0.3"
+                                            IsVisible="{Binding OffNextArtworkPath, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                                            ZIndex="4">
+                            <ctrl:CoverFlowCard.RenderTransform>
                                 <TransformGroup>
-                                    <ScaleTransform ScaleX="0.55" ScaleY="0.55" />
-                                    <TranslateTransform X="625" />
+                                    <Rotate3DTransform AngleY="34" Depth="800" />
+                                    <ScaleTransform ScaleX="0.69" ScaleY="0.69" />
+                                    <TranslateTransform X="510" />
                                 </TransformGroup>
-                            </Border.RenderTransform>
-                            <Panel>
-                                <ctrl:CachedImage SourcePath="{Binding OffNextArtworkPath}" Stretch="UniformToFill" />
-                                <Border Background="#000" Opacity="0.32" />
-                            </Panel>
-                        </Border>
+                            </ctrl:CoverFlowCard.RenderTransform>
+                        </ctrl:CoverFlowCard>
 
                         <!-- Position +5 -->
-                        <Border Width="320" Height="320"
-                                CornerRadius="6"
-                                ClipToBounds="True"
-                                IsVisible="{Binding Next5ArtworkPath, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Center"
-                                ZIndex="3"
-                                RenderTransformOrigin="50%,50%">
-                            <Border.RenderTransform>
+                        <ctrl:CoverFlowCard Classes="flow-card side"
+                                            ArtworkPath="{Binding Next5ArtworkPath}"
+                                            Title="{Binding Next5Track.Title, FallbackValue=''}"
+                                            Artist="{Binding Next5Track.Artist, FallbackValue=''}"
+                                            Dim="0.38"
+                                            IsVisible="{Binding Next5ArtworkPath, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                                            ZIndex="3">
+                            <ctrl:CoverFlowCard.RenderTransform>
                                 <TransformGroup>
-                                    <ScaleTransform ScaleX="0.50" ScaleY="0.50" />
-                                    <TranslateTransform X="730" />
+                                    <Rotate3DTransform AngleY="34" Depth="800" />
+                                    <ScaleTransform ScaleX="0.64" ScaleY="0.64" />
+                                    <TranslateTransform X="575" />
                                 </TransformGroup>
-                            </Border.RenderTransform>
-                            <Panel>
-                                <ctrl:CachedImage SourcePath="{Binding Next5ArtworkPath}" Stretch="UniformToFill" />
-                                <Border Background="#000" Opacity="0.40" />
-                            </Panel>
-                        </Border>
+                            </ctrl:CoverFlowCard.RenderTransform>
+                        </ctrl:CoverFlowCard>
 
                         <!-- Position +6 -->
-                        <Border Width="320" Height="320"
-                                CornerRadius="6"
-                                ClipToBounds="True"
-                                IsVisible="{Binding Next6ArtworkPath, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Center"
-                                ZIndex="2"
-                                RenderTransformOrigin="50%,50%">
-                            <Border.RenderTransform>
+                        <ctrl:CoverFlowCard Classes="flow-card side"
+                                            ArtworkPath="{Binding Next6ArtworkPath}"
+                                            Title="{Binding Next6Track.Title, FallbackValue=''}"
+                                            Artist="{Binding Next6Track.Artist, FallbackValue=''}"
+                                            Dim="0.46"
+                                            IsVisible="{Binding Next6ArtworkPath, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                                            ZIndex="2">
+                            <ctrl:CoverFlowCard.RenderTransform>
                                 <TransformGroup>
-                                    <ScaleTransform ScaleX="0.46" ScaleY="0.46" />
-                                    <TranslateTransform X="840" />
+                                    <Rotate3DTransform AngleY="34" Depth="800" />
+                                    <ScaleTransform ScaleX="0.6" ScaleY="0.6" />
+                                    <TranslateTransform X="635" />
                                 </TransformGroup>
-                            </Border.RenderTransform>
-                            <Panel>
-                                <ctrl:CachedImage SourcePath="{Binding Next6ArtworkPath}" Stretch="UniformToFill" />
-                                <Border Background="#000" Opacity="0.48" />
-                            </Panel>
-                        </Border>
+                            </ctrl:CoverFlowCard.RenderTransform>
+                        </ctrl:CoverFlowCard>
 
-                        <!-- Position +7 (farthest right) -->
-                        <Border Width="320" Height="320"
-                                CornerRadius="6"
-                                ClipToBounds="True"
-                                IsVisible="{Binding Next7ArtworkPath, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Center"
-                                ZIndex="1"
-                                RenderTransformOrigin="50%,50%">
-                            <Border.RenderTransform>
+                        <!-- Position +7 -->
+                        <ctrl:CoverFlowCard Classes="flow-card side"
+                                            ArtworkPath="{Binding Next7ArtworkPath}"
+                                            Title="{Binding Next7Track.Title, FallbackValue=''}"
+                                            Artist="{Binding Next7Track.Artist, FallbackValue=''}"
+                                            Dim="0.54"
+                                            IsVisible="{Binding Next7ArtworkPath, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                                            ZIndex="1">
+                            <ctrl:CoverFlowCard.RenderTransform>
                                 <TransformGroup>
-                                    <ScaleTransform ScaleX="0.42" ScaleY="0.42" />
-                                    <TranslateTransform X="960" />
+                                    <Rotate3DTransform AngleY="34" Depth="800" />
+                                    <ScaleTransform ScaleX="0.56" ScaleY="0.56" />
+                                    <TranslateTransform X="690" />
                                 </TransformGroup>
-                            </Border.RenderTransform>
-                            <Panel>
-                                <ctrl:CachedImage SourcePath="{Binding Next7ArtworkPath}" Stretch="UniformToFill" />
-                                <Border Background="#000" Opacity="0.55" />
-                            </Panel>
-                        </Border>
+                            </ctrl:CoverFlowCard.RenderTransform>
+                        </ctrl:CoverFlowCard>
 
                     </Grid>
 
                 </Grid>
 
-                <!-- Track info just below the center cover (carousel only — the collage is covers-only) -->
+                <!-- Album link just below the centre card. Title and artist live in the
+                     card's caption now (CoverFlowCard), so only the album line stays here. -->
                 <StackPanel HorizontalAlignment="Center"
                             Spacing="4"
-                            Margin="0,16,0,0"
+                            Margin="0,14,0,0"
                             IsVisible="{Binding !IsCollageMode}">
-                    <!-- Title row with explicit badge -->
-                    <ctrl:MarqueeTextBlock Text="{Binding CenterTitle}"
-                                           FontSize="22"
-                                           FontWeight="Bold"
-                                           MaxDisplayWidth="480"
-                                           HorizontalAlignment="Center"
-                                           IsCoverFlow="True">
-                        <ctrl:MarqueeTextBlock.InlineContent>
-                            <Border Classes="explicit-badge compact"
-                                    VerticalAlignment="Center"
-                                    IsVisible="{Binding CenterIsExplicit}"
-                                    ToolTip.Tip="{loc:T CoverFlow.ExplicitTip}">
-                                <TextBlock Text="E"
-                                           Classes="explicit-badge-text compact"
-                                           FontSize="9"
-                                           Opacity="0.9" />
-                            </Border>
-                        </ctrl:MarqueeTextBlock.InlineContent>
-                    </ctrl:MarqueeTextBlock>
-                    <Button Classes="link-btn"
-                            Command="{Binding GoToArtistCommand}"
-                            HorizontalAlignment="Center"
-                            IsVisible="{Binding CenterArtist, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
-                        <ctrl:MarqueeTextBlock Text="{Binding CenterArtist}"
-                                               FontSize="15"
-                                               FontWeight="Bold"
-                                               Foreground="{DynamicResource AccentColorBrush}"
-                                               MaxDisplayWidth="400"
-                                               IsCoverFlow="True"
-                                               IsForArtist="True" />
-                    </Button>
                     <Button Classes="link-btn"
                             Command="{Binding GoToAlbumCommand}"
                             HorizontalAlignment="Center"

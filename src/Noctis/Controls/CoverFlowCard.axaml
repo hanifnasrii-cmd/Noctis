@@ -1,0 +1,134 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="using:Noctis.Controls"
+             xmlns:loc="using:Noctis.Localization"
+             x:Class="Noctis.Controls.CoverFlowCard"
+             x:Name="Root"
+             ClipToBounds="False">
+
+    <UserControl.Styles>
+        <!-- Artist link in the caption: plain text look, no Fluent hover square, no global zoom. -->
+        <Style Selector="Button.flow-card-link">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+        </Style>
+        <Style Selector="Button.flow-card-link:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="Opacity" Value="0.7"/>
+        </Style>
+        <Style Selector="Button.flow-card-link:pressed /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+        </Style>
+        <Style Selector="Button.flow-card-link:pointerover">
+            <Setter Property="RenderTransform" Value="scale(1)"/>
+        </Style>
+        <Style Selector="Button.flow-card-link:pressed">
+            <Setter Property="RenderTransform" Value="scale(1)"/>
+        </Style>
+    </UserControl.Styles>
+
+    <!-- Shadow lives on an UNCLIPPED outer border (ClipToBounds would cut it); the inner
+         border clips the artwork/caption to the rounded glass frame and draws the light edge. -->
+    <Border x:Name="Shadow"
+            CornerRadius="{Binding #Root.CardCornerRadius}"
+            BoxShadow="0 18 44 0 #8C000000"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Center">
+        <Border x:Name="Frame"
+                CornerRadius="{Binding #Root.CardCornerRadius}"
+                ClipToBounds="True"
+                BorderThickness="1.5"
+                BorderBrush="#73FFFFFF"
+                Background="#33FFFFFF">
+            <Panel>
+                <Grid RowDefinitions="Auto,Auto">
+                    <!-- Artwork: square, edge-to-edge inside the frame -->
+                    <Panel Grid.Row="0" x:Name="ArtworkPanel"
+                           Width="{Binding #Root.ArtworkSize}"
+                           Height="{Binding #Root.ArtworkSize}">
+                        <Border Background="#2A2A31" />
+                        <TextBlock Text="{loc:T CoverFlow.Text}"
+                                   FontSize="{Binding #Root.PlaceholderFontSize}"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"
+                                   Opacity="0.15"
+                                   IsVisible="{Binding #Root.ArtworkPath, Converter={x:Static StringConverters.IsNullOrEmpty}}" />
+                        <controls:CachedImage SourcePath="{Binding #Root.ArtworkPath}"
+                                              DecodeWidth="{Binding #Root.DecodeWidth}"
+                                              Stretch="UniformToFill"
+                                              RenderOptions.BitmapInterpolationMode="HighQuality"
+                                              IsVisible="{Binding #Root.ArtworkPath, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                        <ContentPresenter Content="{Binding #Root.Overlay}" />
+                    </Panel>
+
+                    <!-- Frosted caption strip: title + artist, every card carries its own -->
+                    <Border Grid.Row="1" x:Name="Caption"
+                            Background="#E61B1B24"
+                            BorderThickness="0,1,0,0"
+                            BorderBrush="#2EFFFFFF"
+                            Padding="14,9,14,11">
+                        <StackPanel Spacing="1">
+                            <!-- Auto columns, not a horizontal StackPanel: that measures the
+                                 title at infinite width and CharacterEllipsis never trims. -->
+                            <Grid ColumnDefinitions="Auto,Auto" HorizontalAlignment="Center">
+                                <TextBlock x:Name="TitleText"
+                                           Grid.Column="0"
+                                           Text="{Binding #Root.Title}"
+                                           FontSize="15"
+                                           FontWeight="SemiBold"
+                                           Foreground="White"
+                                           TextTrimming="CharacterEllipsis"
+                                           TextAlignment="Center"
+                                           MaxWidth="{Binding #Root.TitleMaxWidth}"
+                                           VerticalAlignment="Center" />
+                                <Border Grid.Column="1"
+                                        Classes="explicit-badge compact"
+                                        Margin="6,0,0,0"
+                                        VerticalAlignment="Center"
+                                        IsVisible="{Binding #Root.IsExplicit}">
+                                    <TextBlock Text="E"
+                                               Classes="explicit-badge-text compact"
+                                               FontSize="9"
+                                               Opacity="0.9" />
+                                </Border>
+                            </Grid>
+                            <!-- Artist: a link when the host gives a command, plain text otherwise -->
+                            <TextBlock x:Name="ArtistText"
+                                       Text="{Binding #Root.Artist}"
+                                       FontSize="13"
+                                       Foreground="#B8FFFFFF"
+                                       TextTrimming="CharacterEllipsis"
+                                       TextAlignment="Center"
+                                       MaxWidth="{Binding #Root.TitleMaxWidth}"
+                                       HorizontalAlignment="Center"
+                                       IsVisible="{Binding #Root.ArtistCommand, Converter={x:Static ObjectConverters.IsNull}}" />
+                            <Button x:Name="ArtistLinkButton"
+                                    Classes="flow-card-link"
+                                    Command="{Binding #Root.ArtistCommand}"
+                                    IsVisible="{Binding #Root.ArtistCommand, Converter={x:Static ObjectConverters.IsNotNull}}">
+                                <TextBlock Text="{Binding #Root.Artist}"
+                                           FontSize="13"
+                                           Foreground="#B8FFFFFF"
+                                           TextTrimming="CharacterEllipsis"
+                                           TextAlignment="Center"
+                                           MaxWidth="{Binding #Root.TitleMaxWidth}" />
+                            </Button>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+
+                <!-- Depth dimming for cards away from the centre -->
+                <Border x:Name="DimOverlay"
+                        Background="#000"
+                        Opacity="{Binding #Root.Dim}"
+                        IsHitTestVisible="False" />
+            </Panel>
+        </Border>
+    </Border>
+
+</UserControl>
