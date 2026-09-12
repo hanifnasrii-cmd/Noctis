@@ -65,6 +65,25 @@ public class ArtistImageService
     public bool IsImageRemoved(Guid artistId)
         => File.Exists(GetRemovedMarkerPath(artistId));
 
+    /// <summary>Sentinel marking a user-picked portrait: the refresh sweep must never
+    /// replace it with whatever the service currently serves.</summary>
+    private string GetCustomMarkerPath(Guid artistId)
+        => Path.Combine(_artistArtworkDir, $"{artistId}.custom");
+
+    /// <summary>
+    /// Sidecar holding the URL the cached portrait was downloaded from. Its write time
+    /// doubles as "last checked against the service": the refresh sweep re-queries the
+    /// service once the sidecar is older than <see cref="RefreshInterval"/>, and only
+    /// downloads when the URL changed (Deezer image URLs carry the image hash, so a new
+    /// photo is a new URL). A cached portrait with no sidecar predates this and gets
+    /// one download-and-compare on its first sweep.
+    /// </summary>
+    private string GetSourceMarkerPath(Guid artistId)
+        => Path.Combine(_artistArtworkDir, $"{artistId}.src");
+
+    /// <summary>How long a cached portrait is trusted before the service is asked again.</summary>
+    internal static readonly TimeSpan RefreshInterval = TimeSpan.FromHours(24);
+
     /// <summary>
     /// Saves a user-picked image as the artist's portrait, overriding any auto-fetched
     /// art and clearing a prior "removed" marker. Returns the cached path, or null on failure.
@@ -77,11 +96,13 @@ public class ArtistImageService
         var cachedPath = GetCachedImagePath(artist.Id);
         try
         {
-            await File.WriteAllBytesAsync(cachedPath, imageData);
+            await WriteImageAtomicAsync(cachedPath, imageData);
 
             var marker = GetRemovedMarkerPath(artist.Id);
             if (File.Exists(marker))
                 File.Delete(marker);
+            File.WriteAllText(GetCustomMarkerPath(artist.Id), string.Empty);
+            TryDelete(GetSourceMarkerPath(artist.Id));
 
             artist.ImagePath = cachedPath;
             return cachedPath;
@@ -106,6 +127,8 @@ public class ArtistImageService
                 File.Delete(cachedPath);
 
             File.WriteAllText(GetRemovedMarkerPath(artist.Id), string.Empty);
+            TryDelete(GetCustomMarkerPath(artist.Id));
+            TryDelete(GetSourceMarkerPath(artist.Id));
             artist.ImagePath = null;
         }
         catch (Exception ex)
@@ -115,8 +138,11 @@ public class ArtistImageService
     }
 
     /// <summary>
-    /// Fetches and caches artist images in the background.
-    /// Calls onImageReady for each artist that gets a new image.
+    /// Fetches and caches artist images in the background, and keeps cached ones current:
+    /// a service-fetched portrait whose last check is older than <see cref="RefreshInterval"/>
+    /// is looked up again and replaced when the service now serves a different photo.
+    /// Calls onImageReady for each artist that gets a new (or replaced) image; the shared
+    /// bitmap cache is invalidated for a replaced file so live tiles repaint it.
     /// </summary>
     public async Task FetchAndCacheAsync(IReadOnlyList<Artist> artists, Action<Artist, string>? onImageReady = null)
     {
@@ -153,13 +179,31 @@ public class ArtistImageService
                     continue;
                 }
 
-                // Skip if already cached
+                // Already cached: surface it, then re-check it against the service if due.
                 if (File.Exists(cachedPath))
                 {
                     if (artist.ImagePath != cachedPath)
                     {
                         artist.ImagePath = cachedPath;
                         onImageReady?.Invoke(artist, cachedPath);
+                    }
+
+                    if (IsRefreshDue(artist))
+                    {
+                        await Task.Delay(RequestPacingMs).ConfigureAwait(false);
+                        try
+                        {
+                            if (await TryRefreshCachedImageAsync(artist.Name.Trim(), artist.Id, cachedPath).ConfigureAwait(false))
+                            {
+                                ArtworkCache.Invalidate(cachedPath);
+                                artist.ImagePath = cachedPath;
+                                onImageReady?.Invoke(artist, cachedPath);
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Debug.WriteLine($"[ArtistImage] Refresh check failed for '{artist.Name}': {ex.Message}");
+                        }
                     }
                     continue;
                 }
@@ -188,7 +232,7 @@ public class ArtistImageService
 
                 try
                 {
-                    if (await TryDownloadAndSaveAsync(artistName, cachedPath).ConfigureAwait(false))
+                    if (await TryDownloadAndSaveAsync(artistName, artist.Id, cachedPath).ConfigureAwait(false))
                     {
                         artist.ImagePath = cachedPath;
                         onImageReady?.Invoke(artist, cachedPath);
@@ -236,18 +280,16 @@ public class ArtistImageService
         var artistName = artist.Name.Trim();
         var cachedPath = GetCachedImagePath(artist.Id);
 
-        try
-        {
-            var marker = GetRemovedMarkerPath(artist.Id);
-            if (File.Exists(marker))
-                File.Delete(marker);
-        }
-        catch { }
+        // Explicit "find online" hands the portrait back to the service, so a custom
+        // marker is cleared too and the refresh sweep resumes tracking it.
+        TryDelete(GetRemovedMarkerPath(artist.Id));
+        TryDelete(GetCustomMarkerPath(artist.Id));
 
         try
         {
-            if (await TryDownloadAndSaveAsync(artistName, cachedPath))
+            if (await TryDownloadAndSaveAsync(artistName, artist.Id, cachedPath))
             {
+                ArtworkCache.Invalidate(cachedPath);
                 artist.ImagePath = cachedPath;
                 return cachedPath;
             }
@@ -260,14 +302,14 @@ public class ArtistImageService
         return null;
     }
 
-    /// <summary>
-    /// Resolves the artist's Deezer photo and writes it to <paramref name="cachedPath"/>.
-    /// Returns true if an image was downloaded and saved.
-    /// </summary>
     /// <summary>Hard ceiling for a single artist-image download, headers plus body.</summary>
     private static readonly TimeSpan DownloadTimeout = TimeSpan.FromSeconds(30);
 
-    private async Task<bool> TryDownloadAndSaveAsync(string artistName, string cachedPath,
+    /// <summary>
+    /// Resolves the artist's Deezer photo and writes it to <paramref name="cachedPath"/>,
+    /// recording the source URL beside it. Returns true if an image was downloaded and saved.
+    /// </summary>
+    private async Task<bool> TryDownloadAndSaveAsync(string artistName, Guid artistId, string cachedPath,
         CancellationToken ct = default)
     {
         // HttpClient.Timeout only covers up to the response headers when
@@ -284,19 +326,125 @@ public class ArtistImageService
         if (string.IsNullOrWhiteSpace(imageUrl))
             return false;
 
+        var imageData = await DownloadImageBytesAsync(imageUrl, token).ConfigureAwait(false);
+        if (imageData == null)
+            return false;
+
+        await WriteImageAtomicAsync(cachedPath, imageData, token).ConfigureAwait(false);
+        WriteSourceMarker(artistId, imageUrl);
+        return true;
+    }
+
+    /// <summary>
+    /// A service-fetched portrait is due for a check once its source sidecar is older
+    /// than <see cref="RefreshInterval"/> (or missing: a cache written before the sidecar
+    /// existed). Custom portraits and unknown artists never are.
+    /// </summary>
+    private bool IsRefreshDue(Artist artist)
+    {
+        if (string.IsNullOrWhiteSpace(artist.Name) || artist.Name == "Unknown Artist")
+            return false;
+        if (File.Exists(GetCustomMarkerPath(artist.Id)))
+            return false;
+
+        var src = GetSourceMarkerPath(artist.Id);
+        if (!File.Exists(src))
+            return true;
+        // A sidecar written by an older match-ranking (before the fan-count tie-break)
+        // may record an impostor's photo: re-check it now, not in 24 hours.
+        if (ReadSourceMarker(src) == null)
+            return true;
+        return DateTime.UtcNow - File.GetLastWriteTimeUtc(src) >= RefreshInterval;
+    }
+
+    /// <summary>
+    /// Sidecar format version. Bump when the way a photo is CHOSEN changes, so every
+    /// portrait picked by the old logic is re-evaluated on the next sweep.
+    /// v2: exact-name ties broken by Deezer fan count (impostor accounts share the name).
+    /// </summary>
+    private const string SourceMarkerVersion = "v2";
+
+    /// <summary>Returns the recorded URL, or null when the sidecar is missing/outdated.</summary>
+    private static string? ReadSourceMarker(string src)
+    {
+        try
+        {
+            if (!File.Exists(src)) return null;
+            var lines = File.ReadAllLines(src);
+            if (lines.Length < 2 || lines[0].Trim() != SourceMarkerVersion) return null;
+            var url = lines[1].Trim();
+            return url.Length == 0 ? null : url;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Asks the service for the artist's current photo URL. Unchanged URL: only the
+    /// check time is stamped, nothing is downloaded. Changed URL (or no recorded URL):
+    /// the photo is downloaded and swapped in if its bytes differ from the cached file.
+    /// Returns true when the cached file was replaced.
+    /// </summary>
+    private async Task<bool> TryRefreshCachedImageAsync(string artistName, Guid artistId, string cachedPath)
+    {
+        using var timeoutCts = new CancellationTokenSource(DownloadTimeout);
+        var token = timeoutCts.Token;
+
+        var imageUrl = await GetDeezerArtistImageUrlAsync(artistName, token).ConfigureAwait(false);
+        if (string.IsNullOrWhiteSpace(imageUrl))
+            return false; // service outage / no match: keep what we have, retry next sweep
+
+        var src = GetSourceMarkerPath(artistId);
+        var knownUrl = ReadSourceMarker(src);
+        if (string.Equals(knownUrl, imageUrl, StringComparison.Ordinal))
+        {
+            WriteSourceMarker(artistId, imageUrl); // bumps the check time
+            return false;
+        }
+
+        var imageData = await DownloadImageBytesAsync(imageUrl, token).ConfigureAwait(false);
+        if (imageData == null)
+            return false;
+
+        WriteSourceMarker(artistId, imageUrl);
+
+        // No recorded URL means the file may already be this very photo.
+        if (knownUrl == null && File.Exists(cachedPath))
+        {
+            var existing = await File.ReadAllBytesAsync(cachedPath, token).ConfigureAwait(false);
+            if (existing.AsSpan().SequenceEqual(imageData))
+                return false;
+        }
+
+        await WriteImageAtomicAsync(cachedPath, imageData, token).ConfigureAwait(false);
+        return true;
+    }
+
+    private async Task<byte[]?> DownloadImageBytesAsync(string imageUrl, CancellationToken token)
+    {
         using var request = new HttpRequestMessage(HttpMethod.Get, imageUrl);
         using var response = await _http
             .SendAsync(request, HttpCompletionOption.ResponseHeadersRead, token).ConfigureAwait(false);
         if (!response.IsSuccessStatusCode ||
             response.Content.Headers.ContentType?.MediaType?.StartsWith("image/", StringComparison.OrdinalIgnoreCase) != true)
-            return false;
+            return null;
 
         var imageData = await HttpSafety
             .ReadBytesBoundedAsync(response.Content, HttpSafety.MaxImageBytes, token).ConfigureAwait(false);
         // Magic-byte check: an error/HTML page must never be cached as artwork.
         if (imageData.Length == 0 || !HttpSafety.LooksLikeImage(imageData))
-            return false;
+            return null;
+        return imageData;
+    }
 
+    /// <summary>
+    /// Writes via a temp file + rename so a tile decoding the portrait mid-write never
+    /// reads a truncated JPEG — a replaced photo lands while the grid is showing it.
+    /// </summary>
+    private static async Task WriteImageAtomicAsync(string cachedPath, byte[] imageData, CancellationToken ct = default)
+    {
         // The cache subdirectory is created once in the constructor, so a "Clear Artwork
         // Cache" (which deletes the whole artwork tree) left every later write throwing
         // DirectoryNotFoundException into a swallowing catch — artist photos silently
@@ -304,8 +452,32 @@ public class ArtistImageService
         var dir = Path.GetDirectoryName(cachedPath);
         if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
 
-        await File.WriteAllBytesAsync(cachedPath, imageData, token).ConfigureAwait(false);
-        return true;
+        var tmp = cachedPath + ".tmp";
+        await File.WriteAllBytesAsync(tmp, imageData, ct).ConfigureAwait(false);
+        File.Move(tmp, cachedPath, overwrite: true);
+    }
+
+    private void WriteSourceMarker(Guid artistId, string imageUrl)
+    {
+        try
+        {
+            var src = GetSourceMarkerPath(artistId);
+            File.WriteAllText(src, SourceMarkerVersion + Environment.NewLine + imageUrl + Environment.NewLine);
+            File.SetLastWriteTimeUtc(src, DateTime.UtcNow);
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[ArtistImage] Failed to record source for {artistId}: {ex.Message}");
+        }
+    }
+
+    private static void TryDelete(string path)
+    {
+        try
+        {
+            if (File.Exists(path)) File.Delete(path);
+        }
+        catch { }
     }
 
     /// <summary>
@@ -330,8 +502,16 @@ public class ArtistImageService
                 data.GetArrayLength() == 0)
                 continue;
 
+            // Deezer's public search has no "verified" flag and returns impostor entries
+            // with the SAME name — for "Bad Bunny" a 6-fan, 1-album account came back
+            // FIRST and the real artist (7.99M fans, 88 albums) second. Returning on the
+            // first exact match therefore swapped in a fake's photo. Within a name-match
+            // tier the real account is the one with by far the most fans, so fans break
+            // the tie, then album count.
             string? bestImageUrl = null;
             var bestRank = int.MaxValue;
+            long bestFans = -1;
+            long bestAlbums = -1;
 
             foreach (var item in data.EnumerateArray())
             {
@@ -343,13 +523,18 @@ public class ArtistImageService
                     ? nameNode.GetString()
                     : null;
                 var rank = RankDeezerArtistMatch(resultName, candidate);
-                if (rank >= bestRank)
+                var fans = ReadCount(item, "nb_fan");
+                var albums = ReadCount(item, "nb_album");
+
+                var better = rank < bestRank
+                    || (rank == bestRank && (fans > bestFans || (fans == bestFans && albums > bestAlbums)));
+                if (!better)
                     continue;
 
                 bestRank = rank;
+                bestFans = fans;
+                bestAlbums = albums;
                 bestImageUrl = imageUrl;
-                if (bestRank == 0)
-                    return bestImageUrl;
             }
 
             if (!string.IsNullOrWhiteSpace(bestImageUrl))
@@ -358,6 +543,11 @@ public class ArtistImageService
 
         return null;
     }
+
+    private static long ReadCount(JsonElement item, string property)
+        => item.TryGetProperty(property, out var node) && node.ValueKind == JsonValueKind.Number && node.TryGetInt64(out var v)
+            ? v
+            : 0;
 
     private static string? GetBestDeezerImageUrl(JsonElement artistNode)
     {

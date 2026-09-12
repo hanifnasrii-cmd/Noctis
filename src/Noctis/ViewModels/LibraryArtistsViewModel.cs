@@ -125,7 +125,14 @@ public partial class LibraryArtistsViewModel : ViewModelBase, ISearchable, IDisp
     public void Refresh()
     {
         if (!_isDirty && ArtistRows.Count > 0)
+        {
+            // Nothing to rebuild, but cached portraits may be due for a re-check against
+            // the service (ArtistImageService.RefreshInterval). Kicking the sweep here is
+            // what lets a changed photo land without a library change; throttled so
+            // tab-hopping doesn't queue a full-library pass every time.
+            KickImageSweepIfDue();
             return;
+        }
         _isDirty = false;
 
         _allArtists = _library.Artists.ToList();
@@ -140,28 +147,45 @@ public partial class LibraryArtistsViewModel : ViewModelBase, ISearchable, IDisp
         _ = SweepMissingArtistImagesAsync(_allArtists);
 
         // Trigger background artist image fetch
-        if (_artistImageService != null && _allArtists.Count > 0)
-        {
-            if (_imageRefreshDebounce == null)
-            {
-                _imageRefreshDebounce = new DispatcherTimer { Interval = TimeSpan.FromSeconds(2) };
-                _imageRefreshDebounce.Tick += (_, _) =>
-                {
-                    _imageRefreshDebounce.Stop();
-                    ApplyFilter(_currentFilter);
-                };
-            }
+        KickImageSweep();
+    }
 
-            _ = _artistImageService.FetchAndCacheAsync(_allArtists, (artist, path) =>
+    /// <summary>Wall-clock of the last sweep kick; gates <see cref="KickImageSweepIfDue"/>.</summary>
+    private DateTime _lastImageSweepUtc = DateTime.MinValue;
+
+    /// <summary>Minimum spacing between sweeps kicked by a no-op Refresh (tab activation).</summary>
+    internal static readonly TimeSpan ImageSweepThrottle = TimeSpan.FromMinutes(10);
+
+    private void KickImageSweepIfDue()
+    {
+        if (DateTime.UtcNow - _lastImageSweepUtc < ImageSweepThrottle) return;
+        KickImageSweep();
+    }
+
+    private void KickImageSweep()
+    {
+        if (_artistImageService == null || _allArtists.Count == 0) return;
+        _lastImageSweepUtc = DateTime.UtcNow;
+
+        if (_imageRefreshDebounce == null)
+        {
+            _imageRefreshDebounce = new DispatcherTimer { Interval = TimeSpan.FromSeconds(2) };
+            _imageRefreshDebounce.Tick += (_, _) =>
             {
-                // Debounce list rebuild — batch image updates every 2 seconds
-                Dispatcher.UIThread.Post(() =>
-                {
-                    _imageRefreshDebounce.Stop();
-                    _imageRefreshDebounce.Start();
-                });
-            });
+                _imageRefreshDebounce.Stop();
+                ApplyFilter(_currentFilter);
+            };
         }
+
+        _ = _artistImageService.FetchAndCacheAsync(_allArtists, (artist, path) =>
+        {
+            // Debounce list rebuild — batch image updates every 2 seconds
+            Dispatcher.UIThread.Post(() =>
+            {
+                _imageRefreshDebounce.Stop();
+                _imageRefreshDebounce.Start();
+            });
+        });
     }
 
     private async Task SweepMissingArtistImagesAsync(List<Artist> artists)
