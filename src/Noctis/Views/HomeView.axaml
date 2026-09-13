@@ -13,6 +13,135 @@
 
     <UserControl.Resources>
         <conv:ArtworkPathConverter x:Key="ArtworkConverter" />
+
+        <!-- One chart row, shared by Most Played and Last Played: rank | art | title+heart |
+             artist | duration | plays | dots. The row's IsLastPlayed picks which list a click
+             queues (PlayChartRow) and turns the podium tints off. -->
+                        <DataTemplate x:Key="ChartRowTemplate" x:DataType="m:TopSongRow">
+                            <Button Classes="browse-item home-chart-row"
+                                    helpers:DragFileBehavior.EnableFileDrag="True"
+                                    ContextRequested="OnChartRowContextRequested"
+                                    Command="{Binding $parent[ItemsControl].((vm:HomeViewModel)DataContext).PlayChartRowCommand}"
+                                    CommandParameter="{Binding}">
+                                <!-- The playing track lights its text in the accent colour
+                                     (title, artist, count), never a solid row fill. -->
+                                <Border Classes="chart-body" Classes.playing="{Binding Track.IsNowPlaying}">
+                                    <Grid ColumnDefinitions="48,44,1.6*,*,72,100,44" Height="54">
+                                        <TextBlock Grid.Column="0"
+                                                   Classes="rank-num"
+                                                   Classes.gold="{Binding IsTop}"
+                                                   Classes.silver="{Binding IsSecond}"
+                                                   Classes.bronze="{Binding IsThird}"
+                                                   Text="{Binding Rank}"
+                                                   HorizontalAlignment="Center"
+                                                   VerticalAlignment="Center" />
+                                        <Border Grid.Column="1"
+                                                Width="36" Height="36"
+                                                CornerRadius="4"
+                                                ClipToBounds="True"
+                                                VerticalAlignment="Center"
+                                                Background="{DynamicResource SystemControlBackgroundBaseLowBrush}">
+                                            <Panel>
+                                                <TextBlock Text="{loc:T Home.Text}"
+                                                           FontSize="14"
+                                                           HorizontalAlignment="Center"
+                                                           VerticalAlignment="Center"
+                                                           Opacity="0.2"
+                                                           IsVisible="{Binding Track.AlbumArtworkPath, Converter={x:Static StringConverters.IsNullOrEmpty}}" />
+                                                <controls:CachedImage SourcePath="{Binding Track.AlbumArtworkPath}"
+                                                                      Stretch="UniformToFill"
+                                                                      RenderOptions.BitmapInterpolationMode="HighQuality"
+                                                                      IsVisible="{Binding Track.AlbumArtworkPath, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                                            </Panel>
+                                        </Border>
+                                        <!-- Left-aligned grid: the star column shrinks to the title's
+                                             desired width, so the heart hugs the title instead of
+                                             sitting at the far edge of the cell. -->
+                                        <Grid Grid.Column="2"
+                                              ColumnDefinitions="*,Auto"
+                                              HorizontalAlignment="Left"
+                                              VerticalAlignment="Center"
+                                              Margin="14,0,16,0">
+                                            <TextBlock Grid.Column="0"
+                                                       Classes="chart-title"
+                                                       FontSize="13"
+                                                       FontWeight="SemiBold"
+                                                       TextTrimming="CharacterEllipsis"
+                                                       MaxLines="1">
+                                                <Run Text="{Binding Track.Title}" />
+                                                <InlineUIContainer BaselineAlignment="Center">
+                                                    <Border Classes="explicit-badge compact"
+                                                            Margin="6,0,0,0"
+                                                            IsVisible="{Binding Track.IsExplicit}"
+                                                            ToolTip.Tip="{loc:T Home.ExplicitTip}">
+                                                        <TextBlock Text="E"
+                                                                   Classes="explicit-badge-text compact"
+                                                                   FontSize="9"
+                                                                   Opacity="0.9" />
+                                                    </Border>
+                                                </InlineUIContainer>
+                                            </TextBlock>
+                                            <controls:HeartIcon Grid.Column="1" Size="14" ShowWhenOff="False"
+                                                Margin="6,0,0,0" VerticalAlignment="Center"
+                                                IsFavorite="{Binding Track.IsFavorite}" />
+                                        </Grid>
+                                        <TextBlock Grid.Column="3"
+                                                   Classes="chart-artist"
+                                                   Text="{Binding Track.Artist}"
+                                                   FontSize="13"
+                                                   Opacity="0.7"
+                                                   VerticalAlignment="Center"
+                                                   TextTrimming="CharacterEllipsis"
+                                                   MaxLines="1"
+                                                   Margin="0,0,16,0" />
+                                        <TextBlock Grid.Column="4"
+                                                   Classes="chart-duration"
+                                                   Text="{Binding Track.DurationFormatted}"
+                                                   FontSize="12"
+                                                   Opacity="0.6"
+                                                   VerticalAlignment="Center"
+                                                   HorizontalAlignment="Left" />
+                                        <StackPanel Grid.Column="5"
+                                                    Orientation="Horizontal"
+                                                    Spacing="3"
+                                                    VerticalAlignment="Center"
+                                                    HorizontalAlignment="Right"
+                                                    Margin="0,0,8,0"
+                                                    ToolTip.Tip="{loc:T Home.ListenCountTip}">
+                                            <TextBlock Classes="chart-plays"
+                                                       Text="{Binding Track.PlayCount}"
+                                                       FontSize="12"
+                                                       FontWeight="SemiBold"
+                                                       Opacity="0.8"
+                                                       VerticalAlignment="Center" />
+                                            <TextBlock Classes="chart-plays"
+                                                       Text="{loc:T Home.Plays}"
+                                                       FontSize="12"
+                                                       FontWeight="SemiBold"
+                                                       Opacity="0.55"
+                                                       VerticalAlignment="Center" />
+                                        </StackPanel>
+                                        <Button Grid.Column="6"
+                                                Classes="chart-dots"
+                                                Width="28" Height="28"
+                                                CornerRadius="14"
+                                                Padding="0"
+                                                Background="Transparent"
+                                                BorderThickness="0"
+                                                HorizontalAlignment="Center"
+                                                VerticalAlignment="Center"
+                                                Cursor="Hand"
+                                                ToolTip.Tip="{loc:T Home.OptionsTip}"
+                                                Click="OnChartRowDotsClick">
+                                            <PathIcon Data="{StaticResource MoreDotsIcon}"
+                                                      Width="14" Height="14"
+                                                      HorizontalAlignment="Center"
+                                                      VerticalAlignment="Center" />
+                                        </Button>
+                                    </Grid>
+                                </Border>
+                            </Button>
+                        </DataTemplate>
     </UserControl.Resources>
 
     <UserControl.Styles>
@@ -52,7 +181,7 @@
             <Setter Property="Opacity" Value="1"/>
         </Style>
 
-        <!-- Recently Played: a play button fades in on hover -->
+        <!-- Album art: a play button fades in on hover -->
         <Style Selector="Button.recent-play">
             <Setter Property="Transitions">
                 <Transitions>
@@ -87,14 +216,15 @@
             <Setter Property="Background" Value="Transparent"/>
         </Style>
 
-        <!-- Disclosure chevron: points right when folded, rotates down when open. The
+        <!-- Disclosure chevron: the thin ComboBox glyph, pointing right when folded and
+             rotating down when open. The
              rotation is a TransformOperationsTransition, never a KeyFrame — a KeyFrame on
              RenderTransform throws at startup. The resting rotation is set here rather
              than on the element, because a local value on the PathIcon would win over
              the .expanded style and the chevron would never turn. -->
         <Style Selector="Button.section-toggle PathIcon.section-chevron">
             <Setter Property="Opacity" Value="0.4"/>
-            <Setter Property="RenderTransform" Value="rotate(0deg)"/>
+            <Setter Property="RenderTransform" Value="rotate(-90deg)"/>
             <Setter Property="Transitions">
                 <Transitions>
                     <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.18">
@@ -107,10 +237,113 @@
             </Setter>
         </Style>
         <Style Selector="Button.section-toggle.expanded PathIcon.section-chevron">
-            <Setter Property="RenderTransform" Value="rotate(90deg)"/>
+            <Setter Property="RenderTransform" Value="rotate(0deg)"/>
         </Style>
         <Style Selector="Button.section-toggle:pointerover PathIcon.section-chevron">
             <Setter Property="Opacity" Value="0.85"/>
+        </Style>
+
+        <!-- Most Listened To chart rows: full-width pills, one track per row -->
+        <Style Selector="Button.home-chart-row">
+            <Setter Property="Background" Value="{DynamicResource HomeCardBackground}"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+        </Style>
+        <!-- Hover fill goes on the template's ContentPresenter: the Fluent Button theme
+             paints that presenter itself on :pointerover, so a Button.Background setter
+             is masked (HomeChartRowBehaviourTests pins this). -->
+        <Style Selector="Button.home-chart-row /template/ ContentPresenter#PART_ContentPresenter, Button.home-rail-track /template/ ContentPresenter#PART_ContentPresenter, Button.home-rail-album /template/ ContentPresenter#PART_ContentPresenter, Button.home-rail-card /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Transitions">
+                <Transitions>
+                    <BrushTransition Property="Background" Duration="0:0:0.08"/>
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="Button.home-chart-row:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource HomeCardHoverBackground}"/>
+        </Style>
+        <!-- Rows, not buttons: no press zoom (the app-wide Button:pressed scale). -->
+        <Style Selector="Button.home-chart-row:pressed, Button.home-rail-track:pressed, Button.home-rail-album:pressed, Button.home-rail-card:pressed">
+            <Setter Property="RenderTransform" Value="scale(1)"/>
+        </Style>
+        <!-- The playing track: accent text only (title, artist, count), no row fill. -->
+        <Style Selector="Border.chart-body.playing TextBlock.chart-title, Border.chart-body.playing TextBlock.chart-artist, Border.chart-body.playing TextBlock.chart-duration, Border.chart-body.playing TextBlock.chart-plays">
+            <Setter Property="Foreground" Value="{DynamicResource AccentColorBrush}"/>
+            <Setter Property="Opacity" Value="1"/>
+        </Style>
+        <Style Selector="Button.chart-dots:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource HomeCardHoverBackground}"/>
+        </Style>
+        <Style Selector="Button.chart-dots PathIcon">
+            <Setter Property="Opacity" Value="0.6"/>
+            <Setter Property="Transitions">
+                <Transitions>
+                    <DoubleTransition Property="Opacity" Duration="0:0:0.12"/>
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="Button.chart-dots:pointerover PathIcon">
+            <Setter Property="Opacity" Value="1"/>
+        </Style>
+
+        <!-- Albums rail: featured card and its track rows -->
+        <Style Selector="Border.rail-panel">
+            <Setter Property="Background" Value="{DynamicResource HomeCardBackground}"/>
+            <Setter Property="CornerRadius" Value="12"/>
+            <Setter Property="Padding" Value="6"/>
+        </Style>
+        <Style Selector="Button.home-rail-card">
+            <Setter Property="Background" Value="{DynamicResource HomeCardBackground}"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="Padding" Value="14"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+        </Style>
+        <Style Selector="Button.home-rail-card:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource HomeCardHoverBackground}"/>
+        </Style>
+        <Style Selector="Button.home-rail-track">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+        </Style>
+        <Style Selector="Button.home-rail-track:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource HomeCardHoverBackground}"/>
+        </Style>
+        <!-- Hairline under each track row, as in the reference; the hover pill keeps it. -->
+        <Style Selector="Border.rail-track-body">
+            <Setter Property="Padding" Value="10,0"/>
+            <Setter Property="BorderThickness" Value="0,0,0,1"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
+        </Style>
+        <Style Selector="ContentPresenter:nth-last-child(1) > Button.home-rail-track Border.rail-track-body">
+            <Setter Property="BorderThickness" Value="0"/>
+        </Style>
+        <Style Selector="Border.rail-track-body.playing TextBlock.rail-title, Border.rail-track-body.playing TextBlock.rail-duration">
+            <Setter Property="Foreground" Value="{DynamicResource AccentColorBrush}"/>
+            <Setter Property="Opacity" Value="1"/>
+        </Style>
+        <Style Selector="Button.home-rail-album">
+            <Setter Property="Background" Value="{DynamicResource HomeCardBackground}"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+        </Style>
+        <Style Selector="Button.home-rail-album:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource HomeCardHoverBackground}"/>
         </Style>
 
         <!-- NOTE: the section panels below carry NO Spacing — each folding body carries the
@@ -126,316 +359,252 @@
                       VerticalScrollBarVisibility="Auto">
             <StackPanel Margin="28,20,28,115" Spacing="32">
 
-                <!-- Top Songs (ranked pill grid) -->
-                <StackPanel IsVisible="{Binding TopSongRows.Count}">
-                    <Button Classes="section-toggle" Classes.expanded="{Binding IsTopSongsExpanded}"
-                            Command="{Binding ToggleSectionCommand}" CommandParameter="TopSongs"
-                            ToolTip.Tip="{loc:T Home.HideShowSectionTip}">
-                        <StackPanel Orientation="Horizontal" Spacing="10">
-                            <TextBlock Text="{loc:T Home.MostListened}"
-                                       FontSize="30"
-                                       FontWeight="Bold" />
-                            <PathIcon Classes="section-chevron" Data="{StaticResource ChevronRightIcon}"
-                                      Width="16" Height="16" VerticalAlignment="Center" />
-                        </StackPanel>
-                    </Button>
+                <!-- ── Hero block. Row 0 = Top Artists across the full width. Row 1 = two
+                     columns: Most Played + Last Played on the left, the Albums rail on the
+                     right. Below ~1100px the code-behind (UpdateHeroLayout) drops the rail
+                     into row 2 under the charts. ── -->
+                <Grid x:Name="HeroGrid" ColumnDefinitions="*,28,360" RowDefinitions="Auto,Auto,Auto">
 
-                    <controls:CollapsibleContent IsOpen="{Binding IsTopSongsExpanded}">
-                        <ItemsControl ItemsSource="{Binding TopSongRows}"
-                                      Margin="0,14,0,0">
-                            <ItemsControl.ItemsPanel>
-                                <ItemsPanelTemplate>
-                                    <UniformGrid Columns="3" />
-                                </ItemsPanelTemplate>
-                            </ItemsControl.ItemsPanel>
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate x:DataType="m:TopSongRow">
-                                    <Button Classes="browse-item"
-                                            Background="{DynamicResource HomeCardBackground}"
-                                            BorderThickness="0"
-                                            CornerRadius="6"
-                                            Padding="0"
-                                            Height="56"
-                                            Margin="3,3"
-                                            Cursor="Hand"
-                                            HorizontalAlignment="Stretch"
-                                            HorizontalContentAlignment="Stretch"
-                                            helpers:DragFileBehavior.EnableFileDrag="True"
-                                            ContextRequested="OnTopSongContextRequested"
-                                            Command="{Binding $parent[ItemsControl].((vm:HomeViewModel)DataContext).PlayTopSongCommand}"
-                                            CommandParameter="{Binding Track}">
-                                        <Button.Styles>
-                                            <Style Selector="Button:pointerover">
-                                                <Setter Property="Background" Value="{DynamicResource HomeCardHoverBackground}" />
-                                            </Style>
-                                        </Button.Styles>
-
-                                        <!-- Pill content: artwork + rank + title + play bar + play count -->
-                                        <Grid ColumnDefinitions="56,38,*,Auto">
-                                            <Border Grid.Column="0"
-                                                    Width="56" Height="56"
-                                                    CornerRadius="6,0,0,6"
-                                                    ClipToBounds="True"
-                                                    Background="{DynamicResource SystemControlBackgroundBaseLowBrush}">
-                                                <Panel>
-                                                    <TextBlock Text="{loc:T Home.Text}"
-                                                               FontSize="16"
-                                                               HorizontalAlignment="Center"
-                                                               VerticalAlignment="Center"
-                                                               Opacity="0.2"
-                                                               IsVisible="{Binding Track.AlbumArtworkPath, Converter={x:Static StringConverters.IsNullOrEmpty}}" />
-                                                    <controls:CachedImage SourcePath="{Binding Track.AlbumArtworkPath}"
-                                                                          Stretch="UniformToFill"
-                                                                          RenderOptions.BitmapInterpolationMode="HighQuality"
-                                                                          IsVisible="{Binding Track.AlbumArtworkPath, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                    <!-- Top Artists -->
+                    <StackPanel Grid.Column="0" Grid.ColumnSpan="3" Grid.Row="0" Margin="0,0,0,32"
+                                IsVisible="{Binding TopArtists.Count}">
+                        <Button Classes="section-toggle" Classes.expanded="{Binding IsTopArtistsExpanded}"
+                                Command="{Binding ToggleSectionCommand}" CommandParameter="TopArtists"
+                                ToolTip.Tip="{loc:T Home.HideShowSectionTip}">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <TextBlock Text="{loc:T Home.TopArtists}"
+                                           FontSize="22"
+                                           FontWeight="Bold" />
+                                <PathIcon Classes="section-chevron" Data="{StaticResource ChevronDownThinIcon}"
+                                          Width="12" Height="12" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+                        <controls:CollapsibleContent IsOpen="{Binding IsTopArtistsExpanded}" Lift="10" Motion="Glide">
+                            <ItemsControl ItemsSource="{Binding TopArtists}"
+                                          Margin="0,14,0,0">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <UniformGrid Columns="6" VerticalAlignment="Top" />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="m:Artist">
+                                        <Button Background="Transparent" BorderThickness="0" Padding="6"
+                                                Margin="2" Cursor="Hand"
+                                                HorizontalAlignment="Stretch"
+                                                HorizontalContentAlignment="Center"
+                                                Command="{Binding $parent[ItemsControl].((vm:HomeViewModel)DataContext).OpenTopArtistCommand}"
+                                                CommandParameter="{Binding}">
+                                            <Button.Styles>
+                                                <Style Selector="Button:pointerover Border#ArtistAvatar">
+                                                    <Setter Property="BorderBrush" Value="{DynamicResource AccentColorBrush}" />
+                                                </Style>
+                                                <!-- Keep the tile transparent on hover/press: only the
+                                                     avatar ring lights up, no gray square behind it. -->
+                                                <Style Selector="Button:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+                                                    <Setter Property="Background" Value="Transparent" />
+                                                </Style>
+                                                <Style Selector="Button:pressed /template/ ContentPresenter#PART_ContentPresenter">
+                                                    <Setter Property="Background" Value="Transparent" />
+                                                </Style>
+                                            </Button.Styles>
+                                            <StackPanel Spacing="10" HorizontalAlignment="Center">
+                                                <!-- Circular portrait: byte-faithful copy of the Artists-page
+                                                     tile (LibraryArtistsView) at the same 160px size and 14pt
+                                                     name, which renders every artist as a full uncut circle. The previous custom variant (extra
+                                                     BorderThickness on the clipping border, HighQuality hint,
+                                                     DecodeWidth, Viewbox) drew some photos cut off at the circle
+                                                     edges. The hover accent ring lives on a separate overlay
+                                                     border so it can't affect the clip or the image layout. -->
+                                                <Panel Width="160" Height="160" HorizontalAlignment="Center">
+                                                    <Border Width="160" Height="160"
+                                                            CornerRadius="80"
+                                                            Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                                                            ClipToBounds="True">
+                                                        <Panel>
+                                                            <PathIcon Data="{StaticResource ArtistsIcon}"
+                                                                      Width="66"
+                                                                      Height="66"
+                                                                      HorizontalAlignment="Center"
+                                                                      VerticalAlignment="Center"
+                                                                      Opacity="0.22" />
+                                                            <controls:CachedImage SourcePath="{Binding ImagePath}"
+                                                                                  Stretch="UniformToFill"
+                                                                                  Width="160"
+                                                                                  Height="160"
+                                                                                  IsVisible="{Binding ImagePath, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                                                        </Panel>
+                                                    </Border>
+                                                    <Border x:Name="ArtistAvatar"
+                                                            Width="160" Height="160"
+                                                            CornerRadius="80"
+                                                            BorderThickness="2"
+                                                            BorderBrush="Transparent"
+                                                            IsHitTestVisible="False">
+                                                        <Border.Transitions>
+                                                            <Transitions>
+                                                                <BrushTransition Property="BorderBrush" Duration="0:0:0.15"/>
+                                                            </Transitions>
+                                                        </Border.Transitions>
+                                                    </Border>
                                                 </Panel>
-                                            </Border>
-                                            <TextBlock Grid.Column="1"
-                                                       Classes="rank-num"
-                                                       Classes.gold="{Binding IsTop}"
-                                                       Classes.silver="{Binding IsSecond}"
-                                                       Classes.bronze="{Binding IsThird}"
-                                                       Text="{Binding Rank}"
-                                                       HorizontalAlignment="Center"
-                                                       VerticalAlignment="Center" />
-                                            <Grid Grid.Column="2"
-                                                  ColumnDefinitions="*,Auto"
-                                                  VerticalAlignment="Center"
-                                                  Margin="0,0,10,0">
-                                                <TextBlock Grid.Column="0"
-                                                           FontSize="13"
+                                                <TextBlock Text="{Binding Name}"
+                                                           FontSize="14"
                                                            FontWeight="SemiBold"
+                                                           HorizontalAlignment="Center"
+                                                           TextAlignment="Center"
                                                            TextTrimming="CharacterEllipsis"
-                                                           MaxLines="1">
-                                                    <Run Text="{Binding Track.Title}" />
-                                                    <InlineUIContainer BaselineAlignment="Center">
-                                                        <Border Classes="explicit-badge compact"
-                                                                Margin="6,0,0,0"
-                                                                IsVisible="{Binding Track.IsExplicit}"
-                                                                ToolTip.Tip="{loc:T Home.ExplicitTip}">
-                                                            <TextBlock Text="E"
-                                                                       Classes="explicit-badge-text compact"
-                                                                       FontSize="9"
-                                                                       Opacity="0.9" />
-                                                        </Border>
-                                                    </InlineUIContainer>
-                                                </TextBlock>
-                                                <controls:HeartIcon Grid.Column="1" Size="14" ShowWhenOff="False"
-                                                    Margin="6,0,0,0" VerticalAlignment="Center"
-                                                    IsFavorite="{Binding Track.IsFavorite}" />
-                                            </Grid>
-                                            <StackPanel Grid.Column="3"
-                                                        Orientation="Horizontal"
-                                                        Spacing="3"
-                                                        VerticalAlignment="Center"
-                                                        Margin="0,0,14,0"
-                                                        ToolTip.Tip="{loc:T Home.ListenCountTip}">
-                                                <TextBlock Text="{Binding Track.PlayCount}"
-                                                           FontSize="11"
-                                                           FontWeight="SemiBold"
-                                                           Opacity="0.75"
-                                                           VerticalAlignment="Center" />
-                                                <TextBlock Text="{loc:T Home.Plays}"
-                                                           FontSize="11"
-                                                           FontWeight="SemiBold"
-                                                           Opacity="0.55"
-                                                           VerticalAlignment="Center" />
+                                                           MaxLines="2" />
                                             </StackPanel>
-                                        </Grid>
-                                    </Button>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                    </controls:CollapsibleContent>
-                </StackPanel>
+                                        </Button>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </controls:CollapsibleContent>
+                    </StackPanel>
 
-                <!-- Top Artists -->
-                <StackPanel IsVisible="{Binding TopArtists.Count}">
-                    <Button Classes="section-toggle" Classes.expanded="{Binding IsTopArtistsExpanded}"
-                            Command="{Binding ToggleSectionCommand}" CommandParameter="TopArtists"
-                            ToolTip.Tip="{loc:T Home.HideShowSectionTip}">
-                        <StackPanel Orientation="Horizontal" Spacing="8">
-                            <TextBlock Text="{loc:T Home.TopArtists}"
-                                       FontSize="22"
-                                       FontWeight="Bold" />
-                            <PathIcon Classes="section-chevron" Data="{StaticResource ChevronRightIcon}"
-                                      Width="14" Height="14" VerticalAlignment="Center" />
+                    <!-- Left column: the two charts. The rail starts level with Most Played
+                         and runs beside both, so each chart is shortened by its width. -->
+                    <StackPanel x:Name="HeroLeft" Grid.Column="0" Grid.Row="1" Spacing="32">
+
+                        <!-- Most Played: ranked chart, one full-width row per track -->
+                        <StackPanel IsVisible="{Binding TopSongRows.Count}">
+                            <Button Classes="section-toggle" Classes.expanded="{Binding IsTopSongsExpanded}"
+                                    Command="{Binding ToggleSectionCommand}" CommandParameter="TopSongs"
+                                    ToolTip.Tip="{loc:T Home.HideShowSectionTip}">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <TextBlock Text="{loc:T Home.MostPlayed}"
+                                               FontSize="22"
+                                               FontWeight="Bold" />
+                                    <PathIcon Classes="section-chevron" Data="{StaticResource ChevronDownThinIcon}"
+                                              Width="12" Height="12" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Button>
+
+                            <controls:CollapsibleContent IsOpen="{Binding IsTopSongsExpanded}" Lift="10" Motion="Glide">
+                                <ItemsControl ItemsSource="{Binding TopSongRows}"
+                                              ItemTemplate="{StaticResource ChartRowTemplate}"
+                                              Margin="0,14,0,0">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <StackPanel Spacing="8" />
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                </ItemsControl>
+                            </controls:CollapsibleContent>
                         </StackPanel>
-                    </Button>
-                    <controls:CollapsibleContent IsOpen="{Binding IsTopArtistsExpanded}">
-                        <ItemsControl ItemsSource="{Binding TopArtists}"
-                                      Margin="0,14,0,0">
-                            <ItemsControl.ItemsPanel>
-                                <ItemsPanelTemplate>
-                                    <UniformGrid Columns="6" VerticalAlignment="Top" />
-                                </ItemsPanelTemplate>
-                            </ItemsControl.ItemsPanel>
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate x:DataType="m:Artist">
-                                    <Button Background="Transparent" BorderThickness="0" Padding="6"
-                                            Margin="2" Cursor="Hand"
-                                            HorizontalAlignment="Stretch"
-                                            HorizontalContentAlignment="Center"
-                                            Command="{Binding $parent[ItemsControl].((vm:HomeViewModel)DataContext).OpenTopArtistCommand}"
-                                            CommandParameter="{Binding}">
-                                        <Button.Styles>
-                                            <Style Selector="Button:pointerover Border#ArtistAvatar">
-                                                <Setter Property="BorderBrush" Value="{DynamicResource AccentColorBrush}" />
-                                            </Style>
-                                            <!-- Keep the tile transparent on hover/press: only the
-                                                 avatar ring lights up, no gray square behind it. -->
-                                            <Style Selector="Button:pointerover /template/ ContentPresenter#PART_ContentPresenter">
-                                                <Setter Property="Background" Value="Transparent" />
-                                            </Style>
-                                            <Style Selector="Button:pressed /template/ ContentPresenter#PART_ContentPresenter">
-                                                <Setter Property="Background" Value="Transparent" />
-                                            </Style>
-                                        </Button.Styles>
-                                        <StackPanel Spacing="10" HorizontalAlignment="Center">
-                                            <!-- Circular portrait: byte-faithful copy of the Artists-page
-                                                 tile (LibraryArtistsView), which renders every artist as a
-                                                 full uncut circle. The previous custom variant (extra
-                                                 BorderThickness on the clipping border, HighQuality hint,
-                                                 DecodeWidth, Viewbox) drew some photos cut off at the circle
-                                                 edges. The hover accent ring lives on a separate overlay
-                                                 border so it can't affect the clip or the image layout. -->
-                                            <Panel Width="140" Height="140" HorizontalAlignment="Center">
-                                                <Border Width="140" Height="140"
-                                                        CornerRadius="70"
-                                                        Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
-                                                        ClipToBounds="True">
-                                                    <Panel>
-                                                        <PathIcon Data="{StaticResource ArtistsIcon}"
-                                                                  Width="58"
-                                                                  Height="58"
-                                                                  HorizontalAlignment="Center"
-                                                                  VerticalAlignment="Center"
-                                                                  Opacity="0.22" />
-                                                        <controls:CachedImage SourcePath="{Binding ImagePath}"
-                                                                              Stretch="UniformToFill"
-                                                                              Width="140"
-                                                                              Height="140"
-                                                                              IsVisible="{Binding ImagePath, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
-                                                    </Panel>
-                                                </Border>
-                                                <Border x:Name="ArtistAvatar"
-                                                        Width="140" Height="140"
-                                                        CornerRadius="70"
-                                                        BorderThickness="2"
-                                                        BorderBrush="Transparent"
-                                                        IsHitTestVisible="False">
-                                                    <Border.Transitions>
-                                                        <Transitions>
-                                                            <BrushTransition Property="BorderBrush" Duration="0:0:0.15"/>
-                                                        </Transitions>
-                                                    </Border.Transitions>
-                                                </Border>
+
+                        <!-- Last Played: the newest distinct tracks, same rows as Most Played -->
+                        <StackPanel IsVisible="{Binding LastPlayedRows.Count}">
+                            <Button Classes="section-toggle" Classes.expanded="{Binding IsLastPlayedExpanded}"
+                                    Command="{Binding ToggleSectionCommand}" CommandParameter="LastPlayed"
+                                    ToolTip.Tip="{loc:T Home.HideShowSectionTip}">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <TextBlock Text="{loc:T Home.LastPlayed}"
+                                               FontSize="22"
+                                               FontWeight="Bold" />
+                                    <PathIcon Classes="section-chevron" Data="{StaticResource ChevronDownThinIcon}"
+                                              Width="12" Height="12" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Button>
+                            <controls:CollapsibleContent IsOpen="{Binding IsLastPlayedExpanded}" Lift="10" Motion="Glide">
+                                <ItemsControl ItemsSource="{Binding LastPlayedRows}"
+                                              ItemTemplate="{StaticResource ChartRowTemplate}"
+                                              Margin="0,14,0,0">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <StackPanel Spacing="8" />
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                </ItemsControl>
+                            </controls:CollapsibleContent>
+                        </StackPanel>
+
+                    </StackPanel>
+
+                    <!-- Albums rail: the last played album as a card with its tracks. -->
+                    <StackPanel x:Name="RecentRail" Grid.Column="2" Grid.Row="1"
+                                IsVisible="{Binding RecentlyPlayedAlbums.Count}">
+                        <Button Classes="section-toggle" Classes.expanded="{Binding IsRecentlyPlayedExpanded}"
+                                Command="{Binding ToggleSectionCommand}" CommandParameter="RecentlyPlayed"
+                                ToolTip.Tip="{loc:T Home.HideShowSectionTip}">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <TextBlock Text="{loc:T Home.Albums}"
+                                           FontSize="22"
+                                           FontWeight="Bold" />
+                                <PathIcon Classes="section-chevron" Data="{StaticResource ChevronDownThinIcon}"
+                                          Width="12" Height="12" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+
+                        <controls:CollapsibleContent IsOpen="{Binding IsRecentlyPlayedExpanded}" Lift="10" Motion="Glide">
+                            <StackPanel Margin="0,14,0,0" Spacing="8">
+
+                                <!-- One rounded panel holds the featured card and its tracks, as in
+                                     the reference; the card's own fill stacks on top of it. -->
+                                <Border Classes="rail-panel"
+                                        IsVisible="{Binding RecentRailAlbum, Converter={x:Static ObjectConverters.IsNotNull}}">
+                                <StackPanel Spacing="4">
+                                <!-- Featured album card. Tag carries the Album for the shared
+                                     context-menu handler (the card's DataContext is the page VM). -->
+                                <Button Classes="album-tile home-rail-card"
+                                        Tag="{Binding RecentRailAlbum}"
+                                        IsVisible="{Binding RecentRailAlbum, Converter={x:Static ObjectConverters.IsNotNull}}"
+                                        helpers:DragFileBehavior.EnableFileDrag="True"
+                                        ContextRequested="OnRecentAlbumContextRequested"
+                                        Command="{Binding OpenAlbumCommand}"
+                                        CommandParameter="{Binding RecentRailAlbum}">
+                                    <Grid ColumnDefinitions="108,16,*">
+                                        <Border Grid.Column="0"
+                                                Width="108" Height="108"
+                                                CornerRadius="8"
+                                                ClipToBounds="True"
+                                                VerticalAlignment="Top"
+                                                Background="{DynamicResource SystemControlBackgroundBaseLowBrush}">
+                                            <Panel>
+                                                <TextBlock Text="{loc:T Home.Text}"
+                                                           FontSize="32"
+                                                           HorizontalAlignment="Center"
+                                                           VerticalAlignment="Center"
+                                                           Opacity="0.2"
+                                                           IsVisible="{Binding RecentRailAlbum.ArtworkPath, Converter={x:Static StringConverters.IsNullOrEmpty}}" />
+                                                <controls:CachedImage SourcePath="{Binding RecentRailAlbum.ArtworkPath}"
+                                                                      DecodeWidth="384"
+                                                                      Stretch="UniformToFill"
+                                                                      RenderOptions.BitmapInterpolationMode="HighQuality"
+                                                                      IsVisible="{Binding RecentRailAlbum.ArtworkPath, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                                                <Button Classes="recent-play"
+                                                        Width="34" Height="34"
+                                                        CornerRadius="17"
+                                                        Padding="0"
+                                                        HorizontalAlignment="Left"
+                                                        VerticalAlignment="Bottom"
+                                                        Margin="8,0,0,8"
+                                                        Background="{DynamicResource AccentColorBrush}"
+                                                        BorderThickness="0"
+                                                        Cursor="Hand"
+                                                        Opacity="0"
+                                                        ToolTip.Tip="{loc:T Home.PlayTip}"
+                                                        Command="{Binding PlayAlbumCommand}"
+                                                        CommandParameter="{Binding RecentRailAlbum}">
+                                                    <PathIcon Data="{StaticResource PlayIcon}"
+                                                              Width="14" Height="14"
+                                                              Margin="2,0,0,0"
+                                                              Foreground="{DynamicResource AccentForegroundBrush}" />
+                                                </Button>
                                             </Panel>
-                                            <TextBlock Text="{Binding Name}"
-                                                       FontSize="13"
-                                                       FontWeight="SemiBold"
-                                                       HorizontalAlignment="Center"
-                                                       TextAlignment="Center"
-                                                       TextTrimming="CharacterEllipsis"
-                                                       MaxLines="2" />
-                                        </StackPanel>
-                                    </Button>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                    </controls:CollapsibleContent>
-                </StackPanel>
-
-                <!-- Recently Played -->
-                <StackPanel IsVisible="{Binding RecentlyPlayedAlbums.Count}">
-                    <Button Classes="section-toggle" Classes.expanded="{Binding IsRecentlyPlayedExpanded}"
-                            Command="{Binding ToggleSectionCommand}" CommandParameter="RecentlyPlayed"
-                            ToolTip.Tip="{loc:T Home.HideShowSectionTip}">
-                        <StackPanel Orientation="Horizontal" Spacing="8">
-                            <TextBlock Text="{loc:T Home.RecentlyPlayed}"
-                                       FontSize="22"
-                                       FontWeight="Bold" />
-                            <PathIcon Classes="section-chevron" Data="{StaticResource ChevronRightIcon}"
-                                      Width="14" Height="14" VerticalAlignment="Center" />
-                        </StackPanel>
-                    </Button>
-
-                    <!-- Album cards -->
-                    <controls:CollapsibleContent IsOpen="{Binding IsRecentlyPlayedExpanded}">
-                        <ItemsControl ItemsSource="{Binding RecentlyPlayedAlbums}"
-                                      Margin="0,14,0,0">
-                            <ItemsControl.ItemsPanel>
-                                <ItemsPanelTemplate>
-                                    <UniformGrid Columns="5" VerticalAlignment="Top" />
-                                </ItemsPanelTemplate>
-                            </ItemsControl.ItemsPanel>
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate x:DataType="m:Album">
-                                    <Button Classes="album-tile"
-                                            Margin="2"
-                                            HorizontalAlignment="Stretch"
-                                            VerticalAlignment="Top"
-                                            helpers:DragFileBehavior.EnableFileDrag="True"
-                                            ContextRequested="OnRecentAlbumContextRequested"
-                                            Command="{Binding $parent[ItemsControl].((vm:HomeViewModel)DataContext).OpenAlbumCommand}"
-                                            CommandParameter="{Binding}">
-                                        <StackPanel Spacing="0">
-                                            <Border x:Name="RecentArt"
-                                                    CornerRadius="6"
-                                                    ClipToBounds="True"
-                                                    Background="{DynamicResource SystemControlBackgroundBaseLowBrush}">
-                                                <Border.Styles>
-                                                    <Style Selector="Border">
-                                                        <Setter Property="Height" Value="{Binding $self.Bounds.Width}" />
-                                                    </Style>
-                                                </Border.Styles>
-                                                <Panel>
-                                                    <TextBlock Text="{loc:T Home.Text}"
-                                                               FontSize="48"
-                                                               HorizontalAlignment="Center"
-                                                               VerticalAlignment="Center"
-                                                               Opacity="0.2"
-                                                               IsVisible="{Binding ArtworkPath, Converter={x:Static StringConverters.IsNullOrEmpty}}" />
-                                                     <controls:CachedImage SourcePath="{Binding ArtworkPath}"
-                                                                           DecodeWidth="768"
-                                                                           Stretch="UniformToFill"
-                                                                           RenderOptions.BitmapInterpolationMode="HighQuality"
-                                                                           IsVisible="{Binding ArtworkPath, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
-                                                     <controls:HeartIcon Size="18" ShowWhenOff="False"
-                                                     HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,8,8"
-                                                     IsFavorite="{Binding HasFavoriteTrack}" />
-                                                     <Button Classes="recent-play"
-                                                             Width="40" Height="40"
-                                                             CornerRadius="20"
-                                                             Padding="0"
-                                                             HorizontalAlignment="Left"
-                                                             VerticalAlignment="Bottom"
-                                                             Margin="10,0,0,10"
-                                                             Background="{DynamicResource AccentColorBrush}"
-                                                             BorderThickness="0"
-                                                             Cursor="Hand"
-                                                             Opacity="0"
-                                                             ToolTip.Tip="{loc:T Home.PlayTip}"
-                                                             Command="{Binding $parent[ItemsControl].((vm:HomeViewModel)DataContext).PlayAlbumCommand}"
-                                                             CommandParameter="{Binding}">
-                                                         <PathIcon Data="{StaticResource PlayIcon}"
-                                                                   Width="16" Height="16"
-                                                                   Margin="2,0,0,0"
-                                                                   Foreground="{DynamicResource AccentForegroundBrush}" />
-                                                     </Button>
-                                                 </Panel>
-                                             </Border>
-                                            <TextBlock Margin="0,5,0,0"
-                                                       FontSize="13"
+                                        </Border>
+                                        <StackPanel Grid.Column="2" VerticalAlignment="Center" Spacing="3">
+                                            <TextBlock FontSize="16"
                                                        FontWeight="SemiBold"
                                                        TextWrapping="Wrap"
                                                        TextTrimming="CharacterEllipsis"
                                                        MaxLines="2">
-                                                <Run Text="{Binding Name}" />
+                                                <Run Text="{Binding RecentRailAlbum.Name}" />
                                                 <InlineUIContainer BaselineAlignment="Center">
                                                     <Border Classes="explicit-badge compact"
                                                             Margin="4,0,0,0"
-                                                            IsVisible="{Binding IsExplicit}"
+                                                            IsVisible="{Binding RecentRailAlbum.IsExplicit}"
                                                             ToolTip.Tip="{loc:T Home.ExplicitTip}">
                                                         <TextBlock Text="E"
                                                                    Classes="explicit-badge-text compact"
@@ -444,20 +613,81 @@
                                                     </Border>
                                                 </InlineUIContainer>
                                             </TextBlock>
-                                            <TextBlock Text="{Binding Artist}"
-                                                       FontSize="12"
-                                                       FontWeight="Bold"
-                                                       Opacity="0.55"
+                                            <TextBlock Text="{Binding RecentRailAlbum.Artist}"
+                                                       FontSize="13"
+                                                       Opacity="0.65"
                                                        TextTrimming="CharacterEllipsis"
-                                                       MaxLines="1"
-                                                       Margin="0,1,0,0" />
+                                                       MaxLines="1" />
+                                            <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,8,0,0">
+                                                <TextBlock Text="{Binding RecentRailAlbum.Year}"
+                                                           FontSize="11" Opacity="0.5"
+                                                           IsVisible="{Binding RecentRailAlbum.Year}" />
+                                                <TextBlock Text="|" FontSize="11" Opacity="0.3"
+                                                           IsVisible="{Binding RecentRailAlbum.Year}" />
+                                                <StackPanel Orientation="Horizontal" Spacing="3">
+                                                    <TextBlock Text="{Binding RecentRailAlbum.TrackCount}" FontSize="11" Opacity="0.5" />
+                                                    <TextBlock Text="{loc:T Home.Songs}" FontSize="11" Opacity="0.5" />
+                                                </StackPanel>
+                                            </StackPanel>
                                         </StackPanel>
-                                    </Button>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                    </controls:CollapsibleContent>
-                </StackPanel>
+                                    </Grid>
+                                </Button>
+
+                                <!-- Featured album's tracks -->
+                                <ItemsControl ItemsSource="{Binding RecentRailTracks}" Margin="4,0,4,2">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate x:DataType="m:Track">
+                                            <Button Classes="browse-item home-rail-track"
+                                                    helpers:DragFileBehavior.EnableFileDrag="True"
+                                                    ContextRequested="OnRecentRailTrackContextRequested"
+                                                    Command="{Binding $parent[ItemsControl].((vm:HomeViewModel)DataContext).PlayRecentRailTrackCommand}"
+                                                    CommandParameter="{Binding}">
+                                                <Border Classes="rail-track-body" Classes.playing="{Binding IsNowPlaying}">
+                                                    <Grid ColumnDefinitions="30,*,Auto" Height="40">
+                                                        <TextBlock Grid.Column="0"
+                                                                   Text="{Binding TrackNumber}"
+                                                                   FontSize="12"
+                                                                   Opacity="0.5"
+                                                                   VerticalAlignment="Center" />
+                                                        <TextBlock Grid.Column="1"
+                                                                   Classes="rail-title"
+                                                                   FontSize="13"
+                                                                   VerticalAlignment="Center"
+                                                                   TextTrimming="CharacterEllipsis"
+                                                                   MaxLines="1"
+                                                                   Margin="0,0,10,0">
+                                                            <Run Text="{Binding Title}" />
+                                                            <InlineUIContainer BaselineAlignment="Center">
+                                                                <Border Classes="explicit-badge compact"
+                                                                        Margin="5,0,0,0"
+                                                                        IsVisible="{Binding IsExplicit}"
+                                                                        ToolTip.Tip="{loc:T Home.ExplicitTip}">
+                                                                    <TextBlock Text="E"
+                                                                               Classes="explicit-badge-text compact"
+                                                                               FontSize="9"
+                                                                               Opacity="0.9" />
+                                                                </Border>
+                                                            </InlineUIContainer>
+                                                        </TextBlock>
+                                                        <TextBlock Grid.Column="2"
+                                                                   Classes="rail-duration"
+                                                                   Text="{Binding DurationFormatted}"
+                                                                   FontSize="12"
+                                                                   Opacity="0.5"
+                                                                   VerticalAlignment="Center" />
+                                                    </Grid>
+                                                </Border>
+                                            </Button>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                                </StackPanel>
+                                </Border>
+
+                            </StackPanel>
+                        </controls:CollapsibleContent>
+                    </StackPanel>
+                </Grid>
 
                 <!-- ── Time-aware rows from local play history ── -->
 
@@ -468,11 +698,11 @@
                             ToolTip.Tip="{loc:T Home.HideShowSectionTip}">
                         <StackPanel Orientation="Horizontal" Spacing="8">
                             <TextBlock Text="{Binding TimeRotationTitle}" FontSize="22" FontWeight="Bold" />
-                            <PathIcon Classes="section-chevron" Data="{StaticResource ChevronRightIcon}"
-                                      Width="14" Height="14" VerticalAlignment="Center" />
+                            <PathIcon Classes="section-chevron" Data="{StaticResource ChevronDownThinIcon}"
+                                      Width="12" Height="12" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
-                    <controls:CollapsibleContent IsOpen="{Binding IsTimeRotationExpanded}">
+                    <controls:CollapsibleContent IsOpen="{Binding IsTimeRotationExpanded}" Lift="10" Motion="Glide">
                         <ItemsControl ItemsSource="{Binding TimeRotationTracks}"
                                       Margin="0,14,0,0">
                             <ItemsControl.ItemsPanel>
@@ -514,22 +744,22 @@
                     </controls:CollapsibleContent>
                 </StackPanel>
 
-                <!-- Heavy rotation (last two weeks) -->
-                <StackPanel IsVisible="{Binding HeavyRotationTracks.Count}">
+                <!-- Heavy rotation (last two weeks); Settings › Appearance › Home can hide it -->
+                <StackPanel IsVisible="{Binding IsHeavyRotationVisible}">
                     <Button Classes="section-toggle" Classes.expanded="{Binding IsHeavyRotationExpanded}"
                             Command="{Binding ToggleSectionCommand}" CommandParameter="HeavyRotation"
                             ToolTip.Tip="{loc:T Home.HideShowSectionTip}">
                         <StackPanel Spacing="2">
                             <StackPanel Orientation="Horizontal" Spacing="8">
                                 <TextBlock Text="{loc:T Home.HeavyRotation}" FontSize="22" FontWeight="Bold" />
-                                <PathIcon Classes="section-chevron" Data="{StaticResource ChevronRightIcon}"
-                                          Width="14" Height="14" VerticalAlignment="Center" />
+                                <PathIcon Classes="section-chevron" Data="{StaticResource ChevronDownThinIcon}"
+                                          Width="12" Height="12" VerticalAlignment="Center" />
                             </StackPanel>
                             <TextBlock Text="{loc:T Home.RepeatThesePastTwo}" FontSize="12" Opacity="0.5"
                                        HorizontalAlignment="Left" />
                         </StackPanel>
                     </Button>
-                    <controls:CollapsibleContent IsOpen="{Binding IsHeavyRotationExpanded}">
+                    <controls:CollapsibleContent IsOpen="{Binding IsHeavyRotationExpanded}" Lift="10" Motion="Glide">
                         <ItemsControl ItemsSource="{Binding HeavyRotationTracks}"
                                       Margin="0,14,0,0">
                             <ItemsControl.ItemsPanel>
@@ -579,14 +809,14 @@
                         <StackPanel Spacing="2">
                             <StackPanel Orientation="Horizontal" Spacing="8">
                                 <TextBlock Text="{loc:T Home.RecentlyRediscovered}" FontSize="22" FontWeight="Bold" />
-                                <PathIcon Classes="section-chevron" Data="{StaticResource ChevronRightIcon}"
-                                          Width="14" Height="14" VerticalAlignment="Center" />
+                                <PathIcon Classes="section-chevron" Data="{StaticResource ChevronDownThinIcon}"
+                                          Width="12" Height="12" VerticalAlignment="Center" />
                             </StackPanel>
                             <TextBlock Text="{loc:T Home.BackEarsAfterLong}" FontSize="12" Opacity="0.5"
                                        HorizontalAlignment="Left" />
                         </StackPanel>
                     </Button>
-                    <controls:CollapsibleContent IsOpen="{Binding IsRediscoveredExpanded}">
+                    <controls:CollapsibleContent IsOpen="{Binding IsRediscoveredExpanded}" Lift="10" Motion="Glide">
                         <ItemsControl ItemsSource="{Binding RediscoveredTracks}"
                                       Margin="0,14,0,0">
                             <ItemsControl.ItemsPanel>

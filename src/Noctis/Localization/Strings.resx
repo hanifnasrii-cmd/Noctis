@@ -665,18 +665,21 @@
 
   <!-- HomeView.axaml (auto-migrated) -->
   <data name="Home.HideShowSectionTip" xml:space="preserve"><value>Hide or show this section</value><comment>ToolTip.Tip in HomeView.axaml</comment></data>
-  <data name="Home.MostListened" xml:space="preserve"><value>Most Listened To</value><comment>Text in HomeView.axaml</comment></data>
+  <data name="Home.MostPlayed" xml:space="preserve"><value>Most Played</value><comment>Home chart header</comment></data>
+  <data name="Home.LastPlayed" xml:space="preserve"><value>Last Played</value><comment>Home chart header</comment></data>
   <data name="Home.Text" xml:space="preserve"><value>&#x266A;</value><comment>Text in HomeView.axaml</comment></data>
   <data name="Home.ExplicitTip" xml:space="preserve"><value>Explicit</value><comment>ToolTip.Tip in HomeView.axaml</comment></data>
   <data name="Home.ListenCountTip" xml:space="preserve"><value>Listen count</value><comment>ToolTip.Tip in HomeView.axaml</comment></data>
   <data name="Home.Plays" xml:space="preserve"><value>plays</value><comment>Text in HomeView.axaml</comment></data>
   <data name="Home.TopArtists" xml:space="preserve"><value>Top Artists</value><comment>Text in HomeView.axaml</comment></data>
-  <data name="Home.RecentlyPlayed" xml:space="preserve"><value>Recently Played</value><comment>Text in HomeView.axaml</comment></data>
+  <data name="Home.Albums" xml:space="preserve"><value>Albums</value><comment>Home right-hand rail header (last played album)</comment></data>
   <data name="Home.PlayTip" xml:space="preserve"><value>Play</value><comment>ToolTip.Tip in HomeView.axaml</comment></data>
   <data name="Home.HeavyRotation" xml:space="preserve"><value>Heavy rotation</value><comment>Text in HomeView.axaml</comment></data>
   <data name="Home.RepeatThesePastTwo" xml:space="preserve"><value>On repeat these past two weeks</value><comment>Text in HomeView.axaml</comment></data>
   <data name="Home.RecentlyRediscovered" xml:space="preserve"><value>Recently rediscovered</value><comment>Text in HomeView.axaml</comment></data>
   <data name="Home.BackEarsAfterLong" xml:space="preserve"><value>Back in your ears after a long break</value><comment>Text in HomeView.axaml</comment></data>
+  <data name="Home.Songs" xml:space="preserve"><value>songs</value><comment>Recently Played rail card: "2017 | 9 songs"</comment></data>
+  <data name="Home.OptionsTip" xml:space="preserve"><value>Options</value><comment>Most Listened To row dots button</comment></data>
 
   <!-- LibraryAlbumsView.axaml (auto-migrated) -->
   <data name="LibraryAlbums.Text" xml:space="preserve"><value>&#x266A;</value><comment>Text in LibraryAlbumsView.axaml</comment></data>
@@ -1572,7 +1575,10 @@
   <data name="Settings.Section.Files" xml:space="preserve"><value>Files</value><comment>Settings section label</comment></data>
   <data name="Settings.Section.Theme" xml:space="preserve"><value>Theme</value><comment>Settings section label</comment></data>
   <data name="Settings.Section.TextAnimation" xml:space="preserve"><value>Text animation</value><comment>Settings section label</comment></data>
+  <data name="Settings.Section.Home" xml:space="preserve"><value>Home</value><comment>Settings section label</comment></data>
   <data name="Settings.Section.Artwork" xml:space="preserve"><value>Artwork</value><comment>Settings section label</comment></data>
+  <data name="Settings.HomeHeavyRotation" xml:space="preserve"><value>Heavy Rotation</value><comment>Appearance › Home toggle</comment></data>
+  <data name="Settings.HomeHeavyRotationDesc" xml:space="preserve"><value>Show the "On repeat these past two weeks" row on the Home page.</value><comment>Appearance › Home toggle description</comment></data>
   <data name="Settings.Section.Taskbar" xml:space="preserve"><value>Taskbar</value><comment>Settings section label</comment></data>
   <data name="Settings.Section.PlayerIsland" xml:space="preserve"><value>Player island</value><comment>Settings section label</comment></data>
   <data name="Settings.Section.MiniPlayer" xml:space="preserve"><value>Mini player</value><comment>Settings section label</comment></data>

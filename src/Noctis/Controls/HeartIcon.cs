@@ -1,6 +1,7 @@
 using System;
 using Avalonia;
 using Avalonia.Animation;
+using Avalonia.Threading;
 using Avalonia.Animation.Easings;
 using Avalonia.Controls;
 using Avalonia.LogicalTree;
@@ -179,18 +180,47 @@ public sealed class HeartIcon : Panel
         var fav = IsFavorite;
         var showOff = !fav && ShowWhenOff;
 
-        _on.IsVisible = fav;
-        _on.Opacity = fav ? 1 : 0;
-        _on.RenderTransform = fav ? Rest : Small;
-
-        _off.IsVisible = showOff;
-        _off.Opacity = showOff ? OffOpacity : 0;
-        _off.RenderTransform = showOff ? Rest : Small;
+        SetGlyph(_on, shown: fav, restOpacity: 1, animate);
+        SetGlyph(_off, shown: showOff, restOpacity: OffOpacity, animate);
 
         if (!animate)
         {
             _on.Transitions = _onPop;
             _off.Transitions = _offPop;
         }
+    }
+
+    /// <summary>How long a glyph stays in the tree after it starts fading out (covers the pop).</summary>
+    private static readonly TimeSpan HideAfter = TimeSpan.FromMilliseconds(260);
+
+    /// <summary>
+    /// A glyph on its way OUT keeps IsVisible while its opacity/scale transition runs and
+    /// is hidden afterwards. Collapsing it on the same tick skipped the fade: un-favorite
+    /// used to vanish instantly while favorite popped in.
+    /// </summary>
+    private void SetGlyph(PathIcon glyph, bool shown, double restOpacity, bool animate)
+    {
+        if (shown)
+        {
+            glyph.IsVisible = true;
+            glyph.Opacity = restOpacity;
+            glyph.RenderTransform = Rest;
+            return;
+        }
+
+        glyph.Opacity = 0;
+        glyph.RenderTransform = Small;
+        if (!animate || !glyph.IsVisible)
+        {
+            glyph.IsVisible = false;
+            return;
+        }
+
+        DispatcherTimer.RunOnce(() =>
+        {
+            // Hide only if it was not shown again during the fade.
+            var stillHidden = ReferenceEquals(glyph, _on) ? !IsFavorite : IsFavorite || !ShowWhenOff;
+            if (stillHidden) glyph.IsVisible = false;
+        }, HideAfter);
     }
 }

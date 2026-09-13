@@ -1863,6 +1863,24 @@
             </StackPanel>
             </Border>
 
+            <TextBlock Classes="section-title" Text="{loc:T Settings.Section.Home}" Margin="0,16,0,8"/>
+            <Border Classes="setting-card group-card">
+            <StackPanel>
+            <Border Classes="setting-row">
+                <Grid ColumnDefinitions="*,Auto">
+                    <StackPanel Grid.Column="0" Spacing="2">
+                        <TextBlock Text="{loc:T Settings.HomeHeavyRotation}" FontSize="15" FontWeight="SemiBold"/>
+                        <TextBlock Text="{loc:T Settings.HomeHeavyRotationDesc}"
+                                   FontSize="12" Opacity="0.5" TextWrapping="Wrap"/>
+                    </StackPanel>
+                    <controls:LottieToggle Grid.Column="1"
+                                          IsChecked="{Binding HomeShowHeavyRotation}"
+                                          VerticalAlignment="Center"/>
+                </Grid>
+            </Border>
+            </StackPanel>
+            </Border>
+
             <TextBlock Classes="section-title" Text="{loc:T Settings.Section.Artwork}" Margin="0,16,0,8"/>
             <Border Classes="setting-card group-card">
             <StackPanel>

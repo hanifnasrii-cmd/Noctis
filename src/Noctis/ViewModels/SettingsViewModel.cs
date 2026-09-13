@@ -694,12 +694,18 @@ public partial class SettingsViewModel : ViewModelBase
     [ObservableProperty] private bool _homeTimeRotationExpanded = true;
     [ObservableProperty] private bool _homeHeavyRotationExpanded = true;
     [ObservableProperty] private bool _homeRediscoveredExpanded = true;
+    [ObservableProperty] private bool _homeLastPlayedExpanded = true;
+
+    /// <summary>Appearance toggle: whether Home shows the "Heavy rotation" row at all.</summary>
+    [ObservableProperty] private bool _homeShowHeavyRotation = true;
 
     partial void OnHomeTopSongsExpandedChanged(bool value) { if (_settingsLoaded) _ = SaveAsync(); }
     partial void OnHomeTopArtistsExpandedChanged(bool value) { if (_settingsLoaded) _ = SaveAsync(); }
     partial void OnHomeRecentlyPlayedExpandedChanged(bool value) { if (_settingsLoaded) _ = SaveAsync(); }
     partial void OnHomeTimeRotationExpandedChanged(bool value) { if (_settingsLoaded) _ = SaveAsync(); }
     partial void OnHomeHeavyRotationExpandedChanged(bool value) { if (_settingsLoaded) _ = SaveAsync(); }
+    partial void OnHomeLastPlayedExpandedChanged(bool value) { if (_settingsLoaded) _ = SaveAsync(); }
+    partial void OnHomeShowHeavyRotationChanged(bool value) { if (_settingsLoaded) _ = SaveAsync(); }
     partial void OnHomeRediscoveredExpandedChanged(bool value) { if (_settingsLoaded) _ = SaveAsync(); }
 
     // ── Noctis server (OpenSubsonic API for phones / other clients) ──
@@ -1852,6 +1858,8 @@ public partial class SettingsViewModel : ViewModelBase
             HomeTimeRotationExpanded = _settings.HomeTimeRotationExpanded;
             HomeHeavyRotationExpanded = _settings.HomeHeavyRotationExpanded;
             HomeRediscoveredExpanded = _settings.HomeRediscoveredExpanded;
+            HomeLastPlayedExpanded = _settings.HomeLastPlayedExpanded;
+            HomeShowHeavyRotation = _settings.HomeShowHeavyRotation;
             PlaybackBarBackgroundOpacity = Math.Clamp(_settings.PlaybackBarBackgroundOpacity, 0, 1);
             MiniPlayerBackgroundOpacity = Math.Clamp(_settings.MiniPlayerBackgroundOpacity, 0, 1);
             AlbumTileSizeAuto = _settings.AlbumTileSizeAuto;
@@ -2233,6 +2241,8 @@ public partial class SettingsViewModel : ViewModelBase
         _settings.HomeTimeRotationExpanded = HomeTimeRotationExpanded;
         _settings.HomeHeavyRotationExpanded = HomeHeavyRotationExpanded;
         _settings.HomeRediscoveredExpanded = HomeRediscoveredExpanded;
+        _settings.HomeLastPlayedExpanded = HomeLastPlayedExpanded;
+        _settings.HomeShowHeavyRotation = HomeShowHeavyRotation;
         _settings.PlaybackBarBackgroundOpacity = Math.Clamp(PlaybackBarBackgroundOpacity, 0, 1);
         _settings.MiniPlayerBackgroundOpacity = Math.Clamp(MiniPlayerBackgroundOpacity, 0, 1);
         _settings.AlbumTileSizeAuto = AlbumTileSizeAuto;
@@ -5155,6 +5165,7 @@ public partial class SettingsViewModel : ViewModelBase
             ReplaceArtistTagSeparators(defaultSettings.ArtistTagSeparators);
             EnableAnimatedCovers = defaultSettings.EnableAnimatedCovers;
             AlbumPageTintEnabled = defaultSettings.AlbumPageTintEnabled;
+            HomeShowHeavyRotation = defaultSettings.HomeShowHeavyRotation;
             NowPlayingArtworkStyle = defaultSettings.NowPlayingArtworkStyle;
             CoverFlowLayout = defaultSettings.CoverFlowLayout;
             MiniPlayerStyle = defaultSettings.MiniPlayerStyle;

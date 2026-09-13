@@ -42,6 +42,30 @@ public partial class HomeViewModel : ViewModelBase, IDisposable
     /// <summary>Recently played albums (grouped from playback history).</summary>
     public BulkObservableCollection<Album> RecentlyPlayedAlbums { get; } = new();
 
+    // ── Albums rail ──
+    //
+    // The Home page's right-hand column: the album that played most recently as a
+    // big card with its track list.
+    private const int MaxRailTracks = 12;
+
+    /// <summary>Album featured in the rail's big card (null when nothing was played yet).</summary>
+    [ObservableProperty] private Album? _recentRailAlbum;
+
+    /// <summary>Leading tracks of <see cref="RecentRailAlbum"/> in disc/track order.</summary>
+    public BulkObservableCollection<Track> RecentRailTracks { get; } = new();
+
+    // ── Last Played chart ──
+    //
+    // The six most recent distinct tracks from the play history, in the same row
+    // template as Most Played. Lives under the hero block where Heavy rotation was.
+    private const int MaxLastPlayed = 6;
+
+    /// <summary>Most recent distinct tracks, newest first (the queue a row click plays).</summary>
+    public BulkObservableCollection<Track> LastPlayed { get; } = new();
+
+    /// <summary>Numbered display rows for <see cref="LastPlayed"/>.</summary>
+    public BulkObservableCollection<TopSongRow> LastPlayedRows { get; } = new();
+
     /// <summary>Top artists by total play count across all their tracks.</summary>
     public BulkObservableCollection<Artist> TopArtists { get; } = new();
 
@@ -74,6 +98,13 @@ public partial class HomeViewModel : ViewModelBase, IDisposable
     [ObservableProperty] private bool _isTimeRotationExpanded = true;
     [ObservableProperty] private bool _isHeavyRotationExpanded = true;
     [ObservableProperty] private bool _isRediscoveredExpanded = true;
+    [ObservableProperty] private bool _isLastPlayedExpanded = true;
+
+    /// <summary>
+    /// Heavy rotation shows only while it has rows AND the Appearance toggle is on.
+    /// Re-raised when either input moves (collection reset, settings change).
+    /// </summary>
+    public bool IsHeavyRotationVisible => HeavyRotationTracks.Count > 0 && (_settings?.HomeShowHeavyRotation ?? true);
 
     /// <summary>Fires when the user wants to open an album's detail view.</summary>
     public event EventHandler<Album>? AlbumOpened;
@@ -93,6 +124,16 @@ public partial class HomeViewModel : ViewModelBase, IDisposable
         _settings = settings;
 
         AdoptPersistedSectionState();
+
+        HeavyRotationTracks.CollectionChanged += (_, _) => OnPropertyChanged(nameof(IsHeavyRotationVisible));
+        if (_settings != null)
+        {
+            _settings.PropertyChanged += (_, e) =>
+            {
+                if (e.PropertyName == nameof(SettingsViewModel.HomeShowHeavyRotation))
+                    OnPropertyChanged(nameof(IsHeavyRotationVisible));
+            };
+        }
 
         // Subscribe to track changes for real-time updates
         _player.TrackStarted += OnTrackStarted;
@@ -138,6 +179,7 @@ public partial class HomeViewModel : ViewModelBase, IDisposable
             IsTimeRotationExpanded = _settings.HomeTimeRotationExpanded;
             IsHeavyRotationExpanded = _settings.HomeHeavyRotationExpanded;
             IsRediscoveredExpanded = _settings.HomeRediscoveredExpanded;
+            IsLastPlayedExpanded = _settings.HomeLastPlayedExpanded;
         }
         finally
         {
@@ -175,6 +217,11 @@ public partial class HomeViewModel : ViewModelBase, IDisposable
         if (_settings != null && !_adoptingPersistedState) _settings.HomeRediscoveredExpanded = value;
     }
 
+    partial void OnIsLastPlayedExpandedChanged(bool value)
+    {
+        if (_settings != null && !_adoptingPersistedState) _settings.HomeLastPlayedExpanded = value;
+    }
+
     /// <summary>
     /// Folds one Home section open or shut. Keyed by name rather than one command per
     /// section so the header template stays a single reusable button.
@@ -190,6 +237,7 @@ public partial class HomeViewModel : ViewModelBase, IDisposable
             case "TimeRotation": IsTimeRotationExpanded = !IsTimeRotationExpanded; break;
             case "HeavyRotation": IsHeavyRotationExpanded = !IsHeavyRotationExpanded; break;
             case "Rediscovered": IsRediscoveredExpanded = !IsRediscoveredExpanded; break;
+            case "LastPlayed": IsLastPlayedExpanded = !IsLastPlayedExpanded; break;
         }
     }
 
@@ -211,7 +259,13 @@ public partial class HomeViewModel : ViewModelBase, IDisposable
 
                 while (RecentlyPlayedAlbums.Count > 10)
                     RecentlyPlayedAlbums.RemoveAt(RecentlyPlayedAlbums.Count - 1);
+
+                RebuildRecentRail();
             }
+
+            var recentTracks = LastPlayed.Where(t => t.Id != track.Id).ToList();
+            recentTracks.Insert(0, track);
+            ReplaceLastPlayed(recentTracks);
         });
     }
 
@@ -240,7 +294,9 @@ public partial class HomeViewModel : ViewModelBase, IDisposable
     public void MarkDirty() => _isDirty = true;
 
     /// <summary>Refreshes the Home tab content with latest data.</summary>
-    public async void Refresh()
+    public void Refresh() => _ = RefreshAsync();
+
+    internal async Task RefreshAsync()
     {
         if (!_isDirty && TopSongs.Count > 0)
         {
@@ -266,13 +322,11 @@ public partial class HomeViewModel : ViewModelBase, IDisposable
                         .OrderByDescending(t => t.PlayCount)
                         .Take(6)
                         .ToList());
-                TopSongs.ReplaceAll(top);
-                TopSongRows.ReplaceAll(BuildTopSongRows(top));
+                ReplaceTopSongsIfChanged(top);
             }
             else
             {
-                TopSongs.ReplaceAll(Array.Empty<Track>());
-                TopSongRows.ReplaceAll(Array.Empty<TopSongRow>());
+                ReplaceTopSongsIfChanged(Array.Empty<Track>());
             }
 
             // Recently played albums: O(1) lookups via GetAlbumById
@@ -285,6 +339,8 @@ public partial class HomeViewModel : ViewModelBase, IDisposable
                 .OfType<Album>()
                 .ToList();
             RecentlyPlayedAlbums.ReplaceAll(recentAlbums);
+            RebuildRecentRail();
+            ReplaceLastPlayed(_player.History);
 
             // Top Artists: aggregate play count by artist name (using album-artist
             // grouping that the library already maintains), drop the "Unknown Artist"
@@ -417,6 +473,22 @@ public partial class HomeViewModel : ViewModelBase, IDisposable
 
     private static List<TopSongRow> BuildTopSongRows(IReadOnlyList<Track> top)
         => top.Select((t, i) => new TopSongRow { Track = t, Rank = i + 1 }).ToList();
+
+    /// <summary>
+    /// Rebuilds the Most Played rows only when the ranking actually moved. A favorite
+    /// toggle dirties Home and refreshes it with the very same top tracks; rebuilding
+    /// the rows then re-realizes every row control, which detaches the one a context
+    /// menu was just opened on, and Avalonia shuts a menu whose owner leaves the tree
+    /// (the "opens and closes" glitch). Hearts and counts are bound per track, so
+    /// untouched rows stay live.
+    /// </summary>
+    private void ReplaceTopSongsIfChanged(IReadOnlyList<Track> top)
+    {
+        if (TopSongs.Count == top.Count && TopSongs.Zip(top).All(p => ReferenceEquals(p.First, p.Second)))
+            return;
+        TopSongs.ReplaceAll(top);
+        TopSongRows.ReplaceAll(BuildTopSongRows(top));
+    }
 
     private static string GetGreeting()
     {
@@ -584,6 +656,90 @@ public partial class HomeViewModel : ViewModelBase, IDisposable
     {
         if (track == null) return;
         await Helpers.LibraryRemovalHelper.RemoveWithPromptAsync(_library, new List<Track> { track });
+    }
+
+    // ── Recently Played rail ──
+
+    internal readonly record struct RecentRail(Album? Featured, List<Track> Tracks);
+
+    /// <summary>The newest recent album and its leading tracks in disc/track order.</summary>
+    internal static RecentRail BuildRecentRail(IReadOnlyList<Album> recent, int maxTracks)
+    {
+        var featured = recent.Count > 0 ? recent[0] : null;
+        if (featured == null)
+            return new RecentRail(null, new List<Track>());
+
+        var tracks = (featured.Tracks ?? new List<Track>())
+            .OrderBy(t => t.DiscNumber <= 0 ? 1 : t.DiscNumber)
+            .ThenBy(t => t.TrackNumber)
+            .Take(maxTracks)
+            .ToList();
+        return new RecentRail(featured, tracks);
+    }
+
+    private void RebuildRecentRail()
+    {
+        var rail = BuildRecentRail(RecentlyPlayedAlbums, MaxRailTracks);
+        RecentRailAlbum = rail.Featured;
+        ReplaceRowIfChanged(RecentRailTracks, rail.Tracks);
+    }
+
+    /// <summary>
+    /// The most recent distinct tracks from a newest-first history: a track that was
+    /// played twice keeps only its newest position.
+    /// </summary>
+    internal static List<Track> BuildLastPlayed(IEnumerable<Track> historyNewestFirst, int max)
+    {
+        var seen = new HashSet<Guid>();
+        var result = new List<Track>(max);
+        foreach (var t in historyNewestFirst)
+        {
+            if (!seen.Add(t.Id)) continue;
+            result.Add(t);
+            if (result.Count >= max) break;
+        }
+        return result;
+    }
+
+    private void ReplaceLastPlayed(IEnumerable<Track> historyNewestFirst)
+    {
+        var next = BuildLastPlayed(historyNewestFirst, MaxLastPlayed);
+        if (LastPlayed.Count == next.Count && LastPlayed.Zip(next).All(p => ReferenceEquals(p.First, p.Second)))
+            return;
+        LastPlayed.ReplaceAll(next);
+        LastPlayedRows.ReplaceAll(next.Select((t, i) => new TopSongRow { Track = t, Rank = i + 1, IsLastPlayed = true }).ToList());
+    }
+
+    /// <summary>Row click for both charts: queues the row's own list (Most Played or Last Played).</summary>
+    [RelayCommand]
+    private void PlayChartRow(TopSongRow row)
+    {
+        if (row.IsLastPlayed) PlayLastPlayed(row.Track);
+        else PlayTopSong(row.Track);
+    }
+
+    [RelayCommand]
+    private void PlayLastPlayed(Track track) => PlayFromRow(LastPlayed, track);
+
+    [RelayCommand]
+    private void ShuffleLastPlayed() => ShuffleRow(LastPlayed);
+
+    /// <summary>Plays a track from the rail's track list, queueing the whole featured album.</summary>
+    [RelayCommand]
+    private void PlayRecentRailTrack(Track track)
+    {
+        var album = RecentRailAlbum;
+        if (album?.Tracks == null || album.Tracks.Count == 0) return;
+        var tracks = album.Tracks.ToList();
+        var index = tracks.IndexOf(track);
+        if (index < 0) index = 0;
+        _player.ReplaceQueueAndPlay(tracks, index);
+    }
+
+    [RelayCommand]
+    private void ShuffleRecentRail(Track _)
+    {
+        if (RecentRailAlbum != null) ShuffleAlbum(RecentRailAlbum);
     }
 
     // ── Album commands ──

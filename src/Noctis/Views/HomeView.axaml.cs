@@ -18,12 +18,45 @@ public partial class HomeView : UserControl
 
     private readonly HashSet<Button> _selectedTiles = new();
 
+    /// <summary>Below this width the Recently Played rail drops under the left column.</summary>
+    private const double HeroTwoColumnMinWidth = 1100;
+    private bool _heroNarrow;
+
     public HomeView()
     {
         InitializeComponent();
         AddHandler(PointerPressedEvent, OnTilePointerPressed, RoutingStrategies.Tunnel);
+        SizeChanged += (_, e) => UpdateHeroLayout(e.NewSize.Width);
         // Forward Ctrl+A from the window so it works without first clicking a tile.
         _ = new WindowKeyForwarder(this, OnViewKeyDown);
+    }
+
+    /// <summary>
+    /// Two columns (left stack + 360px rail) when there is room; one column with the
+    /// rail underneath otherwise. Only touches the grid when the mode actually flips.
+    /// </summary>
+    private void UpdateHeroLayout(double width)
+    {
+        var narrow = width > 0 && width < HeroTwoColumnMinWidth;
+        if (narrow == _heroNarrow) return;
+        _heroNarrow = narrow;
+
+        if (narrow)
+        {
+            HeroGrid.ColumnDefinitions[1].Width = new GridLength(0);
+            HeroGrid.ColumnDefinitions[2].Width = new GridLength(0);
+            Grid.SetColumn(RecentRail, 0);
+            Grid.SetRow(RecentRail, 2);
+            RecentRail.Margin = new Thickness(0, 32, 0, 0);
+        }
+        else
+        {
+            HeroGrid.ColumnDefinitions[1].Width = new GridLength(28);
+            HeroGrid.ColumnDefinitions[2].Width = new GridLength(360);
+            Grid.SetColumn(RecentRail, 2);
+            Grid.SetRow(RecentRail, 1);
+            RecentRail.Margin = default;
+        }
     }
 
     private void OnTilePointerPressed(object? sender, PointerPressedEventArgs e)
@@ -65,8 +98,29 @@ public partial class HomeView : UserControl
     private AlbumContextMenuBuilder? _albumMenuBuilder;
     private Control? _menuOwner;
 
-    private void OnTopSongContextRequested(object? sender, ContextRequestedEventArgs e)
-        => OpenTrackMenu(sender, e, static vm => vm.PlayTopSongCommand, static vm => vm.ShuffleTopSongsCommand);
+    // Most Played and Last Played share one row template; the row says which list it is in.
+    private static bool IsLastPlayedRow(Control? c) => c?.DataContext is TopSongRow { IsLastPlayed: true };
+
+    private void OnChartRowContextRequested(object? sender, ContextRequestedEventArgs e)
+    {
+        if (IsLastPlayedRow(sender as Control))
+            OpenTrackMenu(sender, e, static vm => vm.PlayLastPlayedCommand, static vm => vm.ShuffleLastPlayedCommand);
+        else
+            OpenTrackMenu(sender, e, static vm => vm.PlayTopSongCommand, static vm => vm.ShuffleTopSongsCommand);
+    }
+
+    /// <summary>The chart row's dots button: same menu as a right-click on the row.</summary>
+    private void OnChartRowDotsClick(object? sender, RoutedEventArgs e)
+    {
+        var owner = sender as Control;
+        var opened = IsLastPlayedRow(owner)
+            ? OpenTrackMenu(owner, static vm => vm.PlayLastPlayedCommand, static vm => vm.ShuffleLastPlayedCommand)
+            : OpenTrackMenu(owner, static vm => vm.PlayTopSongCommand, static vm => vm.ShuffleTopSongsCommand);
+        if (opened) e.Handled = true;
+    }
+
+    private void OnRecentRailTrackContextRequested(object? sender, ContextRequestedEventArgs e)
+        => OpenTrackMenu(sender, e, static vm => vm.PlayRecentRailTrackCommand, static vm => vm.ShuffleRecentRailCommand);
 
     private void OnTimeRotationContextRequested(object? sender, ContextRequestedEventArgs e)
         => OpenTrackMenu(sender, e, static vm => vm.PlayTimeRotationCommand, static vm => vm.ShuffleTimeRotationCommand);
@@ -80,7 +134,14 @@ public partial class HomeView : UserControl
     private void OpenTrackMenu(object? sender, ContextRequestedEventArgs e,
         Func<HomeViewModel, ICommand> playCommand, Func<HomeViewModel, ICommand> shuffleCommand)
     {
-        if (sender is not Control owner) return;
+        if (OpenTrackMenu(sender as Control, playCommand, shuffleCommand))
+            e.Handled = true;
+    }
+
+    private bool OpenTrackMenu(Control? owner,
+        Func<HomeViewModel, ICommand> playCommand, Func<HomeViewModel, ICommand> shuffleCommand)
+    {
+        if (owner == null) return false;
         // Top-song rows wrap their Track in a TopSongRow for rank/bar display.
         var track = owner.DataContext switch
         {
@@ -88,8 +149,8 @@ public partial class HomeView : UserControl
             TopSongRow r => r.Track,
             _ => null,
         };
-        if (track == null) return;
-        if (DataContext is not HomeViewModel vm) return;
+        if (track == null) return false;
+        if (DataContext is not HomeViewModel vm) return false;
 
         if (_trackMenuBuilder == null)
         {
@@ -115,12 +176,15 @@ public partial class HomeView : UserControl
             snoozeCommand: vm.SnoozeForMonthCommand);
 
         OpenMenu(_trackMenuBuilder.Menu, owner);
-        e.Handled = true;
+        return true;
     }
 
     private void OnRecentAlbumContextRequested(object? sender, ContextRequestedEventArgs e)
     {
-        if (sender is not Control owner || owner.DataContext is not Album album) return;
+        if (sender is not Control owner) return;
+        // The rail's featured card sits on the page VM and carries its Album in Tag.
+        var album = owner.DataContext as Album ?? owner.Tag as Album;
+        if (album == null) return;
         if (DataContext is not HomeViewModel vm) return;
 
         // Push ctrl-selected albums to ViewModel so commands can operate on all of them

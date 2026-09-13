@@ -302,6 +302,12 @@ public class AppSettings
     /// <summary>Whether Home's "Recently rediscovered" section shows its rows.</summary>
     public bool HomeRediscoveredExpanded { get; set; } = true;
 
+    /// <summary>Whether Home's "Last Played" section shows its rows.</summary>
+    public bool HomeLastPlayedExpanded { get; set; } = true;
+
+    /// <summary>Settings toggle (Appearance): show the "Heavy rotation" row on Home at all.</summary>
+    public bool HomeShowHeavyRotation { get; set; } = true;
+
     /// <summary>Opacity of the playback bar's glass fill (0 = fully transparent, 1 = solid).
     /// Controls only the background, not the bar's text/controls. Default 0.4 matches the
     /// original #66 alpha glass look.</summary>
