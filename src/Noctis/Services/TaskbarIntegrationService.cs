@@ -121,9 +121,11 @@ public sealed class TaskbarIntegrationService : IDisposable
 
     // ── SVG path data (same as Icons.axaml, viewBox 0 0 24 24) ──
 
+    // Previous / Next are the playback bar's rewind / fast-forward glyphs (RewindIcon /
+    // FastForwardIcon in Icons.axaml), so the taskbar thumbnail matches the island.
     private const string PathPrevious =
-        "M3 3.75a.75.75 0 0 1 1.5 0v16.5a.75.75 0 0 1-1.5 0z" +
-        "m18 1.003c0-1.408-1.578-2.24-2.74-1.444L7.763 10.503a1.75 1.75 0 0 0-.01 2.88l10.499 7.302c1.16.807 2.749-.024 2.749-1.437z";
+        "M21.5 6.7Q21.5 5.1 20.1 5.9L12.7 11.1Q11.6 12 12.7 12.9L20.1 18.1Q21.5 18.9 21.5 17.3Z" +
+        "M12 6.7Q12 5.1 10.6 5.9L3.2 11.1Q2.1 12 3.2 12.9L10.6 18.1Q12 18.9 12 17.3Z";
 
     private const string PathPlay =
         "M5 5.274c0-1.707 1.826-2.792 3.325-1.977l12.362 6.727c1.566.852 1.566 3.1 0 3.952L8.325 20.702C6.826 21.518 5 20.432 5 18.726z";
@@ -133,8 +135,8 @@ public sealed class TaskbarIntegrationService : IDisposable
         "m9 0a1.75 1.75 0 0 0-1.75 1.75v14.5c0 .966.784 1.75 1.75 1.75h3.5a1.75 1.75 0 0 0 1.75-1.75V4.75A1.75 1.75 0 0 0 18.246 3z";
 
     private const string PathNext =
-        "M3 4.753c0-1.408 1.578-2.24 2.74-1.444l10.498 7.194a1.75 1.75 0 0 1 .01 2.88L5.749 20.685C4.59 21.492 3 20.66 3 19.248z" +
-        "M21 3.75a.75.75 0 0 0-1.5 0v16.5a.75.75 0 0 0 1.5 0z";
+        "M2.5 6.7Q2.5 5.1 3.9 5.9L11.3 11.1Q12.4 12 11.3 12.9L3.9 18.1Q2.5 18.9 2.5 17.3Z" +
+        "M12 6.7Q12 5.1 13.4 5.9L20.8 11.1Q21.9 12 20.8 12.9L13.4 18.1Q12 18.9 12 17.3Z";
 
     private const string PathHeartOutline =
         "m12.82 5.58l-.82.822l-.824-.824a5.375 5.375 0 1 0-7.601 7.602l7.895 7.895a.75.75 0 0 0 1.06 0l7.902-7.897a5.376 5.376 0 0 0-.001-7.599a5.38 5.38 0 0 0-7.611 0" +
