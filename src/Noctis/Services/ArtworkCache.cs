@@ -271,6 +271,9 @@ public static class ArtworkCache
         return $"{width}|{path}";
     }
 
+    /// <summary>Decode widths are bucketed 64–2048: grids and lists ask for ≤ 1024, the
+    /// artist hero (a portrait stretched across the window) asks for 2048 so an 1800px
+    /// photo is decoded at its own resolution instead of being halved and re-enlarged.</summary>
     private static int NormalizeDecodeWidth(int decodeWidth)
-        => decodeWidth <= 0 ? DecodeWidth : Math.Clamp(decodeWidth, 64, 1024);
+        => decodeWidth <= 0 ? DecodeWidth : Math.Clamp(decodeWidth, 64, 2048);
 }

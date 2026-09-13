@@ -422,7 +422,25 @@ public class ArtistImageService
         return true;
     }
 
+    /// <summary>Deezer serves the same photo at any square size up to 1800px; the search
+    /// JSON only offers 1000px (<c>picture_xl</c>). The artist page paints the portrait
+    /// across the whole window, so ask for 1800 (measured 09-13: 296 KB vs 88 KB, same
+    /// hash). Non-Deezer or unfamiliar URLs pass through untouched.</summary>
+    internal static string UpgradeDeezerSize(string imageUrl)
+        => imageUrl.Contains("dzcdn.net/images/artist/", StringComparison.OrdinalIgnoreCase)
+            ? imageUrl.Replace("/1000x1000-", "/1800x1800-", StringComparison.Ordinal)
+            : imageUrl;
+
     private async Task<byte[]?> DownloadImageBytesAsync(string imageUrl, CancellationToken token)
+    {
+        var bytes = await DownloadImageBytesOnceAsync(imageUrl, token).ConfigureAwait(false);
+        // Should Deezer ever refuse the large size, the 1000px original still exists.
+        if (bytes == null && imageUrl.Contains("/1800x1800-", StringComparison.Ordinal))
+            bytes = await DownloadImageBytesOnceAsync(imageUrl.Replace("/1800x1800-", "/1000x1000-", StringComparison.Ordinal), token).ConfigureAwait(false);
+        return bytes;
+    }
+
+    private async Task<byte[]?> DownloadImageBytesOnceAsync(string imageUrl, CancellationToken token)
     {
         using var request = new HttpRequestMessage(HttpMethod.Get, imageUrl);
         using var response = await _http
@@ -558,7 +576,7 @@ public class ArtistImageService
 
             var imageUrl = node.GetString();
             if (!string.IsNullOrWhiteSpace(imageUrl) && !IsDeezerPlaceholderUrl(imageUrl))
-                return imageUrl;
+                return UpgradeDeezerSize(imageUrl);
         }
 
         return null;
