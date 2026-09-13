@@ -22,16 +22,32 @@ namespace Noctis.Services;
 /// <item><b>Wikipedia</b> REST summary, reached through that Wikidata link (so the article
 /// is the artist's, never a same-name page): the lead paragraph as the bio.</item>
 /// </list>
-/// Results are cached per artist id under <c>artist_info/</c> — 30 days for a hit,
-/// 3 days for a miss — and every lookup is paced to MusicBrainz's 1 request/second rule.
+/// <b>Wikidata</b> also stands in for both when MusicBrainz sheds load: its name search
+/// (accepted only for an item with a MusicBrainz id) identifies the artist, and its claims
+/// (birthplace / formation, dates, genres, country) fill the facts.
+/// Results are cached per artist id under <c>artist_info/</c> — 7 days for a hit, 1 day
+/// for a miss or a partial hit — and every MusicBrainz call is paced to its 1 request/second rule.
 /// </summary>
 public sealed class ArtistInfoService
 {
     private const string MusicBrainzBase = "https://musicbrainz.org/ws/2/artist/";
     private const string WikidataApi = "https://www.wikidata.org/w/api.php";
     private const string WikipediaSummary = "https://en.wikipedia.org/api/rest_v1/page/summary/";
-    private static readonly TimeSpan HitTtl = TimeSpan.FromDays(30);
-    private static readonly TimeSpan MissTtl = TimeSpan.FromDays(3);
+    /// <summary>A hit refreshes weekly; a confirmed "no such artist" is retried daily.
+    /// Transient failures are never cached at all (see <see cref="GetTextAsync"/>).</summary>
+    private static readonly TimeSpan HitTtl = TimeSpan.FromDays(7);
+    private static readonly TimeSpan MissTtl = TimeSpan.FromDays(1);
+    /// <summary>MusicBrainz's search endpoint load-sheds with 503 "server is currently
+    /// busy" (X-RateLimit-Zone: search-shed) for seconds at a time — measured 09-13: one
+    /// 200 then two 503s three seconds apart. One retry each: past that, Wikidata's name
+    /// search identifies the artist and its claims stand in for the lookup.</summary>
+    private const int MusicBrainzSearchAttempts = 2;
+    private const int MusicBrainzLookupAttempts = 2;
+    private static readonly TimeSpan MusicBrainzRetryDelay = TimeSpan.FromSeconds(2);
+    /// <summary>Bumped when the cached shape gains a field older entries lack (2: Links) or
+    /// the pipeline learns a new way to find an artist (3: Wikidata lookup by MusicBrainz
+    /// id, transient failures no longer cached as misses), so older entries refetch.</summary>
+    internal const int CurrentSchema = 3;
 
     private static readonly string UserAgent =
         $"Noctis/{Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "1.0"} (https://github.com/heartached/Noctis)";
@@ -46,6 +62,15 @@ public sealed class ArtistInfoService
         _http = http;
         _dir = Path.Combine(persistence.DataDirectory, "artist_info");
         try { Directory.CreateDirectory(_dir); } catch { }
+    }
+
+    /// <summary>Whatever the cache holds for the artist, stale or not — shown at once while
+    /// <see cref="GetAsync"/> refreshes, so a revisit never waits on the network. Null when
+    /// the cache has nothing usable (no entry, or a miss).</summary>
+    public ArtistInfo? TryGetCached(Guid artistId)
+    {
+        var cached = ReadCache(Path.Combine(_dir, $"{artistId}.json"));
+        return cached is { Found: true } ? cached : null;
     }
 
     /// <summary>Cached or freshly fetched facts; null when nothing reliable was found.</summary>
@@ -64,13 +89,15 @@ public sealed class ArtistInfoService
             var info = await FetchAsync(artistName, ct).ConfigureAwait(false)
                        ?? new ArtistInfo { Name = artistName, Found = false };
             info.FetchedAtUtc = DateTime.UtcNow;
+            info.Schema = CurrentSchema;
             WriteCache(path, info);
             return info.Found ? info : null;
         }
         catch (OperationCanceledException) { throw; }
-        catch
+        catch (Exception ex)
         {
             // Offline or a source hiccup: keep serving a stale hit rather than nothing.
+            DebugLogger.Warn(DebugLogger.Category.Error, "ArtistInfo.Fetch", $"{artistName}: {ex.GetType().Name}: {ex.Message}");
             return cached is { Found: true } ? cached : null;
         }
         finally
@@ -79,8 +106,9 @@ public sealed class ArtistInfoService
         }
     }
 
-    private static bool IsStale(ArtistInfo info)
-        => DateTime.UtcNow - info.FetchedAtUtc > (info.Found ? HitTtl : MissTtl);
+    internal static bool IsStale(ArtistInfo info)
+        => info.Schema < CurrentSchema
+           || DateTime.UtcNow - info.FetchedAtUtc > (info.Found && !info.Partial ? HitTtl : MissTtl);
 
     private static ArtistInfo? ReadCache(string path)
     {
@@ -105,24 +133,99 @@ public sealed class ArtistInfoService
 
     private async Task<ArtistInfo?> FetchAsync(string artistName, CancellationToken ct)
     {
-        // 1. Search MusicBrainz for the id.
-        var searchJson = await GetMusicBrainzAsync(
-            $"{MusicBrainzBase}?query={Uri.EscapeDataString("artist:\"" + artistName.Replace("\"", "") + "\"")}&fmt=json&limit=5", ct);
-        if (searchJson == null) return null;
-        string? mbid;
-        using (var searchDoc = JsonDocument.Parse(searchJson))
-            mbid = PickBestMatch(searchDoc.RootElement, artistName);
-        if (mbid == null) return null;
+        // 1. Identify: MusicBrainz search (one retry through its load-shedding), else
+        //    Wikidata's name search accepted only for an item that carries a MusicBrainz
+        //    artist id (P434) — both give the id; the second also gives the article.
+        string? mbid = null, qid = null;
+        try
+        {
+            var searchJson = await GetMusicBrainzAsync(
+                $"{MusicBrainzBase}?query={Uri.EscapeDataString("artist:\"" + artistName.Replace("\"", "") + "\"")}&fmt=json&limit=5",
+                MusicBrainzSearchAttempts, ct);
+            if (searchJson != null)
+                using (var searchDoc = JsonDocument.Parse(searchJson))
+                    mbid = PickBestMatch(searchDoc.RootElement, artistName);
+        }
+        catch (HttpRequestException) when (!ct.IsCancellationRequested)
+        {
+            mbid = null; // search shed: try the other door
+        }
+        if (mbid == null)
+        {
+            (mbid, qid) = await FindViaWikidataAsync(artistName, ct);
+            if (mbid == null) return null;
+        }
 
-        // 2. Lookup with relations + genres.
-        var lookupJson = await GetMusicBrainzAsync($"{MusicBrainzBase}{mbid}?inc=url-rels+genres+tags&fmt=json", ct);
-        if (lookupJson == null) return null;
-        ArtistInfo info;
-        using (var lookupDoc = JsonDocument.Parse(lookupJson))
-            info = ParseLookup(lookupDoc.RootElement, artistName);
+        // 2. Two lanes at once. MusicBrainz lane: the lookup (relations, genres, dates),
+        //    paced and retried. Wikidata lane: the item for that MusicBrainz id, then its
+        //    sitelinks + claims, then the Wikipedia lead — never waits on MusicBrainz, so a
+        //    shed lookup costs the link row, not the biography, and the page shows in
+        //    max(lanes) rather than their sum.
+        var lookupTask = LookupMusicBrainzAsync(mbid, artistName, ct);
+        var wiki = new ArtistInfo { Name = artistName, MusicBrainzId = mbid, MusicBrainzUrl = "https://musicbrainz.org/artist/" + mbid, WikidataId = qid ?? "" };
+        var wikiTask = ResolveWikipediaLaneAsync(wiki, ct);
+        await Task.WhenAll(lookupTask, wikiTask).ConfigureAwait(false);
+        var facts = wikiTask.Result;
 
-        // 3. Bio: Wikidata → English Wikipedia title → REST summary.
-        var title = await ResolveWikipediaTitleAsync(info, ct);
+        var info = lookupTask.Result;
+        if (info != null)
+        {
+            if (string.IsNullOrEmpty(info.WikidataId)) info.WikidataId = wiki.WikidataId;
+            info.Bio = wiki.Bio; info.BioSource = wiki.BioSource; info.ShortDescription = wiki.ShortDescription;
+            if (wiki.WikipediaUrl.Length > 0) info.WikipediaUrl = wiki.WikipediaUrl;
+            // Rare: Wikidata has no P434 index entry for the id but MusicBrainz carries the
+            // Wikidata / Wikipedia relation — take the article through that instead.
+            if (!info.HasBio && wiki.WikidataId.Length == 0 && (info.WikidataId.Length > 0 || info.WikipediaUrl.Length > 0))
+                await ResolveWikipediaLaneAsync(info, ct).ConfigureAwait(false);
+        }
+        else
+        {
+            // Shed: Wikidata's claims stand in for FROM / BORN / GENRE (labelled in one
+            // more call); the entry is partial and retried on the miss clock for the links.
+            info = wiki;
+            info.Partial = true;
+            if (facts != null)
+            {
+                var labels = new Dictionary<string, string>();
+                if (facts.ItemIds.Count > 0)
+                {
+                    var labelsJson = await GetTextAsync(
+                        $"{WikidataApi}?action=wbgetentities&ids={string.Join("|", facts.ItemIds)}&props=labels&languages=en&format=json", ct);
+                    if (labelsJson != null)
+                    {
+                        using var labelsDoc = JsonDocument.Parse(labelsJson);
+                        labels = ParseWikidataLabels(labelsDoc.RootElement);
+                    }
+                }
+                ApplyWikidataFacts(info, facts, labels);
+            }
+        }
+
+        info.Found = true;
+        return info;
+    }
+
+    /// <summary>The Wikidata lane: item (by id, or by MusicBrainz id), then sitelinks +
+    /// claims in one call, then the English Wikipedia lead into <paramref name="info"/>.
+    /// Returns the parsed claims (for a shed lookup), null when there was no item.</summary>
+    private async Task<WikidataFacts?> ResolveWikipediaLaneAsync(ArtistInfo info, CancellationToken ct)
+    {
+        if (string.IsNullOrEmpty(info.WikidataId) && info.MusicBrainzId.Length > 0)
+            info.WikidataId = await FindWikidataByMusicBrainzIdAsync(info.MusicBrainzId, ct).ConfigureAwait(false) ?? "";
+        WikidataFacts? facts = null;
+        string? title = null;
+        if (!string.IsNullOrEmpty(info.WikidataId))
+        {
+            var json = await GetTextAsync(
+                $"{WikidataApi}?action=wbgetentities&ids={info.WikidataId}&props=sitelinks|claims&sitefilter=enwiki&format=json", ct);
+            if (json != null)
+            {
+                using var doc = JsonDocument.Parse(json);
+                title = ParseWikidataTitle(doc.RootElement, info.WikidataId);
+                facts = ParseWikidataFacts(doc.RootElement, info.WikidataId);
+            }
+        }
+        title ??= TitleFromWikipediaUrl(info.WikipediaUrl);
         if (title != null)
         {
             var summaryJson = await GetTextAsync(WikipediaSummary + Uri.EscapeDataString(title.Replace(' ', '_')), ct);
@@ -132,41 +235,83 @@ public sealed class ArtistInfoService
                 ApplyWikipediaSummary(summaryDoc.RootElement, info);
             }
         }
-
-        info.Found = true;
-        return info;
+        return facts;
     }
 
-    private async Task<string?> ResolveWikipediaTitleAsync(ArtistInfo info, CancellationToken ct)
+    private static string? TitleFromWikipediaUrl(string url)
     {
-        // Prefer the Wikidata item MusicBrainz links (authoritative identity).
-        if (!string.IsNullOrEmpty(info.WikidataId))
+        if (string.IsNullOrEmpty(url) || !url.Contains("en.wikipedia.org/wiki/", StringComparison.OrdinalIgnoreCase)) return null;
+        var slug = url[(url.IndexOf("/wiki/", StringComparison.OrdinalIgnoreCase) + 6)..];
+        return Uri.UnescapeDataString(slug).Replace('_', ' ');
+    }
+
+    /// <summary>The lookup with relations + genres; null when MusicBrainz shed every attempt.</summary>
+    private async Task<ArtistInfo?> LookupMusicBrainzAsync(string mbid, string artistName, CancellationToken ct)
+    {
+        try
         {
-            var json = await GetTextAsync(
-                $"{WikidataApi}?action=wbgetentities&ids={info.WikidataId}&props=sitelinks&sitefilter=enwiki&format=json", ct);
-            if (json != null)
+            var lookupJson = await GetMusicBrainzAsync($"{MusicBrainzBase}{mbid}?inc=url-rels+genres+tags&fmt=json", MusicBrainzLookupAttempts, ct);
+            if (lookupJson == null) return null;
+            using var lookupDoc = JsonDocument.Parse(lookupJson);
+            return ParseLookup(lookupDoc.RootElement, artistName);
+        }
+        catch (HttpRequestException) when (!ct.IsCancellationRequested)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>Wikidata's item for a MusicBrainz artist id (P434), or null.</summary>
+    private async Task<string?> FindWikidataByMusicBrainzIdAsync(string mbid, CancellationToken ct)
+    {
+        var json = await GetTextAsync(
+            $"{WikidataApi}?action=query&list=search&srsearch={Uri.EscapeDataString("haswbstatement:P434=" + mbid)}&srlimit=1&format=json", ct);
+        if (json == null) return null;
+        using var doc = JsonDocument.Parse(json);
+        return ParseWikidataSearch(doc.RootElement);
+    }
+
+    /// <summary>Wikidata name search → the first exact-label item with a MusicBrainz
+    /// artist id (P434). Returns (mbid, qid), or (null, null).</summary>
+    private async Task<(string? Mbid, string? Qid)> FindViaWikidataAsync(string artistName, CancellationToken ct)
+    {
+        var searchJson = await GetTextAsync(
+            $"{WikidataApi}?action=wbsearchentities&search={Uri.EscapeDataString(artistName)}&language=en&type=item&limit=7&format=json", ct);
+        if (searchJson == null) return (null, null);
+        List<string> candidates;
+        using (var doc = JsonDocument.Parse(searchJson))
+            candidates = ParseWikidataCandidates(doc.RootElement, artistName);
+        if (candidates.Count == 0) return (null, null);
+
+        var entitiesJson = await GetTextAsync(
+            $"{WikidataApi}?action=wbgetentities&ids={string.Join("|", candidates)}&props=claims&format=json", ct);
+        if (entitiesJson == null) return (null, null);
+        using var entities = JsonDocument.Parse(entitiesJson);
+        foreach (var qid in candidates)
+        {
+            var mbid = ParseMusicBrainzClaim(entities.RootElement, qid);
+            if (mbid != null) return (mbid, qid);
+        }
+        return (null, null);
+    }
+
+    private async Task<string?> GetMusicBrainzAsync(string url, int attempts, CancellationToken ct)
+    {
+        for (var attempt = 1; ; attempt++)
+        {
+            // ≤ 1 request/second, measured from the previous call's start.
+            var wait = TimeSpan.FromMilliseconds(1100) - (DateTime.UtcNow - _lastMusicBrainzCall);
+            if (wait > TimeSpan.Zero) await Task.Delay(wait, ct).ConfigureAwait(false);
+            _lastMusicBrainzCall = DateTime.UtcNow;
+            try
             {
-                using var doc = JsonDocument.Parse(json);
-                var title = ParseWikidataTitle(doc.RootElement, info.WikidataId);
-                if (title != null) return title;
+                return await GetTextAsync(url, ct).ConfigureAwait(false);
+            }
+            catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.ServiceUnavailable && attempt < attempts)
+            {
+                await Task.Delay(MusicBrainzRetryDelay, ct).ConfigureAwait(false);
             }
         }
-        // A direct English Wikipedia relation is the next best thing.
-        if (!string.IsNullOrEmpty(info.WikipediaUrl) && info.WikipediaUrl.Contains("en.wikipedia.org/wiki/", StringComparison.OrdinalIgnoreCase))
-        {
-            var slug = info.WikipediaUrl[(info.WikipediaUrl.IndexOf("/wiki/", StringComparison.OrdinalIgnoreCase) + 6)..];
-            return Uri.UnescapeDataString(slug).Replace('_', ' ');
-        }
-        return null;
-    }
-
-    private async Task<string?> GetMusicBrainzAsync(string url, CancellationToken ct)
-    {
-        // ≤ 1 request/second, measured from the previous call's start.
-        var wait = TimeSpan.FromMilliseconds(1100) - (DateTime.UtcNow - _lastMusicBrainzCall);
-        if (wait > TimeSpan.Zero) await Task.Delay(wait, ct).ConfigureAwait(false);
-        _lastMusicBrainzCall = DateTime.UtcNow;
-        return await GetTextAsync(url, ct).ConfigureAwait(false);
     }
 
     private async Task<string?> GetTextAsync(string url, CancellationToken ct)
@@ -176,7 +321,11 @@ public sealed class ArtistInfoService
         req.Headers.UserAgent.ParseAdd(UserAgent);
         req.Headers.Accept.ParseAdd("application/json");
         using var resp = await _http.SendAsync(req, HttpCompletionOption.ResponseHeadersRead, ct).ConfigureAwait(false);
-        if (!resp.IsSuccessStatusCode) return null;
+        // 404 is an answer ("no such article"); anything else failing (MusicBrainz's 503s,
+        // a proxy hiccup) throws so GetAsync keeps the stale hit and caches NO miss —
+        // a transient outage used to blank the About card for three days.
+        if (resp.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
+        resp.EnsureSuccessStatusCode();
         return await HttpSafety.ReadStringBoundedAsync(resp.Content, HttpSafety.MaxTextBytes, ct).ConfigureAwait(false);
     }
 
@@ -210,8 +359,12 @@ public sealed class ArtistInfoService
     internal static ArtistInfo ParseLookup(JsonElement a, string requestedName)
     {
         var info = new ArtistInfo { Name = requestedName };
+        // MusicBrainz emits explicit nulls ("begin-area": null for Chase Atlantic); a
+        // property read on a Null element throws, so every nested read goes through here.
         static string Str(JsonElement e, string prop)
-            => e.TryGetProperty(prop, out var v) && v.ValueKind == JsonValueKind.String ? v.GetString() ?? "" : "";
+            => e.ValueKind == JsonValueKind.Object && e.TryGetProperty(prop, out var v) && v.ValueKind == JsonValueKind.String
+                ? v.GetString() ?? ""
+                : "";
 
         info.MusicBrainzId = Str(a, "id");
         var name = Str(a, "name");
@@ -222,7 +375,7 @@ public sealed class ArtistInfoService
         info.Disambiguation = Str(a, "disambiguation");
         if (a.TryGetProperty("area", out var area)) info.Area = Str(area, "name");
         if (a.TryGetProperty("begin-area", out var bArea)) info.BeginArea = Str(bArea, "name");
-        if (a.TryGetProperty("life-span", out var ls))
+        if (a.TryGetProperty("life-span", out var ls) && ls.ValueKind == JsonValueKind.Object)
         {
             info.Begin = Str(ls, "begin");
             info.End = Str(ls, "end");
@@ -237,6 +390,7 @@ public sealed class ArtistInfoService
             if (!a.TryGetProperty(prop, out var arr) || arr.ValueKind != JsonValueKind.Array) continue;
             foreach (var g in arr.EnumerateArray())
             {
+                if (g.ValueKind != JsonValueKind.Object) continue;
                 var gn = Str(g, "name");
                 var count = g.TryGetProperty("count", out var c) && c.ValueKind == JsonValueKind.Number ? c.GetInt32() : 0;
                 if (gn.Length > 0 && count > 0) genres.Add((gn, count));
@@ -248,9 +402,12 @@ public sealed class ArtistInfoService
         {
             foreach (var r in rels.EnumerateArray())
             {
+                if (r.ValueKind != JsonValueKind.Object) continue;
                 var type = Str(r, "type");
                 var url = r.TryGetProperty("url", out var u) ? Str(u, "resource") : "";
                 if (url.Length == 0) continue;
+                // Relations MusicBrainz marks ended (a dead account) are not links to offer.
+                if (r.TryGetProperty("ended", out var ended) && ended.ValueKind == JsonValueKind.True) continue;
                 switch (type)
                 {
                     case "wikidata":
@@ -263,11 +420,147 @@ public sealed class ArtistInfoService
                         if (string.IsNullOrEmpty(info.WebsiteUrl)) info.WebsiteUrl = url;
                         break;
                 }
+                var kind = ArtistLink.ClassifyUrl(type, url);
+                if (kind != null && !info.Links.Any(l => l.Kind == kind))
+                    info.Links.Add(new ArtistLink { Kind = kind, Url = url });
             }
         }
+        info.Links = info.Links.OrderBy(l => l.Order).ToList();
         if (info.MusicBrainzId.Length > 0)
             info.MusicBrainzUrl = "https://musicbrainz.org/artist/" + info.MusicBrainzId;
         return info;
+    }
+
+    /// <summary>Item ids from a <c>wbsearchentities</c> result whose label (or an alias the
+    /// search matched on) equals the name, case-insensitively — "Chase Atlantic" must not
+    /// resolve to "Chase Atlantic discography".</summary>
+    internal static List<string> ParseWikidataCandidates(JsonElement root, string artistName)
+    {
+        var ids = new List<string>();
+        if (!root.TryGetProperty("search", out var search) || search.ValueKind != JsonValueKind.Array) return ids;
+        var wanted = artistName.Trim();
+        foreach (var hit in search.EnumerateArray())
+        {
+            var id = hit.TryGetProperty("id", out var i) ? i.GetString() : null;
+            if (id is not { Length: > 1 } || id[0] != 'Q') continue;
+            var label = hit.TryGetProperty("label", out var l) ? l.GetString()?.Trim() : null;
+            var matched = hit.TryGetProperty("match", out var m) && m.TryGetProperty("text", out var mt) ? mt.GetString()?.Trim() : null;
+            if (string.Equals(label, wanted, StringComparison.OrdinalIgnoreCase)
+                || string.Equals(matched, wanted, StringComparison.OrdinalIgnoreCase))
+                ids.Add(id);
+        }
+        return ids;
+    }
+
+    /// <summary>The MusicBrainz artist id (property P434) claimed by <paramref name="qid"/>
+    /// in a <c>wbgetentities</c> result, null when the item is not a MusicBrainz artist.</summary>
+    internal static string? ParseMusicBrainzClaim(JsonElement root, string qid)
+    {
+        if (!root.TryGetProperty("entities", out var entities) || !entities.TryGetProperty(qid, out var entity)) return null;
+        if (!entity.TryGetProperty("claims", out var claims) || !claims.TryGetProperty("P434", out var p434)
+            || p434.ValueKind != JsonValueKind.Array) return null;
+        foreach (var claim in p434.EnumerateArray())
+        {
+            if (claim.TryGetProperty("mainsnak", out var snak) && snak.TryGetProperty("datavalue", out var dv)
+                && dv.TryGetProperty("value", out var v) && v.ValueKind == JsonValueKind.String)
+            {
+                var mbid = v.GetString();
+                if (Guid.TryParse(mbid, out _)) return mbid;
+            }
+        }
+        return null;
+    }
+
+    /// <summary>FROM / BORN / GENRE straight from a Wikidata item's claims (used when
+    /// MusicBrainz was shed): P19 birthplace or P740 place of formation, P569 birth date or
+    /// P571 inception, P136 genres, P27 citizenship or P495 country of origin, P31 = Q5 for
+    /// a person. Item-valued claims come back as ids to label in a second call.</summary>
+    internal static WikidataFacts? ParseWikidataFacts(JsonElement root, string qid)
+    {
+        if (!root.TryGetProperty("entities", out var entities) || !entities.TryGetProperty(qid, out var entity)
+            || !entity.TryGetProperty("claims", out var claims) || claims.ValueKind != JsonValueKind.Object) return null;
+
+        var facts = new WikidataFacts();
+        facts.IsPerson = ClaimItems(claims, "P31").Contains("Q5");
+        facts.PlaceId = ClaimItems(claims, facts.IsPerson ? "P19" : "P740").FirstOrDefault()
+                        ?? ClaimItems(claims, facts.IsPerson ? "P740" : "P19").FirstOrDefault();
+        facts.CountryId = ClaimItems(claims, facts.IsPerson ? "P27" : "P495").FirstOrDefault()
+                          ?? ClaimItems(claims, facts.IsPerson ? "P495" : "P27").FirstOrDefault();
+        facts.GenreIds = ClaimItems(claims, "P136").Take(4).ToList();
+        facts.Begin = ClaimTime(claims, facts.IsPerson ? "P569" : "P571") ?? ClaimTime(claims, facts.IsPerson ? "P571" : "P569") ?? "";
+        return facts;
+    }
+
+    private static IEnumerable<string> ClaimItems(JsonElement claims, string property)
+    {
+        if (!claims.TryGetProperty(property, out var arr) || arr.ValueKind != JsonValueKind.Array) yield break;
+        foreach (var claim in arr.EnumerateArray())
+        {
+            if (claim.TryGetProperty("mainsnak", out var snak) && snak.TryGetProperty("datavalue", out var dv)
+                && dv.TryGetProperty("value", out var v) && v.ValueKind == JsonValueKind.Object
+                && v.TryGetProperty("id", out var id) && id.ValueKind == JsonValueKind.String)
+                yield return id.GetString()!;
+        }
+    }
+
+    /// <summary>"+1994-03-10T00:00:00Z" at precision 11/10/9 → "1994-03-10" / "1994-03" / "1994".</summary>
+    private static string? ClaimTime(JsonElement claims, string property)
+    {
+        if (!claims.TryGetProperty(property, out var arr) || arr.ValueKind != JsonValueKind.Array) return null;
+        foreach (var claim in arr.EnumerateArray())
+        {
+            if (!claim.TryGetProperty("mainsnak", out var snak) || !snak.TryGetProperty("datavalue", out var dv)
+                || !dv.TryGetProperty("value", out var v) || v.ValueKind != JsonValueKind.Object
+                || !v.TryGetProperty("time", out var t) || t.ValueKind != JsonValueKind.String) continue;
+            var time = t.GetString() ?? "";
+            var precision = v.TryGetProperty("precision", out var p) && p.ValueKind == JsonValueKind.Number ? p.GetInt32() : 11;
+            if (time.Length < 11 || time[0] != '+') continue;
+            var iso = time[1..11]; // yyyy-MM-dd
+            return precision switch { >= 11 => iso, 10 => iso[..7], _ => iso[..4] };
+        }
+        return null;
+    }
+
+    internal static Dictionary<string, string> ParseWikidataLabels(JsonElement root)
+    {
+        var labels = new Dictionary<string, string>();
+        if (!root.TryGetProperty("entities", out var entities) || entities.ValueKind != JsonValueKind.Object) return labels;
+        foreach (var entity in entities.EnumerateObject())
+        {
+            if (entity.Value.TryGetProperty("labels", out var l) && l.TryGetProperty("en", out var en)
+                && en.TryGetProperty("value", out var v) && v.ValueKind == JsonValueKind.String)
+                labels[entity.Name] = v.GetString() ?? "";
+        }
+        return labels;
+    }
+
+    /// <summary>Fills only what the MusicBrainz lookup would have: the card reads the same
+    /// whichever source answered.</summary>
+    internal static void ApplyWikidataFacts(ArtistInfo info, WikidataFacts facts, IReadOnlyDictionary<string, string> labels)
+    {
+        static string Label(IReadOnlyDictionary<string, string> labels, string? id)
+            => id != null && labels.TryGetValue(id, out var v) ? v : "";
+        if (info.Type.Length == 0) info.Type = facts.IsPerson ? "Person" : "Group";
+        if (info.BeginArea.Length == 0) info.BeginArea = Label(labels, facts.PlaceId);
+        // Area, not Country: Country is an ISO code and Area the display name it falls back to.
+        if (info.Area.Length == 0 && info.Country.Length == 0) info.Area = Label(labels, facts.CountryId);
+        if (info.Begin.Length == 0) info.Begin = facts.Begin;
+        if (info.Genres.Count == 0)
+            info.Genres = facts.GenreIds.Select(id => Label(labels, id)).Where(g => g.Length > 0).ToList();
+    }
+
+    /// <summary>The item id ("Q46537070") from a Wikidata <c>list=search</c> result, null when
+    /// nothing carries the statement.</summary>
+    internal static string? ParseWikidataSearch(JsonElement root)
+    {
+        if (!root.TryGetProperty("query", out var query) || !query.TryGetProperty("search", out var search)
+            || search.ValueKind != JsonValueKind.Array) return null;
+        foreach (var hit in search.EnumerateArray())
+        {
+            var title = hit.TryGetProperty("title", out var t) ? t.GetString() : null;
+            if (title is { Length: > 1 } && title[0] == 'Q') return title;
+        }
+        return null;
     }
 
     internal static string? ParseWikidataTitle(JsonElement root, string qid)
@@ -320,14 +613,27 @@ public sealed class ArtistInfo
     public string WikidataId { get; set; } = "";
     public string WikipediaUrl { get; set; } = "";
     public string WebsiteUrl { get; set; } = "";
+    /// <summary>Streaming / social / homepage links for the About card's icon row, in
+    /// display order (Spotify, Apple Music, YouTube, SoundCloud, Bandcamp, Instagram, X, site).</summary>
+    public List<ArtistLink> Links { get; set; } = new();
     public DateTime FetchedAtUtc { get; set; }
     public bool Found { get; set; }
+    /// <summary>The MusicBrainz lookup was shed: identity and bio only, no facts/links.
+    /// Refreshed on the short (miss) clock.</summary>
+    public bool Partial { get; set; }
+    /// <summary>Cache shape version; see <see cref="ArtistInfoService.CurrentSchema"/>.</summary>
+    public int Schema { get; set; }
 
     // ── Display helpers ──
 
     [JsonIgnore] public bool IsGroup => Type is "Group" or "Orchestra" or "Choir";
     [JsonIgnore] public bool HasBio => Bio.Length > 0;
     [JsonIgnore] public bool HasGenres => Genres.Count > 0;
+    [JsonIgnore] public bool HasLinks => Links.Count > 0;
+    /// <summary>"Alternative · R&amp;B · Pop" for the About card's tag line.</summary>
+    [JsonIgnore] public string GenresDotted => string.Join(" · ", Genres.Select(Capitalize));
+    /// <summary>Just the year of the begin date ("2011"), for the calendar fact.</summary>
+    [JsonIgnore] public string BeginYear => Begin.Length >= 4 ? Begin[..4] : "";
     [JsonIgnore] public bool HasWebsite => WebsiteUrl.Length > 0;
     [JsonIgnore] public bool HasWikipedia => WikipediaUrl.Length > 0;
     [JsonIgnore] public bool HasFrom => FromDisplay.Length > 0;
@@ -393,7 +699,7 @@ public sealed class ArtistInfo
 
     [JsonIgnore] public string GenresDisplay => string.Join(", ", Genres.Select(Capitalize));
 
-    private static string Capitalize(string s)
+    internal static string Capitalize(string s)
         => s.Length == 0 ? s : char.ToUpperInvariant(s[0]) + s[1..];
 
     /// <summary>"March 10, 1994" for a full date, "March 1994" for a month, "1994" for a year.</summary>
@@ -410,5 +716,77 @@ public sealed class ArtistInfo
         }
         catch { }
         return parts[0];
+    }
+}
+
+/// <summary>What a Wikidata item says about an artist, before its item ids are labelled.</summary>
+public sealed class WikidataFacts
+{
+    public bool IsPerson { get; set; }
+    public string? PlaceId { get; set; }
+    public string? CountryId { get; set; }
+    public List<string> GenreIds { get; set; } = new();
+    /// <summary>Partial ISO date, like <see cref="ArtistInfo.Begin"/>.</summary>
+    public string Begin { get; set; } = "";
+    /// <summary>Every item id that needs an English label.</summary>
+    public List<string> ItemIds
+        => new[] { PlaceId, CountryId }.Concat(GenreIds).Where(id => id != null).Distinct().Select(id => id!).ToList();
+}
+
+/// <summary>One link on the About card: a known service (drawn with its brand glyph) or
+/// the official site. Classified from the URL host rather than MusicBrainz's relation
+/// type, which lumps Spotify, Apple Music, Deezer and Tidal together as "streaming".</summary>
+public sealed class ArtistLink
+{
+    public string Kind { get; set; } = "";
+    public string Url { get; set; } = "";
+
+    private static readonly string[] KindOrder =
+        { "spotify", "applemusic", "youtube", "soundcloud", "bandcamp", "instagram", "x", "website" };
+
+    [JsonIgnore] public int Order => Math.Max(0, Array.IndexOf(KindOrder, Kind));
+
+    [JsonIgnore]
+    public string IconKey => Kind switch
+    {
+        "spotify" => "SpotifyIcon",
+        "applemusic" => "AppleMusicIcon",
+        "youtube" => "YouTubeIcon",
+        "soundcloud" => "SoundCloudIcon",
+        "bandcamp" => "BandcampIcon",
+        "instagram" => "InstagramIcon",
+        "x" => "XIcon",
+        _ => "GlobeIcon",
+    };
+
+    [JsonIgnore]
+    public string Label => Kind switch
+    {
+        "spotify" => "Spotify",
+        "applemusic" => "Apple Music",
+        "youtube" => "YouTube",
+        "soundcloud" => "SoundCloud",
+        "bandcamp" => "Bandcamp",
+        "instagram" => "Instagram",
+        "x" => "X",
+        _ => "Website",
+    };
+
+    /// <summary>The kind for a MusicBrainz url relation, or null when it is not one the
+    /// card shows (Facebook, Discogs, Deezer, lyrics sites …).</summary>
+    internal static string? ClassifyUrl(string relationType, string url)
+    {
+        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri) || uri.Scheme is not ("http" or "https")) return null;
+        var host = uri.Host.ToLowerInvariant();
+        if (host.StartsWith("www.")) host = host[4..];
+        if (host is "open.spotify.com" or "spotify.com" || host.EndsWith(".spotify.com")) return "spotify";
+        if (host is "music.apple.com" or "itunes.apple.com") return "applemusic";
+        if (host is "youtube.com" or "music.youtube.com" or "youtu.be" || host.EndsWith(".youtube.com")) return "youtube";
+        if (host == "soundcloud.com") return "soundcloud";
+        if (host == "bandcamp.com" || host.EndsWith(".bandcamp.com")) return "bandcamp";
+        if (host == "instagram.com") return "instagram";
+        if (host is "x.com" or "twitter.com") return "x";
+        if (relationType == "official homepage") return "website";
+        return null;
     }
 }
