@@ -18,7 +18,7 @@ namespace Noctis.Views;
 
 public partial class ArtistDetailView : UserControl
 {
-    // One shared track menu for the Popular pills (TrackContextMenuBuilder pattern).
+    // One shared track menu for the song rows (TrackContextMenuBuilder pattern).
     private TrackContextMenuBuilder? _trackMenuBuilder;
     private Control? _menuOwner;
 
@@ -43,7 +43,7 @@ public partial class ArtistDetailView : UserControl
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
     {
         base.OnAttachedToVisualTree(e);
-        _trackedVm = DataContext as ArtistDetailViewModel;
+        TrackViewModel(DataContext as ArtistDetailViewModel);
         TryRestoreScroll();
     }
 
@@ -52,6 +52,7 @@ public partial class ArtistDetailView : UserControl
         CancelPendingScrollRestore();
         if (_trackedVm != null)
             _trackedVm.SavedScrollOffset = PageScrollViewer.Offset.Y;
+        TrackViewModel(null);
         base.OnDetachedFromVisualTree(e);
     }
 
@@ -62,9 +63,27 @@ public partial class ArtistDetailView : UserControl
         // attach nor detach: save the outgoing artist's offset, restore the incoming one's.
         if (_trackedVm != null && !ReferenceEquals(_trackedVm, DataContext))
             _trackedVm.SavedScrollOffset = PageScrollViewer.Offset.Y;
-        _trackedVm = DataContext as ArtistDetailViewModel;
+        TrackViewModel(DataContext as ArtistDetailViewModel);
         if (this.IsAttachedToVisualTree())
             TryRestoreScroll();
+    }
+
+    private void TrackViewModel(ArtistDetailViewModel? vm)
+    {
+        if (ReferenceEquals(_trackedVm, vm)) return;
+        if (_trackedVm != null) _trackedVm.TabChanged -= OnTabChanged;
+        _trackedVm = vm;
+        if (_trackedVm != null) _trackedVm.TabChanged += OnTabChanged;
+    }
+
+    /// <summary>A tab switch lands at the top of the tab strip: the hero stays above,
+    /// the new tab's content starts right under the tabs.</summary>
+    private void OnTabChanged(object? sender, EventArgs e)
+    {
+        CancelPendingScrollRestore();
+        var sv = PageScrollViewer;
+        var target = Math.Min(sv.Offset.Y, Math.Max(0, Hero.Bounds.Height - 8));
+        sv.Offset = new Vector(0, target);
     }
 
     private void TryRestoreScroll()
@@ -113,9 +132,10 @@ public partial class ArtistDetailView : UserControl
         base.OnSizeChanged(e);
         if (e.NewSize.Width <= 0 || DataContext is not ArtistDetailViewModel vm) return;
 
-        // Five tiles per row: section margin 26+26, tile Margin="2" (4px horiz each).
-        var usable = e.NewSize.Width - 52;
-        var tileContentWidth = usable / 5.0 - 8;
+        // Eight tiles per row across the page: section margins 32+32, the Overview's
+        // 24px gutter between its two rows, tile Margin="2" (4px horizontal each).
+        var usable = e.NewSize.Width - 64 - 24;
+        var tileContentWidth = usable / ArtistDetailViewModel.GridColumns - 4;
         var newSize = Math.Max(80, tileContentWidth);
         if (Math.Abs(newSize - vm.TileArtworkSize) < 0.5) return;
 
@@ -143,9 +163,22 @@ public partial class ArtistDetailView : UserControl
     private void OnPopularContextRequested(object? sender, ContextRequestedEventArgs e)
     {
         if (sender is not Control owner) return;
-        if (owner.DataContext is not TopSongRow row) return;
-        if (DataContext is not ArtistDetailViewModel vm) return;
-        if (vm.LibraryAlbumsVm is not { } albumsVm) return;
+        if (OpenTrackMenu(owner, PlacementMode.Pointer)) e.Handled = true;
+    }
+
+    /// <summary>The row's "…" glyph: the same track menu, dropped under the glyph.</summary>
+    private void OnRowMenuClick(object? sender, RoutedEventArgs e)
+    {
+        if (sender is not Control glyph) return;
+        OpenTrackMenu(glyph, PlacementMode.BottomEdgeAlignedRight);
+        e.Handled = true;
+    }
+
+    private bool OpenTrackMenu(Control owner, PlacementMode placement)
+    {
+        if (owner.DataContext is not TopSongRow row) return false;
+        if (DataContext is not ArtistDetailViewModel vm) return false;
+        if (vm.LibraryAlbumsVm is not { } albumsVm) return false;
 
         if (_trackMenuBuilder == null)
         {
@@ -166,11 +199,11 @@ public partial class ArtistDetailView : UserControl
             showInExplorerCommand: albumsVm.ShowInExplorerTrackCommand,
             removeCommand: albumsVm.RemoveTrackFromLibraryCommand);
 
-        OpenMenu(_trackMenuBuilder.Menu, owner);
-        e.Handled = true;
+        OpenMenu(_trackMenuBuilder.Menu, owner, placement);
+        return true;
     }
 
-    private void OpenMenu(ContextMenu menu, Control owner)
+    private void OpenMenu(ContextMenu menu, Control owner, PlacementMode placement)
     {
         ContextMenuCoordinator.NotifyOpening(menu);
         if (menu.IsOpen)
@@ -183,7 +216,7 @@ public partial class ArtistDetailView : UserControl
 
         _menuOwner = owner;
         owner.ContextMenu = menu;
-        menu.Placement = PlacementMode.Pointer;
+        menu.Placement = placement;
         menu.Open(owner);
     }
 

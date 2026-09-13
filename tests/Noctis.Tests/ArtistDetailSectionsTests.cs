@@ -56,7 +56,7 @@ public class ArtistDetailSectionsTests
     }
 
     [Fact]
-    public void Search_ReachesAReleaseThroughItsTrackTitles_AndRespectsTheChip()
+    public void Search_ReachesAReleaseThroughItsTrackTitles_AndSplitsTheTabs()
     {
         var lp = MakeAlbum("Un Verano Sin Ti", "Bad Bunny", 2022, "",
             Enumerable.Range(0, 8).Select(i => ($"Track {i}", 0, false)).Prepend(("Neverita", 3, false)).ToArray());
@@ -65,12 +65,8 @@ public class ArtistDetailSectionsTests
 
         vm.ApplyFilter("neverita");
         Assert.Equal(2, vm.Releases.Count);           // album name OR any track title
-
-        vm.SetReleaseFilterCommand.Execute("singles");
-        Assert.Equal(new[] { "Neverita Live" }, vm.Releases.Select(a => a.Name));
-
-        vm.SetReleaseFilterCommand.Execute("albums");
-        Assert.Equal(new[] { "Un Verano Sin Ti" }, vm.Releases.Select(a => a.Name));
+        Assert.Equal(new[] { "Neverita Live" }, vm.SingleReleases.Select(a => a.Name));
+        Assert.Equal(new[] { "Un Verano Sin Ti" }, vm.AlbumReleases.Select(a => a.Name));
     }
 
     [Fact]
@@ -86,7 +82,7 @@ public class ArtistDetailSectionsTests
     }
 
     [Fact]
-    public void TopFavorites_ListsFavouritedSongsByPlayCount_AndMovesPopularBelow()
+    public void TopFavorites_ListsFavouritedSongsByPlayCount()
     {
         var (vm, _) = Make("A", MakeAlbum("X", "A", 2020, "",
             ("Loved", 5, true), ("Loved More", 9, true), ("Meh", 40, false)));
@@ -94,17 +90,28 @@ public class ArtistDetailSectionsTests
         Assert.True(vm.HasFavorites);
         Assert.Equal(new[] { "Loved More", "Loved" }, vm.FavoriteSongs.Select(r => r.Track.Title));
         Assert.Equal(2, vm.FavoriteCount);
-        Assert.True(vm.ShowPopularBelow);
-        Assert.False(vm.ShowPopularBesideLatest);
+        // Popular is the play-count ranking regardless of hearts.
+        Assert.Equal("Meh", vm.PopularSongs[0].Track.Title);
     }
 
     [Fact]
-    public void NoFavorites_PopularTakesTheSlotBesideLatestRelease()
+    public void SongsTab_FillsTheFullRanking_OnlyWhileOpen()
     {
-        var (vm, _) = Make("A", MakeAlbum("X", "A", 2020, "", ("Meh", 40, false)));
-        Assert.False(vm.HasFavorites);
-        Assert.True(vm.ShowPopularBesideLatest);
-        Assert.False(vm.ShowPopularBelow);
+        var tracks = Enumerable.Range(0, 40).Select(i => ($"Song {i:00}", 40 - i, false)).ToArray();
+        var (vm, _) = Make("A", MakeAlbum("Big", "A", 2000, "", tracks));
+        Assert.Empty(vm.AllSongs);                        // nothing inflated for the Overview
+        Assert.Equal(ArtistDetailViewModel.MaxPopular, vm.PopularSongs.Count);
+
+        vm.SelectTabCommand.Execute("songs");
+        Assert.True(vm.IsTabSongs);
+        Assert.True(vm.AllSongs.Count >= 30);             // first slice is synchronous
+        Assert.Equal("Song 00", vm.AllSongs[0].Track.Title);
+        Assert.Equal(1, vm.AllSongs[0].Rank);
+
+        vm.SelectTabCommand.Execute("garbage");
+        Assert.True(vm.IsTabOverview);
+        vm.ApplyFilter("");                                // a list rebuild off the tab drops the rows
+        Assert.Empty(vm.AllSongs);
     }
 
     [Fact]
@@ -132,7 +139,8 @@ public class ArtistDetailSectionsTests
 
         Assert.Same(late, vm.LatestRelease);
         Assert.Equal("Feb 8, 2026", vm.LatestReleaseDate);
-        Assert.Equal("SINGLE · 1 song", vm.LatestReleaseSubtitle);
+        Assert.Equal("Single · 2026", vm.LatestReleaseKindLine);
+        Assert.Equal("1 song · 3:00", vm.LatestReleaseSongsLine);
         Assert.Equal(new[] { "February", "January", "Old" }, vm.Releases.Select(a => a.Name));
     }
 
@@ -152,5 +160,20 @@ public class ArtistDetailSectionsTests
         Assert.Equal(1, vm.FavoriteCount);
         Assert.True(vm.HasInLibrarySince);
         Assert.Null(vm.About); // no info service wired → About stays empty, card shows library facts
+        Assert.False(vm.IsAboutLoading); // … and never claims to be looking anything up
+        Assert.True(vm.ShowNoBiography);
+    }
+
+    [Fact]
+    public void AboutCard_SaysLookingUp_NotNoBiography_WhileTheLookupRuns()
+    {
+        var (vm, _) = Make("A", MakeAlbum("X", "A", 2020, "", ("Hit", 1, false)));
+        // Simulate the in-flight state the VM enters when a service is wired.
+        vm.IsAboutLoading = true;
+        Assert.False(vm.ShowNoBiography);
+        vm.IsAboutLoading = false;
+        Assert.True(vm.ShowNoBiography);
+        vm.About = new Noctis.Services.ArtistInfo { Bio = "text", Found = true };
+        Assert.False(vm.ShowNoBiography);
     }
 }

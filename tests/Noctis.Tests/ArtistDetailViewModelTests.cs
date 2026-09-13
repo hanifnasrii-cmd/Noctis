@@ -52,8 +52,8 @@ public class ArtistDetailViewModelTests
         Assert.Equal(new[] { "Duo", "Phases" }, vm.Releases.Select(a => a.Name)); // newest first
         Assert.Equal(new[] { "Other" }, vm.AppearsOn.Select(a => a.Name));
         Assert.Same(collab, vm.LatestRelease);
-        Assert.Contains("2 releases", vm.FactsLine);
-        Assert.Contains("4 songs", vm.FactsLine);
+        Assert.Equal(2, vm.ReleaseCount);
+        Assert.Equal(4, vm.SongCount);
     }
 
     [Fact]
@@ -79,7 +79,7 @@ public class ArtistDetailViewModelTests
     }
 
     [Fact]
-    public void ReleaseChips_SplitAlbumsFromSinglesAndEps()
+    public void Tabs_SplitAlbumsFromSinglesAndEps()
     {
         var album = MakeAlbum("LP", "A", 2020, Enumerable.Range(0, 8).Select(i => ($"t{i}", "A", 0)).ToArray());
         var single = MakeAlbum("Single", "A", 2021, ("s", "A", 0));
@@ -87,18 +87,60 @@ public class ArtistDetailViewModelTests
         var (vm, _) = Make("A", album, single, ep);
 
         Assert.Equal(3, vm.Releases.Count);
-        Assert.True(vm.IsFilterAll);
+        Assert.True(vm.IsTabOverview);
+        Assert.Equal(new[] { "LP" }, vm.AlbumReleases.Select(a => a.Name));
+        Assert.Equal(new[] { "EP", "Single" }, vm.SingleReleases.Select(a => a.Name));
+        Assert.Equal(1, vm.AlbumCount);
+        Assert.Equal(2, vm.SingleCount);
 
-        vm.SetReleaseFilterCommand.Execute("albums");
-        Assert.True(vm.IsFilterAlbums);
-        Assert.Equal(new[] { "LP" }, vm.Releases.Select(a => a.Name));
+        vm.SelectTabCommand.Execute("albums");
+        Assert.True(vm.IsTabAlbums);
+        vm.SelectTabCommand.Execute("singles");
+        Assert.True(vm.IsTabSingles);
+        vm.SelectTabCommand.Execute("similar");
+        Assert.True(vm.IsTabSimilar);
+        Assert.True(vm.SimilarLoaded);                    // no service wired → settles empty
+        Assert.True(vm.ShowNoSimilar);
+        vm.SelectTabCommand.Execute("garbage");
+        Assert.True(vm.IsTabOverview);
+    }
 
-        vm.SetReleaseFilterCommand.Execute("singles");
-        Assert.True(vm.IsFilterSingles);
-        Assert.Equal(new[] { "EP", "Single" }, vm.Releases.Select(a => a.Name));
+    [Fact]
+    public void OverviewRows_NewestFourEach_ALoneRowTakesEight_SearchLiftsTheCap()
+    {
+        var albums = Enumerable.Range(0, 10).Select(i =>
+            MakeAlbum($"LP {i:00}", "A", 2000 + i, Enumerable.Range(0, 8).Select(k => ($"lp{i}t{k}", "A", 0)).ToArray()));
+        var singles = Enumerable.Range(0, 6).Select(i => MakeAlbum($"Single {i:00}", "A", 2010 + i, ($"s{i}", "A", 0)));
+        var (vm, _) = Make("A", albums.Concat(singles).ToArray());
 
-        vm.SetReleaseFilterCommand.Execute("garbage");
-        Assert.True(vm.IsFilterAll);
+        Assert.Equal(ArtistDetailViewModel.OverviewRowTiles, vm.OverviewAlbums.Count);
+        Assert.Equal(ArtistDetailViewModel.OverviewRowTiles, vm.OverviewSingles.Count);
+        Assert.Equal("LP 09", vm.OverviewAlbums[0].Name);          // newest first
+        Assert.Equal(1, vm.AlbumsSpan);
+        Assert.Equal(2, vm.SinglesColumn);
+        Assert.Equal(ArtistDetailViewModel.OverviewRowTiles, vm.OverviewAlbumColumns);
+
+        vm.ApplyFilter("lp");                                       // every album matches; no cap
+        Assert.Equal(10, vm.OverviewAlbums.Count);
+        Assert.Empty(vm.OverviewSingles);
+        Assert.Equal(3, vm.AlbumsSpan);                             // the row spans both columns …
+        Assert.Equal(ArtistDetailViewModel.GridColumns, vm.OverviewAlbumColumns); // … eight across
+
+        vm.ApplyFilter("");
+        var (only, _) = Make("B", Enumerable.Range(0, 10).Select(i =>
+            MakeAlbum($"B {i:00}", "B", 2000 + i, Enumerable.Range(0, 8).Select(k => ($"b{i}t{k}", "B", 0)).ToArray())).ToArray());
+        Assert.Equal(ArtistDetailViewModel.GridColumns, only.OverviewAlbums.Count); // alone → eight newest
+        Assert.False(only.HasOverviewSingles);
+    }
+
+    [Fact]
+    public void LatestReleaseLines_KindYearAndSongsLength()
+    {
+        var lp = MakeAlbum("LP", "A", 2024, Enumerable.Range(0, 8).Select(i => ($"t{i}", "A", 0)).ToArray());
+        Assert.Equal("Album · 2024", ArtistDetailViewModel.LatestReleaseKindLineFor(lp));
+        Assert.Equal("8 songs · 24:00", ArtistDetailViewModel.LatestReleaseSongsLineFor(lp));
+        var ep = MakeAlbum("EP", "A", 0, ("e1", "A", 0), ("e2", "A", 0), ("e3", "A", 0));
+        Assert.Equal("EP", ArtistDetailViewModel.LatestReleaseKindLineFor(ep));
     }
 
     [Fact]

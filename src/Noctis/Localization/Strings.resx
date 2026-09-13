@@ -522,13 +522,11 @@
   <data name="ArtistDetail.RemoveFromLibrary" xml:space="preserve"><value>Remove from Library</value><comment>Header in ArtistDetailView.axaml</comment></data>
   <data name="ArtistDetail.Text" xml:space="preserve"><value>&#x266A;</value><comment>Text in ArtistDetailView.axaml</comment></data>
   <data name="ArtistDetail.ExplicitTip" xml:space="preserve"><value>Explicit</value><comment>ToolTip.Tip in ArtistDetailView.axaml</comment></data>
-  <data name="ArtistDetail.ListenCountTip" xml:space="preserve"><value>Listen count</value><comment>ToolTip.Tip in ArtistDetailView.axaml</comment></data>
-  <data name="ArtistDetail.Plays" xml:space="preserve"><value>plays</value><comment>Text in ArtistDetailView.axaml</comment></data>
   <data name="ArtistDetail.PlayEverythingByArtistTip" xml:space="preserve"><value>Play everything by this artist</value><comment>ToolTip.Tip in ArtistDetailView.axaml</comment></data>
   <data name="ArtistDetail.ShuffleEverythingByArtistTip" xml:space="preserve"><value>Shuffle everything by this artist</value><comment>ToolTip.Tip in ArtistDetailView.axaml</comment></data>
   <data name="ArtistDetail.FavoriteArtistTip" xml:space="preserve"><value>Favorite artist</value><comment>ToolTip.Tip in ArtistDetailView.axaml</comment></data>
   <data name="ArtistDetail.OptionsTip" xml:space="preserve"><value>Options</value><comment>ToolTip.Tip in ArtistDetailView.axaml</comment></data>
-  <data name="ArtistDetail.ShufflePopular" xml:space="preserve"><value>Shuffle Popular</value><comment>Header in ArtistDetailView.axaml</comment></data>
+  <data name="ArtistDetail.ShufflePopular" xml:space="preserve"><value>Shuffle Top Songs</value><comment>Header in ArtistDetailView.axaml</comment></data>
   <data name="ArtistDetail.ShuffleFavorites" xml:space="preserve"><value>Shuffle Favorites</value><comment>Header in ArtistDetailView.axaml</comment></data>
   <data name="ArtistDetail.ChoosePictureFromFile" xml:space="preserve"><value>Choose Picture from File</value><comment>Header in ArtistDetailView.axaml</comment></data>
   <data name="ArtistDetail.FindPictureOnline" xml:space="preserve"><value>Find Picture Online</value><comment>Header in ArtistDetailView.axaml</comment></data>
@@ -536,26 +534,30 @@
   <data name="ArtistDetail.LatestRelease" xml:space="preserve"><value>Latest Release</value><comment>Text in ArtistDetailView.axaml</comment></data>
   <data name="ArtistDetail.OpenAlbumTip" xml:space="preserve"><value>Open album</value><comment>ToolTip.Tip in ArtistDetailView.axaml</comment></data>
   <data name="ArtistDetail.TopFavorites" xml:space="preserve"><value>Top Favorites</value><comment>Text in ArtistDetailView.axaml</comment></data>
-  <data name="ArtistDetail.Popular" xml:space="preserve"><value>Popular</value><comment>Text in ArtistDetailView.axaml</comment></data>
-  <data name="ArtistDetail.Releases" xml:space="preserve"><value>Releases</value><comment>Text in ArtistDetailView.axaml</comment></data>
-  <data name="ArtistDetail.All" xml:space="preserve"><value>All</value><comment>Content in ArtistDetailView.axaml</comment></data>
+  <data name="ArtistDetail.Popular" xml:space="preserve"><value>Top Songs</value><comment>Text in ArtistDetailView.axaml</comment></data>
   <data name="ArtistDetail.Albums" xml:space="preserve"><value>Albums</value><comment>Content in ArtistDetailView.axaml</comment></data>
   <data name="ArtistDetail.SinglesEPs" xml:space="preserve"><value>Singles &amp; EPs</value><comment>Content in ArtistDetailView.axaml</comment></data>
   <data name="ArtistDetail.NoReleasesMatch" xml:space="preserve"><value>No releases match.</value><comment>Text in ArtistDetailView.axaml</comment></data>
   <data name="ArtistDetail.Appears" xml:space="preserve"><value>Appears On</value><comment>Text in ArtistDetailView.axaml</comment></data>
-  <data name="ArtistDetail.About" xml:space="preserve"><value>About </value><comment>Text in ArtistDetailView.axaml</comment></data>
-  <data name="ArtistDetail.NoBiographyFoundArtist" xml:space="preserve"><value>No biography found for this artist yet.</value><comment>Text in ArtistDetailView.axaml</comment></data>
+  <data name="ArtistDetail.Overview" xml:space="preserve"><value>Overview</value><comment>Tab in ArtistDetailView.axaml</comment></data>
+  <data name="ArtistDetail.Songs" xml:space="preserve"><value>Songs</value><comment>Tab in ArtistDetailView.axaml</comment></data>
+  <data name="ArtistDetail.SimilarArtists" xml:space="preserve"><value>Similar Artists</value><comment>Tab in ArtistDetailView.axaml</comment></data>
+  <data name="ArtistDetail.SeeAll" xml:space="preserve"><value>See all</value><comment>Content in ArtistDetailView.axaml</comment></data>
+  <data name="ArtistDetail.NoSongsMatch" xml:space="preserve"><value>No songs match.</value><comment>Text in ArtistDetailView.axaml</comment></data>
+  <data name="ArtistDetail.AboutTitle" xml:space="preserve"><value>About </value><comment>Text in ArtistDetailView.axaml</comment></data>
+  <data name="ArtistDetail.Links" xml:space="preserve"><value>Links</value><comment>Text in ArtistDetailView.axaml</comment></data>
   <data name="ArtistDetail.FROM" xml:space="preserve"><value>FROM</value><comment>Text in ArtistDetailView.axaml</comment></data>
-  <data name="ArtistDetail.ACTIVE" xml:space="preserve"><value>ACTIVE</value><comment>Text in ArtistDetailView.axaml</comment></data>
-  <data name="ArtistDetail.GENRES" xml:space="preserve"><value>GENRES</value><comment>Text in ArtistDetailView.axaml</comment></data>
-  <data name="ArtistDetail.LIBRARY" xml:space="preserve"><value>IN YOUR LIBRARY</value><comment>Text in ArtistDetailView.axaml</comment></data>
-  <data name="ArtistDetail.ReleasesFact" xml:space="preserve"><value>RELEASES</value><comment>Text in ArtistDetailView.axaml</comment></data>
-  <data name="ArtistDetail.SONGS" xml:space="preserve"><value>SONGS</value><comment>Text in ArtistDetailView.axaml</comment></data>
-  <data name="ArtistDetail.TOTALLENGTH" xml:space="preserve"><value>TOTAL LENGTH</value><comment>Text in ArtistDetailView.axaml</comment></data>
-  <data name="ArtistDetail.MOSTPLAYED" xml:space="preserve"><value>MOST PLAYED</value><comment>Text in ArtistDetailView.axaml</comment></data>
-  <data name="ArtistDetail.FAVORITED" xml:space="preserve"><value>FAVORITED</value><comment>Text in ArtistDetailView.axaml</comment></data>
-  <data name="ArtistDetail.SongsSuffix" xml:space="preserve"><value> songs</value><comment>Text in ArtistDetailView.axaml</comment></data>
-  <data name="ArtistDetail.SINCE" xml:space="preserve"><value>SINCE</value><comment>Text in ArtistDetailView.axaml</comment></data>
+  <data name="ArtistDetail.GENRE" xml:space="preserve"><value>GENRE</value><comment>Text in ArtistDetailView.axaml</comment></data>
+  <data name="ArtistDetail.ReleasesTile" xml:space="preserve"><value>Releases</value><comment>Text in ArtistDetailView.axaml</comment></data>
+  <data name="ArtistDetail.SongsTile" xml:space="preserve"><value>Songs</value><comment>Text in ArtistDetailView.axaml</comment></data>
+  <data name="ArtistDetail.TotalLengthTile" xml:space="preserve"><value>Total length</value><comment>Text in ArtistDetailView.axaml</comment></data>
+  <data name="ArtistDetail.MostPlayedTile" xml:space="preserve"><value>Most played</value><comment>Text in ArtistDetailView.axaml</comment></data>
+  <data name="ArtistDetail.SinceTile" xml:space="preserve"><value>In library since</value><comment>Text in ArtistDetailView.axaml</comment></data>
+  <data name="ArtistDetail.NotInLibrary" xml:space="preserve"><value>Not in your library</value><comment>Text in ArtistDetailView.axaml</comment></data>
+  <data name="ArtistDetail.FindingSimilar" xml:space="preserve"><value>Finding similar artists…</value><comment>Text in ArtistDetailView.axaml</comment></data>
+  <data name="ArtistDetail.NoSimilar" xml:space="preserve"><value>No similar artists found.</value><comment>Text in ArtistDetailView.axaml</comment></data>
+  <data name="ArtistDetail.LookingUp" xml:space="preserve"><value>Looking up the artist…</value><comment>Text in ArtistDetailView.axaml</comment></data>
+  <data name="ArtistDetail.NoBiographyFoundArtist" xml:space="preserve"><value>No biography found for this artist yet.</value><comment>Text in ArtistDetailView.axaml</comment></data>
 
   <!-- AudioCdView.axaml (auto-migrated) -->
   <data name="AudioCd.Play" xml:space="preserve"><value>Play</value><comment>Content in AudioCdView.axaml</comment></data>

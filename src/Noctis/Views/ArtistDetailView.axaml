@@ -3,6 +3,7 @@
              xmlns:loc="using:Noctis.Localization"
              xmlns:vm="using:Noctis.ViewModels"
              xmlns:m="using:Noctis.Models"
+             xmlns:svc="using:Noctis.Services"
              xmlns:ctrl="using:Noctis.Controls"
              xmlns:helpers="using:Noctis.Helpers"
              x:Class="Noctis.Views.ArtistDetailView"
@@ -11,26 +12,16 @@
              ClipToBounds="True">
 
     <UserControl.Styles>
+        <!-- Rank numerals: the theme's text colour at full strength (white on dark, ink on
+             light) — no podium tints, no dimming (user ask 09-13). -->
         <Style Selector="TextBlock.rank-num">
-            <Setter Property="FontSize" Value="20"/>
+            <Setter Property="FontSize" Value="15"/>
             <Setter Property="FontWeight" Value="Bold"/>
-            <Setter Property="Opacity" Value="0.32"/>
-        </Style>
-        <!-- Podium: #1 gold, #2 silver, #3 bronze (brushes in Styles.axaml). -->
-        <Style Selector="TextBlock.rank-num.gold">
-            <Setter Property="Foreground" Value="{DynamicResource RankGoldBrush}"/>
-            <Setter Property="Opacity" Value="1"/>
-        </Style>
-        <Style Selector="TextBlock.rank-num.silver">
-            <Setter Property="Foreground" Value="{DynamicResource RankSilverBrush}"/>
-            <Setter Property="Opacity" Value="1"/>
-        </Style>
-        <Style Selector="TextBlock.rank-num.bronze">
-            <Setter Property="Foreground" Value="{DynamicResource RankBronzeBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
             <Setter Property="Opacity" Value="1"/>
         </Style>
         <Style Selector="TextBlock.section-title">
-            <Setter Property="FontSize" Value="22"/>
+            <Setter Property="FontSize" Value="20"/>
             <Setter Property="FontWeight" Value="Bold"/>
         </Style>
         <Style Selector="TextBlock.fact-label">
@@ -50,7 +41,7 @@
         <Style Selector="Button.album-header-action:pointerover">
             <Setter Property="RenderTransform" Value="scale(1.045)" />
         </Style>
-        <!-- Bare glyph buttons (favourite star, options): no hover box, no scale. -->
+        <!-- Bare glyph buttons (favourite star, options, row "…"): no hover box, no scale. -->
         <Style Selector="Button.header-icon-btn:pointerover">
             <Setter Property="RenderTransform" Value="scale(1)" />
         </Style>
@@ -61,7 +52,7 @@
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="Opacity" Value="0.7" />
         </Style>
-        <!-- Text links ("Read more", "Shuffle", Wikipedia / Website chips). -->
+        <!-- Text links ("See all", "Read more"). -->
         <Style Selector="Button.text-link">
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="BorderThickness" Value="0" />
@@ -81,49 +72,62 @@
             <Setter Property="Background" Value="{DynamicResource ChipBackground}" />
             <Setter Property="Foreground" Value="{DynamicResource AccentTextExactBrush}" />
         </Style>
-        <Style Selector="Button.link-chip">
-            <Setter Property="Background" Value="{DynamicResource ChipBackground}" />
-            <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="Padding" Value="12,5" />
-            <Setter Property="MinHeight" Value="0" />
-            <Setter Property="CornerRadius" Value="999" />
-            <Setter Property="FontSize" Value="12" />
-            <Setter Property="FontWeight" Value="SemiBold" />
-            <Setter Property="Cursor" Value="Hand" />
-            <Setter Property="RenderTransform" Value="scale(1)" />
-        </Style>
-        <Style Selector="Button.link-chip:pointerover">
-            <Setter Property="RenderTransform" Value="scale(1)" />
-        </Style>
-        <Style Selector="Button.link-chip:pointerover /template/ ContentPresenter">
-            <Setter Property="Background" Value="{DynamicResource HomeCardHoverBackground}" />
-        </Style>
-        <!-- Releases filter chips: All / Albums / Singles & EPs. -->
-        <Style Selector="Button.artist-chip">
+        <!-- Tab strip under the hero: plain labels, the selected one bright with an
+             accent underline (reference: Overview · Albums · Singles & EPs · Songs · Similar). -->
+        <Style Selector="Button.page-tab">
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="Padding" Value="12,5" />
+            <Setter Property="Padding" Value="2,10,2,0" />
             <Setter Property="MinHeight" Value="0" />
-            <Setter Property="CornerRadius" Value="999" />
-            <Setter Property="FontSize" Value="13" />
+            <Setter Property="CornerRadius" Value="0" />
+            <Setter Property="FontSize" Value="14" />
             <Setter Property="FontWeight" Value="SemiBold" />
             <Setter Property="Opacity" Value="0.6" />
             <Setter Property="Cursor" Value="Hand" />
             <Setter Property="RenderTransform" Value="scale(1)" />
+            <Setter Property="Transitions">
+                <Transitions>
+                    <DoubleTransition Property="Opacity" Duration="0:0:0.12" />
+                </Transitions>
+            </Setter>
         </Style>
-        <Style Selector="Button.artist-chip:pointerover">
+        <Style Selector="Button.page-tab:pointerover">
             <Setter Property="RenderTransform" Value="scale(1)" />
             <Setter Property="Opacity" Value="0.9" />
         </Style>
-        <Style Selector="Button.artist-chip:pointerover /template/ ContentPresenter">
-            <Setter Property="Background" Value="{DynamicResource ChipBackground}" />
+        <Style Selector="Button.page-tab:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="Transparent" />
         </Style>
-        <Style Selector="Button.artist-chip.selected">
+        <Style Selector="Button.page-tab:pressed /template/ ContentPresenter">
+            <Setter Property="Background" Value="Transparent" />
+        </Style>
+        <Style Selector="Button.page-tab.selected">
             <Setter Property="Opacity" Value="1" />
-            <Setter Property="Background" Value="{DynamicResource ChipBackground}" />
         </Style>
-        <Style Selector="Button.artist-chip.selected /template/ ContentPresenter">
-            <Setter Property="Background" Value="{DynamicResource ChipBackground}" />
+        <Style Selector="Button.page-tab Border.tab-underline">
+            <Setter Property="Opacity" Value="0" />
+            <Setter Property="Transitions">
+                <Transitions>
+                    <DoubleTransition Property="Opacity" Duration="0:0:0.12" />
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="Button.page-tab.selected Border.tab-underline">
+            <Setter Property="Opacity" Value="1" />
+        </Style>
+        <!-- Tab pages: incoming page fades in with a short upward glide (Settings recipe). -->
+        <Style Selector="StackPanel.tab-page">
+            <Setter Property="RenderTransform" Value="translateY(0px)"/>
+            <Setter Property="Transitions">
+                <Transitions>
+                    <DoubleTransition Property="Opacity" Duration="0:0:0.16" Easing="CubicEaseOut"/>
+                    <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.16" Easing="CubicEaseOut"/>
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="StackPanel.tab-page[IsVisible=False]">
+            <Setter Property="Opacity" Value="0"/>
+            <Setter Property="RenderTransform" Value="translateY(6px)"/>
         </Style>
         <Style Selector="Button.album-tile:pointerover">
             <Setter Property="RenderTransform" Value="scale(1)" />
@@ -131,8 +135,8 @@
         <Style Selector="Button.browse-item:pointerover">
             <Setter Property="RenderTransform" Value="scale(1)" />
         </Style>
-        <!-- Top Songs rows (reference: flat list, the playing row filled in accent with
-             light text). Rows are not buttons visually: no press zoom either. -->
+        <!-- Song rows (reference: flat list, the playing row filled in accent with light
+             text). Rows are not buttons visually: no press zoom either. -->
         <Style Selector="Button.song-row:pressed">
             <Setter Property="RenderTransform" Value="scale(1)" />
         </Style>
@@ -148,13 +152,10 @@
         <Style Selector="Button.song-row.playing PathIcon">
             <Setter Property="Foreground" Value="{DynamicResource AccentForegroundBrush}" />
         </Style>
-        <Style Selector="Button.song-row.playing TextBlock.rank-num">
-            <Setter Property="Opacity" Value="1" />
-        </Style>
         <Style Selector="Button.song-row.playing TextBlock.song-row-dim">
             <Setter Property="Opacity" Value="0.85" />
         </Style>
-        <!-- Outline pill (Shuffle), the reference's FOLLOW: same stroke as the Search box. -->
+        <!-- Outline pill (Shuffle): same stroke as the Search box. -->
         <Style Selector="Button.outline-pill">
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="BorderBrush" Value="{DynamicResource TextControlBorderBrush}" />
@@ -166,29 +167,68 @@
             <Setter Property="Background" Value="{DynamicResource ChipBackground}" />
             <Setter Property="BorderBrush" Value="{DynamicResource TextControlBorderBrush}" />
         </Style>
-        <!-- No hover zoom on the cover (user ask): opt out of the global button scale. -->
-        <Style Selector="Button.latest-cover:pointerover">
+        <!-- Grey pill (Latest Release Play): chip fill, no stroke. -->
+        <Style Selector="Button.grey-pill">
+            <Setter Property="Background" Value="{DynamicResource ChipBackground}" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="CornerRadius" Value="999" />
+            <Setter Property="Cursor" Value="Hand" />
+        </Style>
+        <Style Selector="Button.grey-pill:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource HomeCardHoverBackground}" />
+        </Style>
+        <!-- No hover zoom on covers and portraits: opt out of the global button scale. -->
+        <Style Selector="Button.latest-cover:pointerover, Button.similar-tile:pointerover">
             <Setter Property="RenderTransform" Value="scale(1)" />
         </Style>
-        <Style Selector="Button.latest-cover:pressed">
+        <Style Selector="Button.latest-cover:pressed, Button.similar-tile:pressed">
             <Setter Property="RenderTransform" Value="scale(1)" />
+        </Style>
+        <Style Selector="Button.similar-tile:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="Transparent" />
+        </Style>
+        <!-- A related artist the library lacks: inert and dimmed, portrait still shown. -->
+        <Style Selector="Button.similar-tile:disabled">
+            <Setter Property="Opacity" Value="0.5" />
+        </Style>
+        <Style Selector="Button.similar-tile:disabled /template/ ContentPresenter">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Opacity" Value="1" />
+        </Style>
+        <!-- Round link chips on the About card (Spotify, Instagram, …). -->
+        <Style Selector="Button.link-circle">
+            <Setter Property="Background" Value="{DynamicResource ChipBackground}" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Width" Value="34" />
+            <Setter Property="Height" Value="34" />
+            <Setter Property="MinHeight" Value="0" />
+            <Setter Property="CornerRadius" Value="17" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="RenderTransform" Value="scale(1)" />
+        </Style>
+        <Style Selector="Button.link-circle:pointerover">
+            <Setter Property="RenderTransform" Value="scale(1)" />
+        </Style>
+        <Style Selector="Button.link-circle:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource HomeCardHoverBackground}" />
         </Style>
         <Style Selector="Border.library-stat">
             <Setter Property="Background" Value="{DynamicResource ChipBackground}" />
             <Setter Property="CornerRadius" Value="10" />
-            <Setter Property="Padding" Value="14,10" />
-            <Setter Property="Margin" Value="0,0,10,0" />
+            <Setter Property="Padding" Value="12,9" />
+            <Setter Property="Margin" Value="0,0,8,8" />
         </Style>
     </UserControl.Styles>
 
     <UserControl.Resources>
-        <!-- Album tile shared by Releases and Appears On (mirrors MoreByArtistView) -->
+        <!-- Album tile shared by every release grid (mirrors MoreByArtistView) -->
         <DataTemplate x:Key="AlbumTile" x:DataType="m:Album">
             <Button Classes="album-tile"
                     Focusable="False"
                     Margin="2"
                     MinHeight="{Binding $parent[UserControl].((vm:ArtistDetailViewModel)DataContext).TileHeight}"
-                    HorizontalAlignment="Stretch"
+                    HorizontalAlignment="Left"
                     VerticalAlignment="Top"
                     Command="{Binding $parent[UserControl].((vm:ArtistDetailViewModel)DataContext).OpenAlbumCommand}"
                     CommandParameter="{Binding}">
@@ -249,8 +289,8 @@
                 </Button.ContextMenu>
 
                 <Grid RowDefinitions="Auto,64"
-                      Height="{Binding $parent[UserControl].((vm:ArtistDetailViewModel)DataContext).TileHeight}"
-                      HorizontalAlignment="Stretch">
+                      Width="{Binding $parent[UserControl].((vm:ArtistDetailViewModel)DataContext).TileArtworkSize}"
+                      Height="{Binding $parent[UserControl].((vm:ArtistDetailViewModel)DataContext).TileHeight}">
                     <Border Width="{Binding $parent[UserControl].((vm:ArtistDetailViewModel)DataContext).TileArtworkSize}"
                             Height="{Binding $parent[UserControl].((vm:ArtistDetailViewModel)DataContext).TileArtworkSize}"
                             CornerRadius="6"
@@ -270,7 +310,7 @@
                         </Panel>
                     </Border>
                     <StackPanel Grid.Row="1" Spacing="0">
-                        <TextBlock Margin="0,5,0,0"
+                        <TextBlock Margin="0,6,0,0"
                                    FontSize="13"
                                    FontWeight="SemiBold"
                                    TextWrapping="Wrap"
@@ -289,16 +329,15 @@
                                 </Border>
                             </InlineUIContainer>
                         </TextBlock>
-                        <!-- Release kind · year (the artist name is the page title) -->
+                        <!-- "Album · 2024" (the artist name is the page title) -->
                         <TextBlock FontSize="12"
-                                   FontWeight="Bold"
                                    Opacity="0.55"
                                    TextTrimming="CharacterEllipsis"
                                    MaxLines="1"
-                                   Margin="0,1,0,0">
+                                   Margin="0,2,0,0">
                             <TextBlock.Text>
                                 <MultiBinding StringFormat="{}{0} · {1}">
-                                    <Binding Path="ReleaseKindLabel" />
+                                    <Binding Path="ReleaseKindTitle" />
                                     <Binding Path="Year" />
                                 </MultiBinding>
                             </TextBlock.Text>
@@ -308,8 +347,8 @@
             </Button>
         </DataTemplate>
 
-        <!-- Ranked song row shared by Top Favorites and Popular (reference: rank · + ·
-             art · title / year · duration · heart; the playing row filled in accent). -->
+        <!-- Ranked song row shared by Top Songs, Top Favorites and the Songs tab (reference:
+             rank · art · title / year · duration · … ; the playing row filled in accent). -->
         <DataTemplate x:Key="SongPill" x:DataType="m:TopSongRow">
             <Button Classes="browse-item song-row"
                     Classes.playing="{Binding Track.IsNowPlaying}"
@@ -331,32 +370,13 @@
                         <Setter Property="Background" Value="{DynamicResource HomeCardHoverBackground}" />
                     </Style>
                 </Button.Styles>
-                <Grid ColumnDefinitions="48,36,52,*,Auto,Auto">
+                <Grid ColumnDefinitions="52,52,*,Auto,Auto,40">
                     <TextBlock Grid.Column="0"
                                Classes="rank-num"
-                               Classes.gold="{Binding IsTop}"
-                               Classes.silver="{Binding IsSecond}"
-                               Classes.bronze="{Binding IsThird}"
                                Text="{Binding Rank}"
-                               FontSize="15"
                                HorizontalAlignment="Center"
                                VerticalAlignment="Center" />
-                    <!-- "+": append this song to the queue (inner Button eats the click). -->
-                    <Button Grid.Column="1"
-                            Classes="header-icon-btn"
-                            Background="Transparent"
-                            BorderThickness="0"
-                            Padding="0"
-                            Width="28" Height="28"
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Center"
-                            Cursor="Hand"
-                            Command="{Binding $parent[UserControl].((vm:ArtistDetailViewModel)DataContext).AddSongToQueueCommand}"
-                            CommandParameter="{Binding Track}"
-                            ToolTip.Tip="{loc:T ArtistDetail.AddQueue}">
-                        <PathIcon Data="{StaticResource AddIcon}" Width="14" Height="14" Opacity="0.6" />
-                    </Button>
-                    <Border Grid.Column="2"
+                    <Border Grid.Column="1"
                             Width="40" Height="40"
                             CornerRadius="4"
                             ClipToBounds="True"
@@ -375,7 +395,7 @@
                                               IsVisible="{Binding Track.AlbumArtworkPath, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
                         </Panel>
                     </Border>
-                    <StackPanel Grid.Column="3" Spacing="1" VerticalAlignment="Center" Margin="12,0,10,0">
+                    <StackPanel Grid.Column="2" Spacing="1" VerticalAlignment="Center" Margin="12,0,10,0">
                         <TextBlock FontSize="13"
                                    FontWeight="SemiBold"
                                    TextTrimming="CharacterEllipsis"
@@ -400,18 +420,84 @@
                                    TextTrimming="CharacterEllipsis"
                                    MaxLines="1" />
                     </StackPanel>
+                    <ctrl:HeartIcon Grid.Column="3" Size="14" ShowWhenOff="False"
+                                    Margin="0,0,14,0" VerticalAlignment="Center"
+                                    IsFavorite="{Binding Track.IsFavorite}" />
                     <TextBlock Grid.Column="4"
                                Classes="song-row-dim"
                                Text="{Binding Track.DurationFormatted}"
                                FontSize="12"
                                Opacity="0.7"
                                VerticalAlignment="Center"
-                               Margin="0,0,14,0" />
-                    <ctrl:HeartIcon Grid.Column="5" Size="14" ShowWhenOff="False"
-                                    Margin="0,0,16,0" VerticalAlignment="Center"
-                                    IsFavorite="{Binding Track.IsFavorite}" />
+                               Margin="0,0,6,0" />
+                    <!-- "…": the same track menu as a right-click, anchored to the glyph. -->
+                    <Button Grid.Column="5"
+                            Classes="header-icon-btn row-menu-btn"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            Padding="0"
+                            Width="28" Height="28"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Cursor="Hand"
+                            Click="OnRowMenuClick"
+                            ToolTip.Tip="{loc:T ArtistDetail.OptionsTip}">
+                        <PathIcon Data="{StaticResource MoreDotsIcon}" Width="14" Height="14" Opacity="0.6" />
+                    </Button>
                 </Grid>
             </Button>
+        </DataTemplate>
+
+        <!-- About-card link chip: brand glyph in a round chip, opens the URL. -->
+        <DataTemplate x:Key="LinkChip" x:DataType="svc:ArtistLink">
+            <Button Classes="link-circle"
+                    Margin="0,0,8,0"
+                    Command="{Binding $parent[UserControl].((vm:ArtistDetailViewModel)DataContext).OpenLinkCommand}"
+                    CommandParameter="{Binding Url}"
+                    ToolTip.Tip="{Binding Label}">
+                <PathIcon Data="{Binding IconKey, Converter={x:Static helpers:IconKeyConverter.Instance}}"
+                          Width="15" Height="15" />
+            </Button>
+        </DataTemplate>
+
+        <!-- Similar Artists tile: round portrait + name; in-library tiles open the artist. -->
+        <DataTemplate x:Key="SimilarTile" x:DataType="vm:SimilarArtistRow">
+            <StackPanel Spacing="10" Width="150" Margin="0,0,22,26">
+                <Button Classes="similar-tile"
+                        Focusable="False"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        Padding="0"
+                        Width="150" Height="150"
+                        CornerRadius="75"
+                        HorizontalAlignment="Center"
+                        Cursor="Hand"
+                        IsEnabled="{Binding IsInLibrary}"
+                        Command="{Binding $parent[UserControl].((vm:ArtistDetailViewModel)DataContext).OpenSimilarArtistCommand}"
+                        CommandParameter="{Binding}">
+                    <Button.Clip>
+                        <EllipseGeometry Center="75,75" RadiusX="75" RadiusY="75" />
+                    </Button.Clip>
+                    <Border Width="150" Height="150" CornerRadius="75" Background="#2E2E2E" ClipToBounds="True">
+                        <Panel>
+                            <Path Data="{StaticResource ArtistsIcon}" Stretch="Uniform"
+                                  Fill="{DynamicResource SystemControlForegroundBaseHighBrush}" Height="52"
+                                  HorizontalAlignment="Center" VerticalAlignment="Center" Opacity="0.35" />
+                            <ctrl:CachedImage SourcePath="{Binding ImagePath}"
+                                              DecodeWidth="300"
+                                              Stretch="UniformToFill"
+                                              Width="150" Height="150"
+                                              IsVisible="{Binding HasImage}" />
+                        </Panel>
+                    </Border>
+                </Button>
+                <TextBlock Text="{Binding Name}" FontSize="13" FontWeight="SemiBold"
+                           HorizontalAlignment="Center" TextAlignment="Center"
+                           TextTrimming="CharacterEllipsis" MaxLines="2" TextWrapping="Wrap" />
+                <TextBlock Text="{loc:T ArtistDetail.NotInLibrary}" FontSize="11" Opacity="0.45"
+                           HorizontalAlignment="Center" Margin="0,-6,0,0"
+                           IsVisible="{Binding !IsInLibrary}" />
+            </StackPanel>
         </DataTemplate>
     </UserControl.Resources>
 
@@ -421,17 +507,17 @@
         <StackPanel Margin="0,0,0,115">
 
             <!-- ── Hero ─────────────────────────────────────────────── -->
-            <Grid x:Name="Hero" Height="320" ClipToBounds="True">
-                <!-- Colour wash from the backdrop art's edge colour (VM, off-thread) … -->
+            <Grid x:Name="Hero" Height="400" ClipToBounds="True">
+                <!-- Colour wash from the backdrop art's edge colour (VM, off-thread): the
+                     ground when there is no portrait, and what shows through the fades. -->
                 <Border Background="{Binding HeroBackgroundBrush}" />
-                <!-- … with the art itself pushed to an abstract glow: heavy blur, zoomed
-                     well past the frame and faint, so a portrait reads as light and tone
-                     rather than a smeared face. Static image: one blur per invalidation. -->
+                <!-- No portrait: the newest cover as an abstract glow (heavy blur, zoomed
+                     past the frame, faint) so the header is never a flat slab. -->
                 <ctrl:CachedImage SourcePath="{Binding HeroArtPath}"
                                   DecodeWidth="512"
                                   Stretch="UniformToFill"
                                   Opacity="0.38"
-                                  IsVisible="{Binding HeroArtPath, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                                  IsVisible="{Binding !HasImage}">
                     <ctrl:CachedImage.Effect>
                         <BlurEffect Radius="130" />
                     </ctrl:CachedImage.Effect>
@@ -439,34 +525,32 @@
                         <ScaleTransform ScaleX="1.7" ScaleY="1.7" />
                     </ctrl:CachedImage.RenderTransform>
                 </ctrl:CachedImage>
-                <!-- Scrim for legibility, then a fade into the page background so the
-                     hero dissolves into the sections below instead of ending on a line. -->
-                <Rectangle Fill="#40000000" />
-
-                <!-- Portrait (reference: the photo bleeds in from the right edge). Square
-                     Deezer photos have a background, so instead of a cutout the photo
-                     fills the hero's right side and fades out on its left edge; the
-                     page-background fade above it (later in z-order) dissolves its
-                     bottom into the sections below. -->
+                <!-- Portrait: the whole photo as the hero's background, sharp, filling the
+                     band edge to edge (centre crop). A left scrim keeps the name legible
+                     over a bright photo; the page-background fade below dissolves its
+                     bottom into the sections. -->
                 <ctrl:CachedImage SourcePath="{Binding ImagePath}"
-                                  DecodeWidth="768"
+                                  DecodeWidth="2048"
                                   Stretch="UniformToFill"
-                                  Width="380"
-                                  HorizontalAlignment="Right"
+                                  HorizontalAlignment="Stretch"
                                   VerticalAlignment="Stretch"
-                                  IsVisible="{Binding HasImage}">
-                    <ctrl:CachedImage.OpacityMask>
+                                  RenderOptions.BitmapInterpolationMode="HighQuality"
+                                  IsVisible="{Binding HasImage}" />
+                <Rectangle Fill="#30000000" />
+                <Rectangle IsVisible="{Binding HasImage}">
+                    <Rectangle.Fill>
                         <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,0%">
-                            <GradientStop Color="#00000000" Offset="0" />
-                            <GradientStop Color="#FF000000" Offset="0.45" />
+                            <GradientStop Color="#A6000000" Offset="0" />
+                            <GradientStop Color="#40000000" Offset="0.45" />
+                            <GradientStop Color="#00000000" Offset="0.8" />
                         </LinearGradientBrush>
-                    </ctrl:CachedImage.OpacityMask>
-                </ctrl:CachedImage>
+                    </Rectangle.Fill>
+                </Rectangle>
                 <Border Background="{DynamicResource AppMainBackground}">
                     <Border.OpacityMask>
                         <LinearGradientBrush StartPoint="0%,0%" EndPoint="0%,100%">
-                            <GradientStop Color="#00000000" Offset="0.3" />
-                            <GradientStop Color="#B0000000" Offset="0.78" />
+                            <GradientStop Color="#00000000" Offset="0.4" />
+                            <GradientStop Color="#B0000000" Offset="0.82" />
                             <GradientStop Color="#FF000000" Offset="1" />
                         </LinearGradientBrush>
                     </Border.OpacityMask>
@@ -474,7 +558,7 @@
 
                 <Grid ColumnDefinitions="*"
                       VerticalAlignment="Bottom"
-                      Margin="32,0,400,26">
+                      Margin="32,0,300,22">
                     <StackPanel Grid.Column="0" VerticalAlignment="Bottom" Spacing="4">
                         <!-- Genre kicker ("HIP HOP"): dominant library genre, else MusicBrainz. -->
                         <TextBlock Text="{Binding GenreKicker}"
@@ -492,10 +576,6 @@
                                    TextTrimming="CharacterEllipsis"
                                    MaxLines="2"
                                    TextWrapping="Wrap" />
-                        <TextBlock Text="{Binding FactsLine}"
-                                   FontSize="13"
-                                   Opacity="0.6" />
-
                         <StackPanel Orientation="Horizontal" Spacing="12" Margin="0,14,0,0" VerticalAlignment="Center">
                             <Button Command="{Binding PlayAllCommand}"
                                     Classes="accent-btn album-header-action"
@@ -516,15 +596,22 @@
                                     <TextBlock Text="{loc:T ArtistDetail.Play}" FontSize="14" FontWeight="Bold" VerticalAlignment="Center" />
                                 </StackPanel>
                             </Button>
-                            <!-- Outline pill, the reference's FOLLOW slot. -->
+                            <!-- Same accent fill as Play (user ask 09-13). -->
                             <Button Command="{Binding ShuffleAllCommand}"
-                                    Classes="outline-pill album-header-action"
+                                    Classes="accent-btn album-header-action"
                                     Padding="22,8"
+                                    CornerRadius="999"
+                                    Background="{DynamicResource AccentButtonBackground}"
+                                    Foreground="{DynamicResource AccentForegroundBrush}"
+                                    BorderBrush="{DynamicResource AccentBorderBrush}"
+                                    BorderThickness="1"
                                     FontWeight="Bold"
+                                    Cursor="Hand"
                                     ToolTip.Tip="{loc:T ArtistDetail.ShuffleEverythingByArtistTip}">
                                 <StackPanel Orientation="Horizontal" Spacing="6">
                                     <PathIcon Data="{StaticResource ShuffleIcon}"
                                               Width="16" Height="16"
+                                              Foreground="{DynamicResource AccentForegroundBrush}"
                                               VerticalAlignment="Center" />
                                     <TextBlock Text="{loc:T ArtistDetail.Shuffle}" FontSize="14" FontWeight="Bold" VerticalAlignment="Center" />
                                 </StackPanel>
@@ -583,77 +670,62 @@
                 </Grid>
             </Grid>
 
-            <!-- ── Latest Release  |  Top Favorites / Popular ───────── -->
-            <Grid ColumnDefinitions="Auto,*" Margin="26,12,26,0">
-                <!-- Latest release card (by release date) -->
-                <StackPanel Grid.Column="0" Spacing="8" Width="360" Margin="0,0,28,0"
-                            IsVisible="{Binding HasLatestRelease}">
-                    <TextBlock Text="{loc:T ArtistDetail.LatestRelease}" Classes="section-title" Margin="2,0,0,4" />
-                    <Button Classes="latest-cover"
-                            Background="Transparent" BorderThickness="0" Padding="0"
-                            Cursor="Hand"
-                            HorizontalAlignment="Left"
-                            Command="{Binding OpenAlbumCommand}"
-                            CommandParameter="{Binding LatestRelease}"
-                            ToolTip.Tip="{loc:T ArtistDetail.OpenAlbumTip}">
-                        <Border Width="290" Height="290" CornerRadius="8" ClipToBounds="True" Background="#1AFFFFFF">
-                            <Panel>
-                                <TextBlock Text="{loc:T ArtistDetail.Text}" FontSize="40" Opacity="0.15"
-                                           HorizontalAlignment="Center" VerticalAlignment="Center"
-                                           IsVisible="{Binding LatestRelease.ArtworkPath, Converter={x:Static StringConverters.IsNullOrEmpty}, FallbackValue=True}" />
-                                <ctrl:CachedImage SourcePath="{Binding LatestRelease.ArtworkPath, FallbackValue={x:Null}}"
-                                                  DecodeWidth="512"
-                                                  Stretch="UniformToFill"
-                                                  RenderOptions.BitmapInterpolationMode="HighQuality"
-                                                  IsVisible="{Binding LatestRelease.ArtworkPath, Converter={x:Static StringConverters.IsNotNullOrEmpty}, FallbackValue=False}" />
-                            </Panel>
-                        </Border>
+            <!-- ── Tabs ─────────────────────────────────────────────── -->
+            <StackPanel Margin="32,2,32,0">
+                <StackPanel Orientation="Horizontal" Spacing="26">
+                    <Button Classes="page-tab" Classes.selected="{Binding IsTabOverview}"
+                            Command="{Binding SelectTabCommand}" CommandParameter="overview">
+                        <StackPanel>
+                            <TextBlock Text="{loc:T ArtistDetail.Overview}" />
+                            <Border Classes="tab-underline" Height="2" Margin="0,9,0,0" CornerRadius="1"
+                                    Background="{DynamicResource AccentColorBrush}" />
+                        </StackPanel>
                     </Button>
-                    <StackPanel Spacing="2" Margin="2,2,0,0">
-                        <TextBlock Text="{Binding LatestReleaseDate}"
-                                   FontSize="11" FontWeight="Bold" LetterSpacing="0.8" Opacity="0.55" />
-                        <TextBlock Text="{Binding LatestRelease.Name, FallbackValue=''}"
-                                   FontSize="16" FontWeight="SemiBold"
-                                   TextWrapping="Wrap" MaxLines="2" TextTrimming="CharacterEllipsis" />
-                        <TextBlock Text="{Binding LatestReleaseSubtitle}"
-                                   FontSize="12" Opacity="0.55" />
-                        <Button Classes="text-link" Margin="-8,4,0,0"
-                                Command="{Binding PlayLatestReleaseCommand}"
-                                HorizontalAlignment="Left">
-                            <StackPanel Orientation="Horizontal" Spacing="5">
-                                <PathIcon Data="{StaticResource PlaySolidIcon}" Width="10" Height="10"
-                                          Foreground="{DynamicResource AccentTextExactBrush}" VerticalAlignment="Center" />
-                                <TextBlock Text="{loc:T ArtistDetail.Play}" VerticalAlignment="Center" />
-                            </StackPanel>
-                        </Button>
-                    </StackPanel>
+                    <Button Classes="page-tab" Classes.selected="{Binding IsTabAlbums}"
+                            Command="{Binding SelectTabCommand}" CommandParameter="albums">
+                        <StackPanel>
+                            <TextBlock Text="{loc:T ArtistDetail.Albums}" />
+                            <Border Classes="tab-underline" Height="2" Margin="0,9,0,0" CornerRadius="1"
+                                    Background="{DynamicResource AccentColorBrush}" />
+                        </StackPanel>
+                    </Button>
+                    <Button Classes="page-tab" Classes.selected="{Binding IsTabSingles}"
+                            Command="{Binding SelectTabCommand}" CommandParameter="singles">
+                        <StackPanel>
+                            <TextBlock Text="{loc:T ArtistDetail.SinglesEPs}" />
+                            <Border Classes="tab-underline" Height="2" Margin="0,9,0,0" CornerRadius="1"
+                                    Background="{DynamicResource AccentColorBrush}" />
+                        </StackPanel>
+                    </Button>
+                    <Button Classes="page-tab" Classes.selected="{Binding IsTabSongs}"
+                            Command="{Binding SelectTabCommand}" CommandParameter="songs">
+                        <StackPanel>
+                            <TextBlock Text="{loc:T ArtistDetail.Songs}" />
+                            <Border Classes="tab-underline" Height="2" Margin="0,9,0,0" CornerRadius="1"
+                                    Background="{DynamicResource AccentColorBrush}" />
+                        </StackPanel>
+                    </Button>
+                    <Button Classes="page-tab" Classes.selected="{Binding IsTabSimilar}"
+                            Command="{Binding SelectTabCommand}" CommandParameter="similar">
+                        <StackPanel>
+                            <TextBlock Text="{loc:T ArtistDetail.SimilarArtists}" />
+                            <Border Classes="tab-underline" Height="2" Margin="0,9,0,0" CornerRadius="1"
+                                    Background="{DynamicResource AccentColorBrush}" />
+                        </StackPanel>
+                    </Button>
                 </StackPanel>
+                <Border Height="1" Background="{DynamicResource ChipBackground}" />
+            </StackPanel>
 
-                <!-- Right column: Top Favorites when the user has favourited songs by this
-                     artist, otherwise Popular takes the slot. -->
-                <StackPanel Grid.Column="1" Spacing="8">
-                    <StackPanel Spacing="8" IsVisible="{Binding HasFavorites}">
-                        <Grid ColumnDefinitions="*,Auto" Margin="2,0,0,4">
-                            <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                                <TextBlock Text="{loc:T ArtistDetail.TopFavorites}" Classes="section-title" VerticalAlignment="Center" />
-                                <ctrl:HeartIcon Size="15" IsFavorite="True" VerticalAlignment="Center" Margin="0,3,0,0" />
-                            </StackPanel>
-                            <Button Grid.Column="1" Classes="text-link" Content="{loc:T ArtistDetail.Shuffle}"
-                                    Command="{Binding ShuffleFavoritesCommand}" VerticalAlignment="Center" />
-                        </Grid>
-                        <ItemsControl ItemsSource="{Binding FavoriteSongs}" ItemTemplate="{StaticResource SongPill}">
-                            <ItemsControl.ItemsPanel>
-                                <ItemsPanelTemplate>
-                                    <StackPanel />
-                                </ItemsPanelTemplate>
-                            </ItemsControl.ItemsPanel>
-                        </ItemsControl>
-                    </StackPanel>
-                    <StackPanel Spacing="8" IsVisible="{Binding ShowPopularBesideLatest}">
+            <!-- ── Overview ─────────────────────────────────────────── -->
+            <StackPanel x:Name="OverviewPanel" Classes="tab-page" IsVisible="{Binding IsTabOverview}">
+                <!-- Popular | Latest Release | About -->
+                <Grid ColumnDefinitions="*,24,Auto,24,Auto" Margin="32,22,32,0">
+                    <StackPanel Grid.Column="0" Spacing="6">
                         <Grid ColumnDefinitions="*,Auto" Margin="2,0,0,4">
                             <TextBlock Grid.Column="0" Text="{loc:T ArtistDetail.Popular}" Classes="section-title" VerticalAlignment="Center" />
-                            <Button Grid.Column="1" Classes="text-link" Content="{loc:T ArtistDetail.Shuffle}"
-                                    Command="{Binding ShufflePopularCommand}" VerticalAlignment="Center" />
+                            <Button Grid.Column="1" Classes="text-link" Content="{loc:T ArtistDetail.SeeAll}"
+                                    Command="{Binding SelectTabCommand}" CommandParameter="songs" VerticalAlignment="Center" />
                         </Grid>
                         <ItemsControl ItemsSource="{Binding PopularSongs}" ItemTemplate="{StaticResource SongPill}">
                             <ItemsControl.ItemsPanel>
@@ -662,92 +734,109 @@
                                 </ItemsPanelTemplate>
                             </ItemsControl.ItemsPanel>
                         </ItemsControl>
+                        <TextBlock Text="{loc:T ArtistDetail.NoSongsMatch}"
+                                   FontSize="13" Opacity="0.5" Margin="2,4,0,0"
+                                   IsVisible="{Binding !HasPopular}" />
+
+                        <!-- In your library: stat tiles under the rows. They used to sit in the
+                             About card, where a long bio pushed the whole row's height and left
+                             a hole under Top Songs; here they fill that space instead. -->
+                        <UniformGrid Columns="5" Margin="0,10,-8,0">
+                            <Border Classes="library-stat">
+                                <StackPanel Spacing="1">
+                                    <TextBlock Classes="fact-value" FontWeight="Bold" Text="{Binding ReleaseCount}" />
+                                    <TextBlock Classes="fact-label" LetterSpacing="0" FontWeight="SemiBold" FontSize="11" Text="{loc:T ArtistDetail.ReleasesTile}" />
+                                </StackPanel>
+                            </Border>
+                            <Border Classes="library-stat">
+                                <StackPanel Spacing="1">
+                                    <TextBlock Classes="fact-value" FontWeight="Bold" Text="{Binding SongCount}" />
+                                    <TextBlock Classes="fact-label" LetterSpacing="0" FontWeight="SemiBold" FontSize="11" Text="{loc:T ArtistDetail.SongsTile}" />
+                                </StackPanel>
+                            </Border>
+                            <Border Classes="library-stat">
+                                <StackPanel Spacing="1">
+                                    <TextBlock Classes="fact-value" FontWeight="Bold" Text="{Binding TotalLengthDisplay}" />
+                                    <TextBlock Classes="fact-label" LetterSpacing="0" FontWeight="SemiBold" FontSize="11" Text="{loc:T ArtistDetail.TotalLengthTile}" />
+                                </StackPanel>
+                            </Border>
+                            <Border Classes="library-stat" IsVisible="{Binding HasMostPlayed}">
+                                <StackPanel Spacing="1">
+                                    <TextBlock Classes="fact-value" FontWeight="Bold" Text="{Binding MostPlayedTitle}"
+                                               TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" MaxLines="1" />
+                                    <TextBlock Classes="fact-label" LetterSpacing="0" FontWeight="SemiBold" FontSize="11" Text="{loc:T ArtistDetail.MostPlayedTile}" />
+                                </StackPanel>
+                            </Border>
+                            <Border Classes="library-stat" IsVisible="{Binding HasInLibrarySince}">
+                                <StackPanel Spacing="1">
+                                    <TextBlock Classes="fact-value" FontWeight="Bold" Text="{Binding InLibrarySince}"
+                                               TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" MaxLines="1" />
+                                    <TextBlock Classes="fact-label" LetterSpacing="0" FontWeight="SemiBold" FontSize="11" Text="{loc:T ArtistDetail.SinceTile}" />
+                                </StackPanel>
+                            </Border>
+                        </UniformGrid>
                     </StackPanel>
-                </StackPanel>
-            </Grid>
 
-            <!-- ── Popular (full width, when Top Favorites took the slot above) ── -->
-            <StackPanel Margin="26,26,26,0" Spacing="8" IsVisible="{Binding ShowPopularBelow}">
-                <Grid ColumnDefinitions="*,Auto" Margin="2,0,0,4">
-                    <TextBlock Grid.Column="0" Text="{loc:T ArtistDetail.Popular}" Classes="section-title" VerticalAlignment="Center" />
-                    <Button Grid.Column="1" Classes="text-link" Content="{loc:T ArtistDetail.Shuffle}"
-                            Command="{Binding ShufflePopularCommand}" VerticalAlignment="Center" />
-                </Grid>
-                <ItemsControl ItemsSource="{Binding PopularSongs}" ItemTemplate="{StaticResource SongPill}">
-                    <ItemsControl.ItemsPanel>
-                        <ItemsPanelTemplate>
-                            <StackPanel />
-                        </ItemsPanelTemplate>
-                    </ItemsControl.ItemsPanel>
-                </ItemsControl>
-            </StackPanel>
-
-            <!-- ── Releases ─────────────────────────────────────────── -->
-            <StackPanel Margin="26,26,26,0" Spacing="8">
-                <Grid ColumnDefinitions="*,Auto" Margin="2,0,0,4">
-                    <TextBlock Grid.Column="0" Text="{loc:T ArtistDetail.Releases}" Classes="section-title" VerticalAlignment="Center" />
-                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
-                        <Button Classes="artist-chip" Classes.selected="{Binding IsFilterAll}"
-                                Content="{loc:T ArtistDetail.All}"
-                                Command="{Binding SetReleaseFilterCommand}" CommandParameter="all" />
-                        <Button Classes="artist-chip" Classes.selected="{Binding IsFilterAlbums}"
-                                Content="{loc:T ArtistDetail.Albums}"
-                                Command="{Binding SetReleaseFilterCommand}" CommandParameter="albums" />
-                        <Button Classes="artist-chip" Classes.selected="{Binding IsFilterSingles}"
-                                Content="{loc:T ArtistDetail.SinglesEPs}"
-                                Command="{Binding SetReleaseFilterCommand}" CommandParameter="singles" />
+                    <!-- Latest release (by release date): cover beside the facts. -->
+                    <StackPanel Grid.Column="2" Spacing="6" Width="380" IsVisible="{Binding HasLatestRelease}">
+                        <TextBlock Text="{loc:T ArtistDetail.LatestRelease}" Classes="section-title" Margin="2,0,0,4" />
+                        <Grid ColumnDefinitions="Auto,18,*" Margin="0,3,0,0">
+                            <Button Grid.Column="0" Classes="latest-cover"
+                                    Background="Transparent" BorderThickness="0" Padding="0"
+                                    Cursor="Hand"
+                                    VerticalAlignment="Top"
+                                    Command="{Binding OpenAlbumCommand}"
+                                    CommandParameter="{Binding LatestRelease}"
+                                    ToolTip.Tip="{loc:T ArtistDetail.OpenAlbumTip}">
+                                <Border Width="216" Height="216" CornerRadius="8" ClipToBounds="True" Background="#1AFFFFFF">
+                                    <Panel>
+                                        <TextBlock Text="{loc:T ArtistDetail.Text}" FontSize="40" Opacity="0.15"
+                                                   HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                   IsVisible="{Binding LatestRelease.ArtworkPath, Converter={x:Static StringConverters.IsNullOrEmpty}, FallbackValue=True}" />
+                                        <ctrl:CachedImage SourcePath="{Binding LatestRelease.ArtworkPath, FallbackValue={x:Null}}"
+                                                          DecodeWidth="512"
+                                                          Stretch="UniformToFill"
+                                                          RenderOptions.BitmapInterpolationMode="HighQuality"
+                                                          IsVisible="{Binding LatestRelease.ArtworkPath, Converter={x:Static StringConverters.IsNotNullOrEmpty}, FallbackValue=False}" />
+                                    </Panel>
+                                </Border>
+                            </Button>
+                            <StackPanel Grid.Column="2" Spacing="4" VerticalAlignment="Center">
+                                <TextBlock Text="{Binding LatestReleaseDate}"
+                                           FontSize="11" FontWeight="Bold" LetterSpacing="0.8" Opacity="0.55" />
+                                <TextBlock Text="{Binding LatestRelease.Name, FallbackValue=''}"
+                                           FontSize="17" FontWeight="Bold"
+                                           TextWrapping="Wrap" MaxLines="3" TextTrimming="CharacterEllipsis" />
+                                <TextBlock Text="{Binding LatestReleaseKindLine}" FontSize="12" Opacity="0.6" />
+                                <TextBlock Text="{Binding LatestReleaseSongsLine}" FontSize="12" Opacity="0.6" />
+                                <Button Classes="grey-pill" Margin="0,10,0,0" Padding="20,7"
+                                        HorizontalAlignment="Left"
+                                        Command="{Binding PlayLatestReleaseCommand}">
+                                    <StackPanel Orientation="Horizontal" Spacing="6">
+                                        <PathIcon Data="{StaticResource PlaySolidIcon}" Width="11" Height="11" VerticalAlignment="Center" />
+                                        <TextBlock Text="{loc:T ArtistDetail.Play}" FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                    </StackPanel>
+                                </Button>
+                            </StackPanel>
+                        </Grid>
                     </StackPanel>
-                </Grid>
-                <ItemsControl ItemsSource="{Binding Releases}"
-                              ItemTemplate="{StaticResource AlbumTile}"
-                              IsVisible="{Binding HasReleases}">
-                    <ItemsControl.ItemsPanel>
-                        <ItemsPanelTemplate>
-                            <UniformGrid Columns="5" />
-                        </ItemsPanelTemplate>
-                    </ItemsControl.ItemsPanel>
-                </ItemsControl>
-                <TextBlock Text="{loc:T ArtistDetail.NoReleasesMatch}"
-                           FontSize="13" Opacity="0.5" Margin="2,4,0,0"
-                           IsVisible="{Binding !HasReleases}" />
-            </StackPanel>
 
-            <!-- ── Appears On ───────────────────────────────────────── -->
-            <StackPanel Margin="26,26,26,0" Spacing="8" IsVisible="{Binding HasAppearsOn}">
-                <TextBlock Text="{loc:T ArtistDetail.Appears}" Classes="section-title" Margin="2,0,0,4" />
-                <ItemsControl ItemsSource="{Binding AppearsOn}"
-                              ItemTemplate="{StaticResource AlbumTile}">
-                    <ItemsControl.ItemsPanel>
-                        <ItemsPanelTemplate>
-                            <UniformGrid Columns="5" />
-                        </ItemsPanelTemplate>
-                    </ItemsControl.ItemsPanel>
-                </ItemsControl>
-            </StackPanel>
-
-            <!-- ── About ────────────────────────────────────────────── -->
-            <!-- Story on the left (Wikipedia lead), the artist's facts in a two-column
-                 grid on the right, and a strip of "in your library" stats along the
-                 bottom — what only Noctis knows. Shows the library strip even when the
-                 web lookup found nothing. -->
-            <Border Margin="26,30,26,0"
-                    Background="{DynamicResource HomeCardBackground}"
-                    CornerRadius="12"
-                    Padding="24,20">
-                <StackPanel Spacing="20">
-                    <Grid ColumnDefinitions="3*,40,2*">
-                        <StackPanel Grid.Column="0" Spacing="8">
-                            <TextBlock Classes="section-title">
-                                <Run Text="{loc:T ArtistDetail.About}" /><Run Text="{Binding ArtistName}" />
+                    <!-- About card: bio, facts with glyphs, links, library stat tiles. Shown
+                         even when the web lookup found nothing — the stats are ours. -->
+                    <Border Grid.Column="4" Width="340"
+                            Background="{DynamicResource HomeCardBackground}"
+                            CornerRadius="12"
+                            Padding="20,16,20,18"
+                            VerticalAlignment="Top">
+                        <StackPanel Spacing="12">
+                            <TextBlock FontSize="15" FontWeight="Bold" TextTrimming="CharacterEllipsis" MaxLines="1">
+                                <Run Text="{loc:T ArtistDetail.AboutTitle}" /><Run Text="{Binding ArtistName}" />
                             </TextBlock>
-                            <TextBlock Text="{Binding About.ShortDescription, FallbackValue=''}"
-                                       FontSize="13" FontWeight="SemiBold" Opacity="0.6"
-                                       IsVisible="{Binding About.ShortDescription, Converter={x:Static StringConverters.IsNotNullOrEmpty}, FallbackValue=False}" />
                             <StackPanel Spacing="4" IsVisible="{Binding About.HasBio, FallbackValue=False}">
                                 <TextBlock x:Name="BioText"
                                            Text="{Binding About.Bio, FallbackValue=''}"
-                                           FontSize="14"
-                                           LineHeight="22"
+                                           FontSize="13"
+                                           LineHeight="20"
                                            Opacity="0.85"
                                            TextWrapping="Wrap"
                                            TextTrimming="CharacterEllipsis"
@@ -760,87 +849,194 @@
                                         Command="{Binding ToggleBioCommand}"
                                         IsVisible="{Binding ShowBioToggle}" />
                             </StackPanel>
+                            <TextBlock Text="{loc:T ArtistDetail.LookingUp}"
+                                       FontSize="13" Opacity="0.5" TextWrapping="Wrap"
+                                       IsVisible="{Binding IsAboutLoading}" />
                             <TextBlock Text="{loc:T ArtistDetail.NoBiographyFoundArtist}"
-                                       FontSize="13" Opacity="0.5"
-                                       IsVisible="{Binding !About.HasBio, FallbackValue=True}" />
-                        </StackPanel>
+                                       FontSize="13" Opacity="0.5" TextWrapping="Wrap"
+                                       IsVisible="{Binding ShowNoBiography}" />
 
-                        <!-- Facts: two columns, each fact hidden when the source lacks it.
-                             UniformGrid skips invisible children, so the grid stays tight. -->
-                        <StackPanel Grid.Column="2" Spacing="16" VerticalAlignment="Top"
-                                    IsVisible="{Binding HasAboutFacts}">
-                            <UniformGrid Columns="2">
-                                <StackPanel Spacing="3" Margin="0,0,16,14" IsVisible="{Binding About.HasFrom, FallbackValue=False}">
+                            <!-- Facts, Apple Music style: FROM / BORN (FORMED for a group) / GENRE
+                                 as label-over-value pairs; each hidden when the source lacks it. -->
+                            <StackPanel Spacing="10" Margin="0,2,0,0" IsVisible="{Binding HasAboutFacts}">
+                                <StackPanel Spacing="2" IsVisible="{Binding About.HasFrom, FallbackValue=False}">
                                     <TextBlock Classes="fact-label" Text="{loc:T ArtistDetail.FROM}" />
                                     <TextBlock Classes="fact-value" Text="{Binding About.FromDisplay, FallbackValue=''}" />
                                 </StackPanel>
-                                <StackPanel Spacing="3" Margin="0,0,16,14" IsVisible="{Binding About.HasBegin, FallbackValue=False}">
+                                <StackPanel Spacing="2" IsVisible="{Binding About.HasBegin, FallbackValue=False}">
                                     <TextBlock Classes="fact-label" Text="{Binding About.BeginLabel, FallbackValue='BORN'}" />
                                     <TextBlock Classes="fact-value" Text="{Binding About.BeginDisplay, FallbackValue=''}" />
                                 </StackPanel>
-                                <StackPanel Spacing="3" Margin="0,0,16,14" IsVisible="{Binding About.HasEnd, FallbackValue=False}">
-                                    <TextBlock Classes="fact-label" Text="{Binding About.EndLabel, FallbackValue='DIED'}" />
-                                    <TextBlock Classes="fact-value" Text="{Binding About.EndDisplay, FallbackValue=''}" />
+                                <StackPanel Spacing="2" IsVisible="{Binding HasGenreFact}">
+                                    <TextBlock Classes="fact-label" Text="{loc:T ArtistDetail.GENRE}" />
+                                    <TextBlock Classes="fact-value" Text="{Binding GenreFact}" />
                                 </StackPanel>
-                                <StackPanel Spacing="3" Margin="0,0,16,14" IsVisible="{Binding About.HasActive, FallbackValue=False}">
-                                    <TextBlock Classes="fact-label" Text="{loc:T ArtistDetail.ACTIVE}" />
-                                    <TextBlock Classes="fact-value" Text="{Binding About.ActiveDisplay, FallbackValue=''}" />
-                                </StackPanel>
-                            </UniformGrid>
-                            <StackPanel Spacing="3" Margin="0,-10,0,0" IsVisible="{Binding About.HasGenres, FallbackValue=False}">
-                                <TextBlock Classes="fact-label" Text="{loc:T ArtistDetail.GENRES}" />
-                                <TextBlock Classes="fact-value" Text="{Binding About.GenresDisplay, FallbackValue=''}" />
                             </StackPanel>
-                        </StackPanel>
-                    </Grid>
 
-                    <!-- In your library: one row of stat tiles -->
-                    <StackPanel Spacing="8">
-                        <TextBlock Classes="fact-label" Text="{loc:T ArtistDetail.LIBRARY}" />
-                        <UniformGrid Rows="1">
-                            <Border Classes="library-stat">
-                                <StackPanel Spacing="2">
-                                    <TextBlock Classes="fact-label" Text="{loc:T ArtistDetail.ReleasesFact}" />
-                                    <TextBlock Classes="fact-value" FontWeight="SemiBold" Text="{Binding ReleaseCount}" />
-                                </StackPanel>
-                            </Border>
-                            <Border Classes="library-stat">
-                                <StackPanel Spacing="2">
-                                    <TextBlock Classes="fact-label" Text="{loc:T ArtistDetail.SONGS}" />
-                                    <TextBlock Classes="fact-value" FontWeight="SemiBold" Text="{Binding SongCount}" />
-                                </StackPanel>
-                            </Border>
-                            <Border Classes="library-stat">
-                                <StackPanel Spacing="2">
-                                    <TextBlock Classes="fact-label" Text="{loc:T ArtistDetail.TOTALLENGTH}" />
-                                    <TextBlock Classes="fact-value" FontWeight="SemiBold" Text="{Binding TotalLengthDisplay}" />
-                                </StackPanel>
-                            </Border>
-                            <Border Classes="library-stat" IsVisible="{Binding HasMostPlayed}">
-                                <StackPanel Spacing="2">
-                                    <TextBlock Classes="fact-label" Text="{loc:T ArtistDetail.MOSTPLAYED}" />
-                                    <TextBlock Classes="fact-value" FontWeight="SemiBold" Text="{Binding MostPlayedTitle}"
-                                               TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" MaxLines="1" />
-                                </StackPanel>
-                            </Border>
-                            <Border Classes="library-stat" IsVisible="{Binding !!FavoriteCount}">
-                                <StackPanel Spacing="2">
-                                    <TextBlock Classes="fact-label" Text="{loc:T ArtistDetail.FAVORITED}" />
-                                    <TextBlock Classes="fact-value" FontWeight="SemiBold">
-                                        <Run Text="{Binding FavoriteCount}" /><Run Text="{loc:T ArtistDetail.SongsSuffix}" />
-                                    </TextBlock>
-                                </StackPanel>
-                            </Border>
-                            <Border Classes="library-stat" Margin="0" IsVisible="{Binding HasInLibrarySince}">
-                                <StackPanel Spacing="2">
-                                    <TextBlock Classes="fact-label" Text="{loc:T ArtistDetail.SINCE}" />
-                                    <TextBlock Classes="fact-value" FontWeight="SemiBold" Text="{Binding InLibrarySince}" />
-                                </StackPanel>
-                            </Border>
-                        </UniformGrid>
+                            <!-- Links: brand chips -->
+                            <StackPanel Spacing="8" IsVisible="{Binding About.HasLinks, FallbackValue=False}">
+                                <TextBlock Text="{loc:T ArtistDetail.Links}" FontSize="13" FontWeight="Bold" />
+                                <ItemsControl ItemsSource="{Binding About.Links, FallbackValue={x:Null}}" ItemTemplate="{StaticResource LinkChip}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <WrapPanel Orientation="Horizontal" />
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                </ItemsControl>
+                            </StackPanel>
+
+                        </StackPanel>
+                    </Border>
+                </Grid>
+
+                <!-- Albums | Singles & EPs (newest four each; a lone row takes the width) -->
+                <Grid ColumnDefinitions="*,24,*" Margin="32,26,32,0">
+                    <StackPanel Grid.Column="0" Grid.ColumnSpan="{Binding AlbumsSpan}" Spacing="8"
+                                IsVisible="{Binding HasOverviewAlbums}">
+                        <Grid ColumnDefinitions="*,Auto" Margin="2,0,0,2">
+                            <TextBlock Grid.Column="0" Text="{loc:T ArtistDetail.Albums}" Classes="section-title" VerticalAlignment="Center" />
+                            <Button Grid.Column="1" Classes="text-link" Content="{loc:T ArtistDetail.SeeAll}"
+                                    Command="{Binding SelectTabCommand}" CommandParameter="albums" VerticalAlignment="Center" />
+                        </Grid>
+                        <ItemsControl ItemsSource="{Binding OverviewAlbums}" ItemTemplate="{StaticResource AlbumTile}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <UniformGrid Columns="{Binding $parent[UserControl].((vm:ArtistDetailViewModel)DataContext).OverviewAlbumColumns}" />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                        </ItemsControl>
                     </StackPanel>
+                    <StackPanel Grid.Column="{Binding SinglesColumn}" Grid.ColumnSpan="{Binding SinglesSpan}" Spacing="8"
+                                IsVisible="{Binding HasOverviewSingles}">
+                        <Grid ColumnDefinitions="*,Auto" Margin="2,0,0,2">
+                            <TextBlock Grid.Column="0" Text="{loc:T ArtistDetail.SinglesEPs}" Classes="section-title" VerticalAlignment="Center" />
+                            <Button Grid.Column="1" Classes="text-link" Content="{loc:T ArtistDetail.SeeAll}"
+                                    Command="{Binding SelectTabCommand}" CommandParameter="singles" VerticalAlignment="Center" />
+                        </Grid>
+                        <ItemsControl ItemsSource="{Binding OverviewSingles}" ItemTemplate="{StaticResource AlbumTile}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <UniformGrid Columns="{Binding $parent[UserControl].((vm:ArtistDetailViewModel)DataContext).OverviewSingleColumns}" />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                        </ItemsControl>
+                    </StackPanel>
+                </Grid>
+                <TextBlock Text="{loc:T ArtistDetail.NoReleasesMatch}"
+                           FontSize="13" Opacity="0.5" Margin="34,26,0,0"
+                           IsVisible="{Binding !HasReleases}" />
+
+                <!-- Similar Artists: the first eight, "See all" opens the tab -->
+                <StackPanel Margin="32,26,32,0" Spacing="8" IsVisible="{Binding HasOverviewSimilar}">
+                    <Grid ColumnDefinitions="*,Auto" Margin="2,0,0,8">
+                        <TextBlock Grid.Column="0" Text="{loc:T ArtistDetail.SimilarArtists}" Classes="section-title" VerticalAlignment="Center" />
+                        <Button Grid.Column="1" Classes="text-link" Content="{loc:T ArtistDetail.SeeAll}"
+                                Command="{Binding SelectTabCommand}" CommandParameter="similar" VerticalAlignment="Center" />
+                    </Grid>
+                    <ItemsControl ItemsSource="{Binding OverviewSimilar}" ItemTemplate="{StaticResource SimilarTile}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel Orientation="Horizontal" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                    </ItemsControl>
                 </StackPanel>
-            </Border>
+
+                <!-- Appears On: albums the artist is only featured on -->
+                <StackPanel Margin="32,26,32,0" Spacing="8" IsVisible="{Binding HasAppearsOn}">
+                    <TextBlock Text="{loc:T ArtistDetail.Appears}" Classes="section-title" Margin="2,0,0,2" />
+                    <ItemsControl ItemsSource="{Binding AppearsOn}" ItemTemplate="{StaticResource AlbumTile}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <UniformGrid Columns="8" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                    </ItemsControl>
+                </StackPanel>
+            </StackPanel>
+
+            <!-- ── Albums tab ───────────────────────────────────────── -->
+            <StackPanel x:Name="AlbumsPanel" Classes="tab-page" Margin="32,22,32,0" Spacing="8" IsVisible="{Binding IsTabAlbums}">
+                <StackPanel Orientation="Horizontal" Spacing="10" Margin="2,0,0,2">
+                    <TextBlock Text="{loc:T ArtistDetail.Albums}" Classes="section-title" VerticalAlignment="Center" />
+                    <TextBlock Text="{Binding AlbumCount}" FontSize="14" Opacity="0.45" VerticalAlignment="Center" Margin="0,3,0,0" />
+                </StackPanel>
+                <ItemsControl ItemsSource="{Binding AlbumReleases}" ItemTemplate="{StaticResource AlbumTile}" IsVisible="{Binding HasAlbums}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <UniformGrid Columns="8" />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                </ItemsControl>
+                <TextBlock Text="{loc:T ArtistDetail.NoReleasesMatch}" FontSize="13" Opacity="0.5" Margin="2,4,0,0" IsVisible="{Binding !HasAlbums}" />
+            </StackPanel>
+
+            <!-- ── Singles & EPs tab ────────────────────────────────── -->
+            <StackPanel x:Name="SinglesPanel" Classes="tab-page" Margin="32,22,32,0" Spacing="8" IsVisible="{Binding IsTabSingles}">
+                <StackPanel Orientation="Horizontal" Spacing="10" Margin="2,0,0,2">
+                    <TextBlock Text="{loc:T ArtistDetail.SinglesEPs}" Classes="section-title" VerticalAlignment="Center" />
+                    <TextBlock Text="{Binding SingleCount}" FontSize="14" Opacity="0.45" VerticalAlignment="Center" Margin="0,3,0,0" />
+                </StackPanel>
+                <ItemsControl ItemsSource="{Binding SingleReleases}" ItemTemplate="{StaticResource AlbumTile}" IsVisible="{Binding HasSingles}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <UniformGrid Columns="8" />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                </ItemsControl>
+                <TextBlock Text="{loc:T ArtistDetail.NoReleasesMatch}" FontSize="13" Opacity="0.5" Margin="2,4,0,0" IsVisible="{Binding !HasSingles}" />
+            </StackPanel>
+
+            <!-- ── Songs tab: Top Favorites, then everything ranked ─── -->
+            <StackPanel x:Name="SongsPanel" Classes="tab-page" Margin="32,22,32,0" Spacing="8" IsVisible="{Binding IsTabSongs}">
+                <StackPanel Spacing="8" Margin="0,0,0,18" IsVisible="{Binding HasFavorites}">
+                    <Grid ColumnDefinitions="*,Auto" Margin="2,0,0,2">
+                        <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                            <TextBlock Text="{loc:T ArtistDetail.TopFavorites}" Classes="section-title" VerticalAlignment="Center" />
+                            <ctrl:HeartIcon Size="15" IsFavorite="True" VerticalAlignment="Center" Margin="0,3,0,0" />
+                        </StackPanel>
+                        <Button Grid.Column="1" Classes="text-link" Content="{loc:T ArtistDetail.Shuffle}"
+                                Command="{Binding ShuffleFavoritesCommand}" VerticalAlignment="Center" />
+                    </Grid>
+                    <ItemsControl ItemsSource="{Binding FavoriteSongs}" ItemTemplate="{StaticResource SongPill}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <StackPanel />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                    </ItemsControl>
+                </StackPanel>
+                <Grid ColumnDefinitions="*,Auto" Margin="2,0,0,2">
+                    <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                        <TextBlock Text="{loc:T ArtistDetail.Songs}" Classes="section-title" VerticalAlignment="Center" />
+                        <TextBlock Text="{Binding SongCount}" FontSize="14" Opacity="0.45" VerticalAlignment="Center" Margin="0,3,0,0" />
+                    </StackPanel>
+                    <Button Grid.Column="1" Classes="text-link" Content="{loc:T ArtistDetail.Shuffle}"
+                            Command="{Binding ShuffleAllCommand}" VerticalAlignment="Center" />
+                </Grid>
+                <ItemsControl ItemsSource="{Binding AllSongs}" ItemTemplate="{StaticResource SongPill}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <StackPanel />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                </ItemsControl>
+                <TextBlock Text="{loc:T ArtistDetail.NoSongsMatch}" FontSize="13" Opacity="0.5" Margin="2,4,0,0" IsVisible="{Binding !HasAllSongs}" />
+            </StackPanel>
+
+            <!-- ── Similar Artists tab ──────────────────────────────── -->
+            <StackPanel x:Name="SimilarPanel" Classes="tab-page" Margin="32,22,32,0" Spacing="8" IsVisible="{Binding IsTabSimilar}">
+                <TextBlock Text="{loc:T ArtistDetail.SimilarArtists}" Classes="section-title" Margin="2,0,0,8" />
+                <ItemsControl ItemsSource="{Binding SimilarArtists}" ItemTemplate="{StaticResource SimilarTile}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <WrapPanel Orientation="Horizontal" />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                </ItemsControl>
+                <TextBlock Text="{loc:T ArtistDetail.FindingSimilar}" FontSize="13" Opacity="0.5" Margin="2,4,0,0" IsVisible="{Binding IsSimilarLoading}" />
+                <TextBlock Text="{loc:T ArtistDetail.NoSimilar}" FontSize="13" Opacity="0.5" Margin="2,4,0,0" IsVisible="{Binding ShowNoSimilar}" />
+            </StackPanel>
 
         </StackPanel>
     </ScrollViewer>

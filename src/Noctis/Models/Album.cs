@@ -275,6 +275,17 @@ public class Album : ObservableObject
         _ => "ALBUM",
     };
 
+    /// <summary>Title-case kind for tile captions on the artist page ("Album · 2024",
+    /// "Single", "EP", "Live album"); the kicker keeps its upper-case form.</summary>
+    public string ReleaseKindTitle
+    {
+        get
+        {
+            var label = ReleaseKindLabel;
+            return label == "EP" ? label : char.ToUpperInvariant(label[0]) + label[1..].ToLowerInvariant();
+        }
+    }
+
     /// <summary>"12 tracks" / "1 track" for the album header's facts line.</summary>
     public string TrackCountText => TrackCount == 1 ? "1 track" : $"{TrackCount} tracks";
 

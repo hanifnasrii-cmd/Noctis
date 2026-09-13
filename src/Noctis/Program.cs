@@ -267,6 +267,7 @@ internal class Program
         services.AddSingleton<IListenBrainzService, ListenBrainzService>();
         services.AddSingleton<ArtistImageService>();
         services.AddSingleton<ArtistInfoService>();
+        services.AddSingleton<SimilarArtistsService>();
         services.AddSingleton<ITunesArtworkService>();
         services.AddSingleton<UpdateService>();
         services.AddSingleton<ShortcutService>();

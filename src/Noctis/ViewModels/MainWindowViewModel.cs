@@ -2096,13 +2096,16 @@ public partial class MainWindowViewModel : ViewModelBase
         // About-the-artist facts (MusicBrainz + Wikipedia); resolved lazily so the
         // long-lived shell constructor doesn't grow another parameter.
         var artistInfo = App.Services?.GetService(typeof(ArtistInfoService)) as ArtistInfoService;
-        var page = new ArtistDetailViewModel(artistName, _library, Player, _albumsVm, _artistsVm, _artistImageService, Sidebar, artistInfo);
+        var similarArtists = App.Services?.GetService(typeof(SimilarArtistsService)) as SimilarArtistsService;
+        var page = new ArtistDetailViewModel(artistName, _library, Player, _albumsVm, _artistsVm, _artistImageService, Sidebar, artistInfo, similarArtists);
         page.BackRequested += (_, _) =>
         {
             if (ReferenceEquals(CurrentView, page))
                 GoBackInHistory();
         };
         page.AlbumOpened += (_, album) => OpenAlbumDetail(album, backButtonText: page.ArtistName);
+        // Similar Artists tile for an artist in the library: their page, this one in history.
+        page.ArtistOpened += (_, name) => OpenArtistDiscography(name);
         page.SearchLyricsRequested += (_, track) => SearchLyricsForTrack(track);
         CurrentView = page;
         HighlightSidebarSection("artists");

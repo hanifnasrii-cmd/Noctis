@@ -75,19 +75,33 @@ public class ArtistDetailViewMountTests
         Assert.Contains("Chase Atlantic", texts);
         Assert.DoesNotContain("ARTIST", texts); // the old release-kind kicker stays gone (09-03)
         Assert.Contains("ALTERNATIVE", texts);  // genre kicker (09-13 redesign): dominant library genre
-        Assert.Contains("Popular", texts);
+        Assert.Contains("Top Songs", texts);
+        Assert.DoesNotContain("Popular", texts);
         Assert.Contains("Latest Release", texts);
-        Assert.Contains("Releases", texts);
+        // GENRE fact from the library tag even before any web lookup.
+        Assert.Contains("GENRE", texts);
+        Assert.Contains("Alternative", texts);
+        // Tab strip (09-13 redesign, design 4): Overview selected, the rest plain.
+        foreach (var tab in new[] { "Overview", "Albums", "Singles & EPs", "Songs", "Similar Artists" })
+            Assert.Contains(tab, texts);
+        var tabs = view.GetVisualDescendants().OfType<Button>().Where(b => b.Classes.Contains("page-tab")).ToList();
+        Assert.Equal(5, tabs.Count);
+        Assert.Single(tabs.Where(t => t.Classes.Contains("selected")));
 
-        // Three release tiles and ten popular rows realized, each with its "+" queue button.
+        // Overview: two album tiles beside one single tile, five top-song rows with "…" only
+        // (the "+" queue button is gone, 09-13).
         var tiles = view.GetVisualDescendants().OfType<Button>().Count(b => b.Classes.Contains("album-tile"));
         Assert.Equal(3, tiles);
         var rows = view.GetVisualDescendants().OfType<Button>().Where(b => b.Classes.Contains("song-row")).ToList();
         Assert.Equal(ArtistDetailViewModel.MaxPopular, rows.Count);
-        var plusButtons = rows.Sum(r => r.GetVisualDescendants().OfType<Button>().Count(b => b.Command == vm.AddSongToQueueCommand));
-        Assert.Equal(ArtistDetailViewModel.MaxPopular, plusButtons);
+        var menuButtons = rows.Sum(r => r.GetVisualDescendants().OfType<Button>().Count(b => b.Classes.Contains("row-menu-btn")));
+        Assert.Equal(ArtistDetailViewModel.MaxPopular, menuButtons);
+        Assert.Equal(ArtistDetailViewModel.MaxPopular, rows.Sum(r => r.GetVisualDescendants().OfType<Button>().Count()) ); // no other inner buttons
         // Year under the title (the reference's "2017"), not the album name.
         Assert.Contains("2019", texts);
+        // Tile captions read "Album · 2019" (title case), the kicker form stays upper-case.
+        Assert.Contains("Album · 2019", texts);
+        Assert.Contains("Single · 2022", texts);
 
         // The playing song's row takes the accent fill: play the #1 song through the
         // player, the shared Track's IsNowPlaying flips, the row's class follows.
@@ -99,19 +113,31 @@ public class ArtistDetailViewMountTests
         Assert.Single(playingRows);
         Assert.Same(top, ((TopSongRow)playingRows[0].DataContext!).Track);
 
-        // Podium numerals: #1 gold, #2 silver, #3 bronze, #4 plain.
+        // Rank numerals: plain theme text at full opacity, no podium tints (09-13 ask).
         var ranks = view.GetVisualDescendants().OfType<TextBlock>()
-            .Where(t => t.Classes.Contains("rank-num")).ToDictionary(t => t.Text!);
-        Assert.True(ranks["1"].Classes.Contains("gold"));
-        Assert.True(ranks["2"].Classes.Contains("silver"));
-        Assert.True(ranks["3"].Classes.Contains("bronze"));
-        Assert.False(ranks["4"].Classes.Contains("gold") || ranks["4"].Classes.Contains("silver") || ranks["4"].Classes.Contains("bronze"));
+            .Where(t => t.Classes.Contains("rank-num")).ToList();
+        Assert.Equal(ArtistDetailViewModel.MaxPopular, ranks.Count);
+        Assert.All(ranks, r =>
+        {
+            Assert.Equal(1.0, r.Opacity);
+            Assert.False(r.Classes.Contains("gold") || r.Classes.Contains("silver") || r.Classes.Contains("bronze"));
+        });
 
-        // Singles chip narrows the grid live.
-        vm.SetReleaseFilterCommand.Execute("singles");
+        // Singles & EPs tab: the Overview folds away, one tile in the full grid.
+        vm.SelectTabCommand.Execute("singles");
         Dispatcher.UIThread.RunJobs();
-        tiles = view.GetVisualDescendants().OfType<Button>().Count(b => b.Classes.Contains("album-tile"));
+        Assert.False(view.FindControl<StackPanel>("OverviewPanel")!.IsVisible);
+        Assert.True(view.FindControl<StackPanel>("SinglesPanel")!.IsVisible);
+        tiles = view.GetVisualDescendants().OfType<Button>()
+            .Count(b => b.Classes.Contains("album-tile") && b.IsEffectivelyVisible);
         Assert.Equal(1, tiles);
+
+        // Songs tab: every song, ranked; the first slice lands synchronously.
+        vm.SelectTabCommand.Execute("songs");
+        Dispatcher.UIThread.RunJobs();
+        var songRows = view.FindControl<StackPanel>("SongsPanel")!
+            .GetVisualDescendants().OfType<Button>().Count(b => b.Classes.Contains("song-row"));
+        Assert.Equal(23, songRows);
     }
 
     [AvaloniaFact]
