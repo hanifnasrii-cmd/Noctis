@@ -1779,6 +1779,28 @@
                     </Grid>
                 </StackPanel>
             </Border>
+            <Border Classes="setting-row">
+                <StackPanel Spacing="12">
+                    <StackPanel Spacing="2">
+                        <TextBlock Text="{loc:T Settings.TrackBoxOpacity}" FontSize="15" FontWeight="SemiBold"/>
+                        <TextBlock Text="{loc:T Settings.HowSolidTrackBox}"
+                                   FontSize="12" Opacity="0.5" TextWrapping="Wrap"/>
+                    </StackPanel>
+                    <Grid ColumnDefinitions="*,Auto">
+                        <Slider Grid.Column="0"
+                                Classes="accent-slider"
+                                Minimum="0" Maximum="1"
+                                x:Name="TrackBoxOpacitySlider"
+                                Value="{Binding PlaybackBarTrackBoxOpacity, Mode=TwoWay}"
+                                VerticalAlignment="Center"/>
+                        <TextBlock Grid.Column="1"
+                                   Text="{Binding PlaybackBarTrackBoxOpacity, StringFormat='{}{0:P0}'}"
+                                   FontSize="12" Opacity="0.7"
+                                   VerticalAlignment="Center"
+                                   MinWidth="44" TextAlignment="Right" Margin="12,0,0,0"/>
+                    </Grid>
+                </StackPanel>
+            </Border>
             </StackPanel>
             </Border>
 
@@ -1980,6 +2002,24 @@
                     </StackPanel>
                     <!-- Header + picker share a spacing-free panel so the 12px gap folds with the body
                          (see the Crossfade block). -->
+                    <Grid ColumnDefinitions="*,Auto">
+                        <StackPanel Grid.Column="0" Spacing="2">
+                            <TextBlock Text="{loc:T Settings.RepeatButton}" FontSize="13" FontWeight="SemiBold"/>
+                            <TextBlock Text="{loc:T Settings.RepeatButtonNextToForward}" FontSize="12" Opacity="0.5" TextWrapping="Wrap"/>
+                        </StackPanel>
+                        <controls:LottieToggle Grid.Column="1"
+                                              IsChecked="{Binding PlaybackBarShowRepeat}"
+                                              VerticalAlignment="Center"/>
+                    </Grid>
+                    <Grid ColumnDefinitions="*,Auto">
+                        <StackPanel Grid.Column="0" Spacing="2">
+                            <TextBlock Text="{loc:T Settings.FavoriteButton}" FontSize="13" FontWeight="SemiBold"/>
+                            <TextBlock Text="{loc:T Settings.FavoriteButtonHeart}" FontSize="12" Opacity="0.5" TextWrapping="Wrap"/>
+                        </StackPanel>
+                        <controls:LottieToggle Grid.Column="1"
+                                              IsChecked="{Binding PlaybackBarShowFavorite}"
+                                              VerticalAlignment="Center"/>
+                    </Grid>
                     <StackPanel>
                     <Grid ColumnDefinitions="*,Auto">
                         <StackPanel Grid.Column="0" Spacing="2">

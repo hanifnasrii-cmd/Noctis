@@ -335,54 +335,18 @@
             </Setter>
         </Style>
 
-        <!-- Apple-Music-style hover reveal for the seek row: at rest only the slim pill
-             track shows; hovering the row fades in the side time labels, the thumb and
-             a slightly thicker track. -->
-        <Style Selector="TextBlock.seek-time">
-            <Setter Property="Transitions">
-                <Transitions>
-                    <DoubleTransition Property="Opacity" Duration="0:0:0.18"/>
-                </Transitions>
-            </Setter>
-        </Style>
-        <Style Selector="Grid.seek-row TextBlock.seek-time">
-            <Setter Property="Opacity" Value="0"/>
-        </Style>
-        <Style Selector="Grid.seek-row:pointerover TextBlock.seek-time">
-            <Setter Property="Opacity" Value="1"/>
-        </Style>
-
-        <!-- Track pill: slim at rest, slightly thicker on hover. CornerRadius 999 clamps
-             to half the current height, so the ends stay fully rounded at every size.
-             The Height change pairs with an equal-and-opposite translateY so the pill
-             stays vertically centred mid-animation (the code-behind helper only drives
-             Width/Canvas.Left on these borders, so Height/RenderTransform are free). -->
+        <!-- Seek row hover: the track keeps its 3px height and there are no time labels
+             (the thicker-on-hover track and the side times were dropped — the card's
+             bottom-edge line stays exactly as it rests). Only a small thumb fades in so
+             there is still a handle to grab. CornerRadius 999 keeps the track ends round. -->
         <Style Selector="Grid.seek-row Border.seek-track">
             <Setter Property="Height" Value="3"/>
-            <Setter Property="RenderTransform" Value="translateY(0px)"/>
-            <Setter Property="Transitions">
-                <Transitions>
-                    <DoubleTransition Property="Height" Duration="0:0:0.18">
-                        <DoubleTransition.Easing>
-                            <CubicEaseOut/>
-                        </DoubleTransition.Easing>
-                    </DoubleTransition>
-                    <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.18">
-                        <TransformOperationsTransition.Easing>
-                            <CubicEaseOut/>
-                        </TransformOperationsTransition.Easing>
-                    </TransformOperationsTransition>
-                </Transitions>
-            </Setter>
-        </Style>
-        <Style Selector="Grid.seek-row:pointerover Border.seek-track">
-            <Setter Property="Height" Value="6"/>
-            <Setter Property="RenderTransform" Value="translateY(-1.5px)"/>
         </Style>
 
-        <!-- Thumb: hidden at rest, fades + grows in on hover. The host Panel carries the
-             fade because PillSliderVisualHelper writes SeekThumb.Opacity (enabled state)
-             on every position tick, which would clobber a style on the thumb itself. -->
+        <!-- Thumb: hidden at rest, fades in on hover at a fixed 6px (any larger and the
+             card's rounded clip would shave its bottom). The host Panel carries the fade
+             because PillSliderVisualHelper writes SeekThumb.Opacity (enabled state) on
+             every position tick, which would clobber a style on the thumb itself. -->
         <Style Selector="Grid.seek-row Panel.seek-thumb-host">
             <Setter Property="Opacity" Value="0"/>
             <Setter Property="Transitions">
@@ -395,26 +359,8 @@
             <Setter Property="Opacity" Value="1"/>
         </Style>
         <Style Selector="Grid.seek-row Border.seek-thumb">
-            <Setter Property="Width" Value="8"/>
-            <Setter Property="Height" Value="8"/>
-            <Setter Property="Transitions">
-                <Transitions>
-                    <DoubleTransition Property="Width" Duration="0:0:0.18">
-                        <DoubleTransition.Easing>
-                            <CubicEaseOut/>
-                        </DoubleTransition.Easing>
-                    </DoubleTransition>
-                    <DoubleTransition Property="Height" Duration="0:0:0.18">
-                        <DoubleTransition.Easing>
-                            <CubicEaseOut/>
-                        </DoubleTransition.Easing>
-                    </DoubleTransition>
-                </Transitions>
-            </Setter>
-        </Style>
-        <Style Selector="Grid.seek-row:pointerover Border.seek-thumb">
-            <Setter Property="Width" Value="12"/>
-            <Setter Property="Height" Value="12"/>
+            <Setter Property="Width" Value="6"/>
+            <Setter Property="Height" Value="6"/>
         </Style>
 
         <!-- Track-info viewport widths live here (not as local values) so the mid
@@ -422,16 +368,16 @@
              "bar-mid" is toggled on the island by code-behind when the user drags
              the persistent bar below the full-layout width (see ApplyIslandShape). -->
         <Style Selector="Border#TrackTitleViewport">
-            <Setter Property="Width" Value="192"/>
+            <Setter Property="Width" Value="160"/>
         </Style>
         <Style Selector="Border#ArtistNameViewport">
-            <Setter Property="Width" Value="192"/>
+            <Setter Property="Width" Value="160"/>
         </Style>
         <Style Selector="Border.island.bar-mid Border#TrackTitleViewport">
-            <Setter Property="Width" Value="120"/>
+            <Setter Property="Width" Value="110"/>
         </Style>
         <Style Selector="Border.island.bar-mid Border#ArtistNameViewport">
-            <Setter Property="Width" Value="120"/>
+            <Setter Property="Width" Value="110"/>
         </Style>
 
         <!-- GitHub #52 (Aosneg, 1.4.7): hovering a bar button long enough for its tooltip
@@ -461,7 +407,7 @@
                 HorizontalAlignment="Center"
                 VerticalAlignment="Center"
                 Height="50"
-                Width="626">
+                Width="536">
             <!-- No Width transition: the compact (lyrics-page) and base widths belong to
                  two different bar instances, so there is never a width change worth
                  animating — the pill is simply born at whichever width its page needs.
@@ -623,7 +569,7 @@
                         <Viewbox Width="18" Height="18">
                             <Canvas Width="24" Height="24">
                                 <Path Fill="{DynamicResource IslandIconFill}"
-                                      Data="{StaticResource PreviousIcon}" />
+                                      Data="{StaticResource RewindIcon}" />
                             </Canvas>
                         </Viewbox>
                     </Button>
@@ -664,7 +610,7 @@
                         <Viewbox Width="18" Height="18">
                             <Canvas Width="24" Height="24">
                                 <Path Fill="{DynamicResource IslandIconFill}"
-                                      Data="{StaticResource NextIcon}" />
+                                      Data="{StaticResource FastForwardIcon}" />
                             </Canvas>
                         </Viewbox>
                     </Button>
@@ -780,10 +726,13 @@
                          repeat-one, since there is no separate one-shot icon. While on,
                          an Apple-Music-style soft accent pill sits behind the glyph:
                          AccentColorBrush (Settings accent, kept live by App.SetAccent)
-                         knocked back by Border.Opacity — never a solid accent fill. -->
+                         knocked back by Border.Opacity — never a solid accent fill.
+                         Opt-in like the other island extras (Settings → Player Island
+                         Buttons → Repeat). -->
                     <Button Classes="pill-btn transport-btn"
                             Command="{Binding CycleRepeatCommand}"
                             ToolTip.Tip="{loc:T PlaybackBar.RepeatTip}"
+                            IsVisible="{Binding IslandShowRepeat}"
                             Width="34" Height="34">
                         <Panel Width="34" Height="34">
                             <Border Width="28" Height="28"
@@ -844,23 +793,44 @@
 
                 </StackPanel>
 
-                <!-- CENTER: Album Art + Track Info + Seek Bar (right-click opens options).
+                <!-- CENTER: the track box — album art, title/artist, the now-playing bars
+                     and the options button in one rounded card, with the seek bar running
+                     along the card's bottom edge (right-click anywhere in it opens options).
                      IsVisible is code-managed (UpdateTrackInfoVisibility): hidden on the
                      lyrics page AND in the compact resize shape — a binding here would
                      be a local value no width-driven style could ever override. -->
                 <Grid x:Name="TrackInfoPanel"
                       Grid.Column="1"
                       VerticalAlignment="Center"
-                      Margin="0,0,6,0"
-                      Background="Transparent"
-                      ColumnDefinitions="Auto,*">
+                      Margin="0,0,8,0"
+                      Background="Transparent">
+                  <!-- ClipToBounds (rounded, it follows CornerRadius): the seek track runs
+                       the card's full width so its ends are trimmed by the bottom corners
+                       and the line reads as coming out of the card's sides, like the
+                       reference LCD. Everything else stays clear of the edges. -->
+                  <!-- Fill: white at a user-set opacity (Settings → Player Island → Track Box
+                       Opacity, default 7%); 0 hides the card entirely. -->
+                  <Border x:Name="TrackInfoBox"
+                          Height="41"
+                          CornerRadius="10"
+                          ClipToBounds="True">
+                    <Border.Background>
+                      <SolidColorBrush Color="#FFFFFF" Opacity="{Binding IslandTrackBoxOpacity}"/>
+                    </Border.Background>
+                  <Grid RowDefinitions="*,6">
+                  <!-- Art nearly fills the card (34px, 1px from the top, 3px in from the
+                       left) like the reference LCD. Its corner radius is the card's minus
+                       the inset (10 − 3 = 7) so the two corners run concentric — a smaller
+                       radius left a bright sliver of card fill inside the card's corner. -->
+                  <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto" Margin="3,0,3,0">
 
                     <!-- Album art thumbnail (click opens the Mini Player) -->
                     <Border Grid.Column="0"
-                            Width="36" Height="36"
+                            Width="34" Height="34"
                             CornerRadius="7"
                             ClipToBounds="True"
-                            Margin="0,0,12,0"
+                            Margin="0,1,8,0"
+                            VerticalAlignment="Top"
                             Cursor="Hand"
                             ToolTip.Tip="{loc:T PlaybackBar.MiniPlayerTip}"
                             PointerPressed="OnAlbumArtPressed"
@@ -885,13 +855,12 @@
                         </Panel>
                     </Border>
 
-                    <!-- Track info + Seek bar -->
+                    <!-- Track info: title + artist (the seek bar is the box's bottom row) -->
                     <Grid Grid.Column="1"
                           x:Name="TrackInfoContent"
                           VerticalAlignment="Center"
                           MinWidth="80"
                           MaxWidth="520"
-                          Margin="0,3,0,0"
                           ClipToBounds="False">
                         <StackPanel>
                             <Grid>
@@ -899,7 +868,6 @@
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
                                 <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto"/>
                                     <RowDefinition Height="Auto"/>
                                     <RowDefinition Height="Auto"/>
                                 </Grid.RowDefinitions>
@@ -1008,91 +976,108 @@
                                 </Button>
                             </Border>
 
-                            <!-- Compact seek bar: fixed side times with a long centered slider.
-                                 The seek-row class drives the Apple-Music-style hover reveal
-                                 (times, thumb, thicker track, frosted backdrop pill). -->
-                            <Grid Grid.Row="2" Height="20" Margin="-22,-2,0,0" ClipToBounds="False"
-                                  Classes="seek-row" Background="Transparent"
-                                  ColumnDefinitions="Auto,*,Auto">
-                                <TextBlock Grid.Column="0"
-                                           Classes="seek-time"
-                                           Text="{Binding PositionText}"
-                                           FontSize="10"
-                                           VerticalAlignment="Center"
-                                           TextAlignment="Left"
-                                           Foreground="{DynamicResource IslandForegroundTertiary}"
-                                           Width="38"
-                                           Margin="18,0,-12,0" />
-
-                                <Grid Grid.Column="1" Height="20" ClipToBounds="False">
-                                    <Canvas x:Name="SeekVisual"
-                                            Height="20"
-                                            ClipToBounds="False"
-                                            IsHitTestVisible="False">
-                                        <Border x:Name="SeekTrackBackground"
-                                                Classes="seek-track"
-                                                CornerRadius="999"
-                                                Background="{DynamicResource IslandSliderUnfilled}"
-                                                Canvas.Top="8.5"/>
-                                        <Border x:Name="SeekTrackFill"
-                                                Classes="seek-track"
-                                                CornerRadius="999"
-                                                Background="{DynamicResource IslandSliderFilled}"
-                                                Canvas.Top="8.5"/>
-                                        <!-- Fixed 12x12 host keeps the thumb's centre where the
-                                             code-behind transform expects it while the inner
-                                             circle grows/fades with the hover styles. -->
-                                        <Panel Classes="seek-thumb-host"
-                                               Width="12"
-                                               Height="12"
-                                               Canvas.Top="4">
-                                            <Border x:Name="SeekThumb"
-                                                    Classes="seek-thumb"
-                                                    HorizontalAlignment="Center"
-                                                    VerticalAlignment="Center"
-                                                    CornerRadius="999"
-                                                    Background="{DynamicResource IslandSliderFilled}"
-                                                    BoxShadow="0 2 4 0 #40000000"/>
-                                        </Panel>
-                                    </Canvas>
-                                    <Slider Value="{Binding PositionFraction, Mode=TwoWay}"
-                                            Classes="seek-slider"
-                                            Minimum="0" Maximum="1"
-                                            Focusable="False"
-                                            VerticalAlignment="Center"
-                                            x:Name="SeekSlider" />
-                                </Grid>
-
-                                <TextBlock Grid.Column="2"
-                                           Classes="seek-time"
-                                           Text="{Binding RemainingTimeText, StringFormat='-{0}'}"
-                                           FontSize="10"
-                                           VerticalAlignment="Center"
-                                           TextAlignment="Left"
-                                           Foreground="{DynamicResource IslandForegroundTertiary}"
-                                           Width="44"
-                                           Margin="8,0,0,0" />
-                            </Grid>
                             </Grid>
                         </StackPanel>
                     </Grid>
+
+                    <!-- Now-playing bars (the same EqVisualizer the album/track rows use,
+                         accent-coloured by its default style) + the options button, on the
+                         box's right edge. The MenuFlyout itself stays declared on the right
+                         cluster's OptionsButton — the fallback shown only while this box is
+                         hidden — and this button opens that same flyout anchored here. -->
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                        <controls:EqVisualizer Width="22" Height="18"
+                                               VerticalAlignment="Center"
+                                               IsPlaying="{Binding IsPlaying}" />
+                        <Button x:Name="BoxOptionsButton"
+                                Classes="secondary-btn"
+                                Click="OnBoxOptionsClick"
+                                ToolTip.Tip="{loc:T PlaybackBar.OptionsTip}"
+                                Width="28" Height="28">
+                            <Viewbox Width="16" Height="16">
+                                <Canvas Width="24" Height="24">
+                                    <Path Fill="{DynamicResource IslandIconFill}"
+                                          Data="{StaticResource MoreDotsIcon}" />
+                                </Canvas>
+                            </Viewbox>
+                        </Button>
+                    </StackPanel>
+                  </Grid>
+
+                  <!-- Seek bar along the card's bottom edge: a 6px row whose 3px track sits
+                       2px under the art and 1px above the card's bottom — the line IS the
+                       card's bottom edge, as in the reference LCD. PillSliderVisualHelper
+                       insets the track by half the 12px thumb host on each side, so the
+                       row hangs 6px past the card on both sides: the track then spans the
+                       card edge to edge and the card's rounded clip trims its ends into the
+                       corners. The 6px thumb (centre y = 3.5 in the row) stays inside the
+                       card; hovering only fades it in — no time labels, no thicker track
+                       (see the seek-row styles above). -->
+                  <Grid Grid.Row="1" Height="6" Margin="-6,0,-6,0" ClipToBounds="False"
+                        Classes="seek-row" Background="Transparent">
+                      <Grid Height="6" ClipToBounds="False">
+                          <Canvas x:Name="SeekVisual"
+                                  Height="6"
+                                  ClipToBounds="False"
+                                  IsHitTestVisible="False">
+                              <!-- Remainder: a faint light line, not IslandSliderUnfilled —
+                                   that opaque dark grey (#3A3A3A in the Dark theme) sat
+                                   darker than the card and read as a shadow trough. -->
+                              <Border x:Name="SeekTrackBackground"
+                                      Classes="seek-track"
+                                      CornerRadius="999"
+                                      Background="{DynamicResource IslandTrackBoxSliderUnfilled}"
+                                      Canvas.Top="2"/>
+                              <Border x:Name="SeekTrackFill"
+                                      Classes="seek-track"
+                                      CornerRadius="999"
+                                      Background="{DynamicResource IslandSliderFilled}"
+                                      Canvas.Top="2"/>
+                              <!-- Fixed 12x12 host keeps the thumb's centre where the
+                                   code-behind transform expects it (on the track's centre
+                                   line, y = 3.5) while the inner circle fades with the
+                                   hover styles. -->
+                              <Panel Classes="seek-thumb-host"
+                                     Width="12"
+                                     Height="12"
+                                     Canvas.Top="-2.5">
+                                  <Border x:Name="SeekThumb"
+                                          Classes="seek-thumb"
+                                          HorizontalAlignment="Center"
+                                          VerticalAlignment="Center"
+                                          CornerRadius="999"
+                                          Background="{DynamicResource IslandSliderFilled}"
+                                          BoxShadow="0 2 4 0 #40000000"/>
+                              </Panel>
+                          </Canvas>
+                          <Slider Value="{Binding PositionFraction, Mode=TwoWay}"
+                                  Classes="seek-slider"
+                                  Minimum="0" Maximum="1"
+                                  Focusable="False"
+                                  Height="6"
+                                  VerticalAlignment="Center"
+                                  x:Name="SeekSlider" />
+                      </Grid>
+                  </Grid>
+                  </Grid>
+                  </Border>
                 </Grid>
 
                 <!-- RIGHT: Additional Controls -->
                 <StackPanel Grid.Column="2"
                             Orientation="Horizontal"
                             Spacing="2"
-                            VerticalAlignment="Center"
-                            Margin="-16,0,0,0">
+                            VerticalAlignment="Center">
 
                     <!-- Favorite (Discord, Reuben Strides 2026-08-25): one click instead of
-                         "… → Favorites". Visibility follows TrackInfoPanel (code-behind), so
-                         the 340px compact pill and the lyrics-page bar keep their proven
-                         4-icon layout; the full layout's width budget grew by one icon. -->
+                         "… → Favorites". Opt-in like the other island extras (Settings →
+                         Player Island Buttons → Favorite); its width is budgeted with them
+                         in the code-behind (ExtraTransportWidth). -->
                     <Button x:Name="FavoriteButton"
                             Classes="secondary-btn"
                             Command="{Binding ToggleCurrentTrackFavoriteCommand}"
                             IsEnabled="{Binding CurrentTrack, Converter={x:Static ObjectConverters.IsNotNull}}"
+                            IsVisible="{Binding IslandShowFavorite}"
                             ToolTip.Tip="{loc:T PlaybackBar.FavoriteTip}"
                             Width="34" Height="34">
                         <controls:HeartIcon Size="16"
@@ -1100,10 +1085,16 @@
                                             IsFavorite="{Binding CurrentTrack.IsFavorite, FallbackValue=False}" />
                     </Button>
 
-                    <!-- More options button -->
+                    <!-- More options: the everyday "…" lives inside the track box
+                         (BoxOptionsButton). This one owns the MenuFlyout and is the
+                         fallback shown only while the box is hidden — the lyrics-page bar
+                         and the compact resize shape — so the lyrics-only menu entries
+                         stay reachable there. IsVisible is code-managed
+                         (UpdateTrackInfoVisibility), the inverse of TrackInfoPanel. -->
                     <Button x:Name="OptionsButton"
                             Classes="secondary-btn"
                             ToolTip.Tip="{loc:T PlaybackBar.OptionsTip}"
+                            IsVisible="False"
                             Width="34" Height="34">
                         <Viewbox Width="16" Height="16">
                             <Canvas Width="24" Height="24">
@@ -1337,6 +1328,20 @@
                         </Button.Flyout>
                     </Button>
 
+                    <!-- Lyrics button -->
+                    <Button Classes="secondary-btn"
+                            Click="OnLyricsButtonClick"
+                            ToolTip.Tip="{loc:T PlaybackBar.LyricsTip}"
+                            Width="34" Height="34">
+                        <Border Width="16" Height="16"
+                                Background="{DynamicResource IslandIconFill}"
+                                RenderOptions.BitmapInterpolationMode="HighQuality">
+                            <Border.OpacityMask>
+                                <ImageBrush Source="avares://Noctis/Assets/Icons/Lyrics%20ICON.png" Stretch="Uniform" />
+                            </Border.OpacityMask>
+                        </Border>
+                    </Button>
+
                     <!-- Queue button -->
                     <Button Classes="secondary-btn"
                             Command="{Binding ShowQueueCommand}"
@@ -1348,21 +1353,6 @@
                                 RenderOptions.BitmapInterpolationMode="HighQuality">
                             <Border.OpacityMask>
                                 <ImageBrush Source="avares://Noctis/Assets/Icons/Queue%20ICON.png" Stretch="Uniform" />
-                            </Border.OpacityMask>
-                        </Border>
-                    </Button>
-
-
-                    <!-- Lyrics button -->
-                    <Button Classes="secondary-btn"
-                            Click="OnLyricsButtonClick"
-                            ToolTip.Tip="{loc:T PlaybackBar.LyricsTip}"
-                            Width="34" Height="34">
-                        <Border Width="16" Height="16"
-                                Background="{DynamicResource IslandIconFill}"
-                                RenderOptions.BitmapInterpolationMode="HighQuality">
-                            <Border.OpacityMask>
-                                <ImageBrush Source="avares://Noctis/Assets/Icons/Lyrics%20ICON.png" Stretch="Uniform" />
                             </Border.OpacityMask>
                         </Border>
                     </Button>

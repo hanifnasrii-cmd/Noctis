@@ -229,7 +229,9 @@ public partial class PlaybackBarView : UserControl
             e.PropertyName == nameof(PlayerViewModel.IslandShowSkipButtons) ||
             e.PropertyName == nameof(PlayerViewModel.IslandShowPlaybackSpeed) ||
             e.PropertyName == nameof(PlayerViewModel.IslandShowSleepTimer) ||
-            e.PropertyName == nameof(PlayerViewModel.IslandShowShuffle))
+            e.PropertyName == nameof(PlayerViewModel.IslandShowShuffle) ||
+            e.PropertyName == nameof(PlayerViewModel.IslandShowRepeat) ||
+            e.PropertyName == nameof(PlayerViewModel.IslandShowFavorite))
         {
             UpdateIslandWidth();
         }
@@ -928,26 +930,29 @@ public partial class PlaybackBarView : UserControl
         return PillSliderVisualHelper.GetValueFromPointer(slider, position, VolumeThumbSize);
     }
 
-    // Slim bar (3 transport, 5 right icons — the favorite heart joined in 1.4.8) — still
-    // narrower than the old 5+5 layout.
-    private const double IslandBaseWidth = 626;
+    // Stock width: 3 transport + the track box + 3 right icons. Repeat and the favorite
+    // heart became opt-in extras when the box arrived; the box itself is kept short
+    // (160px title/artist viewports) so it reads as the reference LCD, not a long bar.
+    // Was 626 (192px viewports + heart + dots) — AppSettings migrates that stored value.
+    private const double IslandBaseWidth = 536;
     // Lyrics page hides the center track-info, so the pill only holds transport + right icons.
     private const double IslandLyricsPageWidth = 340;
 
     // ── User resize (persistent bar only) ──
     // Shape thresholds derived from the clusters' natural widths as declared in the
-    // XAML: transport 148 + 14 margin = 162; right icons 5 × 34 + 4 × 2 spacing = 178,
-    // − 16 margin = 162 (the favorite heart hides with the track info, so the compact
-    // pill still holds the proven 4); track info 36 art + 12 + 192 viewport + 8 + 6
-    // margins = 254; island chrome 24 padding + 3 border = 27. Full layout therefore
-    // needs 605px; with the viewports narrowed to 120 ("bar-mid") it needs 533px;
-    // transport + 4 icons alone need 315px — 340 is the compact layout the lyrics page
-    // already uses.
-    private const double IslandFullShapeMinWidth = 606; // below: viewports narrow to 120
-    private const double IslandMidShapeMinWidth = 536;  // below: track info hidden (compact pill)
+    // XAML: transport 34 + 2 + 40 + 2 + 34 = 112, + 14 margin = 126; right icons
+    // 3 × 34 + 2 × 2 spacing = 106 (the options fallback only shows in the compact
+    // shape, where the box is gone); the track box 3 + 34 art + 8 + 160 viewport + 8 +
+    // 22 eq + 28 dots + 3 = 266, + 8 margin = 274; island chrome 24 padding + 3 border
+    // = 27. Full layout therefore needs 533px; with the viewports narrowed to 110
+    // ("bar-mid") it needs 483px; transport + 4 icons alone need 295px — 340 is the
+    // compact layout the lyrics page already uses. Repeat / favorite / the podcast
+    // extras add ExtraTransportButtonWidth each on top (see ExtraTransportWidth).
+    private const double IslandFullShapeMinWidth = 534; // below: viewports narrow to 110
+    private const double IslandMidShapeMinWidth = 484;  // below: track info hidden (compact pill)
     private const double IslandMinUserWidth = IslandLyricsPageWidth;
-    // Each optional island button (speed / skip back / skip forward / sleep) is a 34px
-    // transport button plus the row's 2px spacing.
+    // Each optional island button (repeat / favorite / speed / skip back / skip forward /
+    // sleep / shuffle) is a 34px button plus its row's 2px spacing.
     private const double ExtraTransportButtonWidth = 36;
     // Breathing room to the host's edges, matching the 8px margins the side panels use.
     private const double IslandEdgeMargin = 8;
@@ -1154,7 +1159,9 @@ public partial class PlaybackBarView : UserControl
             var buttons = (vm.IslandShowSkipButtons ? 2 : 0)
                         + (vm.IslandShowPlaybackSpeed ? 1 : 0)
                         + (vm.IslandShowSleepTimer ? 1 : 0)
-                        + (vm.IslandShowShuffle ? 1 : 0);
+                        + (vm.IslandShowShuffle ? 1 : 0)
+                        + (vm.IslandShowRepeat ? 1 : 0)
+                        + (vm.IslandShowFavorite ? 1 : 0);
             return buttons * ExtraTransportButtonWidth;
         }
     }
@@ -1191,9 +1198,9 @@ public partial class PlaybackBarView : UserControl
     private void UpdateTrackInfoVisibility()
     {
         var visible = _observedPlayerViewModel?.IsLyricsPageActive != true && !_isWidthCompact;
-        // The favorite heart is budgeted with the track info: both go when the pill is
-        // compact, so the 340px layout keeps its original four right-hand icons.
-        FavoriteButton.IsVisible = visible;
+        // The "…" normally sits inside the track box; while the box is hidden the right
+        // cluster's OptionsButton (which owns the MenuFlyout) stands in for it.
+        OptionsButton.IsVisible = !visible;
         if (TrackInfoPanel.IsVisible == visible)
             return;
 
@@ -1313,9 +1320,15 @@ public partial class PlaybackBarView : UserControl
         if (e.InitialPressMouseButton != MouseButton.Right) return;
         if (DataContext is not PlayerViewModel { CurrentTrack: not null }) return;
 
-        OptionsButton.Flyout?.ShowAt(OptionsButton);
+        OptionsButton.Flyout?.ShowAt(BoxOptionsButton);
         e.Handled = true;
     }
+
+    /// <summary>The track box's "…" opens the options MenuFlyout declared on the right
+    /// cluster's OptionsButton (the compact/lyrics fallback), anchored to itself. One
+    /// flyout, two anchors — the menu's bindings resolve through the shared DataContext.</summary>
+    private void OnBoxOptionsClick(object? sender, RoutedEventArgs e) =>
+        OptionsButton.Flyout?.ShowAt(BoxOptionsButton);
 
     // Expands a submenu the instant the pointer enters its parent item, skipping the
     // default hover delay. Shared by the Sleep Timer and Lyrics Display menu items.

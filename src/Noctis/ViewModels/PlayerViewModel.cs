@@ -101,6 +101,10 @@ public partial class PlayerViewModel : ViewModelBase
     [ObservableProperty] private bool _islandShowSleepTimer;
     /// <summary>GitHub #59: shuffle on the island, after Repeat.</summary>
     [ObservableProperty] private bool _islandShowShuffle;
+    /// <summary>Repeat after Next, and the favorite heart on the right: opt-in since the
+    /// track-box layout, so the stock bar is transport + box + lyrics/queue/volume.</summary>
+    [ObservableProperty] private bool _islandShowRepeat;
+    [ObservableProperty] private bool _islandShowFavorite;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IslandSkipLabel))]
@@ -159,10 +163,13 @@ public partial class PlayerViewModel : ViewModelBase
     /// <summary>Opacity of the playback bar's glass fill (0–1). Driven by Settings; default
     /// 0.4 matches the original #66 alpha. Background only — controls/text stay opaque.</summary>
     [ObservableProperty] private double _islandBackgroundOpacity = 0.4;
+    /// <summary>Opacity of the white track box (song-info card) inside the bar (0–1).
+    /// Driven by Settings; 0 removes the card, leaving art/text straight on the pill.</summary>
+    [ObservableProperty] private double _islandTrackBoxOpacity = 0.07;
     /// <summary>User-resized width of the persistent playback bar island. Hydrated from
     /// AppSettings.PlaybackBarWidth at startup and updated by the bar's edge-drag; the
     /// 626 default mirrors both the settings default and the XAML base width.</summary>
-    [ObservableProperty] private double _playbackBarIslandWidth = 626;
+    [ObservableProperty] private double _playbackBarIslandWidth = 536;
     /// <summary>Whether the lyrics page's flowing-light blobs are shown in artwork
     /// background mode (issue #22). Driven by Settings like the marquee flags.</summary>
     [ObservableProperty] private bool _lyricsFlowingLightEnabled;

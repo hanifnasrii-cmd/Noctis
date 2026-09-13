@@ -479,6 +479,8 @@ public partial class SettingsViewModel : ViewModelBase
     [ObservableProperty] private bool _playbackBarShowPlaybackSpeed;
     [ObservableProperty] private bool _playbackBarShowSleepTimer;
     [ObservableProperty] private bool _playbackBarShowShuffle;
+    [ObservableProperty] private bool _playbackBarShowRepeat;
+    [ObservableProperty] private bool _playbackBarShowFavorite;
 
     public bool IsSkipSeconds10 { get => PlaybackBarSkipSeconds == 10; set { if (value) PlaybackBarSkipSeconds = 10; } }
     public bool IsSkipSeconds15 { get => PlaybackBarSkipSeconds == 15; set { if (value) PlaybackBarSkipSeconds = 15; } }
@@ -1058,10 +1060,13 @@ public partial class SettingsViewModel : ViewModelBase
         }
     }
     [ObservableProperty] private double _playbackBarBackgroundOpacity = 0.4;
+    /// <summary>Opacity of the track box inside the player bar. Mirrors
+    /// <see cref="AppSettings.PlaybackBarTrackBoxOpacity"/>.</summary>
+    [ObservableProperty] private double _playbackBarTrackBoxOpacity = 0.07;
     /// <summary>Player island width in DIPs (GitHub #50): the Appearance slider and the
     /// bar's edge-grip drag drive the same value. Mirrors <see cref="AppSettings.PlaybackBarWidth"/>.</summary>
     [ObservableProperty] private double _playbackBarIslandWidth = PlaybackBarDefaultWidth;
-    public const double PlaybackBarDefaultWidth = 626;
+    public const double PlaybackBarDefaultWidth = 536;
     public const double PlaybackBarMinWidth = 340;
     public const double PlaybackBarMaxWidth = 1400;
     // True while a grip drag pushes its width into the slider property, so the
@@ -1806,6 +1811,8 @@ public partial class SettingsViewModel : ViewModelBase
             PlaybackBarShowPlaybackSpeed = _settings.PlaybackBarShowPlaybackSpeed;
             PlaybackBarShowSleepTimer = _settings.PlaybackBarShowSleepTimer;
             PlaybackBarShowShuffle = _settings.PlaybackBarShowShuffle;
+            PlaybackBarShowRepeat = _settings.PlaybackBarShowRepeat;
+            PlaybackBarShowFavorite = _settings.PlaybackBarShowFavorite;
             PlaybackBarIslandWidth = _settings.PlaybackBarWidth;
             LyricsFlowingLightEnabled = _settings.LyricsFlowingLightEnabled;
             LyricsFlowingStyle = FlowingStyles.Normalize(_settings.LyricsFlowingStyle);
@@ -1861,6 +1868,7 @@ public partial class SettingsViewModel : ViewModelBase
             HomeLastPlayedExpanded = _settings.HomeLastPlayedExpanded;
             HomeShowHeavyRotation = _settings.HomeShowHeavyRotation;
             PlaybackBarBackgroundOpacity = Math.Clamp(_settings.PlaybackBarBackgroundOpacity, 0, 1);
+            PlaybackBarTrackBoxOpacity = Math.Clamp(_settings.PlaybackBarTrackBoxOpacity, 0, 1);
             MiniPlayerBackgroundOpacity = Math.Clamp(_settings.MiniPlayerBackgroundOpacity, 0, 1);
             AlbumTileSizeAuto = _settings.AlbumTileSizeAuto;
             AlbumTileTargetSize = Math.Clamp(_settings.AlbumTileTargetSize,
@@ -2198,6 +2206,8 @@ public partial class SettingsViewModel : ViewModelBase
         _settings.PlaybackBarShowPlaybackSpeed = PlaybackBarShowPlaybackSpeed;
         _settings.PlaybackBarShowSleepTimer = PlaybackBarShowSleepTimer;
         _settings.PlaybackBarShowShuffle = PlaybackBarShowShuffle;
+        _settings.PlaybackBarShowRepeat = PlaybackBarShowRepeat;
+        _settings.PlaybackBarShowFavorite = PlaybackBarShowFavorite;
         _settings.LyricsFlowingLightEnabled = LyricsFlowingLightEnabled;
         _settings.LyricsFlowingStyle = LyricsFlowingStyle;
         _settings.LyricsKawarpWarp = LyricsKawarpWarp;
@@ -2244,6 +2254,7 @@ public partial class SettingsViewModel : ViewModelBase
         _settings.HomeLastPlayedExpanded = HomeLastPlayedExpanded;
         _settings.HomeShowHeavyRotation = HomeShowHeavyRotation;
         _settings.PlaybackBarBackgroundOpacity = Math.Clamp(PlaybackBarBackgroundOpacity, 0, 1);
+        _settings.PlaybackBarTrackBoxOpacity = Math.Clamp(PlaybackBarTrackBoxOpacity, 0, 1);
         _settings.MiniPlayerBackgroundOpacity = Math.Clamp(MiniPlayerBackgroundOpacity, 0, 1);
         _settings.AlbumTileSizeAuto = AlbumTileSizeAuto;
         _settings.AlbumTileTargetSize = Math.Clamp(AlbumTileTargetSize,
@@ -2442,7 +2453,10 @@ public partial class SettingsViewModel : ViewModelBase
         _player.IslandShowPlaybackSpeed = PlaybackBarShowPlaybackSpeed;
         _player.IslandShowSleepTimer = PlaybackBarShowSleepTimer;
         _player.IslandShowShuffle = PlaybackBarShowShuffle;
+        _player.IslandShowRepeat = PlaybackBarShowRepeat;
+        _player.IslandShowFavorite = PlaybackBarShowFavorite;
         _player.IslandBackgroundOpacity = Math.Clamp(PlaybackBarBackgroundOpacity, 0, 1);
+        _player.IslandTrackBoxOpacity = Math.Clamp(PlaybackBarTrackBoxOpacity, 0, 1);
         // Already clamped by AppSettings.ClampToValidRanges on load; a live
         // SetPlaybackBarWidth writes the same value into _settings first.
         _player.PlaybackBarIslandWidth = _settings.PlaybackBarWidth;
@@ -3082,6 +3096,19 @@ public partial class SettingsViewModel : ViewModelBase
         if (_settingsLoaded && !_suspendSettingPersistence) QueueSettingsSave();
     }
 
+    partial void OnPlaybackBarTrackBoxOpacityChanged(double value)
+    {
+        var clamped = Math.Clamp(value, 0, 1);
+        if (clamped != value)
+        {
+            PlaybackBarTrackBoxOpacity = clamped;
+            return;
+        }
+
+        ApplyPlayerSettings();
+        if (_settingsLoaded && !_suspendSettingPersistence) QueueSettingsSave();
+    }
+
     partial void OnMiniPlayerBackgroundOpacityChanged(double value)
     {
         var clamped = double.IsFinite(value) ? Math.Clamp(value, 0, 1) : 0.35;
@@ -3427,6 +3454,18 @@ public partial class SettingsViewModel : ViewModelBase
     }
 
     partial void OnPlaybackBarShowShuffleChanged(bool value)
+    {
+        ApplyPlayerSettings();
+        if (_settingsLoaded) _ = SaveAsync();
+    }
+
+    partial void OnPlaybackBarShowRepeatChanged(bool value)
+    {
+        ApplyPlayerSettings();
+        if (_settingsLoaded) _ = SaveAsync();
+    }
+
+    partial void OnPlaybackBarShowFavoriteChanged(bool value)
     {
         ApplyPlayerSettings();
         if (_settingsLoaded) _ = SaveAsync();
@@ -5174,6 +5213,8 @@ public partial class SettingsViewModel : ViewModelBase
             PlaybackBarShowPlaybackSpeed = defaultSettings.PlaybackBarShowPlaybackSpeed;
             PlaybackBarShowSleepTimer = defaultSettings.PlaybackBarShowSleepTimer;
             PlaybackBarShowShuffle = defaultSettings.PlaybackBarShowShuffle;
+            PlaybackBarShowRepeat = defaultSettings.PlaybackBarShowRepeat;
+            PlaybackBarShowFavorite = defaultSettings.PlaybackBarShowFavorite;
             PlaybackBarIslandWidth = defaultSettings.PlaybackBarWidth;
             LyricsFlowingLightEnabled = defaultSettings.LyricsFlowingLightEnabled;
             LyricsFlowingStyle = defaultSettings.LyricsFlowingStyle;
@@ -5190,6 +5231,7 @@ public partial class SettingsViewModel : ViewModelBase
             ExternalOpenAppPath = defaultSettings.ExternalOpenAppPath;
             ReplayGainPreampDb = defaultSettings.ReplayGainPreampDb;
             PlaybackBarBackgroundOpacity = defaultSettings.PlaybackBarBackgroundOpacity;
+            PlaybackBarTrackBoxOpacity = defaultSettings.PlaybackBarTrackBoxOpacity;
             MiniPlayerBackgroundOpacity = defaultSettings.MiniPlayerBackgroundOpacity;
             AlbumTileSizeAuto = defaultSettings.AlbumTileSizeAuto;
             AlbumTileTargetSize = defaultSettings.AlbumTileTargetSize;

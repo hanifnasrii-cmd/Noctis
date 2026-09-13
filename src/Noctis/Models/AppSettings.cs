@@ -313,6 +313,10 @@ public class AppSettings
     /// original #66 alpha glass look.</summary>
     public double PlaybackBarBackgroundOpacity { get; set; } = 0.4;
 
+    /// <summary>Opacity of the white track box (song info card) inside the playback bar
+    /// (0 = no box, 1 = solid white). Default 0.07 is the reference LCD's soft lift.</summary>
+    public double PlaybackBarTrackBoxOpacity { get; set; } = 0.07;
+
     /// <summary>Opacity of the mini player card's glass fill (0 = fully transparent,
     /// 1 = solid). Background only — the artwork wash, sheen and contents are unaffected.
     /// Default 0.35 keeps the card distinctly see-through (iOS Live-Activity glass);
@@ -320,10 +324,11 @@ public class AppSettings
     public double MiniPlayerBackgroundOpacity { get; set; } = 0.35;
 
     /// <summary>User-chosen width of the floating playback bar island, set by dragging its
-    /// edges (double-click a grip resets). 626 is the full layout (590 before the favorite heart); 340 is the
-    /// smallest proven layout (the lyrics-page compact pill). The window clamps the upper
-    /// end live, so only a sanity ceiling is stored.</summary>
-    public double PlaybackBarWidth { get; set; } = 626;
+    /// edges (double-click a grip resets). 536 is the full layout (626 with the old long
+    /// track info, 590 before the favorite heart); 340 is the smallest proven layout (the
+    /// lyrics-page compact pill). The window clamps the upper end live, so only a sanity
+    /// ceiling is stored.</summary>
+    public double PlaybackBarWidth { get; set; } = 536;
 
     /// <summary>Album cover sizing mode for the Albums/Favorites grids. True (default) keeps
     /// the classic layout — five covers per row, covers scale with the window — so existing
@@ -368,6 +373,13 @@ public class AppSettings
     /// <summary>GitHub #59: a shuffle button on the island, after Repeat. Off by default —
     /// shuffle already lives in the Queue panel header.</summary>
     public bool PlaybackBarShowShuffle { get; set; }
+
+    /// <summary>Repeat (after Next) and the favorite heart (right cluster) on the island.
+    /// Off by default since the track-box layout: the stock bar mirrors the Apple-Music
+    /// reference — transport, track box, lyrics / queue / volume.</summary>
+    public bool PlaybackBarShowRepeat { get; set; }
+
+    public bool PlaybackBarShowFavorite { get; set; }
 
     /// <summary>Whether tracks marked explicit (ITUNESADVISORY=1) may play automatically.
     /// On by default. When off they are skipped on queue advance, excluded from shuffle,
@@ -635,6 +647,9 @@ public class AppSettings
         EqPreampDb = Math.Clamp(EqPreampDb, Services.ParametricEqMath.EqPreampMinDb, Services.ParametricEqMath.EqPreampMaxDb);
         CrossfadeDuration = Math.Clamp(CrossfadeDuration, 1, 12);
         PlaybackBarBackgroundOpacity = Math.Clamp(PlaybackBarBackgroundOpacity, 0, 1);
+        PlaybackBarTrackBoxOpacity = double.IsFinite(PlaybackBarTrackBoxOpacity)
+            ? Math.Clamp(PlaybackBarTrackBoxOpacity, 0, 1)
+            : 0.07;
         // IsFinite first: Math.Clamp propagates NaN, and NaN here would erase the card fill.
         MiniPlayerBackgroundOpacity = double.IsFinite(MiniPlayerBackgroundOpacity)
             ? Math.Clamp(MiniPlayerBackgroundOpacity, 0, 1)
@@ -646,11 +661,15 @@ public class AppSettings
         // IsFinite first: Math.Clamp propagates NaN, and a NaN width would wedge the bar.
         PlaybackBarWidth = double.IsFinite(PlaybackBarWidth)
             ? Math.Clamp(PlaybackBarWidth, 340, 4096)
-            : 626;
+            : 536;
         // 1.4.8: the bar grew a favorite heart (+36px) and its default went 590 → 626. A
         // stored 590 is the untouched OLD default, not a choice — move it along so existing
         // installs keep the full layout instead of dropping to the narrowed "bar-mid" shape.
         if (PlaybackBarWidth == 590) PlaybackBarWidth = 626;
+        // Track-box layout: the default went 626 → 536 (short LCD-style box, heart and
+        // dots no longer in the right cluster). Same rule: a stored 626 is the untouched
+        // old default, so it follows the new one instead of leaving a stretched pill.
+        if (PlaybackBarWidth == 626) PlaybackBarWidth = 536;
         PlaybackBarSkipSeconds = PlaybackBarSkipSeconds is 10 or 15 or 30 ? PlaybackBarSkipSeconds : 15;
     }
 }

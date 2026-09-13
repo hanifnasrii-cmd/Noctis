@@ -214,6 +214,12 @@
   <data name="Settings.SleepTimerOneClick" xml:space="preserve"><value>Sleep timer one click away.</value><comment>Text in SettingsView.axaml</comment></data>
   <data name="Settings.Shuffle" xml:space="preserve"><value>Shuffle</value><comment>Text in SettingsView.axaml</comment></data>
   <data name="Settings.ShuffleButtonAfterRepeat" xml:space="preserve"><value>A shuffle button next to Repeat.</value><comment>Text in SettingsView.axaml</comment></data>
+  <data name="Settings.TrackBoxOpacity" xml:space="preserve"><value>Track Box Opacity</value><comment>Text in SettingsView.axaml</comment></data>
+  <data name="Settings.HowSolidTrackBox" xml:space="preserve"><value>How solid the box around the song info in the player bar is. 0% hides it.</value><comment>Text in SettingsView.axaml</comment></data>
+  <data name="Settings.RepeatButton" xml:space="preserve"><value>Repeat</value><comment>Text in SettingsView.axaml</comment></data>
+  <data name="Settings.RepeatButtonNextToForward" xml:space="preserve"><value>A repeat button after Next: cycles Off → All → One.</value><comment>Text in SettingsView.axaml</comment></data>
+  <data name="Settings.FavoriteButton" xml:space="preserve"><value>Favorite</value><comment>Text in SettingsView.axaml</comment></data>
+  <data name="Settings.FavoriteButtonHeart" xml:space="preserve"><value>A heart on the right to favorite the playing song in one click.</value><comment>Text in SettingsView.axaml</comment></data>
   <data name="Settings.PlayerIslandWidth" xml:space="preserve"><value>Player Island Width</value><comment>Text in SettingsView.axaml</comment></data>
   <data name="Settings.HowWidePlayerIsland" xml:space="preserve"><value>Wider gives the seek bar more room. You can also drag the island's edges. Double-click the knob to reset.</value><comment>Text in SettingsView.axaml</comment></data>
   <data name="Settings.Narrower" xml:space="preserve"><value>Narrower</value><comment>Text in SettingsView.axaml</comment></data>

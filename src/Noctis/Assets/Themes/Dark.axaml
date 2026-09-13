@@ -90,6 +90,7 @@
     <SolidColorBrush x:Key="IslandSliderUnfilled" Color="#3A3A3A" />
     <SolidColorBrush x:Key="IslandAlbumArtPlaceholder" Color="#33FFFFFF" />
     <SolidColorBrush x:Key="IslandExplicitBadge" Color="#88888888" />
+    <SolidColorBrush x:Key="IslandTrackBoxSliderUnfilled" Color="#2EFFFFFF" />
     <SolidColorBrush x:Key="IslandIconAccent" Color="#E8E8E8" />
 
     <!-- Sidebar highlight — visible against pure black -->
