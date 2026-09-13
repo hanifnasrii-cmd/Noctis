@@ -655,7 +655,7 @@
                                  otherwise render a stray leading "· 2018 · 24 tracks" dot. -->
                             <MultiBinding Converter="{StaticResource MetadataLine}" ConverterParameter="track">
                                 <Binding Path="Player.CurrentTrack.Genre" FallbackValue=""/>
-                                <Binding Path="Player.CurrentTrack.Year" FallbackValue="0"/>
+                                <Binding Path="Player.CurrentTrack.DisplayYear" FallbackValue="0"/>
                                 <Binding Path="Player.CurrentTrack.TrackCount" FallbackValue="0"/>
                             </MultiBinding>
                         </TextBlock.Text>

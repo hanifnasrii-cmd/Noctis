@@ -77,6 +77,16 @@ public partial class Track : ObservableObject
     public string ReleaseDate { get; set; } = string.Empty;
 
     /// <summary>
+    /// Year to show next to the track: the year of <see cref="ReleaseDate"/> when the
+    /// tag carries a parseable one, else <see cref="Year"/>. The album page prints the
+    /// release date, so a page that shows only a year must derive it from the same
+    /// tag or the two disagree whenever a file's YEAR and RELEASEDATE differ (a deluxe
+    /// re-issue tagged 2025 over an original 2024-11-01 release date).
+    /// </summary>
+    [JsonIgnore]
+    public int DisplayYear => TryParseReleaseDate(ReleaseDate, out var released) ? released.Year : Year;
+
+    /// <summary>
     /// Parses a <see cref="ReleaseDate"/> tag value. Taggers write these several ways
     /// ("2014-10-27", an ISO timestamp, or slash-separated), and plenty of files carry
     /// none at all — so callers get a bool and decide the fallback themselves. Shared by

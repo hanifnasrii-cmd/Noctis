@@ -23,4 +23,8 @@ public sealed class TopSongRow
     public bool IsTop => !IsLastPlayed && Rank == 1;
     public bool IsSecond => !IsLastPlayed && Rank == 2;
     public bool IsThird => !IsLastPlayed && Rank == 3;
+
+    /// <summary>Artist page "Top Songs" row subtitle: the release year (same tag the
+    /// album page prints), falling back to the album name for untagged files.</summary>
+    public string SubtitleText => Track.DisplayYear > 0 ? Track.DisplayYear.ToString() : Track.Album;
 }

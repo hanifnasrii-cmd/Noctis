@@ -1426,8 +1426,8 @@
                             </Canvas>
                             <Border x:Name="VolumeFlyoutContent"
                                     Background="{DynamicResource IslandBackground}"
-                                    BorderBrush="{DynamicResource IslandBorder}"
-                                    BorderThickness="1"
+                                    BorderBrush="{DynamicResource TextControlBorderBrush}"
+                                    BorderThickness="1.5"
                                     CornerRadius="999"
                                     Padding="8,3"
                                     Opacity="0"

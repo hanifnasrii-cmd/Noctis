@@ -45,7 +45,7 @@ public class ArtistDetailViewMountTests
             {
                 Id = Guid.NewGuid(), Title = $"{name} {i}", Artist = artist, AlbumArtist = artist, Album = name,
                 AlbumId = id, TrackNumber = i, DiscNumber = 1, Year = year, Duration = TimeSpan.FromMinutes(3),
-                PlayCount = trackCount - i,
+                PlayCount = trackCount - i, Genre = "Alternative",
             });
         }
         album.TrackCount = trackCount;
@@ -73,16 +73,31 @@ public class ArtistDetailViewMountTests
 
         var texts = view.GetVisualDescendants().OfType<TextBlock>().Select(t => t.Text).ToList();
         Assert.Contains("Chase Atlantic", texts);
-        Assert.DoesNotContain("ARTIST", texts); // kicker removed (user ask, 09-03)
+        Assert.DoesNotContain("ARTIST", texts); // the old release-kind kicker stays gone (09-03)
+        Assert.Contains("ALTERNATIVE", texts);  // genre kicker (09-13 redesign): dominant library genre
         Assert.Contains("Popular", texts);
         Assert.Contains("Latest Release", texts);
         Assert.Contains("Releases", texts);
 
-        // Three release tiles and ten popular pills realized.
+        // Three release tiles and ten popular rows realized, each with its "+" queue button.
         var tiles = view.GetVisualDescendants().OfType<Button>().Count(b => b.Classes.Contains("album-tile"));
         Assert.Equal(3, tiles);
-        var pills = view.GetVisualDescendants().OfType<Button>().Count(b => b.Classes.Contains("browse-item"));
-        Assert.Equal(ArtistDetailViewModel.MaxPopular, pills);
+        var rows = view.GetVisualDescendants().OfType<Button>().Where(b => b.Classes.Contains("song-row")).ToList();
+        Assert.Equal(ArtistDetailViewModel.MaxPopular, rows.Count);
+        var plusButtons = rows.Sum(r => r.GetVisualDescendants().OfType<Button>().Count(b => b.Command == vm.AddSongToQueueCommand));
+        Assert.Equal(ArtistDetailViewModel.MaxPopular, plusButtons);
+        // Year under the title (the reference's "2017"), not the album name.
+        Assert.Contains("2019", texts);
+
+        // The playing song's row takes the accent fill: play the #1 song through the
+        // player, the shared Track's IsNowPlaying flips, the row's class follows.
+        Assert.DoesNotContain(rows, r => r.Classes.Contains("playing"));
+        var top = vm.PopularSongs[0].Track;
+        player.ReplaceQueueAndPlay(new List<Track> { top }, 0);
+        Dispatcher.UIThread.RunJobs();
+        var playingRows = rows.Where(r => r.Classes.Contains("playing")).ToList();
+        Assert.Single(playingRows);
+        Assert.Same(top, ((TopSongRow)playingRows[0].DataContext!).Track);
 
         // Podium numerals: #1 gold, #2 silver, #3 bronze, #4 plain.
         var ranks = view.GetVisualDescendants().OfType<TextBlock>()

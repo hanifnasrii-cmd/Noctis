@@ -1970,6 +1970,24 @@ public partial class LyricsViewModel : ViewModelBase, IDisposable
     {
         // Read the parse-affecting setting here, on the UI thread that owns it.
         var joinSplitWords = _player.LyricsJoinSplitWords;
+
+        // Fade the (still-visible) old lyrics out WHILE the probe runs, not after
+        // it. The swap below — a full ItemsControl rebuild plus a scroll snap —
+        // must land off-screen, but the fade needs no probe result; waiting for
+        // one first (the old order) added the whole sidecar/store disk read to
+        // the time the previous track's lyrics stayed up after the new track had
+        // already started. Measured: LyricsTrackChangeTimingTests.
+        var fadeOut = Task.CompletedTask;
+        if (LyricsSwapPending != null)
+        {
+            if (Dispatcher.UIThread.CheckAccess())
+                LyricsSwapPending?.Invoke(this, EventArgs.Empty);
+            else
+                await Dispatcher.UIThread.InvokeAsync(() => LyricsSwapPending?.Invoke(this, EventArgs.Empty));
+            fadeOut = Task.Delay(LyricsSwapFadeOutMs);
+        }
+
+        var probeClock = System.Diagnostics.Stopwatch.StartNew();
         var probe = await Task.Run(() =>
         {
             // Track lyrics are store-backed and lazy: the first touch is a small
@@ -1980,18 +1998,14 @@ public partial class LyricsViewModel : ViewModelBase, IDisposable
             _loadedSyncedLyrics = track.SyncedLyrics;
             return ProbeLocalLyricSources(track, joinSplitWords);
         });
+        // Visible in Settings ▸ About ▸ Developer Mode ▸ Copy Logs: how long the
+        // disk probe took on THIS machine (the fade hides up to LyricsSwapFadeOutMs of it).
+        DebugLogger.Info(DebugLogger.Category.Lyrics, "LocalProbe",
+            $"ms={probeClock.ElapsedMilliseconds}, source={probe.Source}");
 
         if (generation != _searchGeneration) return;
-
-        // Give attached views one beat to fade the (still-visible) old lyrics
-        // out, so the swap below — a full ItemsControl rebuild plus a scroll
-        // snap — happens off-screen instead of as a visible flash+jump.
-        if (LyricsSwapPending != null)
-        {
-            await Dispatcher.UIThread.InvokeAsync(() => LyricsSwapPending?.Invoke(this, EventArgs.Empty));
-            await Task.Delay(LyricsSwapFadeOutMs);
-            if (generation != _searchGeneration) return;
-        }
+        await fadeOut;
+        if (generation != _searchGeneration) return;
 
         var applied = new TaskCompletionSource();
         Dispatcher.UIThread.Post(() =>

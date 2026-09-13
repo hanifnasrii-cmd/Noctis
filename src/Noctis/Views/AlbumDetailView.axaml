@@ -257,14 +257,6 @@
             <StackPanel Grid.Column="1"
                         VerticalAlignment="Center"
                         Spacing="6">
-                <!-- Release kind kicker: ALBUM / SINGLE / EP … (Album.ReleaseKindLabel) -->
-                <TextBlock Text="{Binding Album.ReleaseKindLabel}"
-                           FontSize="11"
-                           FontWeight="Bold"
-                           LetterSpacing="1.5"
-                           Opacity="0.55"
-                           Margin="1,0,0,-2"
-                           Foreground="{Binding PageForegroundBrush}" />
                 <Grid ColumnDefinitions="Auto,Auto"
                       HorizontalAlignment="Left"
                       MaxWidth="1400">

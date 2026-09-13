@@ -87,6 +87,13 @@ public partial class ArtistDetailViewModel : ViewModelBase, ISearchable, IDispos
     /// <summary>"4 releases · 52 songs · 3h 12m"</summary>
     [ObservableProperty] private string _factsLine = string.Empty;
 
+    /// <summary>Hero kicker above the name ("HIP HOP"): the artist's most common library
+    /// genre tag, else the first MusicBrainz genre once About loads, else hidden.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasGenreKicker))]
+    private string _genreKicker = string.Empty;
+    public bool HasGenreKicker => GenreKicker.Length > 0;
+
     public ObservableCollection<TopSongRow> PopularSongs { get; } = new();
     public ObservableCollection<TopSongRow> FavoriteSongs { get; } = new();
     public ObservableCollection<Album> Releases { get; } = new();
@@ -258,6 +265,20 @@ public partial class ArtistDetailViewModel : ViewModelBase, ISearchable, IDispos
         return capped.Select((t, i) => new TopSongRow { Track = t, Rank = i + 1 }).ToList();
     }
 
+    /// <summary>The most common non-empty genre tag across the artist's songs, upper-cased
+    /// for the hero kicker; ties break alphabetically. Null when nothing is tagged.</summary>
+    internal static string? DominantGenre(IEnumerable<Track> songs)
+    {
+        var top = songs
+            .Select(t => t.Genre?.Trim() ?? string.Empty)
+            .Where(g => g.Length > 0)
+            .GroupBy(g => g, StringComparer.OrdinalIgnoreCase)
+            .OrderByDescending(g => g.Count())
+            .ThenBy(g => g.Key, StringComparer.OrdinalIgnoreCase)
+            .FirstOrDefault();
+        return top?.Key.ToUpperInvariant();
+    }
+
     /// <summary>Applies the All / Albums / Singles &amp; EPs chip.</summary>
     internal static IEnumerable<Album> FilterReleases(IEnumerable<Album> releases, string filter) => filter switch
     {
@@ -291,6 +312,7 @@ public partial class ArtistDetailViewModel : ViewModelBase, ISearchable, IDispos
             songs.Count == 1 ? "1 song" : $"{songs.Count} songs",
             TotalLengthDisplay,
         });
+        GenreKicker = DominantGenre(songs) ?? (About?.Genres.FirstOrDefault() ?? string.Empty).ToUpperInvariant();
 
         // Library-side About facts.
         var mostPlayed = songs.OrderByDescending(t => t.PlayCount).FirstOrDefault();
@@ -406,7 +428,13 @@ public partial class ArtistDetailViewModel : ViewModelBase, ISearchable, IDispos
         {
             var info = await _info.GetAsync(Artist.Id, ArtistName, _cts.Token).ConfigureAwait(false);
             if (_cts.IsCancellationRequested) return;
-            await Dispatcher.UIThread.InvokeAsync(() => About = info);
+            await Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                About = info;
+                // Untagged library: the hero kicker falls back to MusicBrainz's top genre.
+                if (GenreKicker.Length == 0 && info?.Genres.FirstOrDefault() is { Length: > 0 } genre)
+                    GenreKicker = genre.ToUpperInvariant();
+            });
         }
         catch (OperationCanceledException) { }
         catch (Exception ex)
@@ -497,6 +525,13 @@ public partial class ArtistDetailViewModel : ViewModelBase, ISearchable, IDispos
         var songs = PopularSongs.Select(r => r.Track).ToList();
         if (songs.Count == 0) return;
         _player.ReplaceQueueAndPlay(ShuffleHelper.WeightedShuffle(songs), 0);
+    }
+
+    /// <summary>The "+" on a Top Songs row: append that one song to the queue.</summary>
+    [RelayCommand]
+    private void AddSongToQueue(Track? track)
+    {
+        if (track != null) _player.AddToQueue(track);
     }
 
     [RelayCommand]
