@@ -441,7 +441,11 @@ public partial class HomeViewModel : ViewModelBase, IDisposable
                 .Select(id => _library.GetAlbumById(id))
                 .OfType<Album>()
                 .ToList();
-            RecentlyPlayedAlbums.ReplaceAll(recentAlbums);
+            // Only reset when the row actually changed: a Reset tears every tile down and
+            // Avalonia closes a ContextMenu whose owner leaves the tree, so the 500 ms
+            // refresh after a menu option (Favorites…) used to snap a re-opened menu shut.
+            if (!SameSequence(RecentlyPlayedAlbums, recentAlbums))
+                RecentlyPlayedAlbums.ReplaceAll(recentAlbums);
             RebuildRecentRail();
             ReplaceLastPlayed(_player.History);
             UpdateContinue();
@@ -586,9 +590,12 @@ public partial class HomeViewModel : ViewModelBase, IDisposable
     /// (the "opens and closes" glitch). Hearts and counts are bound per track, so
     /// untouched rows stay live.
     /// </summary>
+    private static bool SameSequence<T>(IReadOnlyList<T> current, IReadOnlyList<T> next) where T : class
+        => current.Count == next.Count && current.Zip(next).All(p => ReferenceEquals(p.First, p.Second));
+
     private void ReplaceTopSongsIfChanged(IReadOnlyList<Track> top)
     {
-        if (TopSongs.Count == top.Count && TopSongs.Zip(top).All(p => ReferenceEquals(p.First, p.Second)))
+        if (SameSequence(TopSongs, top))
             return;
         TopSongs.ReplaceAll(top);
         TopSongRows.ReplaceAll(BuildTopSongRows(top));

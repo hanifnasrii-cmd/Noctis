@@ -1024,10 +1024,13 @@
     <Style Selector="Button.tile-play:pressed /template/ ContentPresenter, Button.tile-more:pressed /template/ ContentPresenter">
         <Setter Property="Background" Value="#E6303032" />
     </Style>
-    <!-- Glyphs sit in a centred Viewbox: a Path with Stretch lands its scaled geometry
-         at the box's top-left, which read as off-centre in the 32px circles. -->
+    <!-- Glyphs sit in a centred Viewbox. Stretch=Uniform drops the geometry's origin
+         offset (the 24-unit icon grid's padding); with Stretch=None the Path measures
+         bounds.Right x bounds.Bottom and the Viewbox scales that padding too, landing
+         the ink ~2px right (Play) and ~4px low (dots) of the circle centre. -->
     <Style Selector="Button.tile-play Path, Button.tile-more Path">
         <Setter Property="Fill" Value="White" />
+        <Setter Property="Stretch" Value="Uniform" />
     </Style>
 
     <!-- Tile heart (09-13): at the right end of the title line; when the title wraps to
