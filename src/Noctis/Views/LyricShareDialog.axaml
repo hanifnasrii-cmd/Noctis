@@ -245,7 +245,7 @@
                 </Grid>
 
                 <!-- Footer: card options + background dropdowns, status, actions -->
-                <Grid Grid.Row="2" Grid.ColumnSpan="2" ColumnDefinitions="Auto,Auto,*,Auto,Auto" Margin="0,16,0,0">
+                <Grid Grid.Row="2" Grid.ColumnSpan="2" ColumnDefinitions="Auto,Auto,*,Auto,Auto,Auto" Margin="0,16,0,0">
                     <!-- Card options: layout, format, text colour & sync collapsed into one dropdown -->
                     <Button Grid.Column="0" Classes="share-pill" VerticalAlignment="Center"
                             Width="270" HorizontalContentAlignment="Stretch"
@@ -403,14 +403,23 @@
                                    TextTrimming="CharacterEllipsis"/>
                     </StackPanel>
 
+                    <!-- Copy puts the full-resolution PNG on the clipboard so it can be
+                         pasted straight into Discord/chat without a save dialog. -->
                     <Button Grid.Column="3"
+                            Classes="share-pill"
+                            Margin="0,0,8,0"
+                            Click="OnCopyClick"
+                            Content="{loc:T LyricShare.Copy}"
+                            ToolTip.Tip="{loc:T LyricShare.CopyImageTip}"
+                            IsEnabled="{Binding Preview, Converter={x:Static ObjectConverters.IsNotNull}}"/>
+                    <Button Grid.Column="4"
                             Classes="share-pill"
                             Margin="0,0,8,0"
                             Click="OnSaveVideoClick"
                             IsEnabled="{Binding CanExportVideo}"
                             Content="{loc:T LyricShare.SaveVideo}"
                             ToolTip.Tip="{loc:T LyricShare.SaveMP4ClipLyricTip}"/>
-                    <Button Grid.Column="4"
+                    <Button Grid.Column="5"
                             Classes="share-pill accent"
                             Click="OnSaveClick"
                             Content="{loc:T LyricShare.SaveCard}"

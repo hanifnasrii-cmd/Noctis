@@ -82,6 +82,26 @@ public partial class LyricShareDialog : Window
         }
     }
 
+    private async void OnCopyClick(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        // async void: an escaped exception would crash the app.
+        try
+        {
+            var vm = Vm;
+            if (vm?.CurrentPng is null) return;
+            // Same full-resolution re-render as Save — CurrentPng is only the small preview.
+            if (await vm.RenderExportPngAsync() is not { } png) return;
+            var status = await PngExportHelper.CopyPngAsync(this, png, vm.SuggestedFileName);
+            if (status != null)
+                vm.ReportStatus(status);
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[LyricShareDialog] Copy failed: {ex.Message}");
+            Vm?.ReportStatus("Copy failed.");
+        }
+    }
+
     private async void OnSaveVideoClick(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
     {
         // async void: an escaped exception would crash the app.

@@ -1133,7 +1133,17 @@ public partial class PlaybackBarView : UserControl
         // below account for the extras instead.
         var extra = ExtraTransportWidth;
         if (CompactWhenLyricsPageActive && _observedPlayerViewModel?.IsLyricsPageActive == true)
+        {
             IslandBorder.Width = IslandLyricsPageWidth + extra;
+            // The lyrics page hosts this copy in its info column, whose width follows the
+            // cover (height − 370, floored at 300) — on a short window (a 720p/768p TV,
+            // or any window under ~710px tall) that column is narrower than the pill.
+            // This control clips to its bounds, so being arranged at the column's width
+            // chopped the pill's rounded ends straight (Discord report, 2026-09-10).
+            // Carrying the pill's width as the bar's minimum lets it overflow the column
+            // symmetrically (Stretch centres an oversized child) with its ends intact.
+            MinWidth = IslandBorder.Width;
+        }
         else if (!CompactWhenLyricsPageActive && _observedPlayerViewModel is { } vm)
         {
             var width = ClampUserIslandWidth(vm.PlaybackBarIslandWidth);
