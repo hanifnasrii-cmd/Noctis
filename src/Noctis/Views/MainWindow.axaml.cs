@@ -15,8 +15,6 @@ namespace Noctis.Views;
 
 public partial class MainWindow : Window
 {
-    private static readonly IBrush ActiveToggleBg = new SolidColorBrush(Color.Parse("#30FFFFFF"));
-    private static readonly IBrush InactiveToggleBg = Brushes.Transparent;
 
     private TaskbarIntegrationService? _taskbar;
     private SmtcService? _smtc;
@@ -33,7 +31,6 @@ public partial class MainWindow : Window
     private bool _liquidGlassActive;
     private System.ComponentModel.PropertyChangedEventHandler? _playerPropertyChangedHandler;
     private System.ComponentModel.PropertyChangedEventHandler? _queuePopupStateHandler;
-    private System.ComponentModel.PropertyChangedEventHandler? _topBarPropertyChangedHandler;
     private System.ComponentModel.PropertyChangedEventHandler? _mainVmPropertyChangedHandler;
     private System.ComponentModel.PropertyChangedEventHandler? _currentTrackPropertyChangedHandler;
     private Track? _trackedFavoriteTrack;
@@ -406,14 +403,8 @@ public partial class MainWindow : Window
                 Services.StartupTrace.Mark("initialize-async-done");
                 Services.StartupTrace.Flush();
 
-                // Wire up albums view-mode toggle visuals
-                _topBarPropertyChangedHandler = (_, e) =>
-                {
-                    if (e.PropertyName is nameof(TopBarViewModel.IsCoverFlowMode) or nameof(TopBarViewModel.IsCollageMode))
-                        UpdateViewModeToggleVisuals(vm.TopBar.IsCoverFlowMode, vm.TopBar.IsCollageMode);
-                };
-                vm.TopBar.PropertyChanged += _topBarPropertyChangedHandler;
-                UpdateViewModeToggleVisuals(vm.TopBar.IsCoverFlowMode, vm.TopBar.IsCollageMode);
+                // View-mode corner icons bind to TopBar.IsCoverFlowMode directly (09-13);
+                // nothing to toggle by name any more.
 
                 // Queue row position numbers: rows are virtualized and recycled, so
                 // there is no per-item index to bind — stamp the 1-based position when
@@ -1041,9 +1032,6 @@ public partial class MainWindow : Window
                 _trackedFavoriteTrack = null;
             }
 
-            if (_topBarPropertyChangedHandler != null)
-                vm.TopBar.PropertyChanged -= _topBarPropertyChangedHandler;
-
             if (_mainVmPropertyChangedHandler != null)
                 vm.PropertyChanged -= _mainVmPropertyChangedHandler;
         }
@@ -1486,24 +1474,6 @@ public partial class MainWindow : Window
             vm.Lyrics.IsFullScreenPageActive = immersive;
     }
 
-    // ── Albums toggle visuals ──
-
-    private void UpdateViewModeToggleVisuals(bool isCoverFlow, bool isCollage = false)
-    {
-        if (AlbumsLibraryModeBtn != null)
-        {
-            AlbumsLibraryModeBtn.Background = isCoverFlow ? InactiveToggleBg : ActiveToggleBg;
-            AlbumsLibraryModeBtn.Opacity = isCoverFlow ? 0.5 : 1.0;
-        }
-        if (AlbumsUpNextModeBtn != null)
-        {
-            AlbumsUpNextModeBtn.Background = isCoverFlow ? ActiveToggleBg : InactiveToggleBg;
-            AlbumsUpNextModeBtn.Opacity = isCoverFlow ? 1.0 : 0.5;
-        }
-        // The layout segment is now a labelled dropdown (Carousel / Cascade / Collage),
-        // always full-opacity while Cover Flow is on; nothing to toggle here.
-    }
-
     // ── Queue popup event handlers ──
 
     private void OnGlobalPointerPressed(object? sender, PointerPressedEventArgs e)
@@ -1651,12 +1621,6 @@ public partial class MainWindow : Window
         _queueDragRowOffsetY = e.GetPosition(rowControl).Y;
         _queueDragStartPos = e.GetPosition(this);
         _queueDragActive = false;
-    }
-
-    private void OnPageSortByMenuItemPointerEntered(object? sender, PointerEventArgs e)
-    {
-        if (sender is MenuItem item)
-            item.IsSubMenuOpen = true;
     }
 
     private void OnQueueItemPointerMoved(object? sender, PointerEventArgs e)

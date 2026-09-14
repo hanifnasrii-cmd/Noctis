@@ -194,4 +194,11 @@ public partial class FavoritesView : UserControl
             FavoritesList.LayoutUpdated += _pendingScrollRestore;
         }
     }
+
+    /// <summary>Tile hover dots: the same menu a right-click on the tile opens.</summary>
+    private void OnTileMoreClick(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        Helpers.AlbumTile.OpenMenu(sender);
+        e.Handled = true;
+    }
 }

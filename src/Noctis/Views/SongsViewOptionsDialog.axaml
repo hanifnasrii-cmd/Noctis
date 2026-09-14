@@ -179,11 +179,14 @@
                     </Button>
                 </Grid>
 
+                <!-- Scrollbar at the card's right edge like Settings (SettingsScrollViewer):
+                     the viewer spans the full card width and the CONTENT carries the 24px
+                     side inset, so the bar no longer floats 24px inside the card. -->
                 <ScrollViewer Grid.Row="1"
-                              Margin="24,16,24,0"
+                              Margin="0,16,0,0"
                               VerticalScrollBarVisibility="Auto"
                               HorizontalScrollBarVisibility="Disabled">
-                    <StackPanel>
+                    <StackPanel Margin="24,0,24,0">
 
                         <!-- Sort by -->
                         <Grid ColumnDefinitions="Auto,*" Margin="0,0,0,12">

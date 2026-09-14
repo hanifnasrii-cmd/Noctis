@@ -4,6 +4,7 @@ using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Noctis.Helpers;
+using Noctis.Localization;
 using Noctis.Models;
 using Noctis.Services;
 
@@ -69,6 +70,104 @@ public partial class HomeViewModel : ViewModelBase, IDisposable
     /// <summary>Top artists by total play count across all their tracks.</summary>
     public BulkObservableCollection<Artist> TopArtists { get; } = new();
 
+    // ── Continue listening hero ──
+    //
+    // The first thing on the page (09-13 Home design 1): the track you left off on, its
+    // album, and how much of it is left. The player's loaded track wins because it is
+    // what Resume acts on; otherwise the newest history entry.
+    private const int MaxRecentAlbums = 6;
+
+    [ObservableProperty] private Track? _continueTrack;
+    [ObservableProperty] private Album? _continueAlbum;
+    /// <summary>" · Album · Year" after the accent-coloured artist name ("" when neither is known).</summary>
+    [ObservableProperty] private string _continueDetail = string.Empty;
+    /// <summary>The hero track is the loaded track and it is playing: the button reads Pause.</summary>
+    [ObservableProperty] private bool _isContinuePlaying;
+
+    // ── Albums row tile size ──
+    //
+    // Same maths as the Albums page (AlbumGridMetrics): five covers across in Auto,
+    // otherwise the column count nearest the cover-size slider, so the Home covers are
+    // the size the user already chose for the grid. The view feeds its usable width.
+    [ObservableProperty] private double _albumTileSize = 220;
+    private double _lastAlbumUsableWidth;
+
+    public void UpdateAlbumTileSize(double usableWidth)
+    {
+        if (!double.IsFinite(usableWidth) || usableWidth <= 0) return;
+        _lastAlbumUsableWidth = usableWidth;
+        var auto = _settings?.AlbumTileSizeAuto ?? true;
+        var target = _settings?.AlbumTileTargetSize ?? 220;
+        var columns = AlbumGridMetrics.ComputeColumns(usableWidth, auto, target);
+        var size = AlbumGridMetrics.ComputeTileSize(usableWidth, columns);
+        if (Math.Abs(size - AlbumTileSize) >= 0.5) AlbumTileSize = size;
+    }
+
+    private void UpdateContinue()
+    {
+        var track = _player.CurrentTrack ?? LastPlayed.FirstOrDefault();
+        ContinueTrack = track;
+        if (track == null)
+        {
+            ContinueAlbum = null;
+            ContinueDetail = string.Empty;
+            IsContinuePlaying = false;
+            return;
+        }
+
+        ContinueAlbum = track.AlbumId != Guid.Empty ? _library.GetAlbumById(track.AlbumId) : null;
+        ContinueDetail = BuildContinueDetail(track);
+        IsContinuePlaying = ReferenceEquals(_player.CurrentTrack, track) && _player.State == PlaybackState.Playing;
+    }
+
+    /// <summary>" · Album · Year" — the part after the artist name. Album and year are each
+    /// skipped when unknown; the leading separator only appears when something follows the
+    /// artist. Internal for tests.</summary>
+    internal static string BuildContinueDetail(Track track)
+    {
+        var parts = new List<string>(2);
+        if (!string.IsNullOrWhiteSpace(track.Album)) parts.Add(track.Album);
+        if (track.DisplayYear > 0) parts.Add(track.DisplayYear.ToString());
+        return parts.Count == 0 ? string.Empty : " · " + string.Join(" · ", parts);
+    }
+
+    private void OnPlayerPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName is nameof(PlayerViewModel.CurrentTrack) or nameof(PlayerViewModel.State))
+            UpdateContinue();
+    }
+
+    /// <summary>Hero button. For the loaded track it is the same toggle as the player bar's
+    /// play/pause (so the two stay in step); otherwise it plays the hero track from the Last
+    /// Played list (alone if it is no longer in it).</summary>
+    [RelayCommand]
+    private void ResumeContinue()
+    {
+        var track = ContinueTrack;
+        if (track == null) return;
+        if (ReferenceEquals(_player.CurrentTrack, track))
+        {
+            _player.PlayPauseCommand.Execute(null);
+            return;
+        }
+        if (LastPlayed.Contains(track)) PlayFromRow(LastPlayed, track);
+        else _player.ReplaceQueueAndPlay(new List<Track> { track }, 0);
+    }
+
+    /// <summary>Hero "Play album": the whole album from track 1 in disc/track order, not
+    /// from whichever track the album's list happens to start with.</summary>
+    [RelayCommand]
+    private void PlayContinueAlbum()
+    {
+        var album = ContinueAlbum;
+        if (album?.Tracks == null || album.Tracks.Count == 0) return;
+        var ordered = album.Tracks
+            .OrderBy(t => t.DiscNumber <= 0 ? 1 : t.DiscNumber)
+            .ThenBy(t => t.TrackNumber)
+            .ToList();
+        _player.ReplaceQueueAndPlay(ordered, 0);
+    }
+
     // ── Time-aware rows (local play history) ──
 
     /// <summary>Tracks the user keeps playing around this time of day.</summary>
@@ -132,11 +231,14 @@ public partial class HomeViewModel : ViewModelBase, IDisposable
             {
                 if (e.PropertyName == nameof(SettingsViewModel.HomeShowHeavyRotation))
                     OnPropertyChanged(nameof(IsHeavyRotationVisible));
+                else if (e.PropertyName is nameof(SettingsViewModel.AlbumTileSizeAuto) or nameof(SettingsViewModel.AlbumTileTargetSize))
+                    UpdateAlbumTileSize(_lastAlbumUsableWidth);
             };
         }
 
         // Subscribe to track changes for real-time updates
         _player.TrackStarted += OnTrackStarted;
+        _player.PropertyChanged += OnPlayerPropertyChanged;
 
         // Subscribe to library changes with debounce to avoid flooding UI thread
         _refreshDebounce = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(500) };
@@ -301,6 +403,7 @@ public partial class HomeViewModel : ViewModelBase, IDisposable
         if (!_isDirty && TopSongs.Count > 0)
         {
             Greeting = GetGreeting();
+            UpdateContinue();
             // Time-aware rows depend on the clock and the play log, both of which
             // move without dirtying the library — rebuild them on every visit.
             _ = RefreshTimeAwareRowsAsync();
@@ -334,13 +437,14 @@ public partial class HomeViewModel : ViewModelBase, IDisposable
                 .Take(50)
                 .Select(t => t.AlbumId)
                 .Distinct()
-                .Take(10)
+                .Take(MaxRecentAlbums)
                 .Select(id => _library.GetAlbumById(id))
                 .OfType<Album>()
                 .ToList();
             RecentlyPlayedAlbums.ReplaceAll(recentAlbums);
             RebuildRecentRail();
             ReplaceLastPlayed(_player.History);
+            UpdateContinue();
 
             // Top Artists: aggregate play count by artist name (using album-artist
             // grouping that the library already maintains), drop the "Unknown Artist"
@@ -757,6 +861,18 @@ public partial class HomeViewModel : ViewModelBase, IDisposable
         _player.ReplaceQueueAndPlay(album.Tracks, 0);
     }
 
+    /// <summary>Tile hover button: Pause/resume when this album is the loaded one, else
+    /// play it from track 1 in disc/track order.</summary>
+    [RelayCommand]
+    private void TogglePlayAlbum(Album album)
+    {
+        if (album == null) return;
+        if (album.IsCurrent) { _player.PlayPauseCommand.Execute(null); return; }
+        var ordered = Helpers.AlbumTile.OrderedTracks(album);
+        if (ordered.Count == 0) return;
+        _player.ReplaceQueueAndPlay(ordered, 0);
+    }
+
     [RelayCommand]
     private void ShuffleAlbum(Album album)
     {
@@ -918,6 +1034,7 @@ public partial class HomeViewModel : ViewModelBase, IDisposable
         _refreshDebounce.Stop();
         _topArtistImageDebounce?.Stop();
         _player.TrackStarted -= OnTrackStarted;
+        _player.PropertyChanged -= OnPlayerPropertyChanged;
         _library.LibraryUpdated -= _libraryUpdatedHandler;
         _library.FavoritesChanged -= _favoritesChangedHandler;
     }

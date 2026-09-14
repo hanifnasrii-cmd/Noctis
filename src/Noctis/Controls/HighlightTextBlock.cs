@@ -84,6 +84,11 @@ public class HighlightTextBlock : TextBlock
             return;
         }
 
+        // Leaving the plain path: the fast path above wrote the title into Text, and a
+        // TextBlock renders Text AND its Inlines when both are set — Favorites showed
+        // "VolvíVolví" for every explicit single until a later relayout
+        // (HighlightTextBlockExplicitTests pins it). Clear Text before the runs go in.
+        if (!string.IsNullOrEmpty(Text)) Text = string.Empty;
         Inlines?.Clear();
 
         foreach (var segment in BuildSegments(text, query))

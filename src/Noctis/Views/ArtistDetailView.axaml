@@ -307,42 +307,67 @@
                                               Stretch="UniformToFill"
                                               RenderOptions.BitmapInterpolationMode="HighQuality"
                                               IsVisible="{Binding ArtworkPath, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                                                    <!-- Hover overlay (09-13): dim + Play/Pause + dots; styles in Styles.axaml -->
+                                                    <Border Classes="tile-dim" />
+                                                    <Button Classes="tile-play"
+                                                            Command="{Binding $parent[UserControl].((vm:ArtistDetailViewModel)DataContext).LibraryAlbumsVm.TogglePlayAlbumCommand}"
+                                                            CommandParameter="{Binding}">
+                                                        <Panel>
+                                                            <Viewbox Width="12" Height="12" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="1,0,0,0" IsVisible="{Binding !IsNowPlaying}"><Path Data="{StaticResource PlayIcon}" Fill="White" /></Viewbox>
+                                                            <Viewbox Width="12" Height="12" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding IsNowPlaying}"><Path Data="{StaticResource PauseIcon}" Fill="White" /></Viewbox>
+                                                        </Panel>
+                                                    </Button>
+                                                    <Button Classes="tile-more" Click="OnTileMoreClick">
+                                                        <Viewbox Width="14" Height="14" HorizontalAlignment="Center" VerticalAlignment="Center"><Path Data="{StaticResource MoreDotsIcon}" Fill="White" /></Viewbox>
+                                                    </Button>
                         </Panel>
                     </Border>
-                    <StackPanel Grid.Row="1" Spacing="0">
-                        <TextBlock Margin="0,6,0,0"
-                                   FontSize="13"
-                                   FontWeight="SemiBold"
-                                   TextWrapping="Wrap"
-                                   TextTrimming="CharacterEllipsis"
-                                   MaxLines="2">
-                            <Run Text="{Binding Name}" />
-                            <InlineUIContainer BaselineAlignment="Center">
-                                <Border Classes="explicit-badge compact"
-                                        Margin="4,0,0,0"
-                                        IsVisible="{Binding IsExplicit}"
-                                        ToolTip.Tip="{loc:T ArtistDetail.ExplicitTip}">
-                                    <TextBlock Text="E"
-                                               Classes="explicit-badge-text compact"
-                                               FontSize="9"
-                                               Opacity="0.9" />
-                                </Border>
-                            </InlineUIContainer>
-                        </TextBlock>
-                        <!-- "Album · 2024" (the artist name is the page title) -->
-                        <TextBlock FontSize="12"
-                                   Opacity="0.55"
-                                   TextTrimming="CharacterEllipsis"
-                                   MaxLines="1"
-                                   Margin="0,2,0,0">
-                            <TextBlock.Text>
-                                <MultiBinding StringFormat="{}{0} · {1}">
-                                    <Binding Path="ReleaseKindTitle" />
-                                    <Binding Path="Year" />
-                                </MultiBinding>
-                            </TextBlock.Text>
-                        </TextBlock>
-                    </StackPanel>
+                                        <StackPanel Grid.Row="1" Classes="tile-text" Spacing="0">
+                                            <!-- Title + explicit badge; the heart sits at the line's right end (09-13) -->
+                                            <Grid ColumnDefinitions="*,Auto" Margin="0,6,0,0">
+                                                <TextBlock Grid.Column="0"
+                                                           helpers:TitleWrap.Watch="True"
+                                                           FontSize="13"
+                                                           FontWeight="SemiBold"
+                                                           TextWrapping="Wrap"
+                                                           TextTrimming="CharacterEllipsis"
+                                                           MaxLines="2">
+                                                    <Run Text="{Binding Name}" />
+                                                    <InlineUIContainer BaselineAlignment="Center">
+                                                        <Border Classes="explicit-badge compact"
+                                                                Margin="4,0,0,0"
+                                                                IsVisible="{Binding IsExplicit}"
+                                                                ToolTip.Tip="{loc:T ArtistDetail.ExplicitTip}">
+                                                            <TextBlock Text="E"
+                                                                       Classes="explicit-badge-text compact"
+                                                                       FontSize="9"
+                                                                       Opacity="0.9" />
+                                                        </Border>
+                                                    </InlineUIContainer>
+                                                </TextBlock>
+                                                <Panel Grid.Column="1" Classes="heart-title" VerticalAlignment="Top" Margin="6,2,0,0">
+                                                    <ctrl:HeartIcon Size="14" ShowWhenOff="False" IsFavorite="{Binding HasFavoriteTrack}" IsVisible="{Binding HasFavoriteTrack}" />
+                                                </Panel>
+                                            </Grid>
+                                            <!-- Subtitle; the heart lands here instead when the title wraps -->
+                                            <Grid ColumnDefinitions="*,Auto" Margin="0,1,0,0">
+                                                <TextBlock Grid.Column="0"
+                                                           FontSize="12"
+                                                           Opacity="0.55"
+                                                           TextTrimming="CharacterEllipsis"
+                                                           MaxLines="1">
+                                                    <TextBlock.Text>
+                                                        <MultiBinding StringFormat="{}{0} · {1}">
+                                                            <Binding Path="ReleaseKindTitle" />
+                                                            <Binding Path="Year" />
+                                                        </MultiBinding>
+                                                    </TextBlock.Text>
+                                                </TextBlock>
+                                                <Panel Grid.Column="1" Classes="heart-sub" VerticalAlignment="Center" Margin="6,0,0,0">
+                                                    <ctrl:HeartIcon Size="14" ShowWhenOff="False" IsFavorite="{Binding HasFavoriteTrack}" IsVisible="{Binding HasFavoriteTrack}" />
+                                                </Panel>
+                                            </Grid>
+                                        </StackPanel>
                 </Grid>
             </Button>
         </DataTemplate>

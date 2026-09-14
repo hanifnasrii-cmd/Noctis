@@ -166,8 +166,8 @@
                                             </ContextMenu>
                                         </Button.ContextMenu>
 
-                                        <StackPanel Spacing="0" HorizontalAlignment="Stretch">
-                                            <!-- Artwork with heart overlay -->
+                                        <StackPanel Classes="tile-text" Spacing="0" HorizontalAlignment="Stretch">
+                                            <!-- Artwork with the hover overlay -->
                                             <Border Width="{Binding $parent[UserControl].((vm:FavoritesViewModel)DataContext).TileArtworkSize}"
                                                     Height="{Binding $parent[UserControl].((vm:FavoritesViewModel)DataContext).TileArtworkSize}"
                                                     CornerRadius="6"
@@ -185,35 +185,67 @@
                                                                           Stretch="UniformToFill"
                                                                           RenderOptions.BitmapInterpolationMode="HighQuality"
                                                                           IsVisible="{Binding ArtworkPath, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
-                                                    <!-- Heart overlay -->
-                                                    <!-- Path, not PathIcon: templated icons cost ~0.25ms each per realized tile (09-12). -->
-                                                    <Path Data="{StaticResource HeartFillIcon}" Stretch="Uniform"
-                                                             Width="22" Height="22"
-                                                             Fill="#E74856"
-                                                             HorizontalAlignment="Right"
-                                                             VerticalAlignment="Bottom"
-                                                             Margin="0,0,8,8" />
+                                                    <!-- Hover overlay (09-13): dim + Play/Pause + dots; styles in Styles.axaml -->
+                                                    <Border Classes="tile-dim" />
+                                                    <Button Classes="tile-play"
+                                                            Command="{Binding $parent[UserControl].((vm:FavoritesViewModel)DataContext).TogglePlayItemCommand}"
+                                                            CommandParameter="{Binding}">
+                                                        <Panel>
+                                                            <Viewbox Width="12" Height="12" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="1,0,0,0">
+                                                                <Viewbox.IsVisible>
+                                                                    <MultiBinding Converter="{x:Static helpers:MultiConverters.NoneTrue}">
+                                                                        <Binding Path="Album.IsNowPlaying" FallbackValue="False" />
+                                                                        <Binding Path="Track.IsCurrentlyPlaying" FallbackValue="False" />
+                                                                    </MultiBinding>
+                                                                </Viewbox.IsVisible>
+                                                                <Path Data="{StaticResource PlayIcon}" Fill="White" />
+                                                            </Viewbox>
+                                                            <Viewbox Width="12" Height="12" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                                <Viewbox.IsVisible>
+                                                                    <MultiBinding Converter="{x:Static BoolConverters.Or}">
+                                                                        <Binding Path="Album.IsNowPlaying" FallbackValue="False" />
+                                                                        <Binding Path="Track.IsCurrentlyPlaying" FallbackValue="False" />
+                                                                    </MultiBinding>
+                                                                </Viewbox.IsVisible>
+                                                                <Path Data="{StaticResource PauseIcon}" Fill="White" />
+                                                            </Viewbox>
+                                                        </Panel>
+                                                    </Button>
+                                                    <Button Classes="tile-more" Click="OnTileMoreClick">
+                                                        <Viewbox Width="14" Height="14" HorizontalAlignment="Center" VerticalAlignment="Center"><Path Data="{StaticResource MoreDotsIcon}" Fill="White" /></Viewbox>
+                                                    </Button>
                                                 </Panel>
                                             </Border>
-                                            <!-- Title + explicit badge -->
-                                            <controls:HighlightTextBlock DisplayText="{Binding Title}"
-                                                                         HighlightText="{Binding $parent[UserControl].((vm:FavoritesViewModel)DataContext).SearchText}"
-                                                                         IsExplicit="{Binding IsExplicit}"
-                                                                         Margin="0,5,0,0"
-                                                                         FontSize="13"
-                                                                         FontWeight="SemiBold"
-                                                                         TextWrapping="Wrap"
-                                                                         TextTrimming="CharacterEllipsis"
-                                                                         MaxLines="2" />
-                                            <!-- Artist name -->
-                                            <controls:HighlightTextBlock DisplayText="{Binding Subtitle}"
-                                                                         HighlightText="{Binding $parent[UserControl].((vm:FavoritesViewModel)DataContext).SearchText}"
-                                                                         FontSize="12"
-                                                                         FontWeight="Bold"
-                                                                         Opacity="0.55"
-                                                                         TextTrimming="CharacterEllipsis"
-                                                                         MaxLines="1"
-                                                                         Margin="0,1,0,0" />
+                                            <!-- Title + explicit badge; the heart sits at the line's right end (09-13) -->
+                                            <Grid ColumnDefinitions="*,Auto" Margin="0,5,0,0">
+                                                <controls:HighlightTextBlock Grid.Column="0"
+                                                                             helpers:TitleWrap.Watch="True"
+                                                                             DisplayText="{Binding Title}"
+                                                                             HighlightText="{Binding $parent[UserControl].((vm:FavoritesViewModel)DataContext).SearchText}"
+                                                                             IsExplicit="{Binding IsExplicit}"
+                                                                             FontSize="13"
+                                                                             FontWeight="SemiBold"
+                                                                             TextWrapping="Wrap"
+                                                                             TextTrimming="CharacterEllipsis"
+                                                                             MaxLines="2" />
+                                                <Panel Grid.Column="1" Classes="heart-title" VerticalAlignment="Top" Margin="6,2,0,0">
+                                                    <controls:HeartIcon Size="14" ShowWhenOff="False" IsFavorite="True" IsVisible="True" />
+                                                </Panel>
+                                            </Grid>
+                                            <!-- Subtitle; the heart lands here instead when the title wraps -->
+                                            <Grid ColumnDefinitions="*,Auto" Margin="0,1,0,0">
+                                                <controls:HighlightTextBlock Grid.Column="0"
+                                                                             DisplayText="{Binding Subtitle}"
+                                                                             HighlightText="{Binding $parent[UserControl].((vm:FavoritesViewModel)DataContext).SearchText}"
+                                                                             FontSize="12"
+                                                                             FontWeight="Bold"
+                                                                             Opacity="0.55"
+                                                                             TextTrimming="CharacterEllipsis"
+                                                                             MaxLines="1" />
+                                                <Panel Grid.Column="1" Classes="heart-sub" VerticalAlignment="Center" Margin="6,0,0,0">
+                                                    <controls:HeartIcon Size="14" ShowWhenOff="False" IsFavorite="True" IsVisible="True" />
+                                                </Panel>
+                                            </Grid>
                                         </StackPanel>
                                     </Button>
                                 </DataTemplate>

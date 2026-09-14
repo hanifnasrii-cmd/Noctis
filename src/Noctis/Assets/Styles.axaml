@@ -972,6 +972,76 @@
         <Setter Property="BorderBrush" Value="{DynamicResource AccentColorBrush}" />
     </Style>
 
+    <!-- Album/single tile hover (09-13, Apple Music): the artwork dims a little, a
+         Play/Pause circle appears bottom-left and a dots circle bottom-right. Both
+         circles sit inside the artwork Border of every tile (Albums grid, Home,
+         Favorites, Artist page, More by artist); Helpers/AlbumTile.cs routes the dots
+         to the tile's own menu. Glyphs are Paths, not PathIcons (per-tile cost, 09-12). -->
+    <Style Selector="Border.tile-dim">
+        <Setter Property="Background" Value="#000000" />
+        <Setter Property="Opacity" Value="0" />
+        <Setter Property="IsHitTestVisible" Value="False" />
+        <Setter Property="Transitions">
+            <Transitions>
+                <DoubleTransition Property="Opacity" Duration="0:0:0.12" />
+            </Transitions>
+        </Setter>
+    </Style>
+    <Style Selector="Button.album-tile:pointerover Border.tile-dim">
+        <Setter Property="Opacity" Value="0.3" />
+    </Style>
+    <Style Selector="Button.tile-play, Button.tile-more">
+        <Setter Property="Width" Value="32" />
+        <Setter Property="Height" Value="32" />
+        <Setter Property="CornerRadius" Value="16" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="HorizontalContentAlignment" Value="Center" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Background" Value="#B3232325" />
+        <Setter Property="VerticalAlignment" Value="Bottom" />
+        <Setter Property="Margin" Value="8" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="Opacity" Value="0" />
+        <Setter Property="Transitions">
+            <Transitions>
+                <DoubleTransition Property="Opacity" Duration="0:0:0.12" />
+            </Transitions>
+        </Setter>
+    </Style>
+    <Style Selector="Button.tile-play">
+        <Setter Property="HorizontalAlignment" Value="Left" />
+    </Style>
+    <Style Selector="Button.tile-more">
+        <Setter Property="HorizontalAlignment" Value="Right" />
+    </Style>
+    <Style Selector="Button.album-tile:pointerover Button.tile-play, Button.album-tile:pointerover Button.tile-more">
+        <Setter Property="Opacity" Value="1" />
+    </Style>
+    <Style Selector="Button.tile-play:pointerover /template/ ContentPresenter, Button.tile-more:pointerover /template/ ContentPresenter">
+        <Setter Property="Background" Value="#E6303032" />
+    </Style>
+    <Style Selector="Button.tile-play:pressed /template/ ContentPresenter, Button.tile-more:pressed /template/ ContentPresenter">
+        <Setter Property="Background" Value="#E6303032" />
+    </Style>
+    <!-- Glyphs sit in a centred Viewbox: a Path with Stretch lands its scaled geometry
+         at the box's top-left, which read as off-centre in the 32px circles. -->
+    <Style Selector="Button.tile-play Path, Button.tile-more Path">
+        <Setter Property="Fill" Value="White" />
+    </Style>
+
+    <!-- Tile heart (09-13): at the right end of the title line; when the title wraps to
+         a second line (Helpers/TitleWrap sets .wrapped on the tile-text panel) it moves
+         to the subtitle line instead. The title-line slot keeps its width while hidden so
+         the title does not reflow and flip the decision back. -->
+    <Style Selector="StackPanel.tile-text.wrapped Panel.heart-title">
+        <Setter Property="Opacity" Value="0" />
+        <Setter Property="IsHitTestVisible" Value="False" />
+    </Style>
+    <Style Selector="StackPanel.tile-text:not(.wrapped) Panel.heart-sub">
+        <Setter Property="IsVisible" Value="False" />
+    </Style>
+
     <Style Selector="ListBox.track-list Button:pointerover">
         <Setter Property="RenderTransform" Value="scale(1)" />
     </Style>

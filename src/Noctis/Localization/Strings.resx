@@ -688,6 +688,11 @@
   <data name="Home.BackEarsAfterLong" xml:space="preserve"><value>Back in your ears after a long break</value><comment>Text in HomeView.axaml</comment></data>
   <data name="Home.Songs" xml:space="preserve"><value>songs</value><comment>Recently Played rail card: "2017 | 9 songs"</comment></data>
   <data name="Home.OptionsTip" xml:space="preserve"><value>Options</value><comment>Most Listened To row dots button</comment></data>
+  <data name="Home.ContinueListening" xml:space="preserve"><value>Continue listening</value><comment>Home hero kicker above the last played track</comment></data>
+  <data name="Home.Resume" xml:space="preserve"><value>Resume</value><comment>Home hero primary button</comment></data>
+  <data name="Home.Pause" xml:space="preserve"><value>Pause</value><comment>Home hero primary button while its track is playing</comment></data>
+  <data name="Home.PlayAlbum" xml:space="preserve"><value>Play album</value><comment>Home hero secondary button</comment></data>
+  <data name="Home.TimeLeft" xml:space="preserve"><value>{0} left</value><comment>Home hero: remaining time of the last played track, e.g. "1:06 left"</comment></data>
 
   <!-- LibraryAlbumsView.axaml (auto-migrated) -->
   <data name="LibraryAlbums.Text" xml:space="preserve"><value>&#x266A;</value><comment>Text in LibraryAlbumsView.axaml</comment></data>
@@ -794,6 +799,8 @@
   <data name="LyricShare.SaveVideo" xml:space="preserve"><value>Save Video</value><comment>Content in LyricShareDialog.axaml</comment></data>
   <data name="LyricShare.SaveMP4ClipLyricTip" xml:space="preserve"><value>Save an MP4 clip — this lyric card with the song audio</value><comment>ToolTip.Tip in LyricShareDialog.axaml</comment></data>
   <data name="LyricShare.SaveCard" xml:space="preserve"><value>Save Card</value><comment>Content in LyricShareDialog.axaml</comment></data>
+  <data name="LyricShare.Copy" xml:space="preserve"><value>Copy</value><comment>Content in LyricShareDialog.axaml</comment></data>
+  <data name="LyricShare.CopyImageTip" xml:space="preserve"><value>Copy the card image to the clipboard</value><comment>ToolTip in LyricShareDialog.axaml</comment></data>
 
   <!-- LyricsPanelView.axaml (auto-migrated) -->
   <data name="LyricsPanel.NoLyricsTrack" xml:space="preserve"><value>No lyrics for this track</value><comment>Text in LyricsPanelView.axaml</comment></data>
@@ -878,6 +885,10 @@
   <data name="Main.LibraryTip" xml:space="preserve"><value>Library</value><comment>ToolTip.Tip in MainWindow.axaml</comment></data>
   <data name="Main.CoverFlowTip" xml:space="preserve"><value>Cover Flow</value><comment>ToolTip.Tip in MainWindow.axaml</comment></data>
   <data name="Main.CoverFlowLayoutTip" xml:space="preserve"><value>Cover Flow layout</value><comment>ToolTip.Tip in MainWindow.axaml</comment></data>
+  <data name="Main.FilterTip" xml:space="preserve"><value>Filter</value><comment>Top-right corner filter icon tooltip prefix</comment></data>
+  <data name="Main.SwitchToCoverFlow" xml:space="preserve"><value>Switch to Cover Flow</value><comment>Top-right view-mode icon tooltip</comment></data>
+  <data name="Main.SwitchToLibrary" xml:space="preserve"><value>Switch to Library</value><comment>Top-right view-mode icon tooltip</comment></data>
+  <data name="Main.Layout" xml:space="preserve"><value>Layout:</value><comment>Cover Flow layout icon tooltip prefix</comment></data>
   <data name="Main.Carousel" xml:space="preserve"><value>Carousel</value><comment>Header in MainWindow.axaml</comment></data>
   <data name="Main.Cascade" xml:space="preserve"><value>Cascade</value><comment>Header in MainWindow.axaml</comment></data>
   <data name="Main.Collage" xml:space="preserve"><value>Collage</value><comment>Header in MainWindow.axaml</comment></data>

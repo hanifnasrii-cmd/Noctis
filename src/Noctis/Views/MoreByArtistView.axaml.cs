@@ -54,4 +54,11 @@ public partial class MoreByArtistView : UserControl
         // Single-album right-click on this page; clear any stale ctrl-selection on the shared VM
         albumsVm.CtrlSelectedAlbums = new List<Album>();
     }
+
+    /// <summary>Tile hover dots: the same menu a right-click on the tile opens.</summary>
+    private void OnTileMoreClick(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        Helpers.AlbumTile.OpenMenu(sender);
+        e.Handled = true;
+    }
 }

@@ -85,7 +85,7 @@ internal sealed class FakeLibraryService : ILibraryService
     public Task PauseActiveScanForShutdownAsync(TimeSpan timeout) => Task.CompletedTask;
     public Task ImportFilesAsync(IEnumerable<string> filePaths, CancellationToken ct = default, IProgress<int>? progress = null) => Task.CompletedTask;
     public Track? GetTrackById(Guid id) => TrackList.FirstOrDefault(t => t.Id == id);
-    public Album? GetAlbumById(Guid id) => null;
+    public Album? GetAlbumById(Guid id) => Albums.FirstOrDefault(a => a.Id == id);
     public IReadOnlyList<Album> GetAlbumsByArtist(string artistName) => Array.Empty<Album>();
     public Task RemoveTrackAsync(Guid id) => Task.CompletedTask;
     public Task RemoveTracksAsync(IEnumerable<Guid> ids) => Task.CompletedTask;

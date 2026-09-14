@@ -424,6 +424,24 @@ public partial class FavoritesViewModel : ViewModelBase, ISearchable, IDisposabl
         else PlayTrack(item.Track!);
     }
 
+    /// <summary>Tile hover button: Pause/resume when the item is the loaded one, else play it.</summary>
+    [RelayCommand]
+    private void TogglePlayItem(FavoriteItem item)
+    {
+        if (item == null) return;
+        if (item.IsAlbum)
+        {
+            var album = item.Album!;
+            if (album.IsCurrent) { _player.PlayPauseCommand.Execute(null); return; }
+            var ordered = Helpers.AlbumTile.OrderedTracks(album);
+            if (ordered.Count == 0) return;
+            _player.ReplaceQueueAndPlay(ordered, 0);
+            return;
+        }
+        if (item.Track!.IsNowPlaying) _player.PlayPauseCommand.Execute(null);
+        else PlayTrack(item.Track!);
+    }
+
     [RelayCommand]
     private void ShuffleItem(FavoriteItem item)
     {

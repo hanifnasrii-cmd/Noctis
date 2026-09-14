@@ -158,6 +158,10 @@ public partial class Track : ObservableObject
     [property: System.Text.Json.Serialization.JsonIgnore]
     private bool _isNowPlaying;
 
+    /// <summary>Loaded AND audibly playing (IsNowPlaying alone means loaded). Album/single
+    /// tiles show Pause on it and Play otherwise; PlayerViewModel keeps it in sync.</summary>
+    [ObservableProperty] private bool _isCurrentlyPlaying;
+
     /// <summary>Transient 1-based position within the list view currently displaying this track
     /// (set by the Folders pane). Drives the leading row-number column. Not persisted.</summary>
     [ObservableProperty]

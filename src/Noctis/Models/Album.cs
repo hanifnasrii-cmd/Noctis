@@ -62,6 +62,15 @@ public class Album : ObservableObject
     /// <summary>Tracks in this album, ordered by disc then track number.</summary>
     public List<Track> Tracks { get; set; } = new();
 
+    private bool _isCurrent;
+    private bool _isNowPlaying;
+
+    /// <summary>The player's loaded track belongs to this album (PlayerViewModel keeps it in sync).</summary>
+    public bool IsCurrent { get => _isCurrent; set => SetProperty(ref _isCurrent, value); }
+
+    /// <summary>IsCurrent and the player is playing: the tile's hover button shows Pause.</summary>
+    public bool IsNowPlaying { get => _isNowPlaying; set => SetProperty(ref _isNowPlaying, value); }
+
     /// <summary>Whether all tracks in this album are marked as favorites.</summary>
     public bool IsAllTracksFavorite => Tracks?.Count > 0 && Tracks.All(t => t.IsFavorite);
 

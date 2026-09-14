@@ -1379,10 +1379,45 @@ public partial class PlayerViewModel : ViewModelBase
     // lists (Folders/Songs) can highlight the current row via a style class.
     partial void OnCurrentTrackChanged(Track? oldValue, Track? newValue)
     {
-        if (oldValue != null) oldValue.IsNowPlaying = false;
+        if (oldValue != null)
+        {
+            oldValue.IsNowPlaying = false;
+            oldValue.IsCurrentlyPlaying = false;
+        }
         if (newValue != null) newValue.IsNowPlaying = true;
+        SyncNowPlayingFlags();
         DebugLogger.Info(DebugLogger.Category.Playback, "CurrentTrack.Changed",
             $"old={oldValue?.Title ?? "<null>"} new={newValue?.Title ?? "<null>"}");
+    }
+
+    partial void OnStateChanged(PlaybackState value) => SyncNowPlayingFlags();
+
+    private Album? _flaggedAlbum;
+
+    /// <summary>
+    /// Album/single tiles (Albums grid, Home, Favorites, Artist page) show Pause on the
+    /// item that is audibly playing and Play otherwise. The flags live on the shared
+    /// model instances: Track.IsCurrentlyPlaying and the loaded track's Album
+    /// (IsCurrent = loaded, IsNowPlaying = loaded and playing).
+    /// </summary>
+    private void SyncNowPlayingFlags()
+    {
+        var current = CurrentTrack;
+        var playing = State == PlaybackState.Playing;
+        if (current != null) current.IsCurrentlyPlaying = playing;
+
+        var album = current != null && current.AlbumId != Guid.Empty ? _library.GetAlbumById(current.AlbumId) : null;
+        if (_flaggedAlbum != null && !ReferenceEquals(_flaggedAlbum, album))
+        {
+            _flaggedAlbum.IsCurrent = false;
+            _flaggedAlbum.IsNowPlaying = false;
+        }
+        if (album != null)
+        {
+            album.IsCurrent = true;
+            album.IsNowPlaying = playing;
+        }
+        _flaggedAlbum = album;
     }
 
     /// <summary>

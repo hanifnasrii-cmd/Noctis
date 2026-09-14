@@ -18,7 +18,7 @@ public partial class HomeView : UserControl
 
     private readonly HashSet<Button> _selectedTiles = new();
 
-    /// <summary>Below this width the Recently Played rail drops under the left column.</summary>
+    /// <summary>Below this width Last Played drops under Most Played.</summary>
     private const double HeroTwoColumnMinWidth = 1100;
     private bool _heroNarrow;
 
@@ -32,8 +32,8 @@ public partial class HomeView : UserControl
     }
 
     /// <summary>
-    /// Two columns (left stack + 360px rail) when there is room; one column with the
-    /// rail underneath otherwise. Only touches the grid when the mode actually flips.
+    /// Two equal columns (Most Played | Last Played) when there is room; one column with
+    /// Last Played underneath otherwise. Only touches the grid when the mode actually flips.
     /// </summary>
     private void UpdateHeroLayout(double width)
     {
@@ -45,19 +45,28 @@ public partial class HomeView : UserControl
         {
             HeroGrid.ColumnDefinitions[1].Width = new GridLength(0);
             HeroGrid.ColumnDefinitions[2].Width = new GridLength(0);
-            Grid.SetColumn(RecentRail, 0);
-            Grid.SetRow(RecentRail, 2);
-            RecentRail.Margin = new Thickness(0, 32, 0, 0);
+            Grid.SetColumn(LastPlayedPanel, 0);
+            Grid.SetRow(LastPlayedPanel, 2);
+            LastPlayedPanel.Margin = new Thickness(0, 32, 0, 0);
         }
         else
         {
             HeroGrid.ColumnDefinitions[1].Width = new GridLength(28);
-            HeroGrid.ColumnDefinitions[2].Width = new GridLength(360);
-            Grid.SetColumn(RecentRail, 2);
-            Grid.SetRow(RecentRail, 1);
-            RecentRail.Margin = default;
+            HeroGrid.ColumnDefinitions[2].Width = new GridLength(1, GridUnitType.Star);
+            Grid.SetColumn(LastPlayedPanel, 2);
+            Grid.SetRow(LastPlayedPanel, 1);
+            LastPlayedPanel.Margin = default;
         }
     }
+
+    /// <summary>
+    /// Albums row covers follow the Albums-page tile size for the row's own width. The
+    /// row measures itself rather than the page: the page width minus margins ignored the
+    /// scroll viewer's bar, so five tiles came out a few pixels too wide and the fifth
+    /// wrapped (09-13). The 2px slack absorbs layout rounding.
+    /// </summary>
+    private void OnAlbumsRowSizeChanged(object? sender, SizeChangedEventArgs e)
+        => (DataContext as HomeViewModel)?.UpdateAlbumTileSize(e.NewSize.Width - 2);
 
     private void OnTilePointerPressed(object? sender, PointerPressedEventArgs e)
     {
@@ -109,18 +118,6 @@ public partial class HomeView : UserControl
             OpenTrackMenu(sender, e, static vm => vm.PlayTopSongCommand, static vm => vm.ShuffleTopSongsCommand);
     }
 
-    /// <summary>The chart row's dots button: same menu as a right-click on the row.</summary>
-    private void OnChartRowDotsClick(object? sender, RoutedEventArgs e)
-    {
-        var owner = sender as Control;
-        var opened = IsLastPlayedRow(owner)
-            ? OpenTrackMenu(owner, static vm => vm.PlayLastPlayedCommand, static vm => vm.ShuffleLastPlayedCommand)
-            : OpenTrackMenu(owner, static vm => vm.PlayTopSongCommand, static vm => vm.ShuffleTopSongsCommand);
-        if (opened) e.Handled = true;
-    }
-
-    private void OnRecentRailTrackContextRequested(object? sender, ContextRequestedEventArgs e)
-        => OpenTrackMenu(sender, e, static vm => vm.PlayRecentRailTrackCommand, static vm => vm.ShuffleRecentRailCommand);
 
     private void OnTimeRotationContextRequested(object? sender, ContextRequestedEventArgs e)
         => OpenTrackMenu(sender, e, static vm => vm.PlayTimeRotationCommand, static vm => vm.ShuffleTimeRotationCommand);
@@ -291,5 +288,12 @@ public partial class HomeView : UserControl
 
             LayoutUpdated += _pendingScrollRestore;
         }
+    }
+
+    /// <summary>Tile hover dots: the same menu a right-click on the tile opens.</summary>
+    private void OnTileMoreClick(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        Helpers.AlbumTile.OpenMenu(sender);
+        e.Handled = true;
     }
 }

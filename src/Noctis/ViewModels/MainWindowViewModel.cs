@@ -386,6 +386,8 @@ public partial class MainWindowViewModel : ViewModelBase
         {
             if (e.PropertyName == nameof(LibraryPlaylistsViewModel.SortLabel))
                 TopBar.PlaylistSortLabel = _playlistsVm.SortLabel;
+            else if (e.PropertyName == nameof(LibraryPlaylistsViewModel.SortMode))
+                TopBar.PlaylistSortMode = _playlistsVm.SortMode;
         };
 
         _foldersVm = new LibraryFoldersViewModel(library, Player, persistence, Sidebar);

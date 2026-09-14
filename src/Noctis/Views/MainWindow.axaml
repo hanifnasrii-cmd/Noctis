@@ -51,6 +51,56 @@
             <Setter Property="Background" Value="{DynamicResource ChipHoverBackground}"/>
             <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
         </Style>
+
+        <!-- Top-right corner (09-13): round 34px icon buttons for filter / sort / view
+             options / view mode, an accent dot on one that is away from its default, and
+             the section's one primary action as a red pill with its word. -->
+        <Style Selector="Button.corner-icon">
+            <Setter Property="Width" Value="34"/>
+            <Setter Property="Height" Value="34"/>
+            <Setter Property="CornerRadius" Value="17"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Background" Value="{DynamicResource ChipBackground}"/>
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style Selector="Button.corner-icon > PathIcon">
+            <Setter Property="Width" Value="15"/>
+            <Setter Property="Height" Value="15"/>
+            <Setter Property="Opacity" Value="0.85"/>
+        </Style>
+        <Style Selector="Button.corner-icon:pointerover > PathIcon">
+            <Setter Property="Opacity" Value="1"/>
+        </Style>
+        <Style Selector="Button.corner-icon:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource ChipHoverBackground}"/>
+        </Style>
+        <Style Selector="Button.corner-icon:pressed /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource ChipHoverBackground}"/>
+        </Style>
+        <Style Selector="Border.corner-dot">
+            <Setter Property="Width" Value="9"/>
+            <Setter Property="Height" Value="9"/>
+            <Setter Property="CornerRadius" Value="4.5"/>
+            <Setter Property="Background" Value="{DynamicResource AccentColorBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource AppMainBackground}"/>
+            <Setter Property="BorderThickness" Value="1.5"/>
+            <Setter Property="HorizontalAlignment" Value="Right"/>
+            <Setter Property="VerticalAlignment" Value="Top"/>
+            <Setter Property="Margin" Value="0,-1,-1,0"/>
+            <Setter Property="IsHitTestVisible" Value="False"/>
+        </Style>
+        <Style Selector="Button.corner-primary">
+            <Setter Property="Padding" Value="14,7"/>
+            <Setter Property="CornerRadius" Value="999"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
     </Window.Styles>
 
 
@@ -115,7 +165,14 @@
                     </views:TopBarView.IsVisible>
                 </views:TopBarView>
 
-                <!-- Right: TopBar action buttons, view toggle, search -->
+                <!-- Right: the page's corner controls. One rule for every section (09-13
+                     "icons + popovers" design): filter / sort / view options are round icon
+                     buttons whose popovers hold the same items the labelled pills used to,
+                     an accent dot on an icon means the control is away from its default,
+                     the section's single primary action keeps its words as a red pill, and
+                     the Library / Cover Flow segment is one icon showing the mode you would
+                     switch TO. Order, left to right: filter · sort · view options · primary
+                     · view mode. Corner width is now the same band on every section. -->
                 <StackPanel Grid.Column="1"
                             x:DataType="vm:TopBarViewModel"
                             DataContext="{Binding TopBar}"
@@ -124,60 +181,45 @@
                             VerticalAlignment="Center"
                             Margin="0,0,12,0"
                             IsVisible="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).IsLyricsViewActive, Converter={x:Static BoolConverters.Not}, FallbackValue=True}">
-                    <StackPanel.Styles>
-                        <Style Selector="Button.release-chip">
-                            <Setter Property="Background" Value="{DynamicResource ChipBackground}"/>
-                            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
-                            <Setter Property="CornerRadius" Value="999"/>
-                            <Setter Property="Padding" Value="14,6"/>
-                            <Setter Property="FontSize" Value="12"/>
-                            <Setter Property="FontWeight" Value="SemiBold"/>
-                            <Setter Property="BorderThickness" Value="0"/>
-                            <Setter Property="Cursor" Value="Hand"/>
-                        </Style>
-                        <Style Selector="Button.release-chip:pointerover /template/ ContentPresenter">
-                            <Setter Property="Background" Value="{DynamicResource ChipHoverBackground}"/>
-                        </Style>
-                    </StackPanel.Styles>
 
-                    <!-- Artist discography: Type dropdown (right-aligned, mirrors the Albums grid) -->
-                    <Button Classes="release-chip" VerticalAlignment="Center"
-                            ToolTip.Tip="{loc:T Main.FilterByReleaseTypeTip}">
-                        <Button.IsVisible>
+                    <!-- Artist discography: release-type filter (the grid's own Type dropdown
+                         lives on the Albums section below, gated on the page title). -->
+                    <Panel VerticalAlignment="Center">
+                        <Panel.IsVisible>
                             <MultiBinding Converter="{x:Static BoolConverters.And}">
                                 <Binding Path="HasReleaseTypeChips"/>
                                 <Binding Path="!IsPageTitleVisible"/>
                             </MultiBinding>
-                        </Button.IsVisible>
-                        <StackPanel Orientation="Horizontal" Spacing="6">
-                            <TextBlock Text="{loc:T Main.Type}" Opacity="0.6" FontSize="12" VerticalAlignment="Center"/>
-                            <TextBlock Text="{Binding ReleaseTypeFilterLabel}" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                            <PathIcon Data="{StaticResource ChevronRightIcon}" Width="9" Height="9"
-                                      RenderTransform="rotate(90deg)" Opacity="0.6" VerticalAlignment="Center"/>
-                        </StackPanel>
-                        <Button.Flyout>
-                            <MenuFlyout Placement="BottomEdgeAlignedRight">
-                                <MenuItem Header="{loc:T Main.All}"
-                                          Command="{Binding ReleaseTypeFilterCommand}"
-                                          CommandParameter="all"/>
-                                <MenuItem Header="{loc:T Main.Albums}"
-                                          Command="{Binding ReleaseTypeFilterCommand}"
-                                          CommandParameter="album"/>
-                                <MenuItem Header="{loc:T Main.Singles}"
-                                          Command="{Binding ReleaseTypeFilterCommand}"
-                                          CommandParameter="single"/>
-                                <MenuItem Header="{loc:T Main.EPs}"
-                                          Command="{Binding ReleaseTypeFilterCommand}"
-                                          CommandParameter="ep"/>
-                                <MenuItem Header="{loc:T Main.Other}"
-                                          Command="{Binding ReleaseTypeFilterCommand}"
-                                          CommandParameter="other"/>
-                            </MenuFlyout>
-                        </Button.Flyout>
-                    </Button>
+                        </Panel.IsVisible>
+                        <Button Classes="corner-icon">
+                            <ToolTip.Tip>
+                                <TextBlock><Run Text="{loc:T Main.Type}"/><Run Text=" "/><Run Text="{Binding ReleaseTypeFilterLabel}"/></TextBlock>
+                            </ToolTip.Tip>
+                            <PathIcon Data="{StaticResource FilterIcon}"/>
+                            <Button.Flyout>
+                                <MenuFlyout Placement="BottomEdgeAlignedRight">
+                                    <MenuItem Header="{loc:T Main.All}" Command="{Binding ReleaseTypeFilterCommand}" CommandParameter="all">
+                                        <MenuItem.Icon><PathIcon Data="{StaticResource CheckmarkIcon}" Width="14" Height="14" IsVisible="{Binding ReleaseTypeFilterLabel, Converter={StaticResource StringEquals}, ConverterParameter=All}"/></MenuItem.Icon>
+                                    </MenuItem>
+                                    <MenuItem Header="{loc:T Main.Albums}" Command="{Binding ReleaseTypeFilterCommand}" CommandParameter="album">
+                                        <MenuItem.Icon><PathIcon Data="{StaticResource CheckmarkIcon}" Width="14" Height="14" IsVisible="{Binding ReleaseTypeFilterLabel, Converter={StaticResource StringEquals}, ConverterParameter=Albums}"/></MenuItem.Icon>
+                                    </MenuItem>
+                                    <MenuItem Header="{loc:T Main.Singles}" Command="{Binding ReleaseTypeFilterCommand}" CommandParameter="single">
+                                        <MenuItem.Icon><PathIcon Data="{StaticResource CheckmarkIcon}" Width="14" Height="14" IsVisible="{Binding ReleaseTypeFilterLabel, Converter={StaticResource StringEquals}, ConverterParameter=Singles}"/></MenuItem.Icon>
+                                    </MenuItem>
+                                    <MenuItem Header="{loc:T Main.EPs}" Command="{Binding ReleaseTypeFilterCommand}" CommandParameter="ep">
+                                        <MenuItem.Icon><PathIcon Data="{StaticResource CheckmarkIcon}" Width="14" Height="14" IsVisible="{Binding ReleaseTypeFilterLabel, Converter={StaticResource StringEquals}, ConverterParameter=EPs}"/></MenuItem.Icon>
+                                    </MenuItem>
+                                    <MenuItem Header="{loc:T Main.Other}" Command="{Binding ReleaseTypeFilterCommand}" CommandParameter="other">
+                                        <MenuItem.Icon><PathIcon Data="{StaticResource CheckmarkIcon}" Width="14" Height="14" IsVisible="{Binding ReleaseTypeFilterLabel, Converter={StaticResource StringEquals}, ConverterParameter=Other}"/></MenuItem.Icon>
+                                    </MenuItem>
+                                </MenuFlyout>
+                            </Button.Flyout>
+                        </Button>
+                        <Border Classes="corner-dot" IsVisible="{Binding IsReleaseTypeFiltered}"/>
+                    </Panel>
 
-                    <!-- Albums grid: Type / Quality / Sort dropdowns (right-aligned). Hidden on the
-                         artist discography page (back button visible), which shows its own Type chip above. -->
+                    <!-- Albums grid: one filter popover (type + quality) and one sort popover. -->
                     <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
                         <StackPanel.IsVisible>
                             <MultiBinding Converter="{x:Static BoolConverters.And}">
@@ -186,373 +228,244 @@
                             </MultiBinding>
                         </StackPanel.IsVisible>
 
-                        <Button Classes="release-chip" VerticalAlignment="Center"
-                                ToolTip.Tip="{loc:T Main.FilterByReleaseTypeTip}">
-                            <StackPanel Orientation="Horizontal" Spacing="6">
-                                <TextBlock Text="{loc:T Main.Type}" Opacity="0.6" FontSize="12" VerticalAlignment="Center"/>
-                                <TextBlock Text="{Binding ReleaseTypeFilterLabel}" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                                <PathIcon Data="{StaticResource ChevronRightIcon}" Width="9" Height="9"
-                                          RenderTransform="rotate(90deg)" Opacity="0.6" VerticalAlignment="Center"/>
-                            </StackPanel>
-                            <Button.Flyout>
-                                <MenuFlyout Placement="BottomEdgeAlignedRight">
-                                    <MenuItem Header="{loc:T Main.All}"
-                                              Command="{Binding ReleaseTypeFilterCommand}"
-                                              CommandParameter="all"/>
-                                    <MenuItem Header="{loc:T Main.Albums}"
-                                              Command="{Binding ReleaseTypeFilterCommand}"
-                                              CommandParameter="album"/>
-                                    <MenuItem Header="{loc:T Main.Singles}"
-                                              Command="{Binding ReleaseTypeFilterCommand}"
-                                              CommandParameter="single"/>
-                                    <MenuItem Header="{loc:T Main.EPs}"
-                                              Command="{Binding ReleaseTypeFilterCommand}"
-                                              CommandParameter="ep"/>
-                                    <MenuItem Header="{loc:T Main.Other}"
-                                              Command="{Binding ReleaseTypeFilterCommand}"
-                                              CommandParameter="other"/>
-                                </MenuFlyout>
-                            </Button.Flyout>
-                        </Button>
+                        <Panel VerticalAlignment="Center">
+                            <Button Classes="corner-icon">
+                                <ToolTip.Tip>
+                                    <TextBlock><Run Text="{loc:T Main.Type}"/><Run Text=" "/><Run Text="{Binding ReleaseTypeFilterLabel}"/><Run Text=" · "/><Run Text="{Binding QualityFilterLabel}"/></TextBlock>
+                                </ToolTip.Tip>
+                                <PathIcon Data="{StaticResource FilterIcon}"/>
+                                <Button.Flyout>
+                                    <MenuFlyout Placement="BottomEdgeAlignedRight">
+                                        <MenuItem Header="{loc:T Main.All}" Command="{Binding ReleaseTypeFilterCommand}" CommandParameter="all">
+                                            <MenuItem.Icon><PathIcon Data="{StaticResource CheckmarkIcon}" Width="14" Height="14" IsVisible="{Binding ReleaseTypeFilterLabel, Converter={StaticResource StringEquals}, ConverterParameter=All}"/></MenuItem.Icon>
+                                        </MenuItem>
+                                        <MenuItem Header="{loc:T Main.Albums}" Command="{Binding ReleaseTypeFilterCommand}" CommandParameter="album">
+                                            <MenuItem.Icon><PathIcon Data="{StaticResource CheckmarkIcon}" Width="14" Height="14" IsVisible="{Binding ReleaseTypeFilterLabel, Converter={StaticResource StringEquals}, ConverterParameter=Albums}"/></MenuItem.Icon>
+                                        </MenuItem>
+                                        <MenuItem Header="{loc:T Main.Singles}" Command="{Binding ReleaseTypeFilterCommand}" CommandParameter="single">
+                                            <MenuItem.Icon><PathIcon Data="{StaticResource CheckmarkIcon}" Width="14" Height="14" IsVisible="{Binding ReleaseTypeFilterLabel, Converter={StaticResource StringEquals}, ConverterParameter=Singles}"/></MenuItem.Icon>
+                                        </MenuItem>
+                                        <MenuItem Header="{loc:T Main.EPs}" Command="{Binding ReleaseTypeFilterCommand}" CommandParameter="ep">
+                                            <MenuItem.Icon><PathIcon Data="{StaticResource CheckmarkIcon}" Width="14" Height="14" IsVisible="{Binding ReleaseTypeFilterLabel, Converter={StaticResource StringEquals}, ConverterParameter=EPs}"/></MenuItem.Icon>
+                                        </MenuItem>
+                                        <MenuItem Header="{loc:T Main.Other}" Command="{Binding ReleaseTypeFilterCommand}" CommandParameter="other">
+                                            <MenuItem.Icon><PathIcon Data="{StaticResource CheckmarkIcon}" Width="14" Height="14" IsVisible="{Binding ReleaseTypeFilterLabel, Converter={StaticResource StringEquals}, ConverterParameter=Other}"/></MenuItem.Icon>
+                                        </MenuItem>
+                                        <Separator/>
+                                        <MenuItem Header="{loc:T Main.All}" Command="{Binding QualityFilterCommand}" CommandParameter="all">
+                                            <MenuItem.Icon><PathIcon Data="{StaticResource CheckmarkIcon}" Width="14" Height="14" IsVisible="{Binding AlbumQualityAll}"/></MenuItem.Icon>
+                                        </MenuItem>
+                                        <MenuItem Header="{loc:T Main.Lossless}" Command="{Binding QualityFilterCommand}" CommandParameter="lossless">
+                                            <MenuItem.Icon><PathIcon Data="{StaticResource CheckmarkIcon}" Width="14" Height="14" IsVisible="{Binding AlbumQualityLossless}"/></MenuItem.Icon>
+                                        </MenuItem>
+                                        <MenuItem Header="{loc:T Main.HiRes}" Command="{Binding QualityFilterCommand}" CommandParameter="hires">
+                                            <MenuItem.Icon><PathIcon Data="{StaticResource CheckmarkIcon}" Width="14" Height="14" IsVisible="{Binding AlbumQualityHiRes}"/></MenuItem.Icon>
+                                        </MenuItem>
+                                    </MenuFlyout>
+                                </Button.Flyout>
+                            </Button>
+                            <Border Classes="corner-dot" IsVisible="{Binding IsAlbumFilterActive}"/>
+                        </Panel>
 
-                        <!-- Quality: the same All / Lossless / Hi-Res segmented pill the Songs page
-                             uses, so both grids filter quality the same way. -->
-                        <Border Background="{DynamicResource ChipBackground}"
-                                CornerRadius="999" Padding="3"
-                                VerticalAlignment="Center"
-                                ToolTip.Tip="{loc:T Main.FilterByAudioQualityTip}">
-                            <Border.Styles>
-                                <Style Selector="Button.quality-chip">
-                                    <Setter Property="Opacity" Value="0.55"/>
-                                </Style>
-                                <Style Selector="Button.quality-chip.on">
-                                    <Setter Property="Opacity" Value="1"/>
-                                    <Setter Property="Background" Value="#30FFFFFF"/>
-                                </Style>
-                            </Border.Styles>
-                            <StackPanel Orientation="Horizontal" Spacing="2">
-                                <Button Classes="ghost-btn quality-chip" Classes.on="{Binding AlbumQualityAll}"
-                                        Padding="10,6" CornerRadius="999" Cursor="Hand"
-                                        Content="{loc:T Main.All}" FontSize="12" FontWeight="SemiBold"
-                                        VerticalAlignment="Center"
-                                        Command="{Binding QualityFilterCommand}" CommandParameter="all" />
-                                <Button Classes="ghost-btn quality-chip" Classes.on="{Binding AlbumQualityLossless}"
-                                        Padding="10,6" CornerRadius="999" Cursor="Hand"
-                                        Content="{loc:T Main.Lossless}" FontSize="12" FontWeight="SemiBold"
-                                        VerticalAlignment="Center"
-                                        Command="{Binding QualityFilterCommand}" CommandParameter="lossless" />
-                                <Button Classes="ghost-btn quality-chip" Classes.on="{Binding AlbumQualityHiRes}"
-                                        Padding="10,6" CornerRadius="999" Cursor="Hand"
-                                        Content="{loc:T Main.HiRes}" FontSize="12" FontWeight="SemiBold"
-                                        VerticalAlignment="Center"
-                                        Command="{Binding QualityFilterCommand}" CommandParameter="hires" />
-                            </StackPanel>
-                        </Border>
-
-                        <Button Classes="release-chip" VerticalAlignment="Center"
-                                ToolTip.Tip="{loc:T Main.SortAlbumsTip}">
-                            <StackPanel Orientation="Horizontal" Spacing="6">
-                                <TextBlock Text="{loc:T Main.Sort}" Opacity="0.6" FontSize="12" VerticalAlignment="Center"/>
-                                <TextBlock Text="{Binding AlbumSortLabel}" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                                <PathIcon Data="{StaticResource ChevronRightIcon}" Width="9" Height="9"
-                                          RenderTransform="rotate(90deg)" Opacity="0.6" VerticalAlignment="Center"/>
-                            </StackPanel>
-                            <Button.Flyout>
-                                <MenuFlyout Placement="BottomEdgeAlignedRight">
-                                    <MenuItem Header="{loc:T Main.Default}"
-                                              Command="{Binding AlbumSortCommand}"
-                                              CommandParameter="default">
-                                        <MenuItem.Icon>
-                                            <PathIcon Data="{StaticResource CheckmarkIcon}" Width="14" Height="14"
-                                                     IsVisible="{Binding AlbumSortMode, Converter={StaticResource StringEquals}, ConverterParameter=default}" />
-                                        </MenuItem.Icon>
-                                    </MenuItem>
-                                    <MenuItem Header="{loc:T Main.TitleZ}"
-                                              Command="{Binding AlbumSortCommand}"
-                                              CommandParameter="title">
-                                        <MenuItem.Icon>
-                                            <PathIcon Data="{StaticResource CheckmarkIcon}" Width="14" Height="14"
-                                                     IsVisible="{Binding AlbumSortMode, Converter={StaticResource StringEquals}, ConverterParameter=title}" />
-                                        </MenuItem.Icon>
-                                    </MenuItem>
-                                    <MenuItem Header="{loc:T Main.AlbumArtist}"
-                                              Command="{Binding AlbumSortCommand}"
-                                              CommandParameter="albumartist">
-                                        <MenuItem.Icon>
-                                            <PathIcon Data="{StaticResource CheckmarkIcon}" Width="14" Height="14"
-                                                     IsVisible="{Binding AlbumSortMode, Converter={StaticResource StringEquals}, ConverterParameter=albumartist}" />
-                                        </MenuItem.Icon>
-                                    </MenuItem>
-                                    <MenuItem Header="{loc:T Main.Year}"
-                                              Command="{Binding AlbumSortCommand}"
-                                              CommandParameter="year">
-                                        <MenuItem.Icon>
-                                            <PathIcon Data="{StaticResource CheckmarkIcon}" Width="14" Height="14"
-                                                     IsVisible="{Binding AlbumSortMode, Converter={StaticResource StringEquals}, ConverterParameter=year}" />
-                                        </MenuItem.Icon>
-                                    </MenuItem>
-                                    <MenuItem Header="{loc:T Main.RecentlyAdded}"
-                                              Command="{Binding AlbumSortCommand}"
-                                              CommandParameter="dateadded">
-                                        <MenuItem.Icon>
-                                            <PathIcon Data="{StaticResource CheckmarkIcon}" Width="14" Height="14"
-                                                     IsVisible="{Binding AlbumSortMode, Converter={StaticResource StringEquals}, ConverterParameter=dateadded}" />
-                                        </MenuItem.Icon>
-                                    </MenuItem>
-                                    <MenuItem Header="{loc:T Main.MostPlayed}"
-                                              Command="{Binding AlbumSortCommand}"
-                                              CommandParameter="mostplayed">
-                                        <MenuItem.Icon>
-                                            <PathIcon Data="{StaticResource CheckmarkIcon}" Width="14" Height="14"
-                                                     IsVisible="{Binding AlbumSortMode, Converter={StaticResource StringEquals}, ConverterParameter=mostplayed}" />
-                                        </MenuItem.Icon>
-                                    </MenuItem>
-                                    <!-- Re-picking Random deals a new shuffle (issue #45). -->
-                                    <MenuItem Header="{loc:T Main.Random}"
-                                              Command="{Binding AlbumSortCommand}"
-                                              CommandParameter="random">
-                                        <MenuItem.Icon>
-                                            <PathIcon Data="{StaticResource CheckmarkIcon}" Width="14" Height="14"
-                                                     IsVisible="{Binding AlbumSortMode, Converter={StaticResource StringEquals}, ConverterParameter=random}" />
-                                        </MenuItem.Icon>
-                                    </MenuItem>
-                                    <Separator />
-                                    <!-- Direction is meaningless for "Default", which floats
-                                         recent imports rather than ordering by one key. -->
-                                    <MenuItem Header="{loc:T Main.Ascending}"
-                                              Command="{Binding AlbumSortCommand}"
-                                              CommandParameter="ascending"
-                                              IsEnabled="{Binding AlbumSortDirectionEnabled}">
-                                        <MenuItem.Icon>
-                                            <PathIcon Data="{StaticResource CheckmarkIcon}" Width="14" Height="14"
-                                                     IsVisible="{Binding AlbumSortAscending}" />
-                                        </MenuItem.Icon>
-                                    </MenuItem>
-                                    <MenuItem Header="{loc:T Main.Descending}"
-                                              Command="{Binding AlbumSortCommand}"
-                                              CommandParameter="descending"
-                                              IsEnabled="{Binding AlbumSortDirectionEnabled}">
-                                        <MenuItem.Icon>
-                                            <PathIcon Data="{StaticResource CheckmarkIcon}" Width="14" Height="14"
-                                                     IsVisible="{Binding AlbumSortDescending}" />
-                                        </MenuItem.Icon>
-                                    </MenuItem>
-                                </MenuFlyout>
-                            </Button.Flyout>
-                        </Button>
+                        <Panel VerticalAlignment="Center">
+                            <Button Classes="corner-icon">
+                                <ToolTip.Tip>
+                                    <TextBlock><Run Text="{loc:T Main.Sort}"/><Run Text=" "/><Run Text="{Binding AlbumSortLabel}"/></TextBlock>
+                                </ToolTip.Tip>
+                                <PathIcon Data="{StaticResource SortIcon}"/>
+                                <Button.Flyout>
+                                    <MenuFlyout Placement="BottomEdgeAlignedRight">
+                                        <MenuItem Header="{loc:T Main.Default}" Command="{Binding AlbumSortCommand}" CommandParameter="default">
+                                            <MenuItem.Icon><PathIcon Data="{StaticResource CheckmarkIcon}" Width="14" Height="14" IsVisible="{Binding AlbumSortMode, Converter={StaticResource StringEquals}, ConverterParameter=default}"/></MenuItem.Icon>
+                                        </MenuItem>
+                                        <MenuItem Header="{loc:T Main.TitleZ}" Command="{Binding AlbumSortCommand}" CommandParameter="title">
+                                            <MenuItem.Icon><PathIcon Data="{StaticResource CheckmarkIcon}" Width="14" Height="14" IsVisible="{Binding AlbumSortMode, Converter={StaticResource StringEquals}, ConverterParameter=title}"/></MenuItem.Icon>
+                                        </MenuItem>
+                                        <MenuItem Header="{loc:T Main.AlbumArtist}" Command="{Binding AlbumSortCommand}" CommandParameter="albumartist">
+                                            <MenuItem.Icon><PathIcon Data="{StaticResource CheckmarkIcon}" Width="14" Height="14" IsVisible="{Binding AlbumSortMode, Converter={StaticResource StringEquals}, ConverterParameter=albumartist}"/></MenuItem.Icon>
+                                        </MenuItem>
+                                        <MenuItem Header="{loc:T Main.Year}" Command="{Binding AlbumSortCommand}" CommandParameter="year">
+                                            <MenuItem.Icon><PathIcon Data="{StaticResource CheckmarkIcon}" Width="14" Height="14" IsVisible="{Binding AlbumSortMode, Converter={StaticResource StringEquals}, ConverterParameter=year}"/></MenuItem.Icon>
+                                        </MenuItem>
+                                        <MenuItem Header="{loc:T Main.RecentlyAdded}" Command="{Binding AlbumSortCommand}" CommandParameter="dateadded">
+                                            <MenuItem.Icon><PathIcon Data="{StaticResource CheckmarkIcon}" Width="14" Height="14" IsVisible="{Binding AlbumSortMode, Converter={StaticResource StringEquals}, ConverterParameter=dateadded}"/></MenuItem.Icon>
+                                        </MenuItem>
+                                        <MenuItem Header="{loc:T Main.MostPlayed}" Command="{Binding AlbumSortCommand}" CommandParameter="mostplayed">
+                                            <MenuItem.Icon><PathIcon Data="{StaticResource CheckmarkIcon}" Width="14" Height="14" IsVisible="{Binding AlbumSortMode, Converter={StaticResource StringEquals}, ConverterParameter=mostplayed}"/></MenuItem.Icon>
+                                        </MenuItem>
+                                        <!-- Re-picking Random deals a new shuffle (issue #45). -->
+                                        <MenuItem Header="{loc:T Main.Random}" Command="{Binding AlbumSortCommand}" CommandParameter="random">
+                                            <MenuItem.Icon><PathIcon Data="{StaticResource CheckmarkIcon}" Width="14" Height="14" IsVisible="{Binding AlbumSortMode, Converter={StaticResource StringEquals}, ConverterParameter=random}"/></MenuItem.Icon>
+                                        </MenuItem>
+                                        <Separator />
+                                        <!-- Direction is meaningless for "Default", which floats
+                                             recent imports rather than ordering by one key. -->
+                                        <MenuItem Header="{loc:T Main.Ascending}" Command="{Binding AlbumSortCommand}" CommandParameter="ascending" IsEnabled="{Binding AlbumSortDirectionEnabled}">
+                                            <MenuItem.Icon><PathIcon Data="{StaticResource CheckmarkIcon}" Width="14" Height="14" IsVisible="{Binding AlbumSortAscending}"/></MenuItem.Icon>
+                                        </MenuItem>
+                                        <MenuItem Header="{loc:T Main.Descending}" Command="{Binding AlbumSortCommand}" CommandParameter="descending" IsEnabled="{Binding AlbumSortDirectionEnabled}">
+                                            <MenuItem.Icon><PathIcon Data="{StaticResource CheckmarkIcon}" Width="14" Height="14" IsVisible="{Binding AlbumSortDescending}"/></MenuItem.Icon>
+                                        </MenuItem>
+                                    </MenuFlyout>
+                                </Button.Flyout>
+                            </Button>
+                            <Border Classes="corner-dot" IsVisible="{Binding IsAlbumSortActive}"/>
+                        </Panel>
                     </StackPanel>
 
-                    <!-- Songs quality filter chips (All / Lossless / Hi-Res). Hidden in Cover Flow mode. -->
-                    <Border IsVisible="{Binding SongsFiltersVisible}"
-                            Background="{DynamicResource ChipBackground}"
-                            CornerRadius="999" Padding="3"
-                            VerticalAlignment="Center">
-                        <Border.Styles>
-                            <Style Selector="Button.quality-chip">
-                                <Setter Property="Opacity" Value="0.55"/>
-                            </Style>
-                            <Style Selector="Button.quality-chip.on">
-                                <Setter Property="Opacity" Value="1"/>
-                                <Setter Property="Background" Value="#30FFFFFF"/>
-                            </Style>
-                        </Border.Styles>
-                        <StackPanel Orientation="Horizontal" Spacing="2">
-                            <Button Classes="ghost-btn quality-chip" Classes.on="{Binding SongsQualityAll}"
-                                    Padding="10,6" CornerRadius="999" Cursor="Hand"
-                                    Content="{loc:T Main.All}" FontSize="12" FontWeight="SemiBold"
-                                    VerticalAlignment="Center"
-                                    Command="{Binding SongsQualityCommand}" CommandParameter="All" />
-                            <Button Classes="ghost-btn quality-chip" Classes.on="{Binding SongsQualityLossless}"
-                                    Padding="10,6" CornerRadius="999" Cursor="Hand"
-                                    Content="{loc:T Main.Lossless}" FontSize="12" FontWeight="SemiBold"
-                                    VerticalAlignment="Center"
-                                    Command="{Binding SongsQualityCommand}" CommandParameter="Lossless" />
-                            <Button Classes="ghost-btn quality-chip" Classes.on="{Binding SongsQualityHiRes}"
-                                    Padding="10,6" CornerRadius="999" Cursor="Hand"
-                                    Content="{loc:T Main.HiRes}" FontSize="12" FontWeight="SemiBold"
-                                    VerticalAlignment="Center"
-                                    Command="{Binding SongsQualityCommand}" CommandParameter="HiRes" />
-                        </StackPanel>
-                    </Border>
-
-                    <!-- Page action buttons (e.g. Songs: Shuffle, Options). Hidden in Cover Flow mode. -->
-                    <Border IsVisible="{Binding PageActionsVisible}"
-                            Background="{DynamicResource ChipBackground}"
-                            CornerRadius="999" Padding="3"
-                            VerticalAlignment="Center">
-                        <StackPanel Orientation="Horizontal" Spacing="0">
-                            <Button Classes="ghost-btn"
-                                    Padding="10,6" CornerRadius="999" Cursor="Hand"
-                                    Command="{Binding PageShuffleCommand}"
-                                    ToolTip.Tip="{loc:T Main.ShuffleTip}" VerticalAlignment="Center">
-                                <PathIcon Data="{StaticResource ShuffleIcon}" Width="14" Height="14"
-                                         VerticalAlignment="Center" />
+                    <!-- Songs (and any page with page actions): filter · sort · view options ·
+                         Shuffle. The quality items only appear on the Songs page itself. -->
+                    <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center"
+                                IsVisible="{Binding PageActionsVisible}">
+                        <Panel VerticalAlignment="Center">
+                            <Button Classes="corner-icon" ToolTip.Tip="{loc:T Main.FilterTip}">
+                                <PathIcon Data="{StaticResource FilterIcon}"/>
+                                <Button.Flyout>
+                                    <MenuFlyout Placement="BottomEdgeAlignedRight"
+                                                PlacementConstraintAdjustment="None"
+                                                helpers:MenuOpenAnimation.EnableFlyoutClose="True">
+                                        <MenuItem Header="{loc:T Main.AllSongs}" Command="{Binding PageSetShowAllItemsCommand}">
+                                            <MenuItem.Icon><PathIcon Data="{StaticResource CheckmarkIcon}" Width="14" Height="14" IsVisible="{Binding PageShowAllItems}"/></MenuItem.Icon>
+                                        </MenuItem>
+                                        <MenuItem Header="{loc:T Main.OnlyFavorites}" Command="{Binding PageSetShowOnlyFavoritesCommand}">
+                                            <MenuItem.Icon><PathIcon Data="{StaticResource CheckmarkIcon}" Width="14" Height="14" IsVisible="{Binding PageShowOnlyFavorites}"/></MenuItem.Icon>
+                                        </MenuItem>
+                                        <Separator IsVisible="{Binding SongsFiltersVisible}"/>
+                                        <MenuItem Header="{loc:T Main.All}" Command="{Binding SongsQualityCommand}" CommandParameter="All" IsVisible="{Binding SongsFiltersVisible}">
+                                            <MenuItem.Icon><PathIcon Data="{StaticResource CheckmarkIcon}" Width="14" Height="14" IsVisible="{Binding SongsQualityAll}"/></MenuItem.Icon>
+                                        </MenuItem>
+                                        <MenuItem Header="{loc:T Main.Lossless}" Command="{Binding SongsQualityCommand}" CommandParameter="Lossless" IsVisible="{Binding SongsFiltersVisible}">
+                                            <MenuItem.Icon><PathIcon Data="{StaticResource CheckmarkIcon}" Width="14" Height="14" IsVisible="{Binding SongsQualityLossless}"/></MenuItem.Icon>
+                                        </MenuItem>
+                                        <MenuItem Header="{loc:T Main.HiRes}" Command="{Binding SongsQualityCommand}" CommandParameter="HiRes" IsVisible="{Binding SongsFiltersVisible}">
+                                            <MenuItem.Icon><PathIcon Data="{StaticResource CheckmarkIcon}" Width="14" Height="14" IsVisible="{Binding SongsQualityHiRes}"/></MenuItem.Icon>
+                                        </MenuItem>
+                                    </MenuFlyout>
+                                </Button.Flyout>
                             </Button>
-                            <Button Classes="ghost-btn"
-                                    Padding="10,6" CornerRadius="999" Cursor="Hand"
-                                    ToolTip.Tip="{loc:T Main.OptionsTip}" VerticalAlignment="Center">
-                                <PathIcon Data="{StaticResource MoreDotsIcon}" Width="14" Height="14"
-                                         VerticalAlignment="Center" />
-                            <Button.Flyout>
-                                <MenuFlyout Placement="BottomEdgeAlignedRight"
-                                            PlacementConstraintAdjustment="None"
-                                            helpers:MenuOpenAnimation.EnableFlyoutClose="True">
-                                    <MenuItem Header="{loc:T Main.AllSongs}" Command="{Binding PageSetShowAllItemsCommand}">
-                                        <MenuItem.Icon>
-                                            <PathIcon Data="{StaticResource CheckmarkIcon}" Width="14" Height="14"
-                                                     IsVisible="{Binding PageShowAllItems}" />
-                                        </MenuItem.Icon>
-                                    </MenuItem>
-                                    <MenuItem Header="{loc:T Main.OnlyFavorites}" Command="{Binding PageSetShowOnlyFavoritesCommand}">
-                                        <MenuItem.Icon>
-                                            <PathIcon Data="{StaticResource CheckmarkIcon}" Width="14" Height="14"
-                                                     IsVisible="{Binding PageShowOnlyFavorites}" />
-                                        </MenuItem.Icon>
-                                    </MenuItem>
-                                    <Separator />
-                                    <MenuItem x:Name="PageSortByMenuItem"
-                                              Header="{loc:T Main.SortOptions}"
-                                              PointerEntered="OnPageSortByMenuItemPointerEntered">
-                                        <!-- Every sortable field, in the same order as the View
-                                             Options list. Checkmarks compare each key against
-                                             PageSortColumn, so a sort chosen from a column header
-                                             shows up here too. -->
+                            <Border Classes="corner-dot" IsVisible="{Binding IsSongsFilterActive}"/>
+                        </Panel>
+
+                        <Panel VerticalAlignment="Center">
+                            <Button Classes="corner-icon">
+                                <ToolTip.Tip>
+                                    <TextBlock><Run Text="{loc:T Main.Sort}"/><Run Text=" "/><Run Text="{Binding PageSortColumn}"/></TextBlock>
+                                </ToolTip.Tip>
+                                <PathIcon Data="{StaticResource SortIcon}"/>
+                                <Button.Flyout>
+                                    <MenuFlyout Placement="BottomEdgeAlignedRight"
+                                                PlacementConstraintAdjustment="None"
+                                                helpers:MenuOpenAnimation.EnableFlyoutClose="True">
+                                        <!-- Checkmarks compare each item's key against PageSortColumn,
+                                             so a sort chosen from a column header shows here too. -->
                                         <MenuItem Header="{loc:T Main.Title}" Command="{Binding PageSortCommand}" CommandParameter="Title">
-                                            <MenuItem.Icon>
-                                                <PathIcon Data="{StaticResource CheckmarkIcon}" Width="14" Height="14"
-                                                         IsVisible="{Binding PageSortColumn, Converter={StaticResource StringEquals}, ConverterParameter=Title}" />
-                                            </MenuItem.Icon>
+                                            <MenuItem.Icon><PathIcon Data="{StaticResource CheckmarkIcon}" Width="14" Height="14" IsVisible="{Binding PageSortColumn, Converter={StaticResource StringEquals}, ConverterParameter=Title}"/></MenuItem.Icon>
                                         </MenuItem>
                                         <MenuItem Header="{loc:T Main.Artist}" Command="{Binding PageSortCommand}" CommandParameter="Artist">
-                                            <MenuItem.Icon>
-                                                <PathIcon Data="{StaticResource CheckmarkIcon}" Width="14" Height="14"
-                                                         IsVisible="{Binding PageSortColumn, Converter={StaticResource StringEquals}, ConverterParameter=Artist}" />
-                                            </MenuItem.Icon>
+                                            <MenuItem.Icon><PathIcon Data="{StaticResource CheckmarkIcon}" Width="14" Height="14" IsVisible="{Binding PageSortColumn, Converter={StaticResource StringEquals}, ConverterParameter=Artist}"/></MenuItem.Icon>
                                         </MenuItem>
                                         <MenuItem Header="{loc:T Main.Album}" Command="{Binding PageSortCommand}" CommandParameter="Album">
-                                            <MenuItem.Icon>
-                                                <PathIcon Data="{StaticResource CheckmarkIcon}" Width="14" Height="14"
-                                                         IsVisible="{Binding PageSortColumn, Converter={StaticResource StringEquals}, ConverterParameter=Album}" />
-                                            </MenuItem.Icon>
+                                            <MenuItem.Icon><PathIcon Data="{StaticResource CheckmarkIcon}" Width="14" Height="14" IsVisible="{Binding PageSortColumn, Converter={StaticResource StringEquals}, ConverterParameter=Album}"/></MenuItem.Icon>
                                         </MenuItem>
                                         <MenuItem Header="{loc:T Main.AlbumByArtist}" Command="{Binding PageSortCommand}" CommandParameter="Album Artist">
-                                            <MenuItem.Icon>
-                                                <PathIcon Data="{StaticResource CheckmarkIcon}" Width="14" Height="14"
-                                                         IsVisible="{Binding PageSortColumn, Converter={StaticResource StringEquals}, ConverterParameter='Album Artist'}" />
-                                            </MenuItem.Icon>
+                                            <MenuItem.Icon><PathIcon Data="{StaticResource CheckmarkIcon}" Width="14" Height="14" IsVisible="{Binding PageSortColumn, Converter={StaticResource StringEquals}, ConverterParameter='Album Artist'}"/></MenuItem.Icon>
                                         </MenuItem>
                                         <MenuItem Header="{loc:T Main.Genre}" Command="{Binding PageSortCommand}" CommandParameter="Genre">
-                                            <MenuItem.Icon>
-                                                <PathIcon Data="{StaticResource CheckmarkIcon}" Width="14" Height="14"
-                                                         IsVisible="{Binding PageSortColumn, Converter={StaticResource StringEquals}, ConverterParameter=Genre}" />
-                                            </MenuItem.Icon>
+                                            <MenuItem.Icon><PathIcon Data="{StaticResource CheckmarkIcon}" Width="14" Height="14" IsVisible="{Binding PageSortColumn, Converter={StaticResource StringEquals}, ConverterParameter=Genre}"/></MenuItem.Icon>
                                         </MenuItem>
                                         <MenuItem Header="{loc:T Main.Time}" Command="{Binding PageSortCommand}" CommandParameter="Time">
-                                            <MenuItem.Icon>
-                                                <PathIcon Data="{StaticResource CheckmarkIcon}" Width="14" Height="14"
-                                                         IsVisible="{Binding PageSortColumn, Converter={StaticResource StringEquals}, ConverterParameter=Time}" />
-                                            </MenuItem.Icon>
+                                            <MenuItem.Icon><PathIcon Data="{StaticResource CheckmarkIcon}" Width="14" Height="14" IsVisible="{Binding PageSortColumn, Converter={StaticResource StringEquals}, ConverterParameter=Time}"/></MenuItem.Icon>
                                         </MenuItem>
                                         <MenuItem Header="{loc:T Main.Plays}" Command="{Binding PageSortCommand}" CommandParameter="Plays">
-                                            <MenuItem.Icon>
-                                                <PathIcon Data="{StaticResource CheckmarkIcon}" Width="14" Height="14"
-                                                         IsVisible="{Binding PageSortColumn, Converter={StaticResource StringEquals}, ConverterParameter=Plays}" />
-                                            </MenuItem.Icon>
+                                            <MenuItem.Icon><PathIcon Data="{StaticResource CheckmarkIcon}" Width="14" Height="14" IsVisible="{Binding PageSortColumn, Converter={StaticResource StringEquals}, ConverterParameter=Plays}"/></MenuItem.Icon>
                                         </MenuItem>
                                         <MenuItem Header="{loc:T Main.Favorite}" Command="{Binding PageSortCommand}" CommandParameter="IsFavorite">
-                                            <MenuItem.Icon>
-                                                <PathIcon Data="{StaticResource CheckmarkIcon}" Width="14" Height="14"
-                                                         IsVisible="{Binding PageSortColumn, Converter={StaticResource StringEquals}, ConverterParameter=IsFavorite}" />
-                                            </MenuItem.Icon>
+                                            <MenuItem.Icon><PathIcon Data="{StaticResource CheckmarkIcon}" Width="14" Height="14" IsVisible="{Binding PageSortColumn, Converter={StaticResource StringEquals}, ConverterParameter=IsFavorite}"/></MenuItem.Icon>
                                         </MenuItem>
                                         <MenuItem Header="{loc:T Main.Rating}" Command="{Binding PageSortCommand}" CommandParameter="Rating">
-                                            <MenuItem.Icon>
-                                                <PathIcon Data="{StaticResource CheckmarkIcon}" Width="14" Height="14"
-                                                         IsVisible="{Binding PageSortColumn, Converter={StaticResource StringEquals}, ConverterParameter=Rating}" />
-                                            </MenuItem.Icon>
+                                            <MenuItem.Icon><PathIcon Data="{StaticResource CheckmarkIcon}" Width="14" Height="14" IsVisible="{Binding PageSortColumn, Converter={StaticResource StringEquals}, ConverterParameter=Rating}"/></MenuItem.Icon>
                                         </MenuItem>
                                         <MenuItem Header="{loc:T Main.Year}" Command="{Binding PageSortCommand}" CommandParameter="Year">
-                                            <MenuItem.Icon>
-                                                <PathIcon Data="{StaticResource CheckmarkIcon}" Width="14" Height="14"
-                                                         IsVisible="{Binding PageSortColumn, Converter={StaticResource StringEquals}, ConverterParameter=Year}" />
-                                            </MenuItem.Icon>
+                                            <MenuItem.Icon><PathIcon Data="{StaticResource CheckmarkIcon}" Width="14" Height="14" IsVisible="{Binding PageSortColumn, Converter={StaticResource StringEquals}, ConverterParameter=Year}"/></MenuItem.Icon>
                                         </MenuItem>
                                         <MenuItem Header="{loc:T Main.BPM}" Command="{Binding PageSortCommand}" CommandParameter="Bpm">
-                                            <MenuItem.Icon>
-                                                <PathIcon Data="{StaticResource CheckmarkIcon}" Width="14" Height="14"
-                                                         IsVisible="{Binding PageSortColumn, Converter={StaticResource StringEquals}, ConverterParameter=Bpm}" />
-                                            </MenuItem.Icon>
+                                            <MenuItem.Icon><PathIcon Data="{StaticResource CheckmarkIcon}" Width="14" Height="14" IsVisible="{Binding PageSortColumn, Converter={StaticResource StringEquals}, ConverterParameter=Bpm}"/></MenuItem.Icon>
                                         </MenuItem>
                                         <MenuItem Header="{loc:T Main.Bitrate}" Command="{Binding PageSortCommand}" CommandParameter="Bitrate">
-                                            <MenuItem.Icon>
-                                                <PathIcon Data="{StaticResource CheckmarkIcon}" Width="14" Height="14"
-                                                         IsVisible="{Binding PageSortColumn, Converter={StaticResource StringEquals}, ConverterParameter=Bitrate}" />
-                                            </MenuItem.Icon>
+                                            <MenuItem.Icon><PathIcon Data="{StaticResource CheckmarkIcon}" Width="14" Height="14" IsVisible="{Binding PageSortColumn, Converter={StaticResource StringEquals}, ConverterParameter=Bitrate}"/></MenuItem.Icon>
                                         </MenuItem>
                                         <MenuItem Header="{loc:T Main.SampleRate}" Command="{Binding PageSortCommand}" CommandParameter="SampleRate">
-                                            <MenuItem.Icon>
-                                                <PathIcon Data="{StaticResource CheckmarkIcon}" Width="14" Height="14"
-                                                         IsVisible="{Binding PageSortColumn, Converter={StaticResource StringEquals}, ConverterParameter=SampleRate}" />
-                                            </MenuItem.Icon>
+                                            <MenuItem.Icon><PathIcon Data="{StaticResource CheckmarkIcon}" Width="14" Height="14" IsVisible="{Binding PageSortColumn, Converter={StaticResource StringEquals}, ConverterParameter=SampleRate}"/></MenuItem.Icon>
                                         </MenuItem>
                                         <MenuItem Header="{loc:T Main.DateAdded}" Command="{Binding PageSortCommand}" CommandParameter="Date Added">
-                                            <MenuItem.Icon>
-                                                <PathIcon Data="{StaticResource CheckmarkIcon}" Width="14" Height="14"
-                                                         IsVisible="{Binding PageSortColumn, Converter={StaticResource StringEquals}, ConverterParameter='Date Added'}" />
-                                            </MenuItem.Icon>
+                                            <MenuItem.Icon><PathIcon Data="{StaticResource CheckmarkIcon}" Width="14" Height="14" IsVisible="{Binding PageSortColumn, Converter={StaticResource StringEquals}, ConverterParameter='Date Added'}"/></MenuItem.Icon>
                                         </MenuItem>
                                         <Separator />
                                         <MenuItem Header="{loc:T Main.Ascending}" Command="{Binding PageSortCommand}" CommandParameter="Ascending">
-                                            <MenuItem.Icon>
-                                                <PathIcon Data="{StaticResource CheckmarkIcon}" Width="14" Height="14"
-                                                         IsVisible="{Binding PageSortAscending}" />
-                                            </MenuItem.Icon>
+                                            <MenuItem.Icon><PathIcon Data="{StaticResource CheckmarkIcon}" Width="14" Height="14" IsVisible="{Binding PageSortAscending}"/></MenuItem.Icon>
                                         </MenuItem>
                                         <MenuItem Header="{loc:T Main.Descending}" Command="{Binding PageSortCommand}" CommandParameter="Descending">
-                                            <MenuItem.Icon>
-                                                <PathIcon Data="{StaticResource CheckmarkIcon}" Width="14" Height="14"
-                                                         IsVisible="{Binding PageSortDescending}" />
-                                            </MenuItem.Icon>
+                                            <MenuItem.Icon><PathIcon Data="{StaticResource CheckmarkIcon}" Width="14" Height="14" IsVisible="{Binding PageSortDescending}"/></MenuItem.Icon>
                                         </MenuItem>
-                                    </MenuItem>
-                                    <Separator />
-                                    <MenuItem Header="{loc:T Main.ShowViewOptions}" Command="{Binding PageViewOptionsCommand}">
-                                        <MenuItem.Icon>
-                                            <PathIcon Data="{StaticResource SettingsIcon}" Width="14" Height="14" />
-                                        </MenuItem.Icon>
-                                    </MenuItem>
-                                </MenuFlyout>
-                            </Button.Flyout>
-                        </Button>
-                        </StackPanel>
-                    </Border>
+                                    </MenuFlyout>
+                                </Button.Flyout>
+                            </Button>
+                            <Border Classes="corner-dot" IsVisible="{Binding IsSongsSortActive}"/>
+                        </Panel>
 
-                    <!-- Playlist action buttons -->
-                    <StackPanel Orientation="Horizontal" Spacing="8" IsVisible="{Binding PlaylistActionsVisible}">
-                        <!-- Playlists grid sort. Every sibling grid had one; this tab had
-                             none at all and showed whatever order the sidebar built. -->
-                        <Button Classes="release-chip" VerticalAlignment="Center"
-                                ToolTip.Tip="{loc:T Main.SortPlaylistsTip}">
-                            <StackPanel Orientation="Horizontal" Spacing="6">
-                                <TextBlock Text="{loc:T Main.Sort}" Opacity="0.6" FontSize="12" VerticalAlignment="Center"/>
-                                <TextBlock Text="{Binding PlaylistSortLabel}" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                                <PathIcon Data="{StaticResource ChevronRightIcon}" Width="9" Height="9"
-                                          RenderTransform="rotate(90deg)" Opacity="0.6" VerticalAlignment="Center"/>
-                            </StackPanel>
-                            <Button.Flyout>
-                                <MenuFlyout Placement="BottomEdgeAlignedRight">
-                                    <MenuItem Header="{loc:T Main.Default}" Command="{Binding PlaylistSortCommand}" CommandParameter="default"/>
-                                    <MenuItem Header="{loc:T Main.Name}" Command="{Binding PlaylistSortCommand}" CommandParameter="name"/>
-                                    <MenuItem Header="{loc:T Main.RecentlyCreated}" Command="{Binding PlaylistSortCommand}" CommandParameter="created"/>
-                                    <MenuItem Header="{loc:T Main.RecentlyModified}" Command="{Binding PlaylistSortCommand}" CommandParameter="modified"/>
-                                    <MenuItem Header="{loc:T Main.TrackCount}" Command="{Binding PlaylistSortCommand}" CommandParameter="tracks"/>
-                                </MenuFlyout>
-                            </Button.Flyout>
+                        <Button Classes="corner-icon"
+                                Command="{Binding PageViewOptionsCommand}"
+                                ToolTip.Tip="{loc:T Main.ShowViewOptions}">
+                            <PathIcon Data="{StaticResource ViewOptionsIcon}"/>
                         </Button>
-                        <Button Classes="accent-btn" Background="{DynamicResource AccentButtonBackground}"
-                                Padding="14,8" CornerRadius="999" Cursor="Hand"
+
+                        <Button Classes="accent-btn corner-primary" Background="{DynamicResource AccentButtonBackground}"
+                                Command="{Binding PageShuffleCommand}"
+                                ToolTip.Tip="{loc:T Main.ShuffleTip}">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <PathIcon Data="{StaticResource ShuffleIcon}" Width="13" Height="13"
+                                          Foreground="{DynamicResource AccentForegroundBrush}" VerticalAlignment="Center"/>
+                                <TextBlock Text="{loc:T Main.ShuffleTip}" FontSize="12" FontWeight="SemiBold"
+                                           Foreground="{DynamicResource AccentForegroundBrush}" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+
+                    <!-- Playlists: sort popover + New (primary). -->
+                    <StackPanel Orientation="Horizontal" Spacing="8" IsVisible="{Binding PlaylistActionsVisible}">
+                        <Panel VerticalAlignment="Center">
+                            <Button Classes="corner-icon">
+                                <ToolTip.Tip>
+                                    <TextBlock><Run Text="{loc:T Main.Sort}"/><Run Text=" "/><Run Text="{Binding PlaylistSortLabel}"/></TextBlock>
+                                </ToolTip.Tip>
+                                <PathIcon Data="{StaticResource SortIcon}"/>
+                                <Button.Flyout>
+                                    <MenuFlyout Placement="BottomEdgeAlignedRight">
+                                        <MenuItem Header="{loc:T Main.Default}" Command="{Binding PlaylistSortCommand}" CommandParameter="default">
+                                            <MenuItem.Icon><PathIcon Data="{StaticResource CheckmarkIcon}" Width="14" Height="14" IsVisible="{Binding PlaylistSortMode, Converter={StaticResource StringEquals}, ConverterParameter=default}"/></MenuItem.Icon>
+                                        </MenuItem>
+                                        <MenuItem Header="{loc:T Main.Name}" Command="{Binding PlaylistSortCommand}" CommandParameter="name">
+                                            <MenuItem.Icon><PathIcon Data="{StaticResource CheckmarkIcon}" Width="14" Height="14" IsVisible="{Binding PlaylistSortMode, Converter={StaticResource StringEquals}, ConverterParameter=name}"/></MenuItem.Icon>
+                                        </MenuItem>
+                                        <MenuItem Header="{loc:T Main.RecentlyCreated}" Command="{Binding PlaylistSortCommand}" CommandParameter="created">
+                                            <MenuItem.Icon><PathIcon Data="{StaticResource CheckmarkIcon}" Width="14" Height="14" IsVisible="{Binding PlaylistSortMode, Converter={StaticResource StringEquals}, ConverterParameter=created}"/></MenuItem.Icon>
+                                        </MenuItem>
+                                        <MenuItem Header="{loc:T Main.RecentlyModified}" Command="{Binding PlaylistSortCommand}" CommandParameter="modified">
+                                            <MenuItem.Icon><PathIcon Data="{StaticResource CheckmarkIcon}" Width="14" Height="14" IsVisible="{Binding PlaylistSortMode, Converter={StaticResource StringEquals}, ConverterParameter=modified}"/></MenuItem.Icon>
+                                        </MenuItem>
+                                        <MenuItem Header="{loc:T Main.TrackCount}" Command="{Binding PlaylistSortCommand}" CommandParameter="tracks">
+                                            <MenuItem.Icon><PathIcon Data="{StaticResource CheckmarkIcon}" Width="14" Height="14" IsVisible="{Binding PlaylistSortMode, Converter={StaticResource StringEquals}, ConverterParameter=tracks}"/></MenuItem.Icon>
+                                        </MenuItem>
+                                    </MenuFlyout>
+                                </Button.Flyout>
+                            </Button>
+                            <Border Classes="corner-dot" IsVisible="{Binding IsPlaylistSortActive}"/>
+                        </Panel>
+                        <Button Classes="accent-btn corner-primary" Background="{DynamicResource AccentButtonBackground}"
                                 ToolTip.Tip="{loc:T Main.NewPlaylistTip}" VerticalAlignment="Center">
                             <StackPanel Orientation="Horizontal" Spacing="6">
+                                <PathIcon Data="{StaticResource AddIcon}" Width="12" Height="12"
+                                          Foreground="{DynamicResource AccentForegroundBrush}" VerticalAlignment="Center"/>
                                 <TextBlock Text="{loc:T Main.New}" FontSize="12" FontWeight="SemiBold"
                                            Foreground="{DynamicResource AccentForegroundBrush}"
                                            VerticalAlignment="Center" />
@@ -615,118 +528,14 @@
                         </Button>
                     </StackPanel>
 
-                    <!-- Artist discography action buttons (same chip style as the Songs page actions) -->
-                    <Border IsVisible="{Binding HasArtistActions}"
-                            Background="{DynamicResource ChipBackground}"
-                            CornerRadius="999" Padding="3"
-                            VerticalAlignment="Center">
-                        <StackPanel Orientation="Horizontal" Spacing="0">
-                            <Button Classes="ghost-btn"
-                                    Padding="10,6" CornerRadius="999" Cursor="Hand"
-                                    Command="{Binding PageShuffleArtistCommand}"
-                                    ToolTip.Tip="{loc:T Main.ShuffleAllTip}" VerticalAlignment="Center">
-                                <PathIcon Data="{StaticResource ShuffleIcon}"
-                                          Width="14" Height="14"
-                                          VerticalAlignment="Center" />
-                            </Button>
-                            <Button Classes="ghost-btn"
-                                    Padding="10,6" CornerRadius="999" Cursor="Hand"
-                                    Command="{Binding PagePlayArtistCommand}"
-                                    ToolTip.Tip="{loc:T Main.PlayAllTip}" VerticalAlignment="Center">
-                                <Border Width="14" Height="14" Background="{DynamicResource SystemControlForegroundBaseHighBrush}" VerticalAlignment="Center"
-                                        Margin="2,0,0,0"
-                                        RenderOptions.BitmapInterpolationMode="HighQuality">
-                                    <Border.OpacityMask>
-                                        <ImageBrush Source="avares://Noctis/Assets/Icons/Play%20ICON.png" Stretch="Uniform" />
-                                    </Border.OpacityMask>
-                                </Border>
-                            </Button>
-                        </StackPanel>
-                    </Border>
-
-                    <!-- Artists grid: Sort dropdown (Name / Songs / Albums + direction), same chip as the Albums sort -->
-                    <Button Classes="release-chip" VerticalAlignment="Center"
-                            IsVisible="{Binding HasArtistSort}"
-                            ToolTip.Tip="{loc:T Main.SortArtistsTip}">
-                        <StackPanel Orientation="Horizontal" Spacing="6">
-                            <TextBlock Text="{loc:T Main.Sort}" Opacity="0.6" FontSize="12" VerticalAlignment="Center"/>
-                            <TextBlock Text="{Binding ArtistSortLabel}" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                            <PathIcon Data="{StaticResource ChevronRightIcon}" Width="9" Height="9"
-                                      RenderTransform="rotate(90deg)" Opacity="0.6" VerticalAlignment="Center"/>
-                        </StackPanel>
-                        <Button.Flyout>
-                            <MenuFlyout Placement="BottomEdgeAlignedRight">
-                                <MenuItem Header="{loc:T Main.Name}" Command="{Binding ArtistSortCommand}" CommandParameter="name">
-                                    <MenuItem.Icon>
-                                        <PathIcon Data="{StaticResource CheckmarkIcon}" Width="14" Height="14"
-                                                  IsVisible="{Binding ArtistSortMode, Converter={StaticResource StringEquals}, ConverterParameter=name}" />
-                                    </MenuItem.Icon>
-                                </MenuItem>
-                                <MenuItem Header="{loc:T Main.SongCount}" Command="{Binding ArtistSortCommand}" CommandParameter="songs">
-                                    <MenuItem.Icon>
-                                        <PathIcon Data="{StaticResource CheckmarkIcon}" Width="14" Height="14"
-                                                  IsVisible="{Binding ArtistSortMode, Converter={StaticResource StringEquals}, ConverterParameter=songs}" />
-                                    </MenuItem.Icon>
-                                </MenuItem>
-                                <MenuItem Header="{loc:T Main.AlbumCount}" Command="{Binding ArtistSortCommand}" CommandParameter="albums">
-                                    <MenuItem.Icon>
-                                        <PathIcon Data="{StaticResource CheckmarkIcon}" Width="14" Height="14"
-                                                  IsVisible="{Binding ArtistSortMode, Converter={StaticResource StringEquals}, ConverterParameter=albums}" />
-                                    </MenuItem.Icon>
-                                </MenuItem>
-                                <Separator/>
-                                <MenuItem Header="{loc:T Main.Ascending}" Command="{Binding ArtistSortCommand}" CommandParameter="Ascending">
-                                    <MenuItem.Icon>
-                                        <PathIcon Data="{StaticResource CheckmarkIcon}" Width="14" Height="14"
-                                                  IsVisible="{Binding ArtistSortAscending}" />
-                                    </MenuItem.Icon>
-                                </MenuItem>
-                                <MenuItem Header="{loc:T Main.Descending}" Command="{Binding ArtistSortCommand}" CommandParameter="Descending">
-                                    <MenuItem.Icon>
-                                        <PathIcon Data="{StaticResource CheckmarkIcon}" Width="14" Height="14"
-                                                  IsVisible="{Binding ArtistSortDescending}" />
-                                    </MenuItem.Icon>
-                                </MenuItem>
-                            </MenuFlyout>
-                        </Button.Flyout>
-                    </Button>
-
-                    <!-- Favorites action buttons — same neutral chip pill as the Songs page actions -->
-                    <Border IsVisible="{Binding FavoritesActionsVisible}"
-                            Background="{DynamicResource ChipBackground}"
-                            CornerRadius="999" Padding="3"
-                            VerticalAlignment="Center">
-                        <StackPanel Orientation="Horizontal" Spacing="0">
-                            <Button Classes="ghost-btn"
-                                    Padding="10,6" CornerRadius="999" Cursor="Hand"
-                                    Command="{Binding PageShuffleFavoritesCommand}"
-                                    ToolTip.Tip="{loc:T Main.ShuffleTip}" VerticalAlignment="Center">
-                                <PathIcon Data="{StaticResource ShuffleIcon}"
-                                          Width="14" Height="14"
-                                          VerticalAlignment="Center" />
-                            </Button>
-                            <Button Classes="ghost-btn"
-                                    Padding="10,6" CornerRadius="999" Cursor="Hand"
-                                    Command="{Binding PagePlayFavoritesCommand}"
-                                    ToolTip.Tip="{loc:T Main.PlayTip}" VerticalAlignment="Center">
-                                <Border Width="14" Height="14" Background="{DynamicResource SystemControlForegroundBaseHighBrush}" VerticalAlignment="Center"
-                                        Margin="2,0,0,0"
-                                        RenderOptions.BitmapInterpolationMode="HighQuality">
-                                    <Border.OpacityMask>
-                                        <ImageBrush Source="avares://Noctis/Assets/Icons/Play%20ICON.png" Stretch="Uniform" />
-                                    </Border.OpacityMask>
-                                </Border>
-                            </Button>
-                        </StackPanel>
-                    </Border>
-
-                    <!-- Folders action buttons: Play (accent) + Shuffle / Manage Folders (neutral chips) -->
+                    <!-- Artist discography: shuffle icon + Play (primary). -->
                     <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center"
-                                IsVisible="{Binding FoldersActionsVisible}">
-                        <Button Classes="accent-btn" Background="{DynamicResource AccentButtonBackground}"
-                                Padding="16,6" CornerRadius="999" Cursor="Hand"
-                                Command="{Binding PagePlayFolderCommand}"
-                                ToolTip.Tip="{loc:T Main.PlayFolderTip}" VerticalAlignment="Center">
+                                IsVisible="{Binding HasArtistActions}">
+                        <Button Classes="corner-icon" Command="{Binding PageShuffleArtistCommand}" ToolTip.Tip="{loc:T Main.ShuffleAllTip}">
+                            <PathIcon Data="{StaticResource ShuffleIcon}"/>
+                        </Button>
+                        <Button Classes="accent-btn corner-primary" Background="{DynamicResource AccentButtonBackground}"
+                                Command="{Binding PagePlayArtistCommand}" ToolTip.Tip="{loc:T Main.PlayAllTip}">
                             <StackPanel Orientation="Horizontal" Spacing="6">
                                 <Border Width="12" Height="12" Background="{DynamicResource AccentForegroundBrush}" VerticalAlignment="Center"
                                         RenderOptions.BitmapInterpolationMode="HighQuality">
@@ -735,85 +544,113 @@
                                     </Border.OpacityMask>
                                 </Border>
                                 <TextBlock Text="{loc:T Main.PlayTip}" FontSize="12" FontWeight="SemiBold"
-                                           Foreground="{DynamicResource AccentForegroundBrush}"
-                                           VerticalAlignment="Center" />
-                            </StackPanel>
-                        </Button>
-                        <Button Background="{DynamicResource ChipBackground}"
-                                BorderThickness="0" Padding="14,6" CornerRadius="999" Cursor="Hand"
-                                Command="{Binding PageShuffleFolderCommand}"
-                                Content="{loc:T Main.ShuffleTip}" FontSize="12" FontWeight="SemiBold"
-                                ToolTip.Tip="{loc:T Main.ShuffleFolderTip}" VerticalAlignment="Center" />
-                        <Button Background="{DynamicResource ChipBackground}"
-                                BorderThickness="0" Padding="14,6" CornerRadius="999" Cursor="Hand"
-                                Command="{Binding PageManageFoldersCommand}"
-                                ToolTip.Tip="{loc:T Main.OpenSettingsAddRemoveTip}"
-                                VerticalAlignment="Center">
-                            <StackPanel Orientation="Horizontal" Spacing="6">
-                                <PathIcon Data="{StaticResource SettingsIcon}"
-                                          Width="13" Height="13"
-                                          Opacity="0.8"
-                                          VerticalAlignment="Center" />
-                                <TextBlock Text="{loc:T Main.ManageFolders}"
-                                           FontSize="12"
-                                           FontWeight="SemiBold"
-                                           VerticalAlignment="Center" />
+                                           Foreground="{DynamicResource AccentForegroundBrush}" VerticalAlignment="Center"/>
                             </StackPanel>
                         </Button>
                     </StackPanel>
 
-                    <!-- View mode toggle (Library / Cover Flow) -->
-                    <Border IsVisible="{Binding HasViewModeToggle}"
-                            Background="{DynamicResource SystemControlBackgroundListLowBrush}"
-                            CornerRadius="999" Padding="3" VerticalAlignment="Center">
-                        <StackPanel Orientation="Horizontal" Spacing="2">
-                            <Button x:Name="AlbumsLibraryModeBtn"
-                                    Command="{Binding SetLibraryModeCommand}"
-                                    BorderThickness="0" Padding="10,6" CornerRadius="999" Cursor="Hand"
-                                    Background="#30FFFFFF" ToolTip.Tip="{loc:T Main.LibraryTip}"
-                                    Content="{loc:T Main.LibraryTip}" FontSize="12" FontWeight="SemiBold" />
-                            <Button x:Name="AlbumsUpNextModeBtn"
-                                    Command="{Binding SetCoverFlowModeCommand}"
-                                    BorderThickness="0" Padding="10,6" CornerRadius="999" Cursor="Hand"
-                                    Background="Transparent" Opacity="0.5" ToolTip.Tip="{loc:T Main.CoverFlowTip}"
-                                    Content="{loc:T Main.CoverFlowTip}" FontSize="12" FontWeight="SemiBold" />
-                            <!-- Cover Flow layout picker: a labelled dropdown (Carousel / Cascade / Collage)
-                                 instead of an unlabelled icon that cycled — the words say what the
-                                 segment is, matching the "Library" / "Cover Flow" words next to it. -->
-                            <Button x:Name="AlbumsCollageModeBtn"
-                                    IsVisible="{Binding IsCoverFlowMode}"
-                                    BorderThickness="0" Padding="10,6" CornerRadius="999" Cursor="Hand"
-                                    Background="Transparent" ToolTip.Tip="{loc:T Main.CoverFlowLayoutTip}">
-                                <StackPanel Orientation="Horizontal" Spacing="6">
-                                    <TextBlock Text="{Binding CoverFlowLayoutLabel}" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                                    <PathIcon Data="{StaticResource ChevronRightIcon}" Width="9" Height="9"
-                                              RenderTransform="rotate(90deg)" Opacity="0.6" VerticalAlignment="Center"/>
-                                </StackPanel>
-                                <Button.Flyout>
-                                    <MenuFlyout Placement="BottomEdgeAlignedRight">
-                                        <MenuItem Header="{loc:T Main.Carousel}" Command="{Binding SetCoverFlowLayoutCommand}" CommandParameter="Carousel">
-                                            <MenuItem.Icon>
-                                                <PathIcon Data="{StaticResource CheckmarkIcon}" Width="14" Height="14"
-                                                          IsVisible="{Binding CoverFlowLayoutLabel, Converter={StaticResource StringEquals}, ConverterParameter=Carousel}" />
-                                            </MenuItem.Icon>
-                                        </MenuItem>
-                                        <MenuItem Header="{loc:T Main.Cascade}" Command="{Binding SetCoverFlowLayoutCommand}" CommandParameter="Cascade">
-                                            <MenuItem.Icon>
-                                                <PathIcon Data="{StaticResource CheckmarkIcon}" Width="14" Height="14"
-                                                          IsVisible="{Binding CoverFlowLayoutLabel, Converter={StaticResource StringEquals}, ConverterParameter=Cascade}" />
-                                            </MenuItem.Icon>
-                                        </MenuItem>
-                                        <MenuItem Header="{loc:T Main.Collage}" Command="{Binding SetCoverFlowLayoutCommand}" CommandParameter="Collage">
-                                            <MenuItem.Icon>
-                                                <PathIcon Data="{StaticResource CheckmarkIcon}" Width="14" Height="14"
-                                                          IsVisible="{Binding CoverFlowLayoutLabel, Converter={StaticResource StringEquals}, ConverterParameter=Collage}" />
-                                            </MenuItem.Icon>
-                                        </MenuItem>
-                                    </MenuFlyout>
-                                </Button.Flyout>
-                            </Button>
-                        </StackPanel>
-                    </Border>
+                    <!-- Artists grid: sort popover (Name / Songs / Albums + direction). -->
+                    <Panel VerticalAlignment="Center" IsVisible="{Binding HasArtistSort}">
+                        <Button Classes="corner-icon">
+                            <ToolTip.Tip>
+                                <TextBlock><Run Text="{loc:T Main.Sort}"/><Run Text=" "/><Run Text="{Binding ArtistSortLabel}"/></TextBlock>
+                            </ToolTip.Tip>
+                            <PathIcon Data="{StaticResource SortIcon}"/>
+                            <Button.Flyout>
+                                <MenuFlyout Placement="BottomEdgeAlignedRight">
+                                    <MenuItem Header="{loc:T Main.Name}" Command="{Binding ArtistSortCommand}" CommandParameter="name">
+                                        <MenuItem.Icon><PathIcon Data="{StaticResource CheckmarkIcon}" Width="14" Height="14" IsVisible="{Binding ArtistSortMode, Converter={StaticResource StringEquals}, ConverterParameter=name}"/></MenuItem.Icon>
+                                    </MenuItem>
+                                    <MenuItem Header="{loc:T Main.SongCount}" Command="{Binding ArtistSortCommand}" CommandParameter="songs">
+                                        <MenuItem.Icon><PathIcon Data="{StaticResource CheckmarkIcon}" Width="14" Height="14" IsVisible="{Binding ArtistSortMode, Converter={StaticResource StringEquals}, ConverterParameter=songs}"/></MenuItem.Icon>
+                                    </MenuItem>
+                                    <MenuItem Header="{loc:T Main.AlbumCount}" Command="{Binding ArtistSortCommand}" CommandParameter="albums">
+                                        <MenuItem.Icon><PathIcon Data="{StaticResource CheckmarkIcon}" Width="14" Height="14" IsVisible="{Binding ArtistSortMode, Converter={StaticResource StringEquals}, ConverterParameter=albums}"/></MenuItem.Icon>
+                                    </MenuItem>
+                                    <Separator/>
+                                    <MenuItem Header="{loc:T Main.Ascending}" Command="{Binding ArtistSortCommand}" CommandParameter="Ascending">
+                                        <MenuItem.Icon><PathIcon Data="{StaticResource CheckmarkIcon}" Width="14" Height="14" IsVisible="{Binding ArtistSortAscending}"/></MenuItem.Icon>
+                                    </MenuItem>
+                                    <MenuItem Header="{loc:T Main.Descending}" Command="{Binding ArtistSortCommand}" CommandParameter="Descending">
+                                        <MenuItem.Icon><PathIcon Data="{StaticResource CheckmarkIcon}" Width="14" Height="14" IsVisible="{Binding ArtistSortDescending}"/></MenuItem.Icon>
+                                    </MenuItem>
+                                </MenuFlyout>
+                            </Button.Flyout>
+                        </Button>
+                        <Border Classes="corner-dot" IsVisible="{Binding IsArtistSortActive}"/>
+                    </Panel>
+
+                    <!-- Favorites: shuffle icon + Play (primary). -->
+                    <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center"
+                                IsVisible="{Binding FavoritesActionsVisible}">
+                        <Button Classes="corner-icon" Command="{Binding PageShuffleFavoritesCommand}" ToolTip.Tip="{loc:T Main.ShuffleTip}">
+                            <PathIcon Data="{StaticResource ShuffleIcon}"/>
+                        </Button>
+                        <Button Classes="accent-btn corner-primary" Background="{DynamicResource AccentButtonBackground}"
+                                Command="{Binding PagePlayFavoritesCommand}" ToolTip.Tip="{loc:T Main.PlayTip}">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <Border Width="12" Height="12" Background="{DynamicResource AccentForegroundBrush}" VerticalAlignment="Center"
+                                        RenderOptions.BitmapInterpolationMode="HighQuality">
+                                    <Border.OpacityMask>
+                                        <ImageBrush Source="avares://Noctis/Assets/Icons/Play%20ICON.png" Stretch="Uniform" />
+                                    </Border.OpacityMask>
+                                </Border>
+                                <TextBlock Text="{loc:T Main.PlayTip}" FontSize="12" FontWeight="SemiBold"
+                                           Foreground="{DynamicResource AccentForegroundBrush}" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+
+                    <!-- Folders: manage icon · shuffle icon · Play (primary). -->
+                    <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center"
+                                IsVisible="{Binding FoldersActionsVisible}">
+                        <Button Classes="corner-icon" Command="{Binding PageManageFoldersCommand}" ToolTip.Tip="{loc:T Main.ManageFolders}">
+                            <PathIcon Data="{StaticResource SettingsIcon}"/>
+                        </Button>
+                        <Button Classes="corner-icon" Command="{Binding PageShuffleFolderCommand}" ToolTip.Tip="{loc:T Main.ShuffleFolderTip}">
+                            <PathIcon Data="{StaticResource ShuffleIcon}"/>
+                        </Button>
+                        <Button Classes="accent-btn corner-primary" Background="{DynamicResource AccentButtonBackground}"
+                                Command="{Binding PagePlayFolderCommand}" ToolTip.Tip="{loc:T Main.PlayFolderTip}">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <Border Width="12" Height="12" Background="{DynamicResource AccentForegroundBrush}" VerticalAlignment="Center"
+                                        RenderOptions.BitmapInterpolationMode="HighQuality">
+                                    <Border.OpacityMask>
+                                        <ImageBrush Source="avares://Noctis/Assets/Icons/Play%20ICON.png" Stretch="Uniform" />
+                                    </Border.OpacityMask>
+                                </Border>
+                                <TextBlock Text="{loc:T Main.PlayTip}" FontSize="12" FontWeight="SemiBold"
+                                           Foreground="{DynamicResource AccentForegroundBrush}" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+
+                    <!-- View mode: one icon showing the mode you would switch to. While Cover
+                         Flow is on, a layout icon (Carousel / Cascade / Collage) sits beside it. -->
+                    <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center"
+                                IsVisible="{Binding HasViewModeToggle}">
+                        <Button Classes="corner-icon" IsVisible="{Binding IsCoverFlowMode}">
+                            <ToolTip.Tip>
+                                <TextBlock><Run Text="{loc:T Main.Layout}"/><Run Text=" "/><Run Text="{Binding CoverFlowLayoutLabel}"/></TextBlock>
+                            </ToolTip.Tip>
+                            <PathIcon Data="{StaticResource LayoutIcon}"/>
+                            <Button.Flyout>
+                                <MenuFlyout Placement="BottomEdgeAlignedRight">
+                                    <MenuItem Header="{loc:T Main.Carousel}" Command="{Binding SetCoverFlowLayoutCommand}" CommandParameter="Carousel"/>
+                                    <MenuItem Header="{loc:T Main.Cascade}" Command="{Binding SetCoverFlowLayoutCommand}" CommandParameter="Cascade"/>
+                                    <MenuItem Header="{loc:T Main.Collage}" Command="{Binding SetCoverFlowLayoutCommand}" CommandParameter="Collage"/>
+                                </MenuFlyout>
+                            </Button.Flyout>
+                        </Button>
+                        <Button Classes="corner-icon" IsVisible="{Binding IsCoverFlowMode}"
+                                Command="{Binding SetLibraryModeCommand}" ToolTip.Tip="{loc:T Main.SwitchToLibrary}">
+                            <PathIcon Data="{StaticResource GridViewIcon}"/>
+                        </Button>
+                        <Button Classes="corner-icon" IsVisible="{Binding !IsCoverFlowMode}"
+                                Command="{Binding SetCoverFlowModeCommand}" ToolTip.Tip="{loc:T Main.SwitchToCoverFlow}">
+                            <PathIcon Data="{StaticResource CoverFlowIcon}"/>
+                        </Button>
+                    </StackPanel>
 
                 </StackPanel>
             </Grid>

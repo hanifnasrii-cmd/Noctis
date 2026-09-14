@@ -314,7 +314,7 @@
                                             </ContextMenu>
                                         </Button.ContextMenu>
 
-                                        <StackPanel Spacing="0" HorizontalAlignment="Stretch">
+                                        <StackPanel Classes="tile-text" Spacing="0" HorizontalAlignment="Stretch">
                                             <!-- Album artwork: size computed once in code-behind, no per-tile Bounds binding -->
                                             <Border Width="{Binding $parent[UserControl].((vm:LibraryAlbumsViewModel)DataContext).TileArtworkSize}"
                                                     Height="{Binding $parent[UserControl].((vm:LibraryAlbumsViewModel)DataContext).TileArtworkSize}"
@@ -335,31 +335,51 @@
                                                                       Stretch="UniformToFill"
                                                                       RenderOptions.BitmapInterpolationMode="HighQuality"
                                                                       IsVisible="{Binding ArtworkPath, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
-                                                    <!-- Favorite heart overlay (visible when any track in album is favorited) -->
-                                                    <ctrl:HeartIcon Size="18" ShowWhenOff="False"
-                                                HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,8,8"
-                                                IsFavorite="{Binding HasFavoriteTrack}" />
+                                                    <!-- Hover overlay (09-13): dim + Play/Pause + dots; styles in Styles.axaml -->
+                                                    <Border Classes="tile-dim" />
+                                                    <Button Classes="tile-play"
+                                                            Command="{Binding $parent[UserControl].((vm:LibraryAlbumsViewModel)DataContext).TogglePlayAlbumCommand}"
+                                                            CommandParameter="{Binding}">
+                                                        <Panel>
+                                                            <Viewbox Width="12" Height="12" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="1,0,0,0" IsVisible="{Binding !IsNowPlaying}"><Path Data="{StaticResource PlayIcon}" Fill="White" /></Viewbox>
+                                                            <Viewbox Width="12" Height="12" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding IsNowPlaying}"><Path Data="{StaticResource PauseIcon}" Fill="White" /></Viewbox>
+                                                        </Panel>
+                                                    </Button>
+                                                    <Button Classes="tile-more" Click="OnTileMoreClick">
+                                                        <Viewbox Width="14" Height="14" HorizontalAlignment="Center" VerticalAlignment="Center"><Path Data="{StaticResource MoreDotsIcon}" Fill="White" /></Viewbox>
+                                                    </Button>
                                                 </Panel>
                                             </Border>
-                                            <!-- Album name + inline explicit badge -->
-                                            <ctrl:HighlightTextBlock DisplayText="{Binding Name}"
-                                                                     HighlightText="{Binding $parent[UserControl].((vm:LibraryAlbumsViewModel)DataContext).SearchText}"
-                                                                     IsExplicit="{Binding IsExplicit}"
-                                                                     Margin="0,5,0,0"
-                                                                     FontSize="13"
-                                                                     FontWeight="SemiBold"
-                                                                     TextWrapping="Wrap"
-                                                                     TextTrimming="CharacterEllipsis"
-                                                                     MaxLines="2" />
-                                            <!-- Artist name · release year -->
-                                            <ctrl:HighlightTextBlock DisplayText="{Binding TileSubtitle}"
-                                                                     HighlightText="{Binding $parent[UserControl].((vm:LibraryAlbumsViewModel)DataContext).SearchText}"
-                                                                     FontSize="12"
-                                                                     FontWeight="Bold"
-                                                                     Opacity="0.55"
-                                                                     TextTrimming="CharacterEllipsis"
-                                                                     MaxLines="1"
-                                                                     Margin="0,1,0,0" />
+                                            <!-- Title + explicit badge; the heart sits at the line's right end (09-13) -->
+                                            <Grid ColumnDefinitions="*,Auto" Margin="0,5,0,0">
+                                                <ctrl:HighlightTextBlock Grid.Column="0"
+                                                                         helpers:TitleWrap.Watch="True"
+                                                                         DisplayText="{Binding Name}"
+                                                                         HighlightText="{Binding $parent[UserControl].((vm:LibraryAlbumsViewModel)DataContext).SearchText}"
+                                                                         IsExplicit="{Binding IsExplicit}"
+                                                                         FontSize="13"
+                                                                         FontWeight="SemiBold"
+                                                                         TextWrapping="Wrap"
+                                                                         TextTrimming="CharacterEllipsis"
+                                                                         MaxLines="2" />
+                                                <Panel Grid.Column="1" Classes="heart-title" VerticalAlignment="Top" Margin="6,2,0,0">
+                                                    <ctrl:HeartIcon Size="14" ShowWhenOff="False" IsFavorite="{Binding HasFavoriteTrack}" IsVisible="{Binding HasFavoriteTrack}" />
+                                                </Panel>
+                                            </Grid>
+                                            <!-- Subtitle; the heart lands here instead when the title wraps -->
+                                            <Grid ColumnDefinitions="*,Auto" Margin="0,1,0,0">
+                                                <ctrl:HighlightTextBlock Grid.Column="0"
+                                                                         DisplayText="{Binding TileSubtitle}"
+                                                                         HighlightText="{Binding $parent[UserControl].((vm:LibraryAlbumsViewModel)DataContext).SearchText}"
+                                                                         FontSize="12"
+                                                                         FontWeight="Bold"
+                                                                         Opacity="0.55"
+                                                                         TextTrimming="CharacterEllipsis"
+                                                                         MaxLines="1" />
+                                                <Panel Grid.Column="1" Classes="heart-sub" VerticalAlignment="Center" Margin="6,0,0,0">
+                                                    <ctrl:HeartIcon Size="14" ShowWhenOff="False" IsFavorite="{Binding HasFavoriteTrack}" IsVisible="{Binding HasFavoriteTrack}" />
+                                                </Panel>
+                                            </Grid>
                                         </StackPanel>
                                     </Button>
                                 </DataTemplate>

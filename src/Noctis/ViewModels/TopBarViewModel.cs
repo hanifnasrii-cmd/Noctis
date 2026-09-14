@@ -167,12 +167,14 @@ public partial class TopBarViewModel : ViewModelBase
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(SongsFiltersVisible))]
     [NotifyPropertyChangedFor(nameof(HasBarContent))]
+    [NotifyPropertyChangedFor(nameof(IsSongsFilterActive))]
     private bool _hasSongsFilters;
     [ObservableProperty] private string _songsSummaryText = string.Empty;
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(SongsQualityAll))]
     [NotifyPropertyChangedFor(nameof(SongsQualityLossless))]
     [NotifyPropertyChangedFor(nameof(SongsQualityHiRes))]
+    [NotifyPropertyChangedFor(nameof(IsSongsFilterActive))]
     private string _songsQualityFilter = "All";
     [ObservableProperty] private ICommand? _songsQualityCommand;
 
@@ -227,7 +229,9 @@ public partial class TopBarViewModel : ViewModelBase
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(ArtistSortDescending))]
     private bool _artistSortAscending = true;
-    [ObservableProperty] private string _artistSortMode = "name";
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsArtistSortActive))]
+    private string _artistSortMode = "name";
     public bool ArtistSortDescending => !ArtistSortAscending;
 
     public void ShowArtistSort(ICommand sortCommand, string label, string mode, bool ascending)
@@ -252,6 +256,9 @@ public partial class TopBarViewModel : ViewModelBase
     // Albums sort chip above. Rides HasPlaylistActions so it appears and disappears with
     // the New button rather than needing its own visibility flag.
     [ObservableProperty] private string _playlistSortLabel = "Default";
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsPlaylistSortActive))]
+    private string _playlistSortMode = "default";
     [ObservableProperty] private ICommand? _playlistSortCommand;
 
     // Global view mode toggle (Library / Cover Flow) — shown on Home, Songs, Albums, Artists, Folders, Playlists, Favorites
@@ -299,9 +306,13 @@ public partial class TopBarViewModel : ViewModelBase
     private bool _hasFavoritesActions;
     [ObservableProperty] private ICommand? _pageShuffleFavoritesCommand;
     [ObservableProperty] private ICommand? _pagePlayFavoritesCommand;
-    [ObservableProperty] private bool _pageShowOnlyFavorites;
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsSongsFilterActive))]
+    private bool _pageShowOnlyFavorites;
     [ObservableProperty] private bool _pageSortAscending = true;
-    [ObservableProperty] private string _pageSortColumn = string.Empty;
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsSongsSortActive))]
+    private string _pageSortColumn = string.Empty;
     [ObservableProperty] private ICommand? _pageSetShowAllItemsCommand;
     [ObservableProperty] private ICommand? _pageSetShowOnlyFavoritesCommand;
     [ObservableProperty] private ICommand? _pageSortCommand;
@@ -462,6 +473,7 @@ public partial class TopBarViewModel : ViewModelBase
     // is. AlbumSortMode is compared per item via StringEqualsConverter.
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(AlbumSortDirectionEnabled))]
+    [NotifyPropertyChangedFor(nameof(IsAlbumSortActive))]
     private string _albumSortMode = "default";
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(AlbumSortDescending))]
@@ -475,18 +487,40 @@ public partial class TopBarViewModel : ViewModelBase
 
     // Dropdown variants of the release-type / quality filters (albums grid top bar).
     [ObservableProperty] private ICommand? _releaseTypeFilterCommand;
-    [ObservableProperty] private string _releaseTypeFilterLabel = "All";
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsReleaseTypeFiltered))]
+    [NotifyPropertyChangedFor(nameof(IsAlbumFilterActive))]
+    private string _releaseTypeFilterLabel = "All";
     [ObservableProperty] private ICommand? _qualityFilterCommand;
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(AlbumQualityAll))]
     [NotifyPropertyChangedFor(nameof(AlbumQualityLossless))]
     [NotifyPropertyChangedFor(nameof(AlbumQualityHiRes))]
+    [NotifyPropertyChangedFor(nameof(IsAlbumFilterActive))]
     private string _qualityFilterLabel = "All";
 
     // Albums quality pill segments (mirrors the Songs pill; label is what the albums VM reports).
     public bool AlbumQualityAll => QualityFilterLabel == "All";
     public bool AlbumQualityLossless => QualityFilterLabel == "Lossless";
     public bool AlbumQualityHiRes => QualityFilterLabel == "Hi-Res";
+
+    // ── Corner icon "not at default" dots ──
+    //
+    // The top-right corner shows filter / sort as round icon buttons (no label, no
+    // value at rest); a small accent dot on the icon says the control is away from its
+    // default, so a filtered or re-sorted grid never looks like the plain one. The
+    // labels compared here are the raw keys the grid view-models report, not localized
+    // text (LibraryAlbumsViewModel.ReleaseTypeFilterLabel etc. are English constants).
+    public bool IsReleaseTypeFiltered => ReleaseTypeFilterLabel != "All";
+    public bool IsAlbumFilterActive => IsReleaseTypeFiltered || QualityFilterLabel != "All";
+    public bool IsAlbumSortActive => AlbumSortMode != "default";
+    /// <summary>The quality part only counts where the quality items are offered (Songs page);
+    /// the filter string is not reset when another page hides them.</summary>
+    public bool IsSongsFilterActive => PageShowOnlyFavorites || (HasSongsFilters && SongsQualityFilter != "All");
+    /// <summary>Songs default order is "Date Added" (LibrarySongsViewModel); empty = not reported yet.</summary>
+    public bool IsSongsSortActive => PageSortColumn is not ("" or "Date Added");
+    public bool IsArtistSortActive => ArtistSortMode != "name";
+    public bool IsPlaylistSortActive => PlaylistSortMode != "default";
 
     public void ShowReleaseTypeChips(ObservableCollection<ReleaseTypeChip> chips, ICommand selectCommand,
         ObservableCollection<QualityChip>? qualityChips = null, ICommand? qualityCommand = null,

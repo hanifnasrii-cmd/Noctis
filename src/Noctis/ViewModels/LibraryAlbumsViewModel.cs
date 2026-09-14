@@ -918,6 +918,18 @@ public partial class LibraryAlbumsViewModel : ViewModelBase, ISearchable, IDispo
         _player.ReplaceQueueAndPlay(album.Tracks, 0);
     }
 
+    /// <summary>Tile hover button: Pause/resume when this album is the loaded one, else
+    /// play it from track 1 in disc/track order.</summary>
+    [RelayCommand]
+    private void TogglePlayAlbum(Album album)
+    {
+        if (album == null) return;
+        if (album.IsCurrent) { _player.PlayPauseCommand.Execute(null); return; }
+        var ordered = Helpers.AlbumTile.OrderedTracks(album);
+        if (ordered.Count == 0) return;
+        _player.ReplaceQueueAndPlay(ordered, 0);
+    }
+
     [RelayCommand]
     private void ShuffleAlbum(Album album)
     {
