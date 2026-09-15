@@ -135,6 +135,16 @@ public partial class PlaylistViewModel : ViewModelBase, ISearchable, IDisposable
     }
 
     /// <summary>Playlist cover color (hex).</summary>
+    /// <summary>Starred in the sidebar (hero star button, 09-14).</summary>
+    public bool IsPinned => _playlist.IsPinned;
+
+    [RelayCommand]
+    private async Task TogglePin()
+    {
+        await _sidebar.TogglePinAsync(_playlist.Id);
+        OnPropertyChanged(nameof(IsPinned));
+    }
+
     public string PlaylistColor => _playlist.Color;
 
     /// <summary>Custom cover art path (if set).</summary>
