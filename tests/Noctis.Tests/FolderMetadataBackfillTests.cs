@@ -56,7 +56,10 @@ public class FolderMetadataBackfillTests : IDisposable
 
         var library = MakeLibrary();
         await library.LoadAsync();
-        await WaitUntil(() => track.Artist == "Folder Artist"); // migration runs in background
+        // Migration runs in the background and writes Artist, Album, then TrackNumber/Title
+        // on that thread; waiting on Artist alone let the asserts below read the title
+        // before it was rewritten under full-suite load (3 of 5 runs, 09-14).
+        await WaitUntil(() => track.Artist == "Folder Artist" && track.Title == "Song");
 
         Assert.Equal("Folder Artist", track.Artist);
         Assert.Equal("Folder Album", track.Album);
