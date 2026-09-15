@@ -33,6 +33,9 @@ public class LastFmService : ILastFmService
     private static readonly Regex LastFmReadMoreRegex = new("Read\\s+more\\s+on\\s+Last\\.fm\\s*\\.?", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
     private static readonly Regex LastFmLicenseRegex = new("User-?contributed\\s+text\\s+is\\s+available\\s+under\\s+the\\s+Creative\\s+Commons\\s+By-?SA\\s+License;?\\s*additional\\s+terms\\s+may\\s+apply\\s*\\.?", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
     private static readonly Regex BlankLineRegex = new("\\n{3,}", RegexOptions.Compiled | RegexOptions.CultureInvariant);
+    // "…Apple Music. ." — Last.fm puts the sentence period OUTSIDE the "Read more" anchor, so
+    // once the anchor text is removed a lone period trails the real one. Collapse it.
+    private static readonly Regex OrphanPeriodRegex = new("(?<=[.!?…])\\s+\\.(?=\\s|$)", RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
 
     public bool IsAuthenticated => !string.IsNullOrEmpty(_sessionKey);
@@ -382,8 +385,11 @@ public class LastFmService : ILastFmService
                 {
                     foreach (var kvp in entries)
                     {
-                        if (!string.IsNullOrWhiteSpace(kvp.Key) && kvp.Value != null)
-                            _albumDescriptionCache[kvp.Key] = kvp.Value;
+                        if (string.IsNullOrWhiteSpace(kvp.Key) || kvp.Value == null) continue;
+                        // Entries written by builds that stranded ". ." are repaired in place.
+                        kvp.Value.Summary = ScrubOrphanPeriods(kvp.Value.Summary);
+                        kvp.Value.FullContent = ScrubOrphanPeriods(kvp.Value.FullContent);
+                        _albumDescriptionCache[kvp.Key] = kvp.Value;
                     }
                 }
             }
@@ -553,24 +559,28 @@ public class LastFmService : ILastFmService
             || t.Equals("Extended", StringComparison.OrdinalIgnoreCase);
     }
 
-    private static string? CleanAlbumSummary(string? rawSummary)
+    internal static string? CleanAlbumSummary(string? rawSummary)
     {
         return CleanAlbumText(rawSummary, preserveParagraphs: false);
     }
 
-    private static string? CleanAlbumContent(string? rawContent)
+    internal static string? CleanAlbumContent(string? rawContent)
     {
         return CleanAlbumText(rawContent, preserveParagraphs: true);
     }
+
+    /// <summary>Repairs text cleaned by an older build (the orphan ". ." was cached on disk).</summary>
+    internal static string? ScrubOrphanPeriods(string? text)
+        => string.IsNullOrEmpty(text) ? text : OrphanPeriodRegex.Replace(text, string.Empty);
 
     private static string? CleanAlbumText(string? rawText, bool preserveParagraphs)
     {
         if (string.IsNullOrWhiteSpace(rawText))
             return null;
 
+        // Tags come off first: the "Read more" phrase sits inside an <a>, and stripping the
+        // phrase while the anchor is still there strands the sentence period after it.
         var decoded = WebUtility.HtmlDecode(rawText);
-        decoded = LastFmReadMoreRegex.Replace(decoded, string.Empty);
-        decoded = LastFmLicenseRegex.Replace(decoded, string.Empty);
         string cleaned;
 
         if (!preserveParagraphs)
@@ -608,6 +618,7 @@ public class LastFmService : ILastFmService
 
         cleaned = LastFmReadMoreRegex.Replace(cleaned, string.Empty);
         cleaned = LastFmLicenseRegex.Replace(cleaned, string.Empty);
+        cleaned = OrphanPeriodRegex.Replace(cleaned, string.Empty);
 
         if (!preserveParagraphs)
         {

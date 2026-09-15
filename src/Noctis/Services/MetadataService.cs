@@ -434,6 +434,11 @@ public class MetadataService : IMetadataService
             tag.DiscCount = (uint)Math.Max(0, track.DiscCount);
             tag.BeatsPerMinute = (uint)Math.Max(0, track.Bpm);
             tag.Year = (uint)Math.Max(0, track.Year);
+            // TagLib's Year setter stamps a bare "2004" into the very frame the full
+            // release date lives in (TDRC / DATE / ©day), so an unrelated save used to
+            // shrink "2004-02-10" to the year. Put the full date back when it agrees
+            // with the year being written.
+            WriteFullReleaseDate(file, track.ReleaseDate, track.Year);
             tag.Composers = string.IsNullOrWhiteSpace(track.Composer) ? Array.Empty<string>() : new[] { track.Composer };
             tag.Lyrics = string.IsNullOrWhiteSpace(track.Lyrics) ? null : track.Lyrics;
             tag.Comment = string.IsNullOrWhiteSpace(track.Comment) ? null : track.Comment;
@@ -1298,6 +1303,42 @@ public class MetadataService : IMetadataService
     /// Returns raw date string (e.g., "2014-10-27" or "2014/10/27" or "2014-10-27T00:00:00Z"), or empty.
     /// Only returns values that contain more than just a year (length > 4).
     /// </summary>
+    /// <summary>
+    /// Re-stamps a full release date ("2004-02-10") into the standard date frames after
+    /// <c>tag.Year</c> reduced them to the year. Skipped when there is no full date, or when
+    /// the date's year no longer matches the year being saved (a year edit wins).
+    /// </summary>
+    private static void WriteFullReleaseDate(TagLib.File file, string? releaseDate, int year)
+    {
+        var value = releaseDate?.Trim();
+        if (string.IsNullOrEmpty(value) || value.Length <= 4) return;
+        if (!Track.TryParseReleaseDate(value, out var parsed) || parsed.Year != year) return;
+
+        try
+        {
+            if (file.GetTag(TagLib.TagTypes.Id3v2) is TagLib.Id3v2.Tag id3v2)
+            {
+                var frame = TagLib.Id3v2.TextInformationFrame.Get(id3v2, "TDRC", true);
+                frame.Text = new[] { value };
+            }
+        }
+        catch { }
+
+        try
+        {
+            if (file.GetTag(TagLib.TagTypes.Xiph) is TagLib.Ogg.XiphComment xiph)
+                xiph.SetField("DATE", value);
+        }
+        catch { }
+
+        try
+        {
+            if (file.GetTag(TagLib.TagTypes.Apple) is TagLib.Mpeg4.AppleTag apple)
+                apple.SetText(TagLib.ByteVector.FromString("\u00A9day", TagLib.StringType.Latin1), new[] { value });
+        }
+        catch { }
+    }
+
     private static string ReadReleaseDate(TagLib.File file, TagLib.Tag tag)
     {
         // ID3v2 (MP3): check TXXX custom frames first (RELEASETIME, RELEASEDATE, YEAR)

@@ -285,22 +285,42 @@
                                     Opacity="0.95" />
                     </Border>
                 </Grid>
-                <!-- Album artist: always a single clickable link (combined name for multi-artist) -->
-                <Button Classes="no-hover-scale"
-                        Background="Transparent"
-                        BorderThickness="0"
-                        Padding="0,1,0,2"
-                        MinHeight="0"
-                        Cursor="Hand"
-                        HorizontalAlignment="Left"
-                        HorizontalContentAlignment="Left"
-                        Command="{Binding ViewArtistCommand}">
-                    <TextBlock Text="{Binding Album.Artist}"
-                               FontSize="20"
-                               LineHeight="24"
-                               VerticalAlignment="Center"
-                               Foreground="{DynamicResource AccentTextExactBrush}" />
-                </Button>
+                <!-- Album artist: one link per credited artist ("Rihanna, Kanye West, Paul McCartney"
+                     used to be a single button that always opened the first name). -->
+                <ItemsControl ItemsSource="{Binding ArtistTokens}" HorizontalAlignment="Left">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <WrapPanel Orientation="Horizontal" />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:ArtistTokenItem">
+                            <StackPanel Orientation="Horizontal">
+                                <Button Classes="no-hover-scale artist-credit-link"
+                                        Background="Transparent"
+                                        BorderThickness="0"
+                                        Padding="0,1,0,2"
+                                        MinHeight="0"
+                                        Cursor="Hand"
+                                        Command="{Binding $parent[ItemsControl].((vm:AlbumDetailViewModel)DataContext).ViewArtistFromTrackCommand}"
+                                        CommandParameter="{Binding Name}">
+                                    <TextBlock Text="{Binding Name}"
+                                               FontSize="20"
+                                               LineHeight="24"
+                                               VerticalAlignment="Center"
+                                               Foreground="{DynamicResource AccentTextExactBrush}" />
+                                </Button>
+                                <TextBlock Text=", "
+                                           FontSize="20"
+                                           LineHeight="24"
+                                           VerticalAlignment="Center"
+                                           Opacity="0.6"
+                                           Foreground="{DynamicResource AccentTextExactBrush}"
+                                           IsVisible="{Binding !IsLast}" />
+                            </StackPanel>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
                 <StackPanel Orientation="Horizontal" Spacing="0" Margin="0,4,0,0"
                             TextElement.Foreground="{Binding PageForegroundBrush}">
                     <TextBlock FontSize="13" Opacity="0.5" VerticalAlignment="Center">

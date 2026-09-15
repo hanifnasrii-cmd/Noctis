@@ -602,20 +602,19 @@ public partial class LibraryAlbumsViewModel : ViewModelBase, ISearchable, IDispo
                 a.Tracks.Any(t => MatchesSearch(t.Title, t.SearchTitleKey, q, qNoSpaces) ||
                                   MatchesSearch(t.Artist, t.SearchArtistKey, q, qNoSpaces)));
 
-            // In artist discographies, show the artist's own releases before feature appearances.
+            // Artist discographies read as one timeline: collab albums sit among the
+            // artist's own releases by year (Discord request), not after them.
             filtered = filtered
-                .OrderBy(a => GetArtistDiscographyRank(a, artistFilter))
-                .ThenBy(a => GetAlbumSearchRank(a, q, qNoSpaces))
-                .ThenBy(a => a.Artist, StringComparer.OrdinalIgnoreCase)
+                .OrderBy(a => GetAlbumSearchRank(a, q, qNoSpaces))
                 .ThenBy(a => a.Year)
+                .ThenBy(a => a.Artist, StringComparer.OrdinalIgnoreCase)
                 .ThenBy(a => a.Name, StringComparer.OrdinalIgnoreCase);
         }
         else if (!string.IsNullOrEmpty(artistFilter))
         {
             filtered = filtered
-                .OrderBy(a => GetArtistDiscographyRank(a, artistFilter))
+                .OrderBy(a => a.Year)
                 .ThenBy(a => a.Artist, StringComparer.OrdinalIgnoreCase)
-                .ThenBy(a => a.Year)
                 .ThenBy(a => a.Name, StringComparer.OrdinalIgnoreCase);
         }
 
