@@ -732,14 +732,16 @@
                             </StackPanel>
                             <StackPanel Grid.Row="4" Grid.Column="2" Spacing="4">
                                 <TextBlock Text="{loc:T Metadata.PlayCount}" FontSize="12" Opacity="0.5" />
-                                <StackPanel Orientation="Horizontal" Spacing="12" MinHeight="36">
-                                    <TextBlock Text="{Binding PlayCountDisplay}" FontSize="14" VerticalAlignment="Center" />
-                                    <Button Content="{loc:T Metadata.Reset}" Command="{Binding ResetPlayCountCommand}"
+                                <!-- Star column keeps a long "N (Last Played …)" from pushing Reset off the edge. -->
+                                <Grid ColumnDefinitions="*,Auto" MinHeight="36">
+                                    <TextBlock Grid.Column="0" Text="{Binding PlayCountDisplay}" FontSize="14"
+                                               VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,12,0" />
+                                    <Button Grid.Column="1" Content="{loc:T Metadata.Reset}" Command="{Binding ResetPlayCountCommand}"
                                             Classes="accent-btn"
                                             Padding="14,5" FontSize="12" FontWeight="Bold" Cursor="Hand" VerticalAlignment="Center"
                                             Foreground="{DynamicResource AccentForegroundBrush}" Background="{DynamicResource AccentButtonBackground}"
                                             CornerRadius="999" />
-                                </StackPanel>
+                                </Grid>
                             </StackPanel>
                         </Grid>
 
@@ -1806,9 +1808,12 @@
                                     Padding="12,4" CornerRadius="999" Cursor="Hand"
                                     FontWeight="SemiBold" FontSize="12"/>
                             <TextBox Text="{Binding ShiftAllSeconds, Mode=TwoWay}"
-                                     Width="56" MinHeight="0" Padding="8,4"
-                                     FontSize="12" CornerRadius="999"
+                                     Classes="pill-input"
+                                     FontFamily="Consolas, Menlo, Monaco, Courier New, monospace"
+                                     Width="64" MinHeight="0" Padding="10,5"
+                                     FontSize="12"
                                      HorizontalContentAlignment="Center"
+                                     VerticalContentAlignment="Center"
                                      VerticalAlignment="Center"
                                      ToolTip.Tip="{loc:T Metadata.SecondsShiftByTip}"/>
                             <TextBlock Text="s" FontSize="12" Opacity="0.6" VerticalAlignment="Center"/>
