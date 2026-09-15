@@ -71,6 +71,68 @@ public class LrcVoiceMarkerTests
     }
 
     [Fact]
+    public void V2000Marker_StrippedFromText_WordTimingSurvives()
+    {
+        var lines = LyricsViewModel.ParseLrcContent("[00:10.00]v2000: <00:10.10>The <00:10.40>family<00:10.90>");
+
+        var line = Assert.Single(lines);
+        Assert.Equal(LyricVoice.Default, line.Voice);
+        Assert.Equal("The family", line.Text);
+        Assert.Equal(2, line.Words!.Count);
+    }
+
+    [Fact]
+    public void BgLine_AttachesToPrecedingLineAsBackgroundWords()
+    {
+        // iTunes/Gramophone "[bg: ...]" line: no line timestamp, word tags inside,
+        // closed by "]". It is the background vocal of the line just above it.
+        var lrc = string.Join("\n",
+            "[00:36.00]v2: <00:36.10>That's <00:36.50>why<00:36.90>",
+            "[bg: <00:36.938>(Ah, <00:38.203>yeah, <00:38.520>yeah)<00:38.783>]",
+            "[00:39.00]v1: <00:39.10>Now<00:39.50>");
+
+        var lines = LyricsViewModel.ParseLrcContent(lrc);
+
+        Assert.Equal(2, lines.Count);
+        var main = lines[0];
+        Assert.Equal("That's why", main.Text);
+        Assert.Equal(LyricVoice.Voice2, main.Voice);
+        Assert.True(main.HasBackgroundWords);
+        var bg = main.BackgroundWords!;
+        Assert.Equal("(Ah, ", bg[0].Text);
+        Assert.Equal(TimeSpan.FromMilliseconds(36_938), bg[0].Start);
+        Assert.Equal("yeah)", bg[^1].Text);
+        Assert.Equal(TimeSpan.FromMilliseconds(38_783), bg[^1].End);
+        Assert.Equal(TimeSpan.FromMilliseconds(38_783), main.BackgroundEndTimestamp);
+        Assert.DoesNotContain(lines, l => l.Text.Contains("bg:"));
+        Assert.Equal("Now", lines[1].Text);
+    }
+
+    [Fact]
+    public void BgLine_WithoutPrecedingLine_DroppedNotShownAsText()
+    {
+        var lines = LyricsViewModel.ParseLrcContent(string.Join("\n",
+            "[bg: <00:01.00>(Ooh)<00:02.00>]",
+            "[00:03.00]Hello"));
+
+        var line = Assert.Single(lines);
+        Assert.Equal("Hello", line.Text);
+    }
+
+    [Fact]
+    public void BgLine_WithoutWordTags_AttachesAsSingleWord()
+    {
+        var lines = LyricsViewModel.ParseLrcContent(string.Join("\n",
+            "[00:03.00]Hello",
+            "[bg: (Ooh)]"));
+
+        var line = Assert.Single(lines);
+        var bg = Assert.Single(line.BackgroundWords!);
+        Assert.Equal("(Ooh)", bg.Text);
+        Assert.Equal(TimeSpan.FromSeconds(3), bg.Start);
+    }
+
+    [Fact]
     public void NoMarker_RegressionUnchanged()
     {
         var lines = LyricsViewModel.ParseLrcContent("[00:12.34]Hello world");

@@ -350,12 +350,20 @@ public class EnhancedLrcParserTests
     }
 
     [Fact]
-    public void StripVoiceMarker_V4_NotAMarker()
+    public void StripVoiceMarker_HigherVoiceIds_StrippedAndMapToDefault()
     {
-        var (body, voice) = EnhancedLrcParser.StripVoiceMarker("v4: Hey");
+        // Apple TTML exports carry agent ids beyond v3 (e.g. "v2000" for a sampled
+        // clip); those must never surface as lyric text. Layout falls back to Default.
+        Assert.Equal((" Hey", Noctis.Models.LyricVoice.Default), EnhancedLrcParser.StripVoiceMarker("v4: Hey"));
+        Assert.Equal((" Hey", Noctis.Models.LyricVoice.Default), EnhancedLrcParser.StripVoiceMarker("v2000: Hey"));
+        Assert.Equal((" Hey", Noctis.Models.LyricVoice.Default), EnhancedLrcParser.StripVoiceMarker(" v1000: Hey"));
+    }
 
-        Assert.Equal("v4: Hey", body);
-        Assert.Equal(Noctis.Models.LyricVoice.Default, voice);
+    [Fact]
+    public void StripVoiceMarker_VWithoutDigitsOrColon_NotAMarker()
+    {
+        Assert.Equal(("v: Hey", Noctis.Models.LyricVoice.Default), EnhancedLrcParser.StripVoiceMarker("v: Hey"));
+        Assert.Equal(("v20 Hey", Noctis.Models.LyricVoice.Default), EnhancedLrcParser.StripVoiceMarker("v20 Hey"));
     }
 
     [Fact]

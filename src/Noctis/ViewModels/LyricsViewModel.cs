@@ -2465,6 +2465,19 @@ public partial class LyricsViewModel : ViewModelBase, IDisposable
             if (MetadataTagRegex().IsMatch(trimmed))
                 continue;
 
+            // iTunes/Gramophone background vocal: "[bg: <t>word <t>word<t>]" — a line with
+            // no [mm:ss.xx] stamp that belongs to the main line directly above it in the
+            // file. Attach it here, in file order: the timestamp sort below would otherwise
+            // push it (as an "unsynced" line) to the very end of the song, and its raw
+            // "[bg: <00:36.938>(Ah, …]" text would render there as a lyric.
+            if (trimmed.StartsWith(BgLinePrefix, StringComparison.Ordinal))
+            {
+                var lastMain = lines.LastOrDefault(l => l.Timestamp.HasValue);
+                if (lastMain != null)
+                    AttachBackgroundLine(lastMain, trimmed, offsetMs);
+                continue;
+            }
+
             // Extract all timestamps from the line
             var matches = LrcTimestampRegex().Matches(trimmed);
             if (matches.Count > 0)
@@ -2546,6 +2559,28 @@ public partial class LyricsViewModel : ViewModelBase, IDisposable
         EnhancedLrcParser.FoldBackgroundLines(lines);
 
         return lines;
+    }
+
+    private const string BgLinePrefix = "[bg:";
+
+    /// <summary>
+    /// Parses a "[bg: …]" line body (prefix and closing bracket stripped) into the
+    /// preceding main line's background layer. A body without word tags becomes one
+    /// word starting at the main line's own timestamp so it still renders.
+    /// </summary>
+    private static void AttachBackgroundLine(LyricLine target, string trimmed, int offsetMs)
+    {
+        var body = trimmed[BgLinePrefix.Length..];
+        if (body.EndsWith(']')) body = body[..^1];
+
+        var (text, words) = EnhancedLrcParser.ParseLine(body);
+        if (string.IsNullOrWhiteSpace(text)) return;
+
+        List<WordTiming> bg = words != null
+            ? (offsetMs == 0 ? words : ShiftWords(words, offsetMs))
+            : [new WordTiming { Text = text, Start = target.Timestamp!.Value }];
+
+        EnhancedLrcParser.AppendBackground(target, bg, bg[^1].End);
     }
 
     /// <summary>Applies the global LRC offset to absolute word timings.</summary>
