@@ -106,31 +106,28 @@ public class ArtistDetailViewModelTests
     }
 
     [Fact]
-    public void OverviewRows_NewestFourEach_ALoneRowTakesEight_SearchLiftsTheCap()
+    public void OverviewRows_NewestColumnsEach_SearchLiftsTheCap()
     {
+        // 09-14: the two Overview rows are stacked full-width at Home's tile size, so each
+        // shows the newest GridColumns releases (five in Auto).
         var albums = Enumerable.Range(0, 10).Select(i =>
             MakeAlbum($"LP {i:00}", "A", 2000 + i, Enumerable.Range(0, 8).Select(k => ($"lp{i}t{k}", "A", 0)).ToArray()));
         var singles = Enumerable.Range(0, 6).Select(i => MakeAlbum($"Single {i:00}", "A", 2010 + i, ($"s{i}", "A", 0)));
         var (vm, _) = Make("A", albums.Concat(singles).ToArray());
 
-        Assert.Equal(ArtistDetailViewModel.OverviewRowTiles, vm.OverviewAlbums.Count);
-        Assert.Equal(ArtistDetailViewModel.OverviewRowTiles, vm.OverviewSingles.Count);
+        Assert.Equal(vm.GridColumns, vm.OverviewAlbums.Count);
+        Assert.Equal(vm.GridColumns, vm.OverviewSingles.Count);
         Assert.Equal("LP 09", vm.OverviewAlbums[0].Name);          // newest first
-        Assert.Equal(1, vm.AlbumsSpan);
-        Assert.Equal(2, vm.SinglesColumn);
-        Assert.Equal(ArtistDetailViewModel.OverviewRowTiles, vm.OverviewAlbumColumns);
+        Assert.Equal(vm.GridColumns, vm.OverviewAlbumColumns);
 
         vm.ApplyFilter("lp");                                       // every album matches; no cap
         Assert.Equal(10, vm.OverviewAlbums.Count);
         Assert.Empty(vm.OverviewSingles);
-        Assert.Equal(3, vm.AlbumsSpan);                             // the row spans both columns …
-        Assert.Equal(ArtistDetailViewModel.GridColumns, vm.OverviewAlbumColumns); // … eight across
 
         vm.ApplyFilter("");
-        var (only, _) = Make("B", Enumerable.Range(0, 10).Select(i =>
-            MakeAlbum($"B {i:00}", "B", 2000 + i, Enumerable.Range(0, 8).Select(k => ($"b{i}t{k}", "B", 0)).ToArray())).ToArray());
-        Assert.Equal(ArtistDetailViewModel.GridColumns, only.OverviewAlbums.Count); // alone → eight newest
-        Assert.False(only.HasOverviewSingles);
+        vm.GridColumns = 7;                                         // wider window / smaller covers → wider rows
+        Assert.Equal(7, vm.OverviewAlbums.Count);
+        Assert.Equal(6, vm.OverviewSingles.Count);                  // only six exist
     }
 
     [Fact]

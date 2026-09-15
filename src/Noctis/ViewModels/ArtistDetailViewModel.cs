@@ -41,12 +41,25 @@ public partial class ArtistDetailViewModel : ViewModelBase, ISearchable, IDispos
     /// <summary>Favourited songs shown in the Songs tab's Top Favorites section.</summary>
     public const int MaxFavorites = 6;
     /// <summary>Tiles per Overview release row: four beside the other row, eight alone.</summary>
-    public const int OverviewRowTiles = 4;
-    public const int GridColumns = 8;
+    /// <summary>Tiles per row: the same maths as Home and the Albums grid (AlbumGridMetrics —
+    /// five across in Auto, else the cover-size setting). The view feeds its usable width.</summary>
+    [ObservableProperty] private int _gridColumns = AlbumGridMetrics.ClassicColumns;
+
+    /// <summary>Cover-size setting shared with Home/Albums (defaults when no settings are wired).</summary>
+    public bool AlbumTileSizeAuto => _settings?.AlbumTileSizeAuto ?? true;
+    public double AlbumTileTargetSize => _settings?.AlbumTileTargetSize ?? 220;
+
+    partial void OnGridColumnsChanged(int value)
+    {
+        OnPropertyChanged(nameof(OverviewAlbumColumns));
+        OnPropertyChanged(nameof(OverviewSingleColumns));
+        if (_allReleases.Count > 0 || _allSongs.Count > 0) ApplyLists(); // overview caps follow the column count
+    }
     private const int CollapsedBioLines = 7;
 
     private readonly ILibraryService _library;
     private readonly PlayerViewModel _player;
+    private readonly SettingsViewModel? _settings;
     private readonly LibraryArtistsViewModel? _artistsVm;
     private readonly ArtistImageService? _images;
     private readonly ArtistInfoService? _info;
@@ -160,11 +173,9 @@ public partial class ArtistDetailViewModel : ViewModelBase, ISearchable, IDispos
     public bool HasAppearsOn => AppearsOn.Count > 0;
     public bool HasAllSongs => AllSongs.Count > 0;
     /// <summary>Overview layout: a row alone spans both columns and shows eight tiles.</summary>
-    public int AlbumsSpan => HasOverviewSingles ? 1 : 3;
-    public int SinglesSpan => HasOverviewAlbums ? 1 : 3;
-    public int SinglesColumn => HasOverviewAlbums ? 2 : 0;
-    public int OverviewAlbumColumns => HasOverviewSingles ? OverviewRowTiles : GridColumns;
-    public int OverviewSingleColumns => HasOverviewAlbums ? OverviewRowTiles : GridColumns;
+    /// <summary>Overview rows are stacked full-width (09-14, tiles at Home size): one row of each.</summary>
+    public int OverviewAlbumColumns => GridColumns;
+    public int OverviewSingleColumns => GridColumns;
     public int AlbumCount => AlbumReleases.Count;
     public int SingleCount => SingleReleases.Count;
 
@@ -257,7 +268,7 @@ public partial class ArtistDetailViewModel : ViewModelBase, ISearchable, IDispos
 
     // ── Tile sizing ──
     private const double TileLabelHeight = 64;
-    [ObservableProperty] private double _tileArtworkSize = 160;
+    [ObservableProperty] private double _tileArtworkSize = 184;
     public double TileHeight => TileArtworkSize + TileLabelHeight;
     partial void OnTileArtworkSizeChanged(double value) => OnPropertyChanged(nameof(TileHeight));
 
@@ -276,9 +287,11 @@ public partial class ArtistDetailViewModel : ViewModelBase, ISearchable, IDispos
         ArtistImageService? images = null,
         SidebarViewModel? sidebar = null,
         ArtistInfoService? info = null,
-        SimilarArtistsService? similar = null)
+        SimilarArtistsService? similar = null,
+        SettingsViewModel? settings = null)
     {
         ArtistName = (artistName ?? string.Empty).Trim();
+        _settings = settings;
         _library = library;
         _player = player;
         LibraryAlbumsVm = libraryAlbumsVm;
@@ -419,6 +432,29 @@ public partial class ArtistDetailViewModel : ViewModelBase, ISearchable, IDispos
         if (SimilarLoaded) RefreshSimilarLibraryFlags();
     }
 
+    /// <summary>Same albums in the same order (reference equality: Album objects are stable).</summary>
+    internal static bool SameAlbums(IList<Album> current, IList<Album> next)
+        => current.Count == next.Count && current.Zip(next).All(p => ReferenceEquals(p.First, p.Second));
+
+    /// <summary>Same tracks at the same ranks: TopSongRow is rebuilt per pass, so compare what it shows.</summary>
+    internal static bool SameRows(IList<TopSongRow> current, IList<TopSongRow> next)
+        => current.Count == next.Count &&
+           current.Zip(next).All(p => ReferenceEquals(p.First.Track, p.Second.Track) && p.First.Rank == p.Second.Rank);
+
+    private static void ReplaceAlbums(ObservableCollection<Album> target, IList<Album> next)
+    {
+        if (SameAlbums(target, next)) return;
+        target.Clear();
+        foreach (var a in next) target.Add(a);
+    }
+
+    private static void ReplaceRows(ObservableCollection<TopSongRow> target, IList<TopSongRow> next)
+    {
+        if (SameRows(target, next)) return;
+        target.Clear();
+        foreach (var r in next) target.Add(r);
+    }
+
     private void ApplyLists()
     {
         var q = _query.Trim();
@@ -426,33 +462,29 @@ public partial class ArtistDetailViewModel : ViewModelBase, ISearchable, IDispos
         var favorites = _allSongs.Where(t => t.IsFavorite).ToList();
         FavoriteCount = favorites.Count;
 
-        FavoriteSongs.Clear();
-        foreach (var row in RankPopular(favorites, q, searching ? 0 : MaxFavorites)) FavoriteSongs.Add(row);
-
-        PopularSongs.Clear();
-        foreach (var row in RankPopular(_allSongs, q, searching ? 0 : MaxPopular)) PopularSongs.Add(row);
+        // Every list is replaced only when its content changed (09-14). LibraryUpdated
+        // fires on each play-count save and FavoritesChanged on every heart, and the
+        // unconditional Clear+Add tore down every row and tile each time: the row under
+        // the pointer flickered, and a track menu whose owner row left the tree was
+        // closed by Avalonia and could not re-open (same root cause as Home, 09-13).
+        ReplaceRows(FavoriteSongs, RankPopular(favorites, q, searching ? 0 : MaxFavorites));
+        ReplaceRows(PopularSongs, RankPopular(_allSongs, q, searching ? 0 : MaxPopular));
 
         var matching = _allReleases.Where(a => AlbumMatches(a, q)).ToList();
         var albums = FilterReleases(matching, "albums").ToList();
         var singles = FilterReleases(matching, "singles").ToList();
 
-        Releases.Clear();
-        foreach (var a in matching) Releases.Add(a);
-        AlbumReleases.Clear();
-        foreach (var a in albums) AlbumReleases.Add(a);
-        SingleReleases.Clear();
-        foreach (var a in singles) SingleReleases.Add(a);
+        ReplaceAlbums(Releases, matching);
+        ReplaceAlbums(AlbumReleases, albums);
+        ReplaceAlbums(SingleReleases, singles);
 
-        // Four tiles per row beside each other; a row alone gets the full eight.
-        var albumCap = searching ? 0 : (singles.Count > 0 ? OverviewRowTiles : GridColumns);
-        var singleCap = searching ? 0 : (albums.Count > 0 ? OverviewRowTiles : GridColumns);
-        OverviewAlbums.Clear();
-        foreach (var a in OverviewRow(albums, albumCap)) OverviewAlbums.Add(a);
-        OverviewSingles.Clear();
-        foreach (var a in OverviewRow(singles, singleCap)) OverviewSingles.Add(a);
+        // One full-width row of each on the Overview: the newest GridColumns releases.
+        var albumCap = searching ? 0 : GridColumns;
+        var singleCap = searching ? 0 : GridColumns;
+        ReplaceAlbums(OverviewAlbums, OverviewRow(albums, albumCap).ToList());
+        ReplaceAlbums(OverviewSingles, OverviewRow(singles, singleCap).ToList());
 
-        AppearsOn.Clear();
-        foreach (var a in _allAppearsOn.Where(a => AlbumMatches(a, q))) AppearsOn.Add(a);
+        ReplaceAlbums(AppearsOn, _allAppearsOn.Where(a => AlbumMatches(a, q)).ToList());
 
         if (IsTabSongs) FillAllSongs();
         else { AllSongs.ReplaceAll(Array.Empty<TopSongRow>()); OnPropertyChanged(nameof(HasAllSongs)); }
@@ -465,9 +497,6 @@ public partial class ArtistDetailViewModel : ViewModelBase, ISearchable, IDispos
         OnPropertyChanged(nameof(HasOverviewAlbums));
         OnPropertyChanged(nameof(HasOverviewSingles));
         OnPropertyChanged(nameof(HasAppearsOn));
-        OnPropertyChanged(nameof(AlbumsSpan));
-        OnPropertyChanged(nameof(SinglesSpan));
-        OnPropertyChanged(nameof(SinglesColumn));
         OnPropertyChanged(nameof(OverviewAlbumColumns));
         OnPropertyChanged(nameof(OverviewSingleColumns));
         OnPropertyChanged(nameof(AlbumCount));
@@ -729,6 +758,15 @@ public partial class ArtistDetailViewModel : ViewModelBase, ISearchable, IDispos
     /// <summary>Plays a row: the queue is the list the row came from — favourites when the
     /// track is one, else the full play-count ranking (Popular is its head) — starting at
     /// the pick.</summary>
+    /// <summary>Row artwork hover button (09-14): Play, or Pause/Resume when this is the loaded track.</summary>
+    [RelayCommand]
+    private void TogglePlaySong(Track track)
+    {
+        if (track == null) return;
+        if (track.IsNowPlaying) { _player.PlayPauseCommand.Execute(null); return; }
+        PlaySong(track);
+    }
+
     [RelayCommand]
     private void PlaySong(Track? track)
     {

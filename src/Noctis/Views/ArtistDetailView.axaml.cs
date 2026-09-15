@@ -127,19 +127,21 @@ public partial class ArtistDetailView : UserControl
             vm.BioOverflows = overflows;
     }
 
-    protected override void OnSizeChanged(SizeChangedEventArgs e)
+    private void OnPageContentSizeChanged(object? sender, SizeChangedEventArgs e)
     {
-        base.OnSizeChanged(e);
         if (e.NewSize.Width <= 0 || DataContext is not ArtistDetailViewModel vm) return;
 
-        // Eight tiles per row across the page: section margins 32+32, the Overview's
-        // 24px gutter between its two rows, tile Margin="2" (4px horizontal each).
-        var usable = e.NewSize.Width - 64 - 24;
-        var tileContentWidth = usable / ArtistDetailViewModel.GridColumns - 4;
-        var newSize = Math.Max(80, tileContentWidth);
-        if (Math.Abs(newSize - vm.TileArtworkSize) < 0.5) return;
+        // Tiles at the size Home and the Albums grid use (AlbumGridMetrics: five across in
+        // Auto, else the cover-size setting) over the section width (margins 32+32, 2px
+        // slack for layout rounding, as Home's row does). The width is the scroll
+        // viewer's content, so the vertical scrollbar is already excluded.
+        var usable = e.NewSize.Width - 64 - 2;
+        var columns = AlbumGridMetrics.ComputeColumns(usable, vm.AlbumTileSizeAuto, vm.AlbumTileTargetSize);
+        var newSize = AlbumGridMetrics.ComputeTileSize(usable, columns);
+        if (columns == vm.GridColumns && Math.Abs(newSize - vm.TileArtworkSize) < 0.5) return;
 
         var savedY = PageScrollViewer.Offset.Y;
+        vm.GridColumns = columns;
         vm.TileArtworkSize = newSize;
         if (savedY > 0)
         {

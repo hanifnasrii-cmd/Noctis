@@ -2099,7 +2099,7 @@ public partial class MainWindowViewModel : ViewModelBase
         // long-lived shell constructor doesn't grow another parameter.
         var artistInfo = App.Services?.GetService(typeof(ArtistInfoService)) as ArtistInfoService;
         var similarArtists = App.Services?.GetService(typeof(SimilarArtistsService)) as SimilarArtistsService;
-        var page = new ArtistDetailViewModel(artistName, _library, Player, _albumsVm, _artistsVm, _artistImageService, Sidebar, artistInfo, similarArtists);
+        var page = new ArtistDetailViewModel(artistName, _library, Player, _albumsVm, _artistsVm, _artistImageService, Sidebar, artistInfo, similarArtists, Settings);
         page.BackRequested += (_, _) =>
         {
             if (ReferenceEquals(CurrentView, page))

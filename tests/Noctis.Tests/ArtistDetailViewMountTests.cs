@@ -96,7 +96,10 @@ public class ArtistDetailViewMountTests
         Assert.Equal(ArtistDetailViewModel.MaxPopular, rows.Count);
         var menuButtons = rows.Sum(r => r.GetVisualDescendants().OfType<Button>().Count(b => b.Classes.Contains("row-menu-btn")));
         Assert.Equal(ArtistDetailViewModel.MaxPopular, menuButtons);
-        Assert.Equal(ArtistDetailViewModel.MaxPopular, rows.Sum(r => r.GetVisualDescendants().OfType<Button>().Count()) ); // no other inner buttons
+        // Inner buttons per row: the "…" menu glyph and (09-14) the hover Play over the art.
+        var playOverlays = rows.Sum(r => r.GetVisualDescendants().OfType<Button>().Count(b => b.Classes.Contains("art-play-overlay")));
+        Assert.Equal(ArtistDetailViewModel.MaxPopular, playOverlays);
+        Assert.Equal(ArtistDetailViewModel.MaxPopular * 2, rows.Sum(r => r.GetVisualDescendants().OfType<Button>().Count()) ); // no other inner buttons
         // Year under the title (the reference's "2017"), not the album name.
         Assert.Contains("2019", texts);
         // Tile captions read "Album · 2019" (title case), the kicker form stays upper-case.

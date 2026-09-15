@@ -155,6 +155,28 @@
         <Style Selector="Button.song-row.playing TextBlock.song-row-dim">
             <Setter Property="Opacity" Value="0.85" />
         </Style>
+        <!-- Row artwork play overlay (09-14): hidden until the row is hovered. -->
+        <Style Selector="Button.art-play-overlay">
+            <Setter Property="Opacity" Value="0" />
+            <Setter Property="Transitions">
+                <Transitions>
+                    <DoubleTransition Property="Opacity" Duration="0:0:0.12" />
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="Button.song-row:pointerover Button.art-play-overlay">
+            <Setter Property="Opacity" Value="1" />
+        </Style>
+        <Style Selector="Button.art-play-overlay:pointerover, Button.art-play-overlay:pressed">
+            <Setter Property="RenderTransform" Value="scale(1)" />
+        </Style>
+        <Style Selector="Button.art-play-overlay:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="#80000000" />
+        </Style>
+        <Style Selector="Button.art-play-overlay Path">
+            <Setter Property="Fill" Value="White" />
+            <Setter Property="Stretch" Value="Uniform" />
+        </Style>
         <!-- Outline pill (Shuffle): same stroke as the Search box. -->
         <Style Selector="Button.outline-pill">
             <Setter Property="Background" Value="Transparent" />
@@ -340,7 +362,7 @@
                                                                 ToolTip.Tip="{loc:T ArtistDetail.ExplicitTip}">
                                                             <TextBlock Text="E"
                                                                        Classes="explicit-badge-text compact"
-                                                                       FontSize="9"
+                                                                       FontSize="8"
                                                                        Opacity="0.9" />
                                                         </Border>
                                                     </InlineUIContainer>
@@ -381,7 +403,7 @@
                     BorderThickness="0"
                     CornerRadius="6"
                     Padding="0"
-                    Height="52"
+                    Height="48"
                     Margin="0,3"
                     Cursor="Hand"
                     HorizontalAlignment="Stretch"
@@ -395,14 +417,14 @@
                         <Setter Property="Background" Value="{DynamicResource HomeCardHoverBackground}" />
                     </Style>
                 </Button.Styles>
-                <Grid ColumnDefinitions="52,52,*,Auto,Auto,40">
+                <Grid ColumnDefinitions="40,40,*,Auto,Auto,40">
                     <TextBlock Grid.Column="0"
                                Classes="rank-num"
                                Text="{Binding Rank}"
                                HorizontalAlignment="Center"
                                VerticalAlignment="Center" />
                     <Border Grid.Column="1"
-                            Width="40" Height="40"
+                            Width="36" Height="36"
                             CornerRadius="4"
                             ClipToBounds="True"
                             VerticalAlignment="Center"
@@ -418,9 +440,28 @@
                                               Stretch="UniformToFill"
                                               RenderOptions.BitmapInterpolationMode="HighQuality"
                                               IsVisible="{Binding Track.AlbumArtworkPath, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                            <!-- Hover Play over the art (09-14), as in the Songs list rows. -->
+                            <Button Classes="art-play-overlay"
+                                    Background="#66000000"
+                                    BorderThickness="0"
+                                    Padding="0"
+                                    CornerRadius="4"
+                                    HorizontalAlignment="Stretch"
+                                    VerticalAlignment="Stretch"
+                                    HorizontalContentAlignment="Center"
+                                    VerticalContentAlignment="Center"
+                                    Cursor="Hand"
+                                    ToolTip.Tip="{loc:T LibrarySongs.PlayFromHereTip}"
+                                    Command="{Binding $parent[UserControl].((vm:ArtistDetailViewModel)DataContext).TogglePlaySongCommand}"
+                                    CommandParameter="{Binding Track}">
+                                <Panel>
+                                    <Viewbox Width="14" Height="14" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="1,0,0,0" IsVisible="{Binding !Track.IsCurrentlyPlaying}"><Path Data="{StaticResource PlayIcon}" /></Viewbox>
+                                    <Viewbox Width="14" Height="14" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding Track.IsCurrentlyPlaying}"><Path Data="{StaticResource PauseIcon}" /></Viewbox>
+                                </Panel>
+                            </Button>
                         </Panel>
                     </Border>
-                    <StackPanel Grid.Column="2" Spacing="1" VerticalAlignment="Center" Margin="12,0,10,0">
+                    <StackPanel Grid.Column="2" Spacing="1" VerticalAlignment="Center" Margin="14,0,16,0">
                         <TextBlock FontSize="13"
                                    FontWeight="SemiBold"
                                    TextTrimming="CharacterEllipsis"
@@ -433,7 +474,7 @@
                                         ToolTip.Tip="{loc:T ArtistDetail.ExplicitTip}">
                                     <TextBlock Text="E"
                                                Classes="explicit-badge-text compact"
-                                               FontSize="9"
+                                               FontSize="8"
                                                Opacity="0.9" />
                                 </Border>
                             </InlineUIContainer>
@@ -529,7 +570,10 @@
     <ScrollViewer x:Name="PageScrollViewer"
                   HorizontalScrollBarVisibility="Disabled"
                   VerticalScrollBarVisibility="Auto">
-        <StackPanel Margin="0,0,0,115">
+        <!-- Tile sizing measures THIS panel (the scroll viewer's content), not the page:
+             the page width ignores the vertical scrollbar, so tiles came out ~18px too
+             wide for their cells and the covers were clipped (09-14; Home's row does the same). -->
+        <StackPanel x:Name="PageContent" Margin="0,0,0,115" SizeChanged="OnPageContentSizeChanged">
 
             <!-- ── Hero ─────────────────────────────────────────────── -->
             <Grid x:Name="Hero" Height="400" ClipToBounds="True">
@@ -914,9 +958,9 @@
                     </Border>
                 </Grid>
 
-                <!-- Albums | Singles & EPs (newest four each; a lone row takes the width) -->
-                <Grid ColumnDefinitions="*,24,*" Margin="32,26,32,0">
-                    <StackPanel Grid.Column="0" Grid.ColumnSpan="{Binding AlbumsSpan}" Spacing="8"
+                <!-- Albums, then Singles & EPs: one full-width row of each at Home's tile size (09-14) -->
+                <StackPanel Margin="32,26,32,0" Spacing="22">
+                    <StackPanel Spacing="8"
                                 IsVisible="{Binding HasOverviewAlbums}">
                         <Grid ColumnDefinitions="*,Auto" Margin="2,0,0,2">
                             <TextBlock Grid.Column="0" Text="{loc:T ArtistDetail.Albums}" Classes="section-title" VerticalAlignment="Center" />
@@ -931,7 +975,7 @@
                             </ItemsControl.ItemsPanel>
                         </ItemsControl>
                     </StackPanel>
-                    <StackPanel Grid.Column="{Binding SinglesColumn}" Grid.ColumnSpan="{Binding SinglesSpan}" Spacing="8"
+                    <StackPanel Spacing="8"
                                 IsVisible="{Binding HasOverviewSingles}">
                         <Grid ColumnDefinitions="*,Auto" Margin="2,0,0,2">
                             <TextBlock Grid.Column="0" Text="{loc:T ArtistDetail.SinglesEPs}" Classes="section-title" VerticalAlignment="Center" />
@@ -946,7 +990,7 @@
                             </ItemsControl.ItemsPanel>
                         </ItemsControl>
                     </StackPanel>
-                </Grid>
+                </StackPanel>
                 <TextBlock Text="{loc:T ArtistDetail.NoReleasesMatch}"
                            FontSize="13" Opacity="0.5" Margin="34,26,0,0"
                            IsVisible="{Binding !HasReleases}" />
@@ -973,7 +1017,7 @@
                     <ItemsControl ItemsSource="{Binding AppearsOn}" ItemTemplate="{StaticResource AlbumTile}">
                         <ItemsControl.ItemsPanel>
                             <ItemsPanelTemplate>
-                                <UniformGrid Columns="8" />
+                                <UniformGrid Columns="{Binding $parent[UserControl].((vm:ArtistDetailViewModel)DataContext).GridColumns}" />
                             </ItemsPanelTemplate>
                         </ItemsControl.ItemsPanel>
                     </ItemsControl>
@@ -989,7 +1033,7 @@
                 <ItemsControl ItemsSource="{Binding AlbumReleases}" ItemTemplate="{StaticResource AlbumTile}" IsVisible="{Binding HasAlbums}">
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
-                            <UniformGrid Columns="8" />
+                            <UniformGrid Columns="{Binding $parent[UserControl].((vm:ArtistDetailViewModel)DataContext).GridColumns}" />
                         </ItemsPanelTemplate>
                     </ItemsControl.ItemsPanel>
                 </ItemsControl>
@@ -1005,7 +1049,7 @@
                 <ItemsControl ItemsSource="{Binding SingleReleases}" ItemTemplate="{StaticResource AlbumTile}" IsVisible="{Binding HasSingles}">
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
-                            <UniformGrid Columns="8" />
+                            <UniformGrid Columns="{Binding $parent[UserControl].((vm:ArtistDetailViewModel)DataContext).GridColumns}" />
                         </ItemsPanelTemplate>
                     </ItemsControl.ItemsPanel>
                 </ItemsControl>
