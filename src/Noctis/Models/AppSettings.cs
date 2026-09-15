@@ -46,6 +46,9 @@ public class AppSettings
     /// <summary>Active accent colour as #RRGGBB hex (mirrors the preset; honoured when preset is "Custom").</summary>
     public string AccentColorHex { get; set; } = "#E74856";
 
+    /// <summary>Accent recolours from the playing track's cover; the chosen accent returns when nothing plays.</summary>
+    public bool AccentFollowsArtwork { get; set; }
+
     /// <summary>User-defined custom themes selectable from the Themes row.</summary>
     public List<CustomThemeDefinition> CustomThemes { get; set; } = new();
 

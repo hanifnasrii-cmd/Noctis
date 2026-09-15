@@ -23,6 +23,38 @@ public partial class MainWindow : Window
     private TrayIcon? _trayIcon;
     private bool _exitRequestedFromTray;
     private EventHandler<string>? _themeChangedHandler;
+    private System.ComponentModel.PropertyChangedEventHandler? _artworkAccentPlayerHandler;
+    private System.ComponentModel.PropertyChangedEventHandler? _artworkAccentSettingsHandler;
+    private string? _artworkAccentPath;
+
+    /// <summary>
+    /// "Accent follows album art": recolours the accent from the playing cover's vibrant
+    /// colour (path-cached; first decode runs off the UI thread), and restores the user's
+    /// own accent when the toggle is off, nothing is playing, or the cover is too grey.
+    /// </summary>
+    private void ApplyArtworkAccent()
+    {
+        if (DataContext is not MainWindowViewModel vm || Avalonia.Application.Current is not App app) return;
+        var path = vm.Settings.AccentFollowsArtwork ? vm.Player.CurrentArtPath : null;
+        _artworkAccentPath = path;
+        if (path == null)
+        {
+            app.SetAccent(vm.Settings.ActiveAccentHex);
+            return;
+        }
+        Task.Run(() => ShareCardRenderer.GetVibrantColorHex(path)).ContinueWith(t =>
+        {
+            if (!t.IsCompletedSuccessfully) return;
+            var hex = Noctis.Helpers.ArtworkAccent.TameForAccent(t.Result);
+            Dispatcher.UIThread.Post(() =>
+            {
+                // A later track may have won the race; only the newest path paints.
+                if (!ReferenceEquals(_artworkAccentPath, path) || !vm.Settings.AccentFollowsArtwork) return;
+                app.SetAccent(hex ?? vm.Settings.ActiveAccentHex);
+            });
+        });
+    }
+
     private EventHandler<string>? _accentChangedHandler;
     private EventHandler<bool>? _liquidGlassChangedHandler;
     private EventHandler<bool>? _sidebarAlwaysExpandedHandler;
@@ -335,10 +367,27 @@ public partial class MainWindow : Window
 
                 _accentChangedHandler = (_, hex) =>
                 {
+                    // While the accent follows the cover, a picker change is stored but the
+                    // cover keeps the screen; it shows once playback stops or the toggle goes off.
+                    if (vm.Settings.AccentFollowsArtwork && vm.Player.CurrentArtPath != null)
+                        return;
                     if (Avalonia.Application.Current is App app)
                         app.SetAccent(hex);
                 };
                 vm.Settings.AccentChanged += _accentChangedHandler;
+
+                _artworkAccentPlayerHandler = (_, e) =>
+                {
+                    if (e.PropertyName == nameof(PlayerViewModel.CurrentArtPath))
+                        ApplyArtworkAccent();
+                };
+                vm.Player.PropertyChanged += _artworkAccentPlayerHandler;
+                _artworkAccentSettingsHandler = (_, e) =>
+                {
+                    if (e.PropertyName == nameof(SettingsViewModel.AccentFollowsArtwork))
+                        ApplyArtworkAccent();
+                };
+                vm.Settings.PropertyChanged += _artworkAccentSettingsHandler;
 
                 _liquidGlassChangedHandler = (_, on) => ApplyLiquidGlass(on);
                 vm.Settings.LiquidGlassChanged += _liquidGlassChangedHandler;
@@ -1010,6 +1059,11 @@ public partial class MainWindow : Window
 
             if (_accentChangedHandler != null)
                 vm.Settings.AccentChanged -= _accentChangedHandler;
+
+            if (_artworkAccentPlayerHandler != null)
+                vm.Player.PropertyChanged -= _artworkAccentPlayerHandler;
+            if (_artworkAccentSettingsHandler != null)
+                vm.Settings.PropertyChanged -= _artworkAccentSettingsHandler;
 
             if (_liquidGlassChangedHandler != null)
                 vm.Settings.LiquidGlassChanged -= _liquidGlassChangedHandler;

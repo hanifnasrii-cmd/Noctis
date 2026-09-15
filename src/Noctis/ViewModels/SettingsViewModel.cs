@@ -361,6 +361,14 @@ public partial class SettingsViewModel : ViewModelBase
     [ObservableProperty] private string _customAccentHex = "#E74856";
     [ObservableProperty] private bool _isCustomAccentSelected;
 
+    /// <summary>Accent follows the playing cover (MainWindow applies it on track change).</summary>
+    [ObservableProperty] private bool _accentFollowsArtwork;
+
+    partial void OnAccentFollowsArtworkChanged(bool value)
+    {
+        if (_settingsLoaded) _ = SaveAsync();
+    }
+
     /// <summary>Drives the custom colour-picker flyout.</summary>
     [ObservableProperty] private Avalonia.Media.Color _pickerColor = Avalonia.Media.Color.Parse("#E74856");
 
@@ -1763,6 +1771,7 @@ public partial class SettingsViewModel : ViewModelBase
             ActiveAccentHex = string.IsNullOrWhiteSpace(_settings.AccentColorHex) ? "#E74856" : _settings.AccentColorHex;
             ActiveAccentName = string.IsNullOrWhiteSpace(_settings.AccentPresetName) ? "Crimson" : _settings.AccentPresetName;
             CustomAccentHex = ActiveAccentHex;
+            AccentFollowsArtwork = _settings.AccentFollowsArtwork;
             try
             {
                 _suppressPickerSync = true;
@@ -2157,6 +2166,7 @@ public partial class SettingsViewModel : ViewModelBase
         _settings.ProfileAvatarPath = ProfileAvatarPath ?? string.Empty;
         _settings.AccentColorHex = ActiveAccentHex;
         _settings.AccentPresetName = ActiveAccentName;
+        _settings.AccentFollowsArtwork = AccentFollowsArtwork;
 
         _settings.ScanOnStartup = ScanOnStartup;
         _settings.WatchFoldersEnabled = WatchFoldersEnabled;
