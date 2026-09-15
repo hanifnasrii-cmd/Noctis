@@ -496,7 +496,7 @@
   <data name="AlbumDetail.OptionsTip" xml:space="preserve"><value>Options</value><comment>ToolTip.Tip in AlbumDetailView.axaml</comment></data>
   <data name="AlbumDetail.AddPlaylist" xml:space="preserve"><value>Add to Playlist</value><comment>Header in AlbumDetailView.axaml</comment></data>
   <data name="AlbumDetail.Metadata" xml:space="preserve"><value>Metadata</value><comment>Header in AlbumDetailView.axaml</comment></data>
-  <data name="AlbumDetail.EditDescription" xml:space="preserve"><value>Edit Description</value><comment>Header in AlbumDetailView.axaml</comment></data>
+  <data name="AlbumDetail.EditDescription" xml:space="preserve"><value>Update Description</value><comment>Header in AlbumDetailView.axaml</comment></data>
   <data name="AlbumDetail.ConvertAlbum" xml:space="preserve"><value>Convert Album</value><comment>Header in AlbumDetailView.axaml</comment></data>
   <data name="AlbumDetail.ScanReplayGain" xml:space="preserve"><value>Scan ReplayGain</value><comment>Header in AlbumDetailView.axaml</comment></data>
   <data name="AlbumDetail.ShowFolder" xml:space="preserve"><value>Show Folder</value><comment>Header in AlbumDetailView.axaml</comment></data>

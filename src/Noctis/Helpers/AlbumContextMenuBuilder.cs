@@ -85,7 +85,7 @@ public sealed class AlbumContextMenuBuilder
         Metadata.Icon = TrackContextMenuBuilder.CreatePngIcon("avares://Noctis/Assets/Icons/Metadata%20ICON.png");
         items.Add(Metadata);
 
-        EditDescription = new MenuItem { Header = "Edit Description", IsVisible = false };
+        EditDescription = new MenuItem { Header = "Update Description", IsVisible = false };
         EditDescription.Icon = TrackContextMenuBuilder.CreatePngIcon("avares://Noctis/Assets/Icons/Metadata%20ICON.png");
         items.Add(EditDescription);
 
