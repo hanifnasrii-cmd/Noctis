@@ -4,6 +4,7 @@ using Avalonia.Headless.XUnit;
 using Avalonia.Markup.Xaml.Styling;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
+using Noctis.Controls;
 using Noctis.Models;
 using Noctis.ViewModels;
 using Noctis.Views;
@@ -100,4 +101,60 @@ public class HomeViewMountTests
         Assert.Equal(5, rows.Count);
         Assert.Equal(0, rows.Sum(r => r.GetVisualDescendants().OfType<Button>().Count(x => x.Classes.Contains("chart-dots"))));
     }
+
+    // -- The playing chart row is filled in the accent colour with contrasting text, as on
+    //    the artist page (user ask 09-14). It used to be accent TEXT on the card fill; the
+    //    heart keeps its own red unless told otherwise, which on a red accent would be
+    //    invisible against the new fill. --
+    [AvaloniaFact]
+    public async Task HomePage_PlayingChartRow_IsAccentFilledWithContrastingTextAndHeart()
+    {
+        EnsureAppStyles();
+        var lib = new FakeLibraryService();
+        var a = T("Un Ratito", "Bad Bunny", 56);
+        var b = T("ANGELS", "Chase Atlantic", 55);
+        a.IsNowPlaying = true;
+        a.IsFavorite = true;
+        b.IsFavorite = true;
+        lib.TrackList.AddRange(new[] { a, b });
+        ((List<Album>)lib.Albums).Add(new Album
+        {
+            Id = AlbumId, Name = "Un Verano Sin Ti", Artist = "Bad Bunny", Tracks = new List<Track> { a, b },
+        });
+        var persistence = new TestPersistenceService();
+        var player = new PlayerViewModel(new FakeAudioPlayer(), lib, persistence, new FakeAnimatedCoverService());
+        var vm = new HomeViewModel(player, lib, new SidebarViewModel(persistence, lib));
+        await vm.RefreshAsync();
+
+        var view = new HomeView { DataContext = vm };
+        var win = new Window { Width = 1400, Height = 900, Content = view, RequestedThemeVariant = Avalonia.Styling.ThemeVariant.Dark };
+        win.Show();
+        Dispatcher.UIThread.RunJobs();
+
+        var accentFill = view.FindResource(Avalonia.Styling.ThemeVariant.Dark, "AccentButtonBackground");
+        var rowForeground = view.FindResource(Avalonia.Styling.ThemeVariant.Dark, "AccentForegroundBrush");
+        var bodies = view.GetVisualDescendants().OfType<Border>()
+            .Where(x => x.Classes.Contains("chart-body")).ToList();
+        Assert.NotEmpty(bodies);
+        var playing = bodies.Where(x => x.Classes.Contains("playing")).ToList();
+        Assert.NotEmpty(playing);
+
+        foreach (var body in playing)
+        {
+            Assert.Same(accentFill, body.Background);
+            Assert.Equal(new Avalonia.CornerRadius(6), body.CornerRadius);
+            var title = body.GetVisualDescendants().OfType<TextBlock>().First(t => t.Classes.Contains("chart-title"));
+            Assert.Same(rowForeground, title.Foreground);
+            var heart = body.GetVisualDescendants().OfType<HeartIcon>().Single();
+            Assert.Same(rowForeground, heart.OnBrush);
+            Assert.Same(rowForeground, heart.OffBrush);
+            Assert.NotSame(body.Background, heart.OnBrush); // the reported red-on-red heart
+        }
+
+        // A row that is not playing keeps the card fill and its own heart red.
+        var other = bodies.First(x => !x.Classes.Contains("playing"));
+        Assert.Null(other.Background);
+        Assert.NotSame(rowForeground, other.GetVisualDescendants().OfType<HeartIcon>().Single().OnBrush);
+    }
+
 }

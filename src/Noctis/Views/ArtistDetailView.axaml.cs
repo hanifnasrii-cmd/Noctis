@@ -162,6 +162,18 @@ public partial class ArtistDetailView : UserControl
         albumsVm.CtrlSelectedAlbums = new List<Album>();
     }
 
+    /// <summary>A song row plays on DOUBLE click (user ask 09-14), like every flat track list
+    /// in the app; a single click leaves the row alone. Taps that land on a button inside the
+    /// row (the artwork Play overlay, the "…" glyph) belong to that button.</summary>
+    private void OnSongRowDoubleTapped(object? sender, TappedEventArgs e)
+    {
+        if (sender is not Control row || row.DataContext is not TopSongRow item) return;
+        if (e.Source is Control source && source.FindAncestorOfType<Button>(true) is { } inner
+            && !ReferenceEquals(inner, row)) return;
+        if (DataContext is not ArtistDetailViewModel vm) return;
+        vm.PlaySongCommand.Execute(item.Track);
+    }
+
     private void OnPopularContextRequested(object? sender, ContextRequestedEventArgs e)
     {
         if (sender is not Control owner) return;

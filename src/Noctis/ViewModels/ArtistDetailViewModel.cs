@@ -487,7 +487,7 @@ public partial class ArtistDetailViewModel : ViewModelBase, ISearchable, IDispos
         ReplaceAlbums(AppearsOn, _allAppearsOn.Where(a => AlbumMatches(a, q)).ToList());
 
         if (IsTabSongs) FillAllSongs();
-        else { AllSongs.ReplaceAll(Array.Empty<TopSongRow>()); OnPropertyChanged(nameof(HasAllSongs)); }
+        else { _allSongsRanking = null; AllSongs.ReplaceAll(Array.Empty<TopSongRow>()); OnPropertyChanged(nameof(HasAllSongs)); }
 
         OnPropertyChanged(nameof(HasPopular));
         OnPropertyChanged(nameof(HasFavorites));
@@ -503,11 +503,19 @@ public partial class ArtistDetailViewModel : ViewModelBase, ISearchable, IDispos
         OnPropertyChanged(nameof(SingleCount));
     }
 
-    /// <summary>Songs tab: the full ranking, streamed in slices (first slice synchronous).</summary>
+    /// <summary>The ranking the Songs list was last filled from (null once cleared).</summary>
+    private List<TopSongRow>? _allSongsRanking;
+
+    /// <summary>Songs tab: the full ranking, streamed in slices (first slice synchronous).
+    /// Skipped when the ranking is the one already filled or in flight: a heart (FavoritesChanged)
+    /// or a play-count save (LibraryUpdated) used to reset every row of the list each time,
+    /// which stalled the page and tore down the row under the pointer or under an open menu.</summary>
     private void FillAllSongs()
     {
-        var generation = ++_songsGeneration;
         var rows = RankPopular(_allSongs, _query.Trim(), 0);
+        if (_allSongsRanking != null && SameRows(_allSongsRanking, rows)) return;
+        _allSongsRanking = rows;
+        var generation = ++_songsGeneration;
         StreamingFill.Into(AllSongs, rows, generation, () => _songsGeneration, first: 30, chunk: 40);
         OnPropertyChanged(nameof(HasAllSongs));
     }

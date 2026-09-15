@@ -140,10 +140,31 @@
         <Style Selector="Button.song-row:pressed">
             <Setter Property="RenderTransform" Value="scale(1)" />
         </Style>
+        <!-- Hover fill goes on the template's ContentPresenter, exactly as Home's chart rows:
+             the Fluent Button theme paints that presenter itself on :pointerover, so a
+             Button.Background setter is masked (HomeChartRowBehaviourTests pins this). -->
+        <Style Selector="Button.song-row /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Transitions">
+                <Transitions>
+                    <BrushTransition Property="Background" Duration="0:0:0.08" />
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="Button.song-row:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource HomeCardHoverBackground}" />
+        </Style>
         <Style Selector="Button.song-row.playing">
             <Setter Property="Background" Value="{DynamicResource AccentButtonBackground}" />
         </Style>
         <Style Selector="Button.song-row.playing:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource AccentButtonBackground}" />
+        </Style>
+        <!-- ...and while held down. Fluent paints its own pressed chrome (#66FFFFFF, a 40%
+             white wash) on the presenter, which replaced the accent fill for as long as the
+             button was down: double-clicking a track made the row flash white between the
+             two presses (user, 09-14). Home never showed it because its fill sits on an
+             opaque body Border in front of the presenter, not on the button itself. -->
+        <Style Selector="Button.song-row.playing:pressed /template/ ContentPresenter#PART_ContentPresenter">
             <Setter Property="Background" Value="{DynamicResource AccentButtonBackground}" />
         </Style>
         <Style Selector="Button.song-row.playing TextBlock">
@@ -154,6 +175,14 @@
         </Style>
         <Style Selector="Button.song-row.playing TextBlock.song-row-dim">
             <Setter Property="Opacity" Value="0.85" />
+        </Style>
+        <!-- The favourite heart paints itself in the app red (#E74856 default OnBrush): on
+             the accent-filled playing row it vanished into the fill when the accent is red
+             (user, 09-14). Same two setters the track lists use in Styles.axaml's
+             Border.now-playing rule, with this page's playing foreground. -->
+        <Style Selector="Button.song-row.playing ctrl|HeartIcon">
+            <Setter Property="OnBrush" Value="{DynamicResource AccentForegroundBrush}" />
+            <Setter Property="OffBrush" Value="{DynamicResource AccentForegroundBrush}" />
         </Style>
         <!-- Row artwork play overlay (09-14): hidden until the row is hovered. -->
         <Style Selector="Button.art-play-overlay">
@@ -395,7 +424,10 @@
         </DataTemplate>
 
         <!-- Ranked song row shared by Top Songs, Top Favorites and the Songs tab (reference:
-             rank · art · title / year · duration · … ; the playing row filled in accent). -->
+             rank · art · title / year · duration · … ; the playing row filled in accent).
+             Playing takes a DOUBLE click (user ask 09-14), as in every flat track list, so the
+             command is invoked from the code-behind instead of Button.Command; the Play button
+             over the artwork stays a single click. -->
         <DataTemplate x:Key="SongPill" x:DataType="m:TopSongRow">
             <Button Classes="browse-item song-row"
                     Classes.playing="{Binding Track.IsNowPlaying}"
@@ -410,13 +442,7 @@
                     HorizontalContentAlignment="Stretch"
                     helpers:DragFileBehavior.EnableFileDrag="True"
                     ContextRequested="OnPopularContextRequested"
-                    Command="{Binding $parent[UserControl].((vm:ArtistDetailViewModel)DataContext).PlaySongCommand}"
-                    CommandParameter="{Binding Track}">
-                <Button.Styles>
-                    <Style Selector="Button:pointerover">
-                        <Setter Property="Background" Value="{DynamicResource HomeCardHoverBackground}" />
-                    </Style>
-                </Button.Styles>
+                    DoubleTapped="OnSongRowDoubleTapped">
                 <Grid ColumnDefinitions="40,40,*,Auto,Auto,40">
                     <TextBlock Grid.Column="0"
                                Classes="rank-num"

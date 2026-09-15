@@ -110,6 +110,18 @@ public partial class HomeView : UserControl
     // Most Played and Last Played share one row template; the row says which list it is in.
     private static bool IsLastPlayedRow(Control? c) => c?.DataContext is TopSongRow { IsLastPlayed: true };
 
+    /// <summary>A chart row plays on DOUBLE click (user ask 09-14), like every flat track
+    /// list in the app; a single click leaves the row alone. Taps that land on a button
+    /// inside the row belong to that button.</summary>
+    private void OnChartRowDoubleTapped(object? sender, TappedEventArgs e)
+    {
+        if (sender is not Control row || row.DataContext is not TopSongRow item) return;
+        if (e.Source is Control source && source.FindAncestorOfType<Button>(true) is { } inner
+            && !ReferenceEquals(inner, row)) return;
+        if (DataContext is not HomeViewModel vm) return;
+        vm.PlayChartRowCommand.Execute(item);
+    }
+
     private void OnChartRowContextRequested(object? sender, ContextRequestedEventArgs e)
     {
         if (IsLastPlayedRow(sender as Control))

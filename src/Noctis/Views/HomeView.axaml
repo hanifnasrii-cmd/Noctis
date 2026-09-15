@@ -17,15 +17,16 @@
         <!-- One chart row, shared by Most Played and Last Played: rank | art | title+heart |
              artist | duration | plays. Compact (48px, no dots column) because the two charts
              sit side by side; right-click still opens the row menu. The row's IsLastPlayed
-             picks which list a click queues (PlayChartRow) and turns the podium tints off. -->
+             picks which list a double-click queues (PlayChartRow) and turns the podium tints
+             off. Playing takes a DOUBLE click (user ask 09-14), as in every flat track list,
+             so the command is invoked from the code-behind instead of Button.Command. -->
                         <DataTemplate x:Key="ChartRowTemplate" x:DataType="m:TopSongRow">
                             <Button Classes="browse-item home-chart-row"
                                     helpers:DragFileBehavior.EnableFileDrag="True"
                                     ContextRequested="OnChartRowContextRequested"
-                                    Command="{Binding $parent[ItemsControl].((vm:HomeViewModel)DataContext).PlayChartRowCommand}"
-                                    CommandParameter="{Binding}">
-                                <!-- The playing track lights its text in the accent colour
-                                     (title, artist, count), never a solid row fill. -->
+                                    DoubleTapped="OnChartRowDoubleTapped">
+                                <!-- The playing track fills this body in the accent colour
+                                     with contrasting text (styles below). -->
                                 <Border Classes="chart-body" Classes.playing="{Binding Track.IsNowPlaying}">
                                     <Grid ColumnDefinitions="40,40,1.5*,*,56,84" Height="48">
                                         <TextBlock Grid.Column="0"
@@ -258,10 +259,21 @@
         <Style Selector="Button.home-chart-row:pressed, Button.home-rail-track:pressed, Button.home-rail-album:pressed, Button.home-rail-card:pressed">
             <Setter Property="RenderTransform" Value="scale(1)"/>
         </Style>
-        <!-- The playing track: accent text only (title, artist, count), no row fill. -->
-        <Style Selector="Border.chart-body.playing TextBlock.chart-title, Border.chart-body.playing TextBlock.chart-artist, Border.chart-body.playing TextBlock.chart-duration, Border.chart-body.playing TextBlock.chart-plays">
-            <Setter Property="Foreground" Value="{DynamicResource AccentColorBrush}"/>
-            <Setter Property="Opacity" Value="1"/>
+        <!-- The playing track: the row filled in the accent colour with contrasting text,
+             exactly as the artist page's song rows (user ask 09-14). The fill sits on the
+             row body (the class is on this Border), which is opaque and carries the
+             button's own radius, so it covers the card fill and the hover wash beneath it.
+             The heart's default red would be accent-on-accent here, as on the artist page. -->
+        <Style Selector="Border.chart-body.playing">
+            <Setter Property="Background" Value="{DynamicResource AccentButtonBackground}"/>
+            <Setter Property="CornerRadius" Value="6"/>
+        </Style>
+        <Style Selector="Border.chart-body.playing TextBlock">
+            <Setter Property="Foreground" Value="{DynamicResource AccentForegroundBrush}"/>
+        </Style>
+        <Style Selector="Border.chart-body.playing controls|HeartIcon">
+            <Setter Property="OnBrush" Value="{DynamicResource AccentForegroundBrush}"/>
+            <Setter Property="OffBrush" Value="{DynamicResource AccentForegroundBrush}"/>
         </Style>
         <Style Selector="Button.chart-dots:pointerover /template/ ContentPresenter#PART_ContentPresenter">
             <Setter Property="Background" Value="{DynamicResource HomeCardHoverBackground}"/>
