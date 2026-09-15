@@ -317,9 +317,16 @@
         <Setter Property="RenderTransform" Value="translateY(-1px)" />
     </Style>
 
+    <!-- Compact variant (tiles + list rows, 09-14, Apple Music): a 12px box with an 8px
+         glyph. No nudge here: with Inter the cap centre IS the line-box centre
+         (ascent 0.969 − capHeight/2 0.364 = 0.605 ≈ 1.21/2), so a run centred on the
+         line box (BaselineAlignment=Center) already sits on the capitals — as long as the
+         box is no taller than the ascent (12.6px at 13px), or the run grows the line's
+         ascent and drifts high. Pinned by TitleBadgeAndMarqueeProbeTests. -->
     <Style Selector="Border.explicit-badge.compact">
-        <Setter Property="Height" Value="14" />
-        <Setter Property="RenderTransform" Value="translateY(-1px)" />
+        <Setter Property="Height" Value="12" />
+        <Setter Property="Padding" Value="3,0" />
+        <Setter Property="RenderTransform" Value="none" />
     </Style>
 
     <Style Selector="TextBlock.explicit-badge-text">
@@ -951,6 +958,13 @@
     <Style Selector="Button.album-tile:pointerover">
         <Setter Property="Background" Value="Transparent"/>
         <Setter Property="RenderTransform" Value="scale(1)"/>
+    </Style>
+    <!-- Fluent's template paints ButtonBackgroundPointerOver on the presenter itself, so
+         the Background setter above never reached it: every tile (Albums, Favorites,
+         Playlists, Artist page, More by artist) hovered with a wash behind title and
+         artist too (user, 09-14). Only the artwork dims (Border.tile-dim). -->
+    <Style Selector="Button.album-tile:pointerover /template/ ContentPresenter#PART_ContentPresenter, Button.album-tile:pressed /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="Transparent"/>
     </Style>
 
     <!-- Ctrl+Click multi-select highlight for album tiles (red border) -->

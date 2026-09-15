@@ -111,7 +111,7 @@ public class HighlightTextBlock : TextBlock
         var badgeText = new TextBlock
         {
             Text = "E",
-            FontSize = 9,
+            FontSize = 8,
             Opacity = 0.9
         };
         badgeText.Classes.Add("explicit-badge-text");

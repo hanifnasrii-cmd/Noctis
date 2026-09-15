@@ -14,6 +14,13 @@ public partial class LibraryPlaylistsView : UserControl
         InitializeComponent();
     }
 
+    /// <summary>Tile dots button: open the tile's own context menu (shared AlbumTile helper).</summary>
+    private void OnTileMoreClick(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        Helpers.AlbumTile.OpenMenu(sender);
+        e.Handled = true;
+    }
+
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
         CancelPendingScrollRestore();

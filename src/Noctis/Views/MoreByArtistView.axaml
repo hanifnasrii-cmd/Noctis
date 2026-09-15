@@ -179,7 +179,7 @@
                                                                 ToolTip.Tip="{loc:T MoreByArtist.ExplicitTip}">
                                                             <TextBlock Text="E"
                                                                        Classes="explicit-badge-text compact"
-                                                                       FontSize="9"
+                                                                       FontSize="8"
                                                                        Opacity="0.9" />
                                                         </Border>
                                                     </InlineUIContainer>

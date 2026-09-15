@@ -284,6 +284,16 @@ public partial class LibrarySongsViewModel : ViewModelBase, ISearchable, IDispos
         if (_settings != null && !_adoptingPersistedState) _settings.SongsShowOnlyFavorites = value;
     }
 
+    /// <summary>Row artwork hover button (09-14): Play from this row, or Pause/Resume when
+    /// the row is the loaded track — the album tile's TogglePlayAlbum for a single row.</summary>
+    [RelayCommand]
+    private void TogglePlayTrack(Track track)
+    {
+        if (track == null) return;
+        if (track.IsNowPlaying) { _player.PlayPauseCommand.Execute(null); return; }
+        PlayFromHere(track);
+    }
+
     [RelayCommand]
     private void PlayFromHere(Track track)
     {

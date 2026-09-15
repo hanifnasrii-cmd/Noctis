@@ -285,6 +285,7 @@ public partial class PlaybackBarView : UserControl
         {
             SetTrackTitleWidth(double.NaN);
             ResetTrackTitleMarquee();
+            TrackTitleViewport.Classes.Set("overflow", false);
             return;
         }
 
@@ -308,6 +309,9 @@ public partial class PlaybackBarView : UserControl
             : textWidth;
         _trackTitleViewportWidth = viewportWidth;
         var shouldAnimate = vm.TrackTitleMarqueeEnabled && hasOverflow;
+        // Edge fade only while the marquee owns the title: the static path ellipsizes
+        // inside the viewport and never cuts a glyph.
+        TrackTitleViewport.Classes.Set("overflow", shouldAnimate);
         if (!shouldAnimate)
         {
             ApplyTrackTitleStaticPresentation(hasOverflow, viewportWidth);
@@ -533,6 +537,10 @@ public partial class PlaybackBarView : UserControl
 
         if (TrackTitleContent.RenderTransform is TranslateTransform transform)
             transform.X = offset;
+
+        // Leading-edge fade once the text has moved under the left edge (Classes.Set is
+        // a no-op when unchanged, so this is free per frame).
+        TrackTitleViewport.Classes.Set("scrolled", offset < -0.5);
     }
 
     // ── Artist name marquee (mirrors title marquee, synced via same timer) ──

@@ -380,6 +380,32 @@
             <Setter Property="Width" Value="110"/>
         </Style>
 
+        <!-- Marquee edge fade (09-14): while the title overflows, the viewport clips the
+             text mid-glyph and a sliver of the next letter sat hard against the edge (the
+             "artifact" after "…Version"). Code-behind sets .overflow while the marquee
+             owns the title (static/ellipsized titles never cut a glyph) and .scrolled once
+             the text has moved left, so the leading edge fades too. 10% ≈ 16px at the
+             160px width, 11px at bar-mid. -->
+        <Style Selector="Border#TrackTitleViewport.overflow">
+            <Setter Property="OpacityMask">
+                <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,0%">
+                    <GradientStop Offset="0" Color="White"/>
+                    <GradientStop Offset="0.9" Color="White"/>
+                    <GradientStop Offset="1" Color="Transparent"/>
+                </LinearGradientBrush>
+            </Setter>
+        </Style>
+        <Style Selector="Border#TrackTitleViewport.overflow.scrolled">
+            <Setter Property="OpacityMask">
+                <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,0%">
+                    <GradientStop Offset="0" Color="Transparent"/>
+                    <GradientStop Offset="0.1" Color="White"/>
+                    <GradientStop Offset="0.9" Color="White"/>
+                    <GradientStop Offset="1" Color="Transparent"/>
+                </LinearGradientBrush>
+            </Setter>
+        </Style>
+
         <!-- GitHub #52 (Aosneg, 1.4.7): hovering a bar button long enough for its tooltip
              made the FIRST click do nothing. The bar sits on the bottom edge, so
              Avalonia's default Pointer placement (20px below the cursor) has no room and

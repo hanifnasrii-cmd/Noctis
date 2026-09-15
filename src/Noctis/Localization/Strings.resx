@@ -756,6 +756,7 @@
   <data name="LibrarySongs.Sample" xml:space="preserve"><value>Sample</value><comment>Content in LibrarySongsView.axaml</comment></data>
   <data name="LibrarySongs.ExplicitTip" xml:space="preserve"><value>Explicit</value><comment>ToolTip.Tip in LibrarySongsView.axaml</comment></data>
   <data name="LibrarySongs.FavoriteTip" xml:space="preserve"><value>Favorite</value><comment>ToolTip.Tip in LibrarySongsView.axaml</comment></data>
+  <data name="LibrarySongs.PlayFromHereTip" xml:space="preserve"><value>Play from here</value><comment>ToolTip.Tip in LibrarySongsView.axaml</comment></data>
   <data name="LibrarySongs.OptionsTip" xml:space="preserve"><value>Options</value><comment>ToolTip.Tip in LibrarySongsView.axaml</comment></data>
   <data name="LibrarySongs.NoSongsFound" xml:space="preserve"><value>No songs found</value><comment>Text in LibrarySongsView.axaml</comment></data>
   <data name="LibrarySongs.AddMusicFoldersSettings" xml:space="preserve"><value>Add music folders in Settings to get started</value><comment>Text in LibrarySongsView.axaml</comment></data>
@@ -1194,6 +1195,7 @@
   <data name="Playlist.Favorite" xml:space="preserve"><value>Favorite</value><comment>Text in PlaylistView.axaml</comment></data>
   <data name="Playlist.Time" xml:space="preserve"><value>Time</value><comment>Text in PlaylistView.axaml</comment></data>
   <data name="Playlist.Text4" xml:space="preserve"><value>&#xE784;</value><comment>Text in PlaylistView.axaml</comment></data>
+  <data name="Playlist.Kicker" xml:space="preserve"><value>PLAYLIST</value><comment>Hero kicker in PlaylistView.axaml</comment></data>
   <data name="Playlist.PlayFromHereTip" xml:space="preserve"><value>Play from here</value><comment>ToolTip.Tip in PlaylistView.axaml</comment></data>
   <data name="Playlist.AddedLast7DaysTip" xml:space="preserve"><value>Added in the last 7 days</value><comment>ToolTip.Tip in PlaylistView.axaml</comment></data>
   <data name="Playlist.NEW" xml:space="preserve"><value>NEW</value><comment>Text in PlaylistView.axaml</comment></data>
