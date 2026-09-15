@@ -980,6 +980,22 @@ public partial class MetadataViewModel : ViewModelBase
 
     /// <summary>Details tool-row hint for album / multi-track edits: why some fields read "Mixed".</summary>
     public bool ShowMixedHint => _albumTracks is { Count: > 1 };
+
+    /// <summary>"3000 × 3000" chip on the Artwork tab; empty while there is no cover.</summary>
+    public string ArtworkDimensions => ArtworkPreview is { } bmp ? $"{bmp.PixelSize.Width} × {bmp.PixelSize.Height}" : string.Empty;
+
+    partial void OnArtworkPreviewChanged(Bitmap? value) => OnPropertyChanged(nameof(ArtworkDimensions));
+
+    [RelayCommand]
+    private void ShowInFolder() => PlatformHelper.ShowInFileManager(_track.FilePath);
+
+    [RelayCommand]
+    private async Task CopyPath(Avalonia.Controls.Window? window)
+    {
+        var clipboard = window?.Clipboard ?? Avalonia.Controls.TopLevel.GetTopLevel(window)?.Clipboard;
+        if (clipboard != null)
+            await clipboard.SetTextAsync(_track.FilePath);
+    }
     public string MixedHint => ShowMixedHint ? Localization.Loc.T("Metadata.MixedHint", _albumTracks!.Count) : string.Empty;
 
     // ── Rename-by-pattern (multi-select) ──

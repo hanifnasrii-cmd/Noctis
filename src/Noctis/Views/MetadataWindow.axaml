@@ -784,165 +784,161 @@
                               HorizontalScrollBarVisibility="Disabled">
                     <StackPanel Spacing="16" Margin="24,16,24,24">
 
-                        <!-- ── Sorting ── -->
-                        <TextBlock Text="{loc:T Metadata.SORTING}" FontSize="11" FontWeight="Bold" Opacity="0.4" Margin="0,0,0,-8" />
-
-                        <StackPanel Spacing="4">
-                            <TextBlock Text="{loc:T Metadata.TitleSort}" FontSize="12" Opacity="0.5" />
-                            <TextBox Classes="metadata-info-field" Text="{Binding TitleSort}" />
-                        </StackPanel>
-                        <StackPanel Spacing="4">
-                            <TextBlock Text="{loc:T Metadata.ArtistSort}" FontSize="12" Opacity="0.5" />
-                            <TextBox Classes="metadata-info-field" Text="{Binding ArtistSort}" />
-                        </StackPanel>
-                        <StackPanel Spacing="4">
-                            <TextBlock Text="{loc:T Metadata.AlbumSort}" FontSize="12" Opacity="0.5" />
-                            <TextBox Classes="metadata-info-field" Text="{Binding AlbumSort}" />
-                        </StackPanel>
-                        <StackPanel Spacing="4">
-                            <TextBlock Text="{loc:T Metadata.AlbumArtistSort}" FontSize="12" Opacity="0.5" />
-                            <TextBox Classes="metadata-info-field" Text="{Binding AlbumArtistSort}" />
-                        </StackPanel>
-                        <StackPanel Spacing="4">
-                            <TextBlock Text="{loc:T Metadata.ComposerSort}" FontSize="12" Opacity="0.5" />
-                            <TextBox Classes="metadata-info-field" Text="{Binding ComposerSort}" />
-                        </StackPanel>
-
-                        <Separator Opacity="0.15" Margin="0,4" />
-
-                        <!-- ── People & Credits ── -->
-                        <TextBlock Text="{loc:T Metadata.PEOPLECREDITS}" FontSize="11" FontWeight="Bold" Opacity="0.4" Margin="0,0,0,-8" />
-
-                        <StackPanel Spacing="4">
-                            <TextBlock Text="{loc:T Metadata.Conductor}" FontSize="12" Opacity="0.5" />
-                            <TextBox Classes="metadata-info-field" Text="{Binding Conductor}" />
-                        </StackPanel>
-                        <StackPanel Spacing="4">
-                            <TextBlock Text="{loc:T Metadata.Lyricist}" FontSize="12" Opacity="0.5" />
-                            <TextBox Classes="metadata-info-field" Text="{Binding Lyricist}" />
-                        </StackPanel>
-                        <StackPanel Spacing="4">
-                            <TextBlock Text="{loc:T Metadata.PublisherLabel}" FontSize="12" Opacity="0.5" />
-                            <TextBox Classes="metadata-info-field" Text="{Binding Publisher}" />
-                        </StackPanel>
-                        <StackPanel Spacing="4">
-                            <TextBlock Text="{loc:T Metadata.EncodedBy}" FontSize="12" Opacity="0.5" />
-                            <TextBox Classes="metadata-info-field" Text="{Binding EncodedBy}" />
-                        </StackPanel>
-
-                        <Separator Opacity="0.15" Margin="0,4" />
-
-                        <!-- ── Identification ── -->
-                        <TextBlock Text="{loc:T Metadata.IDENTIFICATION}" FontSize="11" FontWeight="Bold" Opacity="0.4" Margin="0,0,0,-8" />
-
-                        <StackPanel Spacing="4">
-                            <TextBlock Text="{loc:T Metadata.ISRC}" FontSize="12" Opacity="0.5" />
-                            <TextBox Classes="metadata-info-field" Text="{Binding Isrc}" />
-                        </StackPanel>
-                        <StackPanel Spacing="4">
-                            <TextBlock Text="{loc:T Metadata.CatalogNumber}" FontSize="12" Opacity="0.5" />
-                            <TextBox Classes="metadata-info-field" Text="{Binding CatalogNumber}" />
-                        </StackPanel>
-                        <StackPanel Spacing="4">
-                            <TextBlock Text="{loc:T Metadata.BarcodeUPC}" FontSize="12" Opacity="0.5" />
-                            <TextBox Classes="metadata-info-field" Text="{Binding Barcode}" />
-                        </StackPanel>
-
-                        <Separator Opacity="0.15" Margin="0,4" />
-
-                        <!-- ── Content Descriptors ── -->
-                        <TextBlock Text="{loc:T Metadata.CONTENT}" FontSize="11" FontWeight="Bold" Opacity="0.4" Margin="0,0,0,-8" />
-
-                        <StackPanel Spacing="4">
-                            <TextBlock Text="{loc:T Metadata.ITunesAdvisory}" FontSize="12" Opacity="0.5" />
-                            <ComboBox Classes="metadata-info-field"
-                                      ItemsSource="{x:Static vm:MetadataViewModel.AdvisoryOptions}"
-                                      SelectedItem="{Binding SelectedAdvisory}"
-                                      HorizontalAlignment="Left"
-                                      Width="120">
-                                <ComboBox.SelectionBoxItemTemplate>
-                                     <DataTemplate>
-                                         <presenters:TextPresenter Text="{Binding}"
-                                                                   FontWeight="Normal"
-                                                                   VerticalAlignment="Center" />
-                                     </DataTemplate>
-                                </ComboBox.SelectionBoxItemTemplate>
-                                <ComboBox.ItemTemplate>
-                                    <DataTemplate>
-                                        <presenters:TextPresenter Text="{Binding}"
-                                                                  FontWeight="Normal" />
-                                    </DataTemplate>
-                                </ComboBox.ItemTemplate>
-                            </ComboBox>
-                        </StackPanel>
-                        <StackPanel Spacing="4">
-                            <TextBlock Text="{loc:T Metadata.Language}" FontSize="12" Opacity="0.5" />
-                            <TextBox Classes="metadata-info-field" Text="{Binding Language}" />
-                        </StackPanel>
-                        <StackPanel Spacing="4">
-                            <TextBlock Text="{loc:T Metadata.Mood}" FontSize="12" Opacity="0.5" />
-                            <TextBox Classes="metadata-info-field" Text="{Binding Mood}" />
-                        </StackPanel>
-                        <StackPanel Spacing="4">
-                            <TextBlock Text="{loc:T Metadata.Description}" FontSize="12" Opacity="0.5" />
-                            <TextBox Classes="metadata-info-field" Text="{Binding AdvDescription}" />
-                        </StackPanel>
-                        <StackPanel Spacing="4">
-                            <TextBlock Text="{loc:T Metadata.ReleaseDate}" FontSize="12" Opacity="0.5" />
-                            <TextBox Classes="metadata-info-field" Text="{Binding AdvReleaseDate}" Width="200" HorizontalAlignment="Left" />
-                        </StackPanel>
-                        <StackPanel Spacing="4">
-                            <TextBlock Text="{loc:T Metadata.Copyright}" FontSize="12" Opacity="0.5" />
-                            <TextBox Classes="metadata-info-field" Text="{Binding Copyright}" />
-                        </StackPanel>
-
-                        <Separator Opacity="0.15" Margin="0,4" />
-
-                        <!-- ── Technical / Encoding ── -->
-                        <TextBlock Text="{loc:T Metadata.TECHNICAL}" FontSize="11" FontWeight="Bold" Opacity="0.4" Margin="0,0,0,-8" />
-
-                        <StackPanel Spacing="4">
-                            <TextBlock Text="{loc:T Metadata.Encoder}" FontSize="12" Opacity="0.5" />
-                            <TextBlock Text="{Binding Encoder}" FontSize="14" Opacity="0.9" />
-                        </StackPanel>
-
-                        <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" IsVisible="{Binding ReplayGainTrackGain, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
-                            <StackPanel Grid.Row="0" Grid.Column="0" Spacing="2" Margin="0,0,12,8">
-                                <TextBlock Text="{loc:T Metadata.TrackGain}" FontSize="12" Opacity="0.5" />
-                                <TextBlock Text="{Binding ReplayGainTrackGain}" FontSize="14" Opacity="0.9" />
+                        <Grid ColumnDefinitions="Auto,*" Margin="0,0,0,0">
+                            <TextBlock Text="{loc:T Metadata.SecSorting}" FontSize="11.5" FontWeight="SemiBold" Opacity="0.45" VerticalAlignment="Center" />
+                            <Border Grid.Column="1" Height="1" Background="{DynamicResource SystemControlForegroundBaseLowBrush}" Margin="12,0,0,0" VerticalAlignment="Center" />
+                        </Grid>
+                        <Grid ColumnDefinitions="*,20,*" RowDefinitions="Auto,Auto,Auto">
+                            <StackPanel Grid.Row="0" Grid.Column="0" Spacing="4" Margin="0,0,0,14">
+                                <TextBlock Text="{loc:T Metadata.TitleSort}" FontSize="12" Opacity="0.5" />
+                                <TextBox Classes="metadata-info-field" Text="{Binding TitleSort}" />
                             </StackPanel>
-                            <StackPanel Grid.Row="0" Grid.Column="1" Spacing="2" Margin="0,0,0,8">
-                                <TextBlock Text="{loc:T Metadata.TrackPeak}" FontSize="12" Opacity="0.5" />
-                                <TextBlock Text="{Binding ReplayGainTrackPeak}" FontSize="14" Opacity="0.9" />
+                            <StackPanel Grid.Row="0" Grid.Column="2" Spacing="4" Margin="0,0,0,14">
+                                <TextBlock Text="{loc:T Metadata.ArtistSort}" FontSize="12" Opacity="0.5" />
+                                <TextBox Classes="metadata-info-field" Text="{Binding ArtistSort}" />
                             </StackPanel>
-                            <StackPanel Grid.Row="1" Grid.Column="0" Spacing="2" Margin="0,0,12,0">
-                                <TextBlock Text="{loc:T Metadata.AlbumGain}" FontSize="12" Opacity="0.5" />
-                                <TextBlock Text="{Binding ReplayGainAlbumGain}" FontSize="14" Opacity="0.9" />
+                            <StackPanel Grid.Row="1" Grid.Column="0" Spacing="4" Margin="0,0,0,14">
+                                <TextBlock Text="{loc:T Metadata.AlbumSort}" FontSize="12" Opacity="0.5" />
+                                <TextBox Classes="metadata-info-field" Text="{Binding AlbumSort}" />
                             </StackPanel>
-                            <StackPanel Grid.Row="1" Grid.Column="1" Spacing="2">
-                                <TextBlock Text="{loc:T Metadata.AlbumPeak}" FontSize="12" Opacity="0.5" />
-                                <TextBlock Text="{Binding ReplayGainAlbumPeak}" FontSize="14" Opacity="0.9" />
+                            <StackPanel Grid.Row="1" Grid.Column="2" Spacing="4" Margin="0,0,0,14">
+                                <TextBlock Text="{loc:T Metadata.AlbumArtistSort}" FontSize="12" Opacity="0.5" />
+                                <TextBox Classes="metadata-info-field" Text="{Binding AlbumArtistSort}" />
+                            </StackPanel>
+                            <StackPanel Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="3" Spacing="4">
+                                <TextBlock Text="{loc:T Metadata.ComposerSort}" FontSize="12" Opacity="0.5" />
+                                <TextBox Classes="metadata-info-field" Text="{Binding ComposerSort}" />
                             </StackPanel>
                         </Grid>
 
-                        <Separator Opacity="0.15" Margin="0,4" />
+                        <Grid ColumnDefinitions="Auto,*" Margin="0,18,0,0">
+                            <TextBlock Text="{loc:T Metadata.SecPeople}" FontSize="11.5" FontWeight="SemiBold" Opacity="0.45" VerticalAlignment="Center" />
+                            <Border Grid.Column="1" Height="1" Background="{DynamicResource SystemControlForegroundBaseLowBrush}" Margin="12,0,0,0" VerticalAlignment="Center" />
+                        </Grid>
+                        <Grid ColumnDefinitions="*,20,*" RowDefinitions="Auto,Auto">
+                            <StackPanel Grid.Row="0" Grid.Column="0" Spacing="4" Margin="0,0,0,14">
+                                <TextBlock Text="{loc:T Metadata.Conductor}" FontSize="12" Opacity="0.5" />
+                                <TextBox Classes="metadata-info-field" Text="{Binding Conductor}" />
+                            </StackPanel>
+                            <StackPanel Grid.Row="0" Grid.Column="2" Spacing="4" Margin="0,0,0,14">
+                                <TextBlock Text="{loc:T Metadata.Lyricist}" FontSize="12" Opacity="0.5" />
+                                <TextBox Classes="metadata-info-field" Text="{Binding Lyricist}" />
+                            </StackPanel>
+                            <StackPanel Grid.Row="1" Grid.Column="0" Spacing="4" Margin="0,0,0,0">
+                                <TextBlock Text="{loc:T Metadata.PublisherLabel}" FontSize="12" Opacity="0.5" />
+                                <TextBox Classes="metadata-info-field" Text="{Binding Publisher}" />
+                            </StackPanel>
+                            <StackPanel Grid.Row="1" Grid.Column="2" Spacing="4" Margin="0,0,0,0">
+                                <TextBlock Text="{loc:T Metadata.EncodedBy}" FontSize="12" Opacity="0.5" />
+                                <TextBox Classes="metadata-info-field" Text="{Binding EncodedBy}" />
+                            </StackPanel>
+                        </Grid>
 
-                        <!-- ── Custom Tags ── -->
-                        <Grid ColumnDefinitions="*,Auto">
-                            <TextBlock Grid.Column="0" Text="{loc:T Metadata.CUSTOMTAGS}" FontSize="11" FontWeight="Bold" Opacity="0.4" VerticalAlignment="Center" />
-                            <Button Grid.Column="1"
+                        <Grid ColumnDefinitions="Auto,*" Margin="0,18,0,0">
+                            <TextBlock Text="{loc:T Metadata.SecIdentification}" FontSize="11.5" FontWeight="SemiBold" Opacity="0.45" VerticalAlignment="Center" />
+                            <Border Grid.Column="1" Height="1" Background="{DynamicResource SystemControlForegroundBaseLowBrush}" Margin="12,0,0,0" VerticalAlignment="Center" />
+                        </Grid>
+                        <Grid ColumnDefinitions="*,16,*,16,*">
+                            <StackPanel Grid.Column="0" Spacing="4" Margin="0,0,0,0">
+                                <TextBlock Text="{loc:T Metadata.ISRC}" FontSize="12" Opacity="0.5" />
+                                <TextBox Classes="metadata-info-field" Text="{Binding Isrc}" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="2" Spacing="4" Margin="0,0,0,0">
+                                <TextBlock Text="{loc:T Metadata.CatalogNumber}" FontSize="12" Opacity="0.5" />
+                                <TextBox Classes="metadata-info-field" Text="{Binding CatalogNumber}" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="4" Spacing="4" Margin="0,0,0,0">
+                                <TextBlock Text="{loc:T Metadata.BarcodeUPC}" FontSize="12" Opacity="0.5" />
+                                <TextBox Classes="metadata-info-field" Text="{Binding Barcode}" />
+                            </StackPanel>
+                        </Grid>
+
+                        <Grid ColumnDefinitions="Auto,*" Margin="0,18,0,0">
+                            <TextBlock Text="{loc:T Metadata.SecContent}" FontSize="11.5" FontWeight="SemiBold" Opacity="0.45" VerticalAlignment="Center" />
+                            <Border Grid.Column="1" Height="1" Background="{DynamicResource SystemControlForegroundBaseLowBrush}" Margin="12,0,0,0" VerticalAlignment="Center" />
+                        </Grid>
+                        <Grid ColumnDefinitions="*,20,*" RowDefinitions="Auto,Auto,Auto,Auto">
+                            <StackPanel Grid.Row="0" Grid.Column="0" Spacing="4" Margin="0,0,0,14">
+                                <TextBlock Text="{loc:T Metadata.ITunesAdvisory}" FontSize="12" Opacity="0.5" />
+                                <ComboBox Classes="metadata-info-field"
+                                          ItemsSource="{x:Static vm:MetadataViewModel.AdvisoryOptions}"
+                                          SelectedItem="{Binding SelectedAdvisory}"
+                                          HorizontalAlignment="Stretch">
+                                    <ComboBox.SelectionBoxItemTemplate>
+                                         <DataTemplate>
+                                             <presenters:TextPresenter Text="{Binding}"
+                                                                       FontWeight="Normal"
+                                                                       VerticalAlignment="Center" />
+                                         </DataTemplate>
+                                    </ComboBox.SelectionBoxItemTemplate>
+                                    <ComboBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <presenters:TextPresenter Text="{Binding}"
+                                                                      FontWeight="Normal" />
+                                        </DataTemplate>
+                                    </ComboBox.ItemTemplate>
+                                </ComboBox>
+                            </StackPanel>
+                            <StackPanel Grid.Row="0" Grid.Column="2" Spacing="4" Margin="0,0,0,14">
+                                <TextBlock Text="{loc:T Metadata.Language}" FontSize="12" Opacity="0.5" />
+                                <TextBox Classes="metadata-info-field" Text="{Binding Language}" />
+                            </StackPanel>
+                            <StackPanel Grid.Row="1" Grid.Column="0" Spacing="4" Margin="0,0,0,14">
+                                <TextBlock Text="{loc:T Metadata.Mood}" FontSize="12" Opacity="0.5" />
+                                <TextBox Classes="metadata-info-field" Text="{Binding Mood}" />
+                            </StackPanel>
+                            <StackPanel Grid.Row="1" Grid.Column="2" Spacing="4" Margin="0,0,0,14">
+                                <TextBlock Text="{loc:T Metadata.ReleaseDate}" FontSize="12" Opacity="0.5" />
+                                <TextBox Classes="metadata-info-field" Text="{Binding AdvReleaseDate}" />
+                            </StackPanel>
+                            <StackPanel Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="3" Spacing="4" Margin="0,0,0,14">
+                                <TextBlock Text="{loc:T Metadata.Description}" FontSize="12" Opacity="0.5" />
+                                <TextBox Classes="metadata-info-field" Text="{Binding AdvDescription}" />
+                            </StackPanel>
+                            <StackPanel Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="3" Spacing="4">
+                                <TextBlock Text="{loc:T Metadata.Copyright}" FontSize="12" Opacity="0.5" />
+                                <TextBox Classes="metadata-info-field" Text="{Binding Copyright}" />
+                            </StackPanel>
+                        </Grid>
+
+                        <Grid ColumnDefinitions="Auto,*" Margin="0,18,0,0">
+                            <TextBlock Text="{loc:T Metadata.SecTechnical}" FontSize="11.5" FontWeight="SemiBold" Opacity="0.45" VerticalAlignment="Center" />
+                            <Border Grid.Column="1" Height="1" Background="{DynamicResource SystemControlForegroundBaseLowBrush}" Margin="12,0,0,0" VerticalAlignment="Center" />
+                        </Grid>
+                        <Grid ColumnDefinitions="*,20,*" RowDefinitions="Auto,Auto">
+                            <StackPanel Grid.Row="0" Grid.Column="0" Spacing="2" Margin="0,0,0,12">
+                                <TextBlock Text="{loc:T Metadata.Encoder}" FontSize="12" Opacity="0.5" />
+                                <TextBlock Text="{Binding Encoder}" FontSize="14" />
+                            </StackPanel>
+                            <StackPanel Grid.Row="0" Grid.Column="2" Spacing="2" Margin="0,0,0,12"
+                                        IsVisible="{Binding ReplayGainTrackGain, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                                <TextBlock Text="{loc:T Metadata.TrackGain}" FontSize="12" Opacity="0.5" />
+                                <TextBlock FontSize="14"><Run Text="{Binding ReplayGainTrackGain}" /><Run Text="  ·  " Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" /><Run Text="{loc:T Metadata.TrackPeak}" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" /><Run Text=" " /><Run Text="{Binding ReplayGainTrackPeak}" /></TextBlock>
+                            </StackPanel>
+                            <StackPanel Grid.Row="1" Grid.Column="2" Spacing="2"
+                                        IsVisible="{Binding ReplayGainAlbumGain, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                                <TextBlock Text="{loc:T Metadata.AlbumGain}" FontSize="12" Opacity="0.5" />
+                                <TextBlock FontSize="14"><Run Text="{Binding ReplayGainAlbumGain}" /><Run Text="  ·  " Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" /><Run Text="{loc:T Metadata.AlbumPeak}" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" /><Run Text=" " /><Run Text="{Binding ReplayGainAlbumPeak}" /></TextBlock>
+                            </StackPanel>
+                        </Grid>
+
+                        <Grid ColumnDefinitions="Auto,*,Auto" Margin="0,18,0,0">
+                            <TextBlock Grid.Column="0" Text="{loc:T Metadata.SecCustomTags}" FontSize="11.5" FontWeight="SemiBold" Opacity="0.45" VerticalAlignment="Center" />
+                            <Border Grid.Column="1" Height="1" Background="{DynamicResource SystemControlForegroundBaseLowBrush}" Margin="12,0" VerticalAlignment="Center" />
+                            <Button Grid.Column="2"
                                     Content="{loc:T Metadata.Add}"
                                     Command="{Binding AddCustomTagCommand}"
-                                    Padding="10,4"
-                                    FontSize="11"
+                                    Padding="12,4"
+                                    FontSize="11.5"
+                                    FontWeight="SemiBold"
                                     CornerRadius="999"
                                     Cursor="Hand" />
                         </Grid>
 
-                        <ItemsControl ItemsSource="{Binding CustomTags}">
+                        <ItemsControl ItemsSource="{Binding CustomTags}" Margin="0,4,0,0">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate x:DataType="vm:CustomTagItem">
-                                    <Grid ColumnDefinitions="*,8,2*,8,Auto" Margin="0,0,0,6">
+                                    <Grid ColumnDefinitions="*,8,2*,8,Auto" Margin="0,0,0,8">
                                         <TextBox Grid.Column="0"
                                                  Classes="metadata-info-field"
                                                  Text="{Binding Key}"
@@ -955,8 +951,11 @@
                                                 Content="✕"
                                                 Command="{Binding $parent[ItemsControl].((vm:MetadataViewModel)DataContext).RemoveCustomTagCommand}"
                                                 CommandParameter="{Binding}"
-                                                Padding="6,4"
+                                                Width="30" Height="30"
+                                                Padding="0"
                                                 FontSize="11"
+                                                HorizontalContentAlignment="Center"
+                                                VerticalContentAlignment="Center"
                                                 CornerRadius="999"
                                                 Cursor="Hand"
                                                 VerticalAlignment="Center" />
@@ -980,11 +979,31 @@
                      Classes.changed="{Binding ArtworkChanged}">
                 <DockPanel Margin="24,16">
                     <!-- Toolbar: tab title (actions live in the stack beside the preview) -->
-                    <TextBlock DockPanel.Dock="Top"
-                               Text="{loc:T Metadata.Artwork}"
-                               FontSize="14.5"
-                               FontWeight="Bold"
-                               Margin="2,0,0,12" />
+                    <Grid DockPanel.Dock="Top" ColumnDefinitions="Auto,Auto,*" Margin="2,0,0,12">
+                        <TextBlock Grid.Column="0"
+                                   Text="{loc:T Metadata.Artwork}"
+                                   FontSize="14.5"
+                                   FontWeight="Bold"
+                                   VerticalAlignment="Center" />
+                        <Border Grid.Column="1"
+                                Background="#12FFFFFF"
+                                CornerRadius="999"
+                                Padding="10,3"
+                                Margin="10,0,0,0"
+                                VerticalAlignment="Center"
+                                IsVisible="{Binding ArtworkDimensions, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                            <TextBlock Text="{Binding ArtworkDimensions}"
+                                       FontSize="10.5"
+                                       FontWeight="Bold"
+                                       Opacity="0.75" />
+                        </Border>
+                        <TextBlock Grid.Column="2"
+                                   Text="{loc:T Metadata.ArtworkSharedByAlbum}"
+                                   FontSize="12" Opacity="0.5"
+                                   HorizontalAlignment="Right"
+                                   VerticalAlignment="Center"
+                                   IsVisible="{Binding !IsMultiSelect}" />
+                    </Grid>
 
                     <!-- Artwork action buttons (vertical stack right of the preview) -->
                     <StackPanel x:Name="ArtworkButtonsBar"
@@ -1196,11 +1215,20 @@
                      Classes.changed="{Binding AnimatedArtworkChanged}">
                 <DockPanel Margin="24,16">
                     <!-- Toolbar: tab title (actions live in the stack beside the preview) -->
-                    <TextBlock DockPanel.Dock="Top"
-                               Text="{loc:T Metadata.AnimatedArtwork}"
-                               FontSize="14.5"
-                               FontWeight="Bold"
-                               Margin="2,0,0,12" />
+                    <Grid DockPanel.Dock="Top" ColumnDefinitions="Auto,*" Margin="2,0,0,12">
+                        <TextBlock Grid.Column="0"
+                                   Text="{loc:T Metadata.AnimatedArtwork}"
+                                   FontSize="14.5"
+                                   FontWeight="Bold"
+                                   VerticalAlignment="Center" />
+                        <TextBlock Grid.Column="1"
+                                   Text="{loc:T Metadata.AnimatedArtworkHint}"
+                                   FontSize="12" Opacity="0.5"
+                                   HorizontalAlignment="Right"
+                                   VerticalAlignment="Center"
+                                   Margin="16,0,0,0"
+                                   TextTrimming="CharacterEllipsis" />
+                    </Grid>
 
                     <!-- Action buttons (vertical stack right of the preview, mirrors the Artwork tab) -->
                     <StackPanel DockPanel.Dock="Right"
@@ -1896,137 +1924,140 @@
             <TabItem Header="{loc:T Metadata.Options}" FontSize="14" FontWeight="SemiBold"
                      Tag="{loc:T Metadata.GroupPlayback}"
                      Classes.changed="{Binding OptionsChanged}">
-                <StackPanel Margin="24,14" Spacing="10">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                <StackPanel Margin="24,16,24,24" Spacing="12">
 
-                    <!-- Media Kind (Music, Podcast, Audiobook, ...) -->
-                    <StackPanel Spacing="2">
-                        <TextBlock Text="{loc:T Metadata.MediaKind}" FontSize="12" Opacity="0.5" />
-                        <ComboBox Classes="metadata-info-field"
-                                  ItemsSource="{x:Static vm:MetadataViewModel.AvailableMediaKinds}"
-                                  SelectedItem="{Binding MediaKind}"
-                                  HorizontalAlignment="Left"
-                                  Width="180" />
-                    </StackPanel>
-
-                    <Separator Opacity="0.15" Margin="0,2" />
-
-                    <!-- Release type override (Auto, Album, Single, EP, ...) -->
-                    <StackPanel Spacing="2">
-                        <TextBlock Text="{loc:T Metadata.ReleaseType}" FontSize="12" Opacity="0.5" />
-                        <ComboBox Classes="metadata-info-field"
-                                  ItemsSource="{x:Static vm:MetadataViewModel.AvailableReleaseTypes}"
-                                  SelectedItem="{Binding ReleaseTypeOverride}"
-                                  HorizontalAlignment="Left"
-                                  Width="180" />
-                    </StackPanel>
-
-                    <Separator Opacity="0.15" Margin="0,2" />
-
-                    <!-- Start / Stop Time (inline) -->
-                    <Grid ColumnDefinitions="Auto,24,Auto" HorizontalAlignment="Left">
-                        <Grid Grid.Column="0" ColumnDefinitions="34,30,130" HorizontalAlignment="Left" VerticalAlignment="Center">
-                            <TextBlock Grid.Column="0" Text="{loc:T Metadata.Start}" FontSize="12" Opacity="0.5" VerticalAlignment="Center" />
-                            <CheckBox Classes="metadata-pill-checkbox"
-                                      Grid.Column="1"
-                                      IsChecked="{Binding HasStartTime}"
-                                      Padding="0" Margin="0" MinWidth="0"
-                                      VerticalAlignment="Center" />
-                            <TextBox Classes="metadata-info-field"
-                                     Grid.Column="2"
-                                     Text="{Binding StartTime}"
-                                     IsEnabled="{Binding HasStartTime}"
-                                     Width="130"
-                                     CornerRadius="999"
-                                     Padding="14,6"
-                                     VerticalAlignment="Center" />
-                        </Grid>
-                        <Grid Grid.Column="2" ColumnDefinitions="34,30,130" HorizontalAlignment="Left" VerticalAlignment="Center">
-                            <TextBlock Grid.Column="0" Text="{loc:T Metadata.Stop}" FontSize="12" Opacity="0.5" VerticalAlignment="Center" />
-                            <CheckBox Classes="metadata-pill-checkbox"
-                                      Grid.Column="1"
-                                      IsChecked="{Binding HasStopTime}"
-                                      Padding="0" Margin="0" MinWidth="0"
-                                      VerticalAlignment="Center" />
-                            <TextBox Classes="metadata-info-field"
-                                     Grid.Column="2"
-                                     Text="{Binding StopTime}"
-                                     IsEnabled="{Binding HasStopTime}"
-                                     Width="130"
-                                     CornerRadius="999"
-                                     Padding="14,6"
-                                     VerticalAlignment="Center" />
-                        </Grid>
+                    <Grid ColumnDefinitions="Auto,*" Margin="0,0,0,0">
+                        <TextBlock Text="{loc:T Metadata.SecKind}" FontSize="11.5" FontWeight="SemiBold" Opacity="0.45" VerticalAlignment="Center" />
+                        <Border Grid.Column="1" Height="1" Background="{DynamicResource SystemControlForegroundBaseLowBrush}" Margin="12,0,0,0" VerticalAlignment="Center" />
+                    </Grid>
+                    <Grid ColumnDefinitions="*,20,*">
+                        <!-- Media Kind (Music, Podcast, Audiobook, ...) -->
+                        <StackPanel Grid.Column="0" Spacing="4">
+                            <TextBlock Text="{loc:T Metadata.MediaKind}" FontSize="12" Opacity="0.5" />
+                            <ComboBox Classes="metadata-info-field"
+                                      ItemsSource="{x:Static vm:MetadataViewModel.AvailableMediaKinds}"
+                                      SelectedItem="{Binding MediaKind}"
+                                      HorizontalAlignment="Stretch" />
+                        </StackPanel>
+                        <!-- Release type override (Auto, Album, Single, EP, ...) -->
+                        <StackPanel Grid.Column="2" Spacing="4">
+                            <TextBlock Text="{loc:T Metadata.ReleaseType}" FontSize="12" Opacity="0.5" />
+                            <ComboBox Classes="metadata-info-field"
+                                      ItemsSource="{x:Static vm:MetadataViewModel.AvailableReleaseTypes}"
+                                      SelectedItem="{Binding ReleaseTypeOverride}"
+                                      HorizontalAlignment="Stretch" />
+                        </StackPanel>
                     </Grid>
 
-                    <Separator Opacity="0.15" Margin="0,2" />
-
-                    <!-- Remember playback position -->
-                    <CheckBox Classes="metadata-pill-checkbox"
-                              Content="{loc:T Metadata.RememberPlaybackPosition}"
-                              IsChecked="{Binding RememberPlaybackPosition}" />
-
-                    <!-- Skip when shuffling -->
-                    <CheckBox Classes="metadata-pill-checkbox"
-                              Content="{loc:T Metadata.SkipWhenShuffling}"
-                              IsChecked="{Binding SkipWhenShuffling}" />
-
-                    <Separator Opacity="0.15" Margin="0,2" />
-
-                    <!-- Volume Adjust -->
-                    <StackPanel Spacing="2">
-                        <TextBlock Text="{loc:T Metadata.VolumeAdjust}" FontSize="12" Opacity="0.5" />
-                        <Grid ColumnDefinitions="*,52">
-                            <Grid Grid.Column="0" Height="20" ClipToBounds="False">
-                                <Canvas x:Name="VolumeAdjustVisual"
-                                        Height="20"
-                                        ClipToBounds="False"
-                                        IsHitTestVisible="False">
-                                    <Border x:Name="VolumeAdjustTrackBackground"
-                                            Height="6"
-                                            CornerRadius="3"
-                                            Background="{DynamicResource IslandSliderUnfilled}"
-                                            Opacity="0.4"
-                                            Canvas.Top="7"/>
-                                    <Border x:Name="VolumeAdjustTrackFill"
-                                            Height="6"
-                                            CornerRadius="3"
-                                            Background="{DynamicResource IslandSliderFilled}"
-                                            Canvas.Top="7"/>
-                                    <Border x:Name="VolumeAdjustThumb"
-                                            Width="14"
-                                            Height="14"
-                                            CornerRadius="7"
-                                            Background="{DynamicResource IslandSliderFilled}"
-                                            BoxShadow="0 1 3 0 #40000000"
-                                            Canvas.Top="3"/>
-                                </Canvas>
-                                <Slider x:Name="VolumeAdjustSlider"
-                                        Classes="volume-horizontal"
-                                        Value="{Binding VolumeAdjust, Mode=TwoWay}"
-                                        Minimum="-100" Maximum="100"
-                                        HorizontalAlignment="Stretch"
-                                        DoubleTapped="OnVolumeAdjustSliderDoubleTapped" />
+                    <Grid ColumnDefinitions="Auto,*" Margin="0,18,0,0">
+                        <TextBlock Text="{loc:T Metadata.SecPlayRange}" FontSize="11.5" FontWeight="SemiBold" Opacity="0.45" VerticalAlignment="Center" />
+                        <Border Grid.Column="1" Height="1" Background="{DynamicResource SystemControlForegroundBaseLowBrush}" Margin="12,0,0,0" VerticalAlignment="Center" />
+                    </Grid>
+                    <Grid ColumnDefinitions="*,20,*">
+                        <StackPanel Grid.Column="0" Spacing="4">
+                            <TextBlock Text="{loc:T Metadata.Start}" FontSize="12" Opacity="0.5" />
+                            <Grid ColumnDefinitions="Auto,*">
+                                <CheckBox Classes="metadata-pill-checkbox"
+                                          Grid.Column="0"
+                                          IsChecked="{Binding HasStartTime}"
+                                          Padding="0" Margin="0,0,8,0" MinWidth="0"
+                                          VerticalAlignment="Center" />
+                                <TextBox Classes="metadata-info-field"
+                                         Grid.Column="1"
+                                         Text="{Binding StartTime}"
+                                         IsEnabled="{Binding HasStartTime}"
+                                         VerticalAlignment="Center" />
                             </Grid>
-                            <TextBlock Grid.Column="1"
-                                       Text="{Binding VolumeAdjust, StringFormat='{}{0}%'}"
-                                       FontSize="12"
-                                       Opacity="0.6"
-                                       VerticalAlignment="Center"
-                                       HorizontalAlignment="Right" />
-                        </Grid>
-                    </StackPanel>
+                        </StackPanel>
+                        <StackPanel Grid.Column="2" Spacing="4">
+                            <TextBlock Text="{loc:T Metadata.Stop}" FontSize="12" Opacity="0.5" />
+                            <Grid ColumnDefinitions="Auto,*">
+                                <CheckBox Classes="metadata-pill-checkbox"
+                                          Grid.Column="0"
+                                          IsChecked="{Binding HasStopTime}"
+                                          Padding="0" Margin="0,0,8,0" MinWidth="0"
+                                          VerticalAlignment="Center" />
+                                <TextBox Classes="metadata-info-field"
+                                         Grid.Column="1"
+                                         Text="{Binding StopTime}"
+                                         IsEnabled="{Binding HasStopTime}"
+                                         VerticalAlignment="Center" />
+                            </Grid>
+                        </StackPanel>
+                    </Grid>
 
-                    <Separator Opacity="0.15" Margin="0,2" />
+                    <Grid ColumnDefinitions="Auto,*" Margin="0,18,0,0">
+                        <TextBlock Text="{loc:T Metadata.SecBehaviour}" FontSize="11.5" FontWeight="SemiBold" Opacity="0.45" VerticalAlignment="Center" />
+                        <Border Grid.Column="1" Height="1" Background="{DynamicResource SystemControlForegroundBaseLowBrush}" Margin="12,0,0,0" VerticalAlignment="Center" />
+                    </Grid>
+                    <WrapPanel Orientation="Horizontal" ItemSpacing="24" LineSpacing="10">
+                        <CheckBox Classes="metadata-pill-checkbox"
+                                  Content="{loc:T Metadata.RememberPlaybackPosition}"
+                                  IsChecked="{Binding RememberPlaybackPosition}" />
+                        <CheckBox Classes="metadata-pill-checkbox"
+                                  Content="{loc:T Metadata.SkipWhenShuffling}"
+                                  IsChecked="{Binding SkipWhenShuffling}" />
+                    </WrapPanel>
 
-                    <!-- Equalizer Preset -->
-                    <StackPanel Spacing="2">
-                        <TextBlock Text="{loc:T Metadata.Equalizer}" FontSize="12" Opacity="0.5" Margin="8,0,0,0" />
-                        <ComboBox Classes="metadata-info-field"
-                                  ItemsSource="{x:Static vm:MetadataViewModel.OptionsEqPresets}"
-                                  SelectedItem="{Binding SelectedEqPreset}"
-                                  HorizontalAlignment="Left"
-                                  Width="104" />
-                    </StackPanel>
+                    <Grid ColumnDefinitions="Auto,*" Margin="0,18,0,0">
+                        <TextBlock Text="{loc:T Metadata.SecSound}" FontSize="11.5" FontWeight="SemiBold" Opacity="0.45" VerticalAlignment="Center" />
+                        <Border Grid.Column="1" Height="1" Background="{DynamicResource SystemControlForegroundBaseLowBrush}" Margin="12,0,0,0" VerticalAlignment="Center" />
+                    </Grid>
+                    <Grid ColumnDefinitions="*,20,*">
+                        <!-- Volume Adjust -->
+                        <StackPanel Grid.Column="0" Spacing="4">
+                            <TextBlock Text="{loc:T Metadata.VolumeAdjust}" FontSize="12" Opacity="0.5" />
+                            <Grid ColumnDefinitions="*,52" MinHeight="36">
+                                <Grid Grid.Column="0" Height="20" ClipToBounds="False" VerticalAlignment="Center">
+                                    <Canvas x:Name="VolumeAdjustVisual"
+                                            Height="20"
+                                            ClipToBounds="False"
+                                            IsHitTestVisible="False">
+                                        <Border x:Name="VolumeAdjustTrackBackground"
+                                                Height="6"
+                                                CornerRadius="3"
+                                                Background="{DynamicResource IslandSliderUnfilled}"
+                                                Opacity="0.4"
+                                                Canvas.Top="7"/>
+                                        <Border x:Name="VolumeAdjustTrackFill"
+                                                Height="6"
+                                                CornerRadius="3"
+                                                Background="{DynamicResource IslandSliderFilled}"
+                                                Canvas.Top="7"/>
+                                        <Border x:Name="VolumeAdjustThumb"
+                                                Width="14"
+                                                Height="14"
+                                                CornerRadius="7"
+                                                Background="{DynamicResource IslandSliderFilled}"
+                                                BoxShadow="0 1 3 0 #40000000"
+                                                Canvas.Top="3"/>
+                                    </Canvas>
+                                    <Slider x:Name="VolumeAdjustSlider"
+                                            Classes="volume-horizontal"
+                                            Value="{Binding VolumeAdjust, Mode=TwoWay}"
+                                            Minimum="-100" Maximum="100"
+                                            HorizontalAlignment="Stretch"
+                                            DoubleTapped="OnVolumeAdjustSliderDoubleTapped" />
+                                </Grid>
+                                <TextBlock Grid.Column="1"
+                                           Text="{Binding VolumeAdjust, StringFormat='{}{0}%'}"
+                                           FontSize="12"
+                                           Opacity="0.6"
+                                           VerticalAlignment="Center"
+                                           HorizontalAlignment="Right" />
+                            </Grid>
+                            <TextBlock Text="{loc:T Metadata.DoubleClickToReset}" FontSize="11" Opacity="0.35" />
+                        </StackPanel>
+                        <!-- Equalizer Preset -->
+                        <StackPanel Grid.Column="2" Spacing="4">
+                            <TextBlock Text="{loc:T Metadata.Equalizer}" FontSize="12" Opacity="0.5" />
+                            <ComboBox Classes="metadata-info-field"
+                                      ItemsSource="{x:Static vm:MetadataViewModel.OptionsEqPresets}"
+                                      SelectedItem="{Binding SelectedEqPreset}"
+                                      HorizontalAlignment="Stretch" />
+                        </StackPanel>
+                    </Grid>
 
                     <!-- Rename by pattern (multi-select only) -->
                     <StackPanel Spacing="8" IsVisible="{Binding ShowRenameSection}">
@@ -2063,6 +2094,7 @@
                     </StackPanel>
 
                 </StackPanel>
+                </ScrollViewer>
             </TabItem>
 
             <!-- ═══════════ FILE TAB ═══════════ -->
@@ -2070,94 +2102,79 @@
                      Tag="{loc:T Metadata.GroupFile}">
                 <ScrollViewer VerticalScrollBarVisibility="Auto"
                               HorizontalScrollBarVisibility="Disabled">
-                    <StackPanel Spacing="14" Margin="24,16,24,24">
-                        <!-- Format -->
-                        <StackPanel Spacing="2">
-                            <TextBlock Text="{loc:T Metadata.Format}" FontSize="12" Opacity="0.5" />
-                            <TextBlock Text="{Binding FileFormat}" FontSize="14" />
+                    <StackPanel Spacing="0" Margin="24,16,24,24">
+                        <Grid ColumnDefinitions="Auto,*" Margin="0,0,0,0">
+                            <TextBlock Text="{loc:T Metadata.SecAudio}" FontSize="11.5" FontWeight="SemiBold" Opacity="0.45" VerticalAlignment="Center" />
+                            <Border Grid.Column="1" Height="1" Background="{DynamicResource SystemControlForegroundBaseLowBrush}" Margin="12,0,0,0" VerticalAlignment="Center" />
+                        </Grid>
+                        <Grid ColumnDefinitions="*,20,*" RowDefinitions="Auto,Auto,Auto" Margin="0,10,0,0">
+                            <StackPanel Grid.Row="0" Grid.Column="0" Spacing="2" Margin="0,0,0,12">
+                                <TextBlock Text="{loc:T Metadata.Format}" FontSize="12" Opacity="0.5" />
+                                <TextBlock Text="{Binding FileFormat}" FontSize="14" />
+                            </StackPanel>
+                            <StackPanel Grid.Row="0" Grid.Column="2" Spacing="2" Margin="0,0,0,12">
+                                <TextBlock Text="{loc:T Metadata.Codec}" FontSize="12" Opacity="0.5" />
+                                <TextBlock Text="{Binding Codec}" FontSize="14" />
+                            </StackPanel>
+                            <StackPanel Grid.Row="1" Grid.Column="0" Spacing="2" Margin="0,0,0,12">
+                                <TextBlock Text="{loc:T Metadata.Bitrate}" FontSize="12" Opacity="0.5" />
+                                <TextBlock Text="{Binding Bitrate}" FontSize="14" />
+                            </StackPanel>
+                            <StackPanel Grid.Row="1" Grid.Column="2" Spacing="2" Margin="0,0,0,12">
+                                <TextBlock Text="{loc:T Metadata.SampleRate}" FontSize="12" Opacity="0.5" />
+                                <TextBlock FontSize="14"><Run Text="{Binding SampleRate}" /><Run Text=" · " Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" /><Run Text="{Binding BitsPerSample}" /><Run Text=" · " Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" /><Run Text="{Binding Channels}" /></TextBlock>
+                            </StackPanel>
+                            <StackPanel Grid.Row="2" Grid.Column="0" Spacing="2" Margin="0,0,0,12">
+                                <TextBlock Text="{loc:T Metadata.Duration}" FontSize="12" Opacity="0.5" />
+                                <TextBlock Text="{Binding Duration}" FontSize="14" />
+                            </StackPanel>
+                            <StackPanel Grid.Row="2" Grid.Column="2" Spacing="2" Margin="0,0,0,12">
+                                <TextBlock Text="{loc:T Metadata.Size}" FontSize="12" Opacity="0.5" />
+                                <TextBlock FontSize="14"><Run Text="{Binding FileSize}" /><Run Text=" · " Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" /><Run Text="{Binding LosslessOrLossy}" /></TextBlock>
+                            </StackPanel>
+                        </Grid>
+
+                        <Grid ColumnDefinitions="Auto,*" Margin="0,6,0,0">
+                            <TextBlock Text="{loc:T Metadata.SecDates}" FontSize="11.5" FontWeight="SemiBold" Opacity="0.45" VerticalAlignment="Center" />
+                            <Border Grid.Column="1" Height="1" Background="{DynamicResource SystemControlForegroundBaseLowBrush}" Margin="12,0,0,0" VerticalAlignment="Center" />
+                        </Grid>
+                        <Grid ColumnDefinitions="*,20,*" Margin="0,10,0,0">
+                            <StackPanel Grid.Column="0" Spacing="2" Margin="0,0,0,12">
+                                <TextBlock Text="{loc:T Metadata.DateAdded}" FontSize="12" Opacity="0.5" />
+                                <TextBlock Text="{Binding DateAdded}" FontSize="14" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="2" Spacing="2" Margin="0,0,0,12">
+                                <TextBlock Text="{loc:T Metadata.DateModified}" FontSize="12" Opacity="0.5" />
+                                <TextBlock Text="{Binding DateModified}" FontSize="14" />
+                            </StackPanel>
+                        </Grid>
+
+                        <Grid ColumnDefinitions="Auto,*" Margin="0,6,0,0">
+                            <TextBlock Text="{loc:T Metadata.SecLocation}" FontSize="11.5" FontWeight="SemiBold" Opacity="0.45" VerticalAlignment="Center" />
+                            <Border Grid.Column="1" Height="1" Background="{DynamicResource SystemControlForegroundBaseLowBrush}" Margin="12,0,0,0" VerticalAlignment="Center" />
+                        </Grid>
+                        <StackPanel Spacing="2" Margin="0,10,0,12">
+                            <TextBlock Text="{loc:T Metadata.File}" FontSize="12" Opacity="0.5" />
+                            <TextBlock Text="{Binding FileName}" FontSize="14" TextWrapping="Wrap" />
                         </StackPanel>
-
-                        <!-- Duration -->
-                        <StackPanel Spacing="2">
-                            <TextBlock Text="{loc:T Metadata.Duration}" FontSize="12" Opacity="0.5" />
-                            <TextBlock Text="{Binding Duration}" FontSize="14" />
-                        </StackPanel>
-
-                        <!-- File Size -->
-                        <StackPanel Spacing="2">
-                            <TextBlock Text="{loc:T Metadata.Size}" FontSize="12" Opacity="0.5" />
-                            <TextBlock Text="{Binding FileSize}" FontSize="14" />
-                        </StackPanel>
-
-                        <!-- Bitrate -->
-                        <StackPanel Spacing="2">
-                            <TextBlock Text="{loc:T Metadata.Bitrate}" FontSize="12" Opacity="0.5" />
-                            <TextBlock Text="{Binding Bitrate}" FontSize="14" />
-                        </StackPanel>
-
-                        <!-- Bit Depth -->
-                        <StackPanel Spacing="2">
-                            <TextBlock Text="{loc:T Metadata.BitDepth}" FontSize="12" Opacity="0.5" />
-                            <TextBlock Text="{Binding BitsPerSample}" FontSize="14" />
-                        </StackPanel>
-
-                        <!-- Sample Rate -->
-                        <StackPanel Spacing="2">
-                            <TextBlock Text="{loc:T Metadata.SampleRate}" FontSize="12" Opacity="0.5" />
-                            <TextBlock Text="{Binding SampleRate}" FontSize="14" />
-                        </StackPanel>
-
-                        <!-- Channels -->
-                        <StackPanel Spacing="2">
-                            <TextBlock Text="{loc:T Metadata.Channels}" FontSize="12" Opacity="0.5" />
-                            <TextBlock Text="{Binding Channels}" FontSize="14" />
-                        </StackPanel>
-
-                        <!-- Codec -->
-                        <StackPanel Spacing="2">
-                            <TextBlock Text="{loc:T Metadata.Codec}" FontSize="12" Opacity="0.5" />
-                            <TextBlock Text="{Binding Codec}" FontSize="14" />
-                        </StackPanel>
-
-                        <!-- Lossless / Lossy -->
-                        <StackPanel Spacing="2">
-                            <TextBlock Text="{loc:T Metadata.Quality}" FontSize="12" Opacity="0.5" />
-                            <TextBlock Text="{Binding LosslessOrLossy}" FontSize="14" />
-                        </StackPanel>
-
-                        <Separator Opacity="0.3" Margin="0,4" />
-
-                        <!-- Date Modified -->
-                        <StackPanel Spacing="2">
-                            <TextBlock Text="{loc:T Metadata.DateModified}" FontSize="12" Opacity="0.5" />
-                            <TextBlock Text="{Binding DateModified}" FontSize="14" />
-                        </StackPanel>
-
-                        <!-- Date Added -->
-                        <StackPanel Spacing="2">
-                            <TextBlock Text="{loc:T Metadata.DateAdded}" FontSize="12" Opacity="0.5" />
-                            <TextBlock Text="{Binding DateAdded}" FontSize="14" />
-                        </StackPanel>
-
-                        <Separator Opacity="0.3" Margin="0,4" />
-
-                        <!-- Folder name -->
-                        <StackPanel Spacing="2">
+                        <StackPanel Spacing="2" Margin="0,0,0,12">
                             <TextBlock Text="{loc:T Metadata.FolderName}" FontSize="12" Opacity="0.5" />
-                            <TextBlock Text="{Binding FolderName}"
-                                       FontSize="13"
-                                       TextWrapping="Wrap"
-                                       Opacity="0.9" />
+                            <TextBlock Text="{Binding FolderName}" FontSize="13" TextWrapping="Wrap" Opacity="0.9" />
                         </StackPanel>
-
-                        <!-- Copyright -->
-                        <StackPanel Spacing="2"
+                        <StackPanel Spacing="2" Margin="0,0,0,12"
                                     IsVisible="{Binding Copyright, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
                             <TextBlock Text="{loc:T Metadata.Copyright}" FontSize="12" Opacity="0.5" />
-                            <TextBlock Text="{Binding Copyright}"
-                                       FontSize="13"
-                                       TextWrapping="Wrap"
-                                       Opacity="0.9" />
+                            <TextBlock Text="{Binding Copyright}" FontSize="13" TextWrapping="Wrap" Opacity="0.9" />
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,6,0,0">
+                            <Button Content="{loc:T Metadata.ShowInFolder}"
+                                    Command="{Binding ShowInFolderCommand}"
+                                    Padding="14,6" CornerRadius="999" FontWeight="SemiBold" FontSize="12" Cursor="Hand" />
+                            <Button Content="{loc:T Metadata.CopyPath}"
+                                    Command="{Binding CopyPathCommand}"
+                                    CommandParameter="{Binding $parent[Window]}"
+                                    Padding="14,6" CornerRadius="999" FontWeight="SemiBold" FontSize="12" Cursor="Hand" />
                         </StackPanel>
                     </StackPanel>
                 </ScrollViewer>

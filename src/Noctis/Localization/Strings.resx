@@ -923,6 +923,24 @@
   <data name="Metadata.ChangesMany" xml:space="preserve"><value>{0} changes</value><comment>Footer status in MetadataWindow.axaml</comment></data>
   <data name="Metadata.AppliesToFiles" xml:space="preserve"><value>applies to {0} files</value><comment>Footer status in MetadataWindow.axaml</comment></data>
   <data name="Metadata.MixedHint" xml:space="preserve"><value>Values that differ across the {0} tracks show as Mixed</value><comment>Details tab hint in MetadataWindow.axaml</comment></data>
+  <data name="Metadata.SecSorting" xml:space="preserve"><value>Sorting</value><comment>Text in MetadataWindow.axaml</comment></data>
+  <data name="Metadata.SecPeople" xml:space="preserve"><value>People &amp; credits</value><comment>Text in MetadataWindow.axaml</comment></data>
+  <data name="Metadata.SecIdentification" xml:space="preserve"><value>Identification</value><comment>Text in MetadataWindow.axaml</comment></data>
+  <data name="Metadata.SecContent" xml:space="preserve"><value>Content</value><comment>Text in MetadataWindow.axaml</comment></data>
+  <data name="Metadata.SecTechnical" xml:space="preserve"><value>Technical</value><comment>Text in MetadataWindow.axaml</comment></data>
+  <data name="Metadata.SecCustomTags" xml:space="preserve"><value>Custom tags</value><comment>Text in MetadataWindow.axaml</comment></data>
+  <data name="Metadata.SecKind" xml:space="preserve"><value>Kind</value><comment>Text in MetadataWindow.axaml</comment></data>
+  <data name="Metadata.SecPlayRange" xml:space="preserve"><value>Play range</value><comment>Text in MetadataWindow.axaml</comment></data>
+  <data name="Metadata.SecBehaviour" xml:space="preserve"><value>Behaviour</value><comment>Text in MetadataWindow.axaml</comment></data>
+  <data name="Metadata.SecSound" xml:space="preserve"><value>Sound</value><comment>Text in MetadataWindow.axaml</comment></data>
+  <data name="Metadata.SecAudio" xml:space="preserve"><value>Audio</value><comment>Text in MetadataWindow.axaml</comment></data>
+  <data name="Metadata.SecDates" xml:space="preserve"><value>Dates</value><comment>Text in MetadataWindow.axaml</comment></data>
+  <data name="Metadata.SecLocation" xml:space="preserve"><value>Location</value><comment>Text in MetadataWindow.axaml</comment></data>
+  <data name="Metadata.ShowInFolder" xml:space="preserve"><value>Show in folder</value><comment>Text in MetadataWindow.axaml</comment></data>
+  <data name="Metadata.CopyPath" xml:space="preserve"><value>Copy path</value><comment>Text in MetadataWindow.axaml</comment></data>
+  <data name="Metadata.DoubleClickToReset" xml:space="preserve"><value>Double-click the slider to reset</value><comment>Text in MetadataWindow.axaml</comment></data>
+  <data name="Metadata.ArtworkSharedByAlbum" xml:space="preserve"><value>Shared by the whole album</value><comment>Text in MetadataWindow.axaml</comment></data>
+  <data name="Metadata.AnimatedArtworkHint" xml:space="preserve"><value>Per album · plays on the album page and Now Playing</value><comment>Text in MetadataWindow.axaml</comment></data>
   <data name="Metadata.Cancel" xml:space="preserve"><value>Cancel</value><comment>Content in MetadataWindow.axaml</comment></data>
   <data name="Metadata.Save" xml:space="preserve"><value>Save</value><comment>Text in MetadataWindow.axaml</comment></data>
   <data name="Metadata.Saving" xml:space="preserve"><value>Saving</value><comment>Text in MetadataWindow.axaml</comment></data>
