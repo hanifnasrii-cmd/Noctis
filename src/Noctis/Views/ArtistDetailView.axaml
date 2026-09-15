@@ -153,8 +153,23 @@
         <Style Selector="Button.song-row:pointerover /template/ ContentPresenter#PART_ContentPresenter">
             <Setter Property="Background" Value="{DynamicResource HomeCardHoverBackground}" />
         </Style>
+        <!-- The playing row SNAPS to the accent: the global Button brush transition and the
+             presenter's hover tween both lerp ARGB from the translucent grey (#28FFFFFF) to
+             the opaque accent, and the mid values are a bright pale pink - the row flickered
+             white for a few frames on double click (user, 09-14). Home never tweens because
+             its fill sits on a Border with no transition; do the same here by dropping the
+             transitions while the row is playing (both directions: leaving .playing would
+             otherwise tween the same way back). -->
         <Style Selector="Button.song-row.playing">
             <Setter Property="Background" Value="{DynamicResource AccentButtonBackground}" />
+            <Setter Property="Transitions">
+                <Transitions />
+            </Setter>
+        </Style>
+        <Style Selector="Button.song-row.playing /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Transitions">
+                <Transitions />
+            </Setter>
         </Style>
         <Style Selector="Button.song-row.playing:pointerover /template/ ContentPresenter#PART_ContentPresenter">
             <Setter Property="Background" Value="{DynamicResource AccentButtonBackground}" />

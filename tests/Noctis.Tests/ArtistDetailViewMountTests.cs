@@ -391,6 +391,49 @@ public class ArtistDetailViewMountTests
         Assert.Same(accent, presenter.Background);
     }
 
+    [AvaloniaFact]
+    public void ArtistPage_RowSnapsToAccent_WhenItStartsPlaying_NoTweenThroughWhite()
+    {
+        // Double-clicking a track: the row under the pointer flips to .playing, and its
+        // grey fill (#28FFFFFF hover / #18FFFFFF rest) TWEENED to the opaque accent - the
+        // global Button brush transition and the presenter's hover tween both lerp ARGB, so
+        // the mid values are a bright pale pink: the "white flicker" (user, 09-14). Home
+        // snaps because its fill sits on a Border with no transition. Read live values, no
+        // Transitions=null here: a tween start value would be the grey, not the accent.
+        EnsureAppStyles();
+        var lib = new FakeLibraryService();
+        var album = MakeAlbum("Phases", "Chase Atlantic", 2019, 4);
+        ((List<Album>)lib.Albums).Add(album);
+        var persistence = new TestPersistenceService();
+        var player = new PlayerViewModel(new FakeAudioPlayer(), lib, persistence, new FakeAnimatedCoverService());
+        var vm = new ArtistDetailViewModel("Chase Atlantic", lib, player);
+        var view = new ArtistDetailView { DataContext = vm };
+        var win = new Window { Width = 1280, Height = 900, Content = view, RequestedThemeVariant = Avalonia.Styling.ThemeVariant.Dark };
+        win.Show();
+        Dispatcher.UIThread.RunJobs();
+
+        var accent = (Avalonia.Media.IBrush)view.FindResource(Avalonia.Styling.ThemeVariant.Dark, "AccentButtonBackground")!;
+        var row = view.GetVisualDescendants().OfType<Button>().First(b => b.Classes.Contains("song-row"));
+        var presenter = row.GetVisualDescendants().OfType<ContentPresenter>().First(p => p.Name == "PART_ContentPresenter");
+        var pseudo = (Avalonia.Controls.IPseudoClasses)row.Classes;
+        pseudo.Set(":pointerover", true);
+        pseudo.Set(":pressed", true);
+        Dispatcher.UIThread.RunJobs();
+        Avalonia.Headless.AvaloniaHeadlessPlatform.ForceRenderTimerTick();
+
+        player.ReplaceQueueAndPlay(new List<Track> { ((TopSongRow)row.DataContext!).Track }, 0);
+        Dispatcher.UIThread.RunJobs();
+        Assert.Contains("playing", row.Classes);
+        Assert.Same(accent, presenter.Background); // a tween start value here = the flicker
+        Assert.Same(accent, row.Background);
+
+        pseudo.Set(":pressed", false);
+        pseudo.Set(":pointerover", false);
+        Dispatcher.UIThread.RunJobs();
+        Assert.Same(accent, presenter.Background);
+        Assert.Same(accent, row.Background);
+    }
+
     private sealed class NoOpPlayHistoryStub : IPlayHistoryService
     {
         public IReadOnlyList<PlayHistoryEvent> Events => Array.Empty<PlayHistoryEvent>();
