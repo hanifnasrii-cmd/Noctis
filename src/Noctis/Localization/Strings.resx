@@ -914,6 +914,15 @@
   <data name="Metadata.Album" xml:space="preserve"><value>Album</value><comment>Text in MetadataWindow.axaml</comment></data>
   <data name="Metadata.ExplicitTip" xml:space="preserve"><value>Explicit</value><comment>ToolTip.Tip in MetadataWindow.axaml</comment></data>
   <data name="Metadata.FavoritedTip" xml:space="preserve"><value>Favorited</value><comment>ToolTip.Tip in MetadataWindow.axaml</comment></data>
+  <data name="Metadata.GroupInfo" xml:space="preserve"><value>Info</value><comment>Rail group label in MetadataWindow.axaml</comment></data>
+  <data name="Metadata.GroupLyrics" xml:space="preserve"><value>Lyrics</value><comment>Rail group label in MetadataWindow.axaml</comment></data>
+  <data name="Metadata.GroupPlayback" xml:space="preserve"><value>Playback</value><comment>Rail group label in MetadataWindow.axaml</comment></data>
+  <data name="Metadata.GroupFile" xml:space="preserve"><value>File</value><comment>Rail group label in MetadataWindow.axaml</comment></data>
+  <data name="Metadata.NoChangesYet" xml:space="preserve"><value>No changes yet</value><comment>Footer status in MetadataWindow.axaml</comment></data>
+  <data name="Metadata.ChangesOne" xml:space="preserve"><value>1 change</value><comment>Footer status in MetadataWindow.axaml</comment></data>
+  <data name="Metadata.ChangesMany" xml:space="preserve"><value>{0} changes</value><comment>Footer status in MetadataWindow.axaml</comment></data>
+  <data name="Metadata.AppliesToFiles" xml:space="preserve"><value>applies to {0} files</value><comment>Footer status in MetadataWindow.axaml</comment></data>
+  <data name="Metadata.MixedHint" xml:space="preserve"><value>Values that differ across the {0} tracks show as Mixed</value><comment>Details tab hint in MetadataWindow.axaml</comment></data>
   <data name="Metadata.Cancel" xml:space="preserve"><value>Cancel</value><comment>Content in MetadataWindow.axaml</comment></data>
   <data name="Metadata.Save" xml:space="preserve"><value>Save</value><comment>Text in MetadataWindow.axaml</comment></data>
   <data name="Metadata.Saving" xml:space="preserve"><value>Saving</value><comment>Text in MetadataWindow.axaml</comment></data>

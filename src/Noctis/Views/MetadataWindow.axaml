@@ -140,31 +140,63 @@
             <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
             <Setter Property="Template">
                 <ControlTemplate>
-                    <Border x:Name="SidebarRow"
-                            Background="Transparent"
-                            CornerRadius="9"
-                            Cursor="Hand">
-                        <Panel>
-                            <Border x:Name="SelectionIndicator"
-                                    Width="3"
-                                    CornerRadius="2"
-                                    Margin="4,9"
-                                    HorizontalAlignment="Left"
-                                    VerticalAlignment="Stretch"
-                                    Background="{DynamicResource AccentColorBrush}"
-                                    IsVisible="False" />
-                            <TextBlock Text="{TemplateBinding Header}"
-                                       FontSize="{TemplateBinding FontSize}"
-                                       FontWeight="{TemplateBinding FontWeight}"
-                                       Foreground="{TemplateBinding Foreground}"
-                                       HorizontalAlignment="Left"
-                                       VerticalAlignment="Center"
-                                       Margin="14,7,10,7"
-                                       TextTrimming="CharacterEllipsis" />
-                        </Panel>
-                    </Border>
+                    <!-- Tag carries the rail group label ("Info", "Lyrics", …) for the first
+                         item of each group; ChangeDot lights via the .changed class when the
+                         section holds unsaved edits. -->
+                    <StackPanel>
+                        <TextBlock Text="{TemplateBinding Tag}"
+                                   IsVisible="{TemplateBinding Tag, Converter={x:Static ObjectConverters.IsNotNull}}"
+                                   FontSize="11.5"
+                                   FontWeight="SemiBold"
+                                   Opacity="0.45"
+                                   Margin="14,12,0,6" />
+                        <Border x:Name="SidebarRow"
+                                Background="Transparent"
+                                CornerRadius="9"
+                                Cursor="Hand">
+                            <Panel>
+                                <Border x:Name="SelectionIndicator"
+                                        Width="3"
+                                        CornerRadius="2"
+                                        Margin="4,9"
+                                        HorizontalAlignment="Left"
+                                        VerticalAlignment="Stretch"
+                                        Background="{DynamicResource AccentColorBrush}"
+                                        IsVisible="False" />
+                                <TextBlock Text="{TemplateBinding Header}"
+                                           FontSize="{TemplateBinding FontSize}"
+                                           FontWeight="{TemplateBinding FontWeight}"
+                                           Foreground="{TemplateBinding Foreground}"
+                                           HorizontalAlignment="Left"
+                                           VerticalAlignment="Center"
+                                           Margin="14,7,28,7"
+                                           TextTrimming="CharacterEllipsis" />
+                                <Border x:Name="ChangeDot"
+                                        Width="6" Height="6"
+                                        CornerRadius="3"
+                                        HorizontalAlignment="Right"
+                                        VerticalAlignment="Center"
+                                        Margin="0,0,12,0"
+                                        Background="{DynamicResource AccentColorBrush}"
+                                        IsVisible="False" />
+                            </Panel>
+                        </Border>
+                    </StackPanel>
                 </ControlTemplate>
             </Setter>
+        </Style>
+
+        <Style Selector="TextBlock.change-summary">
+            <Setter Property="Opacity" Value="0.45" />
+        </Style>
+        <Style Selector="TextBlock.change-summary.has">
+            <Setter Property="Opacity" Value="0.9" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="{DynamicResource AccentColorBrush}" />
+        </Style>
+
+        <Style Selector="TabItem.changed /template/ Border#ChangeDot">
+            <Setter Property="IsVisible" Value="True" />
         </Style>
 
         <Style Selector="TabItem:pointerover /template/ Border#SidebarRow">
@@ -259,8 +291,8 @@
                             Padding="{TemplateBinding Padding}">
                         <Grid ColumnDefinitions="Auto,*">
                             <Border Grid.Column="0"
-                                    Width="200"
-                                    Padding="10,14"
+                                    Width="220"
+                                    Padding="10,4,10,14"
                                     BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
                                     BorderThickness="0,0,1,0">
                                 <ScrollViewer HorizontalScrollBarVisibility="Disabled"
@@ -445,6 +477,13 @@
                                TextWrapping="Wrap"
                                VerticalAlignment="Center"
                                IsVisible="{Binding HasSaveError}" />
+                    <!-- Unsaved-edit summary: "No changes yet" / "2 changes · applies to 22 files" -->
+                    <TextBlock Text="{Binding ChangeSummary}"
+                               Classes="change-summary"
+                               Classes.has="{Binding HasChanges}"
+                               FontSize="12.5"
+                               VerticalAlignment="Center"
+                               IsVisible="{Binding !HasSaveError}" />
                 </StackPanel>
                 <Button Grid.Column="1"
                         Content="{loc:T Metadata.Cancel}"
@@ -498,21 +537,35 @@
                     SelectionChanged="OnMetaTabSelectionChanged">
 
             <!-- ═══════════ DETAILS TAB ═══════════ -->
-            <TabItem Header="{loc:T Metadata.Details}" FontSize="14" FontWeight="SemiBold">
+            <TabItem Header="{loc:T Metadata.Details}" FontSize="14" FontWeight="SemiBold"
+                     Tag="{loc:T Metadata.GroupInfo}"
+                     Classes.changed="{Binding DetailsChanged}">
                 <ScrollViewer VerticalScrollBarVisibility="Auto"
                               HorizontalScrollBarVisibility="Disabled">
                     <StackPanel Spacing="16" Margin="24,16,24,24">
                         <!-- Search metadata: find & review tag changes -->
                         <StackPanel Spacing="10" IsVisible="{Binding ShowSearchMetadata}">
-                            <Button Classes="accent-pill"
-                                    Command="{Binding SearchMetadataCommand}"
-                                    HorizontalAlignment="Left"
-                                    Padding="11,5"
-                                    FontSize="12"
-                                    CornerRadius="999"
-                                    FontWeight="SemiBold"
-                                    Cursor="Hand"
-                                    Content="{loc:T Metadata.SearchMetadata}" />
+                            <Grid ColumnDefinitions="Auto,*">
+                                <Button Grid.Column="0"
+                                        Classes="accent-pill"
+                                        Command="{Binding SearchMetadataCommand}"
+                                        HorizontalAlignment="Left"
+                                        Padding="11,5"
+                                        FontSize="12"
+                                        CornerRadius="999"
+                                        FontWeight="SemiBold"
+                                        Cursor="Hand"
+                                        Content="{loc:T Metadata.SearchMetadata}" />
+                                <TextBlock Grid.Column="1"
+                                           Text="{Binding MixedHint}"
+                                           IsVisible="{Binding ShowMixedHint}"
+                                           FontSize="11.5"
+                                           Opacity="0.45"
+                                           TextWrapping="Wrap"
+                                           TextAlignment="Right"
+                                           VerticalAlignment="Center"
+                                           Margin="16,0,0,0" />
+                            </Grid>
                             <StackPanel Orientation="Horizontal" Spacing="8"
                                         IsVisible="{Binding ShowSearchMetadataStatusRow}"
                                         VerticalAlignment="Center">
@@ -599,124 +652,120 @@
                             <TextBox Classes="metadata-info-field" Text="{Binding Album, UpdateSourceTrigger=PropertyChanged}" Watermark="{Binding AlbumWatermark}" />
                         </StackPanel>
 
-                        <!-- Album is compilation -->
-                        <CheckBox Classes="metadata-pill-checkbox"
-                                  Content="{loc:T Metadata.AlbumCompilation}"
-                                  IsChecked="{Binding IsCompilation}" />
+                        <!-- Flags in one row: compilation / explicit / show composer -->
+                        <WrapPanel Orientation="Horizontal" ItemSpacing="24" LineSpacing="10" Margin="0,2,0,2">
+                            <CheckBox Classes="metadata-pill-checkbox"
+                                      Content="{loc:T Metadata.AlbumCompilation}"
+                                      IsChecked="{Binding IsCompilation}" />
+                            <!-- Whole-album dialog only: writes ITUNESADVISORY to every track on Save.
+                                 A single track sets its advisory on the Advanced tab instead. -->
+                            <CheckBox Classes="metadata-pill-checkbox"
+                                      Content="{Binding ExplicitCheckboxLabel}"
+                                      IsChecked="{Binding IsExplicit}"
+                                      IsVisible="{Binding ShowExplicitCheckbox}"
+                                      ToolTip.Tip="{loc:T Metadata.MarksContentAsExplicitTip}" />
+                            <CheckBox Classes="metadata-pill-checkbox"
+                                      Content="{loc:T Metadata.ShowComposerAllViews}"
+                                      IsChecked="{Binding ShowComposerInAllViews}" />
+                        </WrapPanel>
 
-                        <!-- Whole-album dialog only: writes ITUNESADVISORY to every track on Save.
-                             A single track sets its advisory on the Advanced tab instead. -->
-                        <CheckBox Classes="metadata-pill-checkbox"
-                                  Content="{Binding ExplicitCheckboxLabel}"
-                                  IsChecked="{Binding IsExplicit}"
-                                  IsVisible="{Binding ShowExplicitCheckbox}"
-                                  ToolTip.Tip="{loc:T Metadata.MarksContentAsExplicitTip}" />
-
-                        <!-- Artist -->
-                        <StackPanel Spacing="4">
-                            <TextBlock Text="{loc:T Metadata.Artist}" FontSize="12" Opacity="0.5" />
-                            <TextBox Classes="metadata-info-field" Text="{Binding Artist, UpdateSourceTrigger=PropertyChanged}" Watermark="{Binding ArtistWatermark}" />
-                        </StackPanel>
-
-                        <!-- Album Artist -->
-                        <StackPanel Spacing="4">
-                            <TextBlock Text="{loc:T Metadata.AlbumArtist}" FontSize="12" Opacity="0.5" />
-                            <TextBox Classes="metadata-info-field" Text="{Binding AlbumArtist, UpdateSourceTrigger=PropertyChanged}" Watermark="{Binding AlbumArtistWatermark}" />
-                        </StackPanel>
-
-                        <!-- Performer (per-track; hidden when editing a whole album) -->
-                        <StackPanel Spacing="4" IsVisible="{Binding ShowTrackFields}">
-                            <TextBlock Text="{loc:T Metadata.Performer}" FontSize="12" Opacity="0.5" />
-                            <TextBox Classes="metadata-info-field" Text="{Binding Performer, UpdateSourceTrigger=PropertyChanged}" />
-                        </StackPanel>
-
-                        <!-- Composer -->
-                        <StackPanel Spacing="4">
-                            <TextBlock Text="{loc:T Metadata.Composer}" FontSize="12" Opacity="0.5" />
-                            <TextBox Classes="metadata-info-field" Text="{Binding Composer, UpdateSourceTrigger=PropertyChanged}" Watermark="{Binding ComposerWatermark}" />
-                        </StackPanel>
-
-                        <!-- Show composer in all views -->
-                        <CheckBox Classes="metadata-pill-checkbox"
-                                  Content="{loc:T Metadata.ShowComposerAllViews}"
-                                  IsChecked="{Binding ShowComposerInAllViews}" />
-
-                        <!-- Grouping -->
-                        <StackPanel Spacing="4">
-                            <TextBlock Text="{loc:T Metadata.Grouping}" FontSize="12" Opacity="0.5" />
-                            <TextBox Classes="metadata-info-field" Text="{Binding Grouping, UpdateSourceTrigger=PropertyChanged}" Watermark="{Binding GroupingWatermark}" />
-                        </StackPanel>
-
-                        <!-- Genre -->
-                        <StackPanel Spacing="4">
-                            <TextBlock Text="{loc:T Metadata.Genre}" FontSize="12" Opacity="0.5" />
-                            <ComboBox x:Name="GenreCombo"
-                                      Classes="metadata-info-field"
-                                      FontWeight="Normal"
-                                      ItemsSource="{Binding GenreOptions}"
-                                      SelectedItem="{Binding Genre}"
-                                      PlaceholderText="{Binding GenreWatermark}"
-                                      HorizontalAlignment="Stretch" />
-                        </StackPanel>
-
-                        <!-- Year -->
-                        <StackPanel Spacing="4">
-                            <TextBlock Text="{loc:T Metadata.Year}" FontSize="12" Opacity="0.5" />
-                            <TextBox Classes="metadata-info-field" Text="{Binding Year, UpdateSourceTrigger=PropertyChanged}" Watermark="{Binding YearWatermark}" Width="120" HorizontalAlignment="Left" />
-                        </StackPanel>
-
-                        <!-- Track number -->
-                        <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
-                            <TextBlock Text="{loc:T Metadata.Track}" FontSize="12" Opacity="0.5" VerticalAlignment="Center" Width="36" />
-                            <TextBox Classes="metadata-info-field" Text="{Binding TrackNumber, UpdateSourceTrigger=PropertyChanged}" Watermark="{Binding TrackNumberWatermark}" Width="80" />
-                            <TextBlock Text="of" FontSize="12" Opacity="0.5" VerticalAlignment="Center" />
-                            <TextBox Classes="metadata-info-field" Text="{Binding TrackCount, UpdateSourceTrigger=PropertyChanged}" Watermark="{Binding TrackCountWatermark}" Width="80" />
-                        </StackPanel>
-
-                        <!-- Disc number -->
-                        <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
-                            <TextBlock Text="{loc:T Metadata.Disc}" FontSize="12" Opacity="0.5" VerticalAlignment="Center" Width="36" />
-                            <TextBox Classes="metadata-info-field" Text="{Binding DiscNumber, UpdateSourceTrigger=PropertyChanged}" Watermark="{Binding DiscNumberWatermark}" Width="80" />
-                            <TextBlock Text="of" FontSize="12" Opacity="0.5" VerticalAlignment="Center" />
-                            <TextBox Classes="metadata-info-field" Text="{Binding DiscCount, UpdateSourceTrigger=PropertyChanged}" Watermark="{Binding DiscCountWatermark}" Width="80" />
-                        </StackPanel>
-
-                        <!-- Rating (per-track; hidden for album-scoped edits) -->
-                        <StackPanel Spacing="6" IsVisible="{Binding ShowTrackFields}">
-                            <TextBlock Text="{loc:T Metadata.Rating}" FontSize="12" Opacity="0.5" />
-                            <StackPanel Orientation="Horizontal" Spacing="18" VerticalAlignment="Center">
-                                <controls:RatingStars Value="{Binding Rating, Mode=TwoWay}"
-                                                      IsInteractive="True"
-                                                      StarSize="18"
-                                                      StarSpacing="4"
-                                                      Cursor="Hand"
-                                                      Foreground="{DynamicResource AccentColorBrush}"
-                                                      VerticalAlignment="Center" />
-                                <CheckBox Classes="metadata-pill-checkbox"
-                                          Content="{loc:T Metadata.NotLiked}"
-                                          IsChecked="{Binding IsDisliked}"
-                                          VerticalAlignment="Center" />
+                        <!-- Paired fields: the Sheet layout keeps Details on one screen -->
+                        <Grid ColumnDefinitions="*,20,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto">
+                            <!-- Album Artist | Artist -->
+                            <StackPanel Grid.Row="0" Grid.Column="0" Spacing="4" Margin="0,0,0,16">
+                                <TextBlock Text="{loc:T Metadata.AlbumArtist}" FontSize="12" Opacity="0.5" />
+                                <TextBox Classes="metadata-info-field" Text="{Binding AlbumArtist, UpdateSourceTrigger=PropertyChanged}" Watermark="{Binding AlbumArtistWatermark}" />
                             </StackPanel>
-                        </StackPanel>
-
-                        <!-- BPM -->
-                        <StackPanel Spacing="4">
-                            <TextBlock Text="{loc:T Metadata.Bpm}" FontSize="12" Opacity="0.5" />
-                            <TextBox Classes="metadata-info-field" Text="{Binding Bpm, UpdateSourceTrigger=PropertyChanged}" Watermark="{Binding BpmWatermark}" Width="120" HorizontalAlignment="Left" />
-                        </StackPanel>
-
-                        <!-- Play Count -->
-                        <StackPanel Spacing="4">
-                            <TextBlock Text="{loc:T Metadata.PlayCount}" FontSize="12" Opacity="0.5" />
-                            <StackPanel Orientation="Horizontal" Spacing="12">
-                                <TextBlock Text="{Binding PlayCountDisplay}" FontSize="14" VerticalAlignment="Center" />
-                                <Button Content="{loc:T Metadata.Reset}" Command="{Binding ResetPlayCountCommand}"
-                                        Classes="accent-btn"
-                                        Padding="14,5" FontSize="12" FontWeight="Bold" Cursor="Hand" VerticalAlignment="Center"
-                                        Foreground="{DynamicResource AccentForegroundBrush}" Background="{DynamicResource AccentButtonBackground}"
-                                        CornerRadius="999" />
+                            <StackPanel Grid.Row="0" Grid.Column="2" Spacing="4" Margin="0,0,0,16">
+                                <TextBlock Text="{loc:T Metadata.Artist}" FontSize="12" Opacity="0.5" />
+                                <TextBox Classes="metadata-info-field" Text="{Binding Artist, UpdateSourceTrigger=PropertyChanged}" Watermark="{Binding ArtistWatermark}" />
                             </StackPanel>
-                        </StackPanel>
+
+                            <!-- Composer | Grouping -->
+                            <StackPanel Grid.Row="1" Grid.Column="0" Spacing="4" Margin="0,0,0,16">
+                                <TextBlock Text="{loc:T Metadata.Composer}" FontSize="12" Opacity="0.5" />
+                                <TextBox Classes="metadata-info-field" Text="{Binding Composer, UpdateSourceTrigger=PropertyChanged}" Watermark="{Binding ComposerWatermark}" />
+                            </StackPanel>
+                            <StackPanel Grid.Row="1" Grid.Column="2" Spacing="4" Margin="0,0,0,16">
+                                <TextBlock Text="{loc:T Metadata.Grouping}" FontSize="12" Opacity="0.5" />
+                                <TextBox Classes="metadata-info-field" Text="{Binding Grouping, UpdateSourceTrigger=PropertyChanged}" Watermark="{Binding GroupingWatermark}" />
+                            </StackPanel>
+
+                            <!-- Genre | Year -->
+                            <StackPanel Grid.Row="2" Grid.Column="0" Spacing="4" Margin="0,0,0,16">
+                                <TextBlock Text="{loc:T Metadata.Genre}" FontSize="12" Opacity="0.5" />
+                                <ComboBox x:Name="GenreCombo"
+                                          Classes="metadata-info-field"
+                                          FontWeight="Normal"
+                                          ItemsSource="{Binding GenreOptions}"
+                                          SelectedItem="{Binding Genre}"
+                                          PlaceholderText="{Binding GenreWatermark}"
+                                          HorizontalAlignment="Stretch" />
+                            </StackPanel>
+                            <StackPanel Grid.Row="2" Grid.Column="2" Spacing="4" Margin="0,0,0,16">
+                                <TextBlock Text="{loc:T Metadata.Year}" FontSize="12" Opacity="0.5" />
+                                <TextBox Classes="metadata-info-field" Text="{Binding Year, UpdateSourceTrigger=PropertyChanged}" Watermark="{Binding YearWatermark}" />
+                            </StackPanel>
+
+                            <!-- Track x of y | Disc x of y -->
+                            <StackPanel Grid.Row="3" Grid.Column="0" Spacing="4" Margin="0,0,0,16">
+                                <TextBlock Text="{loc:T Metadata.Track}" FontSize="12" Opacity="0.5" />
+                                <Grid ColumnDefinitions="*,Auto,*">
+                                    <TextBox Grid.Column="0" Classes="metadata-info-field" Text="{Binding TrackNumber, UpdateSourceTrigger=PropertyChanged}" Watermark="{Binding TrackNumberWatermark}" />
+                                    <TextBlock Grid.Column="1" Text="of" FontSize="12" Opacity="0.5" VerticalAlignment="Center" Margin="10,0" />
+                                    <TextBox Grid.Column="2" Classes="metadata-info-field" Text="{Binding TrackCount, UpdateSourceTrigger=PropertyChanged}" Watermark="{Binding TrackCountWatermark}" />
+                                </Grid>
+                            </StackPanel>
+                            <StackPanel Grid.Row="3" Grid.Column="2" Spacing="4" Margin="0,0,0,16">
+                                <TextBlock Text="{loc:T Metadata.Disc}" FontSize="12" Opacity="0.5" />
+                                <Grid ColumnDefinitions="*,Auto,*">
+                                    <TextBox Grid.Column="0" Classes="metadata-info-field" Text="{Binding DiscNumber, UpdateSourceTrigger=PropertyChanged}" Watermark="{Binding DiscNumberWatermark}" />
+                                    <TextBlock Grid.Column="1" Text="of" FontSize="12" Opacity="0.5" VerticalAlignment="Center" Margin="10,0" />
+                                    <TextBox Grid.Column="2" Classes="metadata-info-field" Text="{Binding DiscCount, UpdateSourceTrigger=PropertyChanged}" Watermark="{Binding DiscCountWatermark}" />
+                                </Grid>
+                            </StackPanel>
+
+                            <!-- BPM | Play count -->
+                            <StackPanel Grid.Row="4" Grid.Column="0" Spacing="4">
+                                <TextBlock Text="{loc:T Metadata.Bpm}" FontSize="12" Opacity="0.5" />
+                                <TextBox Classes="metadata-info-field" Text="{Binding Bpm, UpdateSourceTrigger=PropertyChanged}" Watermark="{Binding BpmWatermark}" />
+                            </StackPanel>
+                            <StackPanel Grid.Row="4" Grid.Column="2" Spacing="4">
+                                <TextBlock Text="{loc:T Metadata.PlayCount}" FontSize="12" Opacity="0.5" />
+                                <StackPanel Orientation="Horizontal" Spacing="12" MinHeight="36">
+                                    <TextBlock Text="{Binding PlayCountDisplay}" FontSize="14" VerticalAlignment="Center" />
+                                    <Button Content="{loc:T Metadata.Reset}" Command="{Binding ResetPlayCountCommand}"
+                                            Classes="accent-btn"
+                                            Padding="14,5" FontSize="12" FontWeight="Bold" Cursor="Hand" VerticalAlignment="Center"
+                                            Foreground="{DynamicResource AccentForegroundBrush}" Background="{DynamicResource AccentButtonBackground}"
+                                            CornerRadius="999" />
+                                </StackPanel>
+                            </StackPanel>
+                        </Grid>
+
+                        <!-- Performer | Rating (per-track; hidden for album-scoped edits) -->
+                        <Grid ColumnDefinitions="*,20,*" IsVisible="{Binding ShowTrackFields}">
+                            <StackPanel Grid.Column="0" Spacing="4">
+                                <TextBlock Text="{loc:T Metadata.Performer}" FontSize="12" Opacity="0.5" />
+                                <TextBox Classes="metadata-info-field" Text="{Binding Performer, UpdateSourceTrigger=PropertyChanged}" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="2" Spacing="6">
+                                <TextBlock Text="{loc:T Metadata.Rating}" FontSize="12" Opacity="0.5" />
+                                <StackPanel Orientation="Horizontal" Spacing="18" VerticalAlignment="Center" MinHeight="36">
+                                    <controls:RatingStars Value="{Binding Rating, Mode=TwoWay}"
+                                                          IsInteractive="True"
+                                                          StarSize="18"
+                                                          StarSpacing="4"
+                                                          Cursor="Hand"
+                                                          Foreground="{DynamicResource AccentColorBrush}"
+                                                          VerticalAlignment="Center" />
+                                    <CheckBox Classes="metadata-pill-checkbox"
+                                              Content="{loc:T Metadata.NotLiked}"
+                                              IsChecked="{Binding IsDisliked}"
+                                              VerticalAlignment="Center" />
+                                </StackPanel>
+                            </StackPanel>
+                        </Grid>
 
                         <!-- Song comment -->
                         <StackPanel Spacing="4">
@@ -729,7 +778,8 @@
             </TabItem>
 
             <!-- ═══════════ ADVANCED DETAILS TAB ═══════════ -->
-            <TabItem Header="{loc:T Metadata.AdvancedDetails}" FontSize="14" FontWeight="SemiBold" IsVisible="{Binding ShowAdvancedTab}">
+            <TabItem Header="{loc:T Metadata.AdvancedDetails}" FontSize="14" FontWeight="SemiBold" IsVisible="{Binding ShowAdvancedTab}"
+                     Classes.changed="{Binding AdvancedChanged}">
                 <ScrollViewer VerticalScrollBarVisibility="Auto"
                               HorizontalScrollBarVisibility="Disabled">
                     <StackPanel Spacing="16" Margin="24,16,24,24">
@@ -926,7 +976,8 @@
             </TabItem>
 
             <!-- ═══════════ ARTWORK TAB ═══════════ -->
-            <TabItem Header="{loc:T Metadata.Artwork}" FontSize="14" FontWeight="SemiBold">
+            <TabItem Header="{loc:T Metadata.Artwork}" FontSize="14" FontWeight="SemiBold"
+                     Classes.changed="{Binding ArtworkChanged}">
                 <DockPanel Margin="24,16">
                     <!-- Toolbar: tab title (actions live in the stack beside the preview) -->
                     <TextBlock DockPanel.Dock="Top"
@@ -1141,7 +1192,8 @@
             </TabItem>
 
             <!-- ═══════════ ANIMATED ARTWORK TAB ═══════════ -->
-            <TabItem Header="{loc:T Metadata.AnimatedArtwork}" FontSize="14" FontWeight="SemiBold" IsVisible="{Binding ShowAnimatedArtworkTab}">
+            <TabItem Header="{loc:T Metadata.AnimatedArtwork}" FontSize="14" FontWeight="SemiBold" IsVisible="{Binding ShowAnimatedArtworkTab}"
+                     Classes.changed="{Binding AnimatedArtworkChanged}">
                 <DockPanel Margin="24,16">
                     <!-- Toolbar: tab title (actions live in the stack beside the preview) -->
                     <TextBlock DockPanel.Dock="Top"
@@ -1390,7 +1442,9 @@
             </TabItem>
 
             <!-- ═══════════ LYRICS TAB ═══════════ -->
-            <TabItem Header="{loc:T Metadata.PlainLyrics}" FontSize="14" FontWeight="SemiBold" IsVisible="{Binding ShowLyricsTab}">
+            <TabItem Header="{loc:T Metadata.PlainLyrics}" FontSize="14" FontWeight="SemiBold" IsVisible="{Binding ShowLyricsTab}"
+                     Tag="{loc:T Metadata.GroupLyrics}"
+                     Classes.changed="{Binding PlainLyricsChanged}">
                 <DockPanel Margin="24,16">
                     <!-- Toolbar: title left, Enable switch right -->
                     <Grid DockPanel.Dock="Top"
@@ -1454,7 +1508,8 @@
             </TabItem>
 
             <!-- ═══════════ SYNCED LYRICS TAB ═══════════ -->
-            <TabItem Header="{loc:T Metadata.SyncedLyrics}" FontSize="14" FontWeight="SemiBold" IsVisible="{Binding ShowSyncedLyricsTab}">
+            <TabItem Header="{loc:T Metadata.SyncedLyrics}" FontSize="14" FontWeight="SemiBold" IsVisible="{Binding ShowSyncedLyricsTab}"
+                     Classes.changed="{Binding SyncedLyricsChanged}">
                 <DockPanel Margin="24,16">
                     <!-- Toolbar: title + line-count chip left, Formatted/Raw toggle + Enable switch right -->
                     <Grid DockPanel.Dock="Top"
@@ -1658,7 +1713,8 @@
             <!-- ═══════════ TIMESTAMP LYRICS TAB ═══════════ -->
             <!-- Inline twin of the roomy pop-out editor. Binds the same MetadataViewModel,
                  so per-line edits flow through SyncedLyricLines and persist on Save. -->
-            <TabItem Header="{loc:T Metadata.TimestampLyrics}" FontSize="14" FontWeight="SemiBold" IsVisible="{Binding ShowSyncedLyricsTab}">
+            <TabItem Header="{loc:T Metadata.TimestampLyrics}" FontSize="14" FontWeight="SemiBold" IsVisible="{Binding ShowSyncedLyricsTab}"
+                     Classes.changed="{Binding SyncedLyricsChanged}">
                 <DockPanel Margin="24,16">
                     <!-- Toolbar: title + status chips left, nudge hint right -->
                     <Grid DockPanel.Dock="Top"
@@ -1837,7 +1893,9 @@
             </TabItem>
 
             <!-- OPTIONS TAB -->
-            <TabItem Header="{loc:T Metadata.Options}" FontSize="14" FontWeight="SemiBold">
+            <TabItem Header="{loc:T Metadata.Options}" FontSize="14" FontWeight="SemiBold"
+                     Tag="{loc:T Metadata.GroupPlayback}"
+                     Classes.changed="{Binding OptionsChanged}">
                 <StackPanel Margin="24,14" Spacing="10">
 
                     <!-- Media Kind (Music, Podcast, Audiobook, ...) -->
@@ -2008,7 +2066,8 @@
             </TabItem>
 
             <!-- ═══════════ FILE TAB ═══════════ -->
-            <TabItem Header="{loc:T Metadata.File}" FontSize="14" FontWeight="SemiBold" IsVisible="{Binding ShowFileTab}">
+            <TabItem Header="{loc:T Metadata.File}" FontSize="14" FontWeight="SemiBold" IsVisible="{Binding ShowFileTab}"
+                     Tag="{loc:T Metadata.GroupFile}">
                 <ScrollViewer VerticalScrollBarVisibility="Auto"
                               HorizontalScrollBarVisibility="Disabled">
                     <StackPanel Spacing="14" Margin="24,16,24,24">

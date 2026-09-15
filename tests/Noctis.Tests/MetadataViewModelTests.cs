@@ -449,6 +449,86 @@ public class MetadataViewModelTests
 
     // ── Helpers ──
 
+    // ── Change tracking (rail dots + footer summary) ──
+
+    [Fact]
+    public void ChangeTracking_FreshDialog_HasNoChanges()
+    {
+        var tracks = Album("A", "X", 3);
+        using var p = new TestPersistenceService();
+        var vm = NewAlbumVm(tracks, p, out _, out _);
+
+        Assert.Equal(0, vm.ChangeCount);
+        Assert.False(vm.HasChanges);
+        Assert.False(vm.DetailsChanged);
+        Assert.False(vm.OptionsChanged);
+    }
+
+    [Fact]
+    public void ChangeTracking_EditThenRevert_CountsThenClears()
+    {
+        var tracks = Album("A", "X", 3);
+        using var p = new TestPersistenceService();
+        var vm = NewAlbumVm(tracks, p, out _, out _);
+        var original = vm.Genre;
+
+        vm.Genre = "Latin";
+        Assert.Equal(1, vm.ChangeCount);
+        Assert.True(vm.DetailsChanged);
+
+        vm.Comment = "edited";
+        Assert.Equal(2, vm.ChangeCount);
+
+        vm.Genre = original;
+        Assert.Equal(1, vm.ChangeCount);
+        Assert.True(vm.DetailsChanged);
+
+        vm.Comment = string.Empty;
+        Assert.Equal(0, vm.ChangeCount);
+        Assert.False(vm.DetailsChanged);
+    }
+
+    [Fact]
+    public void ChangeTracking_SectionsAreIndependent()
+    {
+        var tracks = Album("A", "X", 2);
+        using var p = new TestPersistenceService();
+        var vm = NewAlbumVm(tracks, p, out _, out _);
+
+        vm.SkipWhenShuffling = !vm.SkipWhenShuffling;
+
+        Assert.True(vm.OptionsChanged);
+        Assert.False(vm.DetailsChanged);
+        Assert.Equal(1, vm.ChangeCount);
+    }
+
+    [Fact]
+    public void ChangeTracking_StagedPlayCountReset_CountsAsDetailsChange()
+    {
+        var tracks = Album("A", "X", 2);
+        tracks[0].PlayCount = 4;
+        using var p = new TestPersistenceService();
+        var vm = NewAlbumVm(tracks, p, out _, out _);
+
+        vm.ResetPlayCountCommand.Execute(null);
+
+        Assert.True(vm.DetailsChanged);
+        Assert.Equal(1, vm.ChangeCount);
+    }
+
+    [Fact]
+    public void ChangeTracking_AlbumSummary_NamesTheFileCount()
+    {
+        var tracks = Album("A", "X", 5);
+        using var p = new TestPersistenceService();
+        var vm = NewAlbumVm(tracks, p, out _, out _);
+
+        vm.Year = "1999";
+
+        Assert.Contains("5", vm.ChangeSummary);
+        Assert.Contains("1", vm.ChangeSummary);
+    }
+
     private static List<Track> Album(string album, string albumArtist, int count)
     {
         var list = new List<Track>();
