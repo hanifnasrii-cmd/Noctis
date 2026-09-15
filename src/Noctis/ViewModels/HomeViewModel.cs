@@ -432,8 +432,13 @@ public partial class HomeViewModel : ViewModelBase, IDisposable
                 ReplaceTopSongsIfChanged(Array.Empty<Track>());
             }
 
-            // Recently played albums: O(1) lookups via GetAlbumById
-            var recentAlbums = _player.History
+            // Recently played albums + Last Played read the PERSISTED play log (09-14):
+            // Player.History is a transport list — StopAndClear wipes it when a queue
+            // plays to its end, and the shutdown snapshot then saves an empty history,
+            // so both rows came back with only the current track after a restart.
+            var history = RecentHistoryNewestFirst();
+            // O(1) lookups via GetAlbumById
+            var recentAlbums = history
                 .Take(50)
                 .Select(t => t.AlbumId)
                 .Distinct()
@@ -447,7 +452,7 @@ public partial class HomeViewModel : ViewModelBase, IDisposable
             if (!SameSequence(RecentlyPlayedAlbums, recentAlbums))
                 RecentlyPlayedAlbums.ReplaceAll(recentAlbums);
             RebuildRecentRail();
-            ReplaceLastPlayed(_player.History);
+            ReplaceLastPlayed(history);
             UpdateContinue();
 
             // Top Artists: aggregate play count by artist name (using album-artist
@@ -793,6 +798,39 @@ public partial class HomeViewModel : ViewModelBase, IDisposable
         var rail = BuildRecentRail(RecentlyPlayedAlbums, MaxRailTracks);
         RecentRailAlbum = rail.Featured;
         ReplaceRowIfChanged(RecentRailTracks, rail.Tracks);
+    }
+
+    /// <summary>How far back the play log is scanned for the two recent rows.</summary>
+    private const int RecentLogScan = 400;
+
+    /// <summary>
+    /// Newest-first list of recently started tracks: the persisted play log when one is
+    /// wired (survives restarts, queue replacement and the player's 50-item cap), else
+    /// the player's in-memory History. Tracks no longer in the library are dropped.
+    /// </summary>
+    private List<Track> RecentHistoryNewestFirst()
+    {
+        var events = _playHistory?.Events;
+        if (events == null || events.Count == 0)
+            return _player.History.ToList();
+        return BuildRecentFromLog(events, _library.GetTrackById, RecentLogScan);
+    }
+
+    /// <summary>
+    /// The newest <paramref name="scan"/> log events (oldest-first log) as tracks,
+    /// newest first; unresolved ids are skipped. Duplicates are left in — the callers
+    /// dedupe by track or album themselves.
+    /// </summary>
+    internal static List<Track> BuildRecentFromLog(IReadOnlyList<PlayHistoryEvent> events, Func<Guid, Track?> resolve, int scan)
+    {
+        var result = new List<Track>(Math.Min(scan, events.Count));
+        var floor = Math.Max(0, events.Count - scan);
+        for (var i = events.Count - 1; i >= floor; i--)
+        {
+            var track = resolve(events[i].TrackId);
+            if (track != null) result.Add(track);
+        }
+        return result;
     }
 
     /// <summary>
