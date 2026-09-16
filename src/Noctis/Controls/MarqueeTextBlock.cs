@@ -5,6 +5,7 @@ using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Threading;
+using Avalonia.VisualTree;
 
 namespace Noctis.Controls;
 
@@ -177,6 +178,14 @@ public class MarqueeTextBlock : UserControl
 
     private bool _isRunning;
     private bool _isFrameQueued;
+    // Scrolled-out-of-view gate. A list of these (the mini player's Queue / Search
+    // drawers: 100 non-virtualized rows, four in view) had EVERY overflowing title lapping
+    // on the frame clock once the rest pause elapsed — a hundred transform writes and a
+    // whole-window re-render per frame for rows nobody could see; the drawer scrolled
+    // like treacle. A marquee now only laps while it is inside its ScrollViewer's
+    // viewport; leaving it stops the lap, and scrolling back in re-arms the rest pause.
+    private ScrollViewer? _scroller;
+    private bool _waitingForView;
     private long _lastFrameTimestamp;
     private int _lapGeneration;
     private double _overflow;
@@ -278,6 +287,9 @@ public class MarqueeTextBlock : UserControl
         _textBlock.Foreground = Foreground;
 
         GlobalSettingsChanged += OnGlobalSettingsChanged;
+        _scroller = this.FindAncestorOfType<ScrollViewer>();
+        if (_scroller != null)
+            _scroller.ScrollChanged += OnHostScrollChanged;
 
         // Schedule measurement after layout
         Dispatcher.UIThread.Post(RecalcAndStart, DispatcherPriority.Render);
@@ -286,7 +298,44 @@ public class MarqueeTextBlock : UserControl
     private void OnDetached(object? sender, VisualTreeAttachmentEventArgs e)
     {
         GlobalSettingsChanged -= OnGlobalSettingsChanged;
+        if (_scroller != null)
+            _scroller.ScrollChanged -= OnHostScrollChanged;
+        _scroller = null;
+        _waitingForView = false;
         StopScrolling();
+    }
+
+    /// <summary>True when no part of this control is scrolled out of its ScrollViewer's
+    /// viewport (always true outside a ScrollViewer).</summary>
+    private bool IsInView()
+    {
+        if (_scroller == null) return true;
+        var origin = this.TranslatePoint(new Point(0, 0), _scroller);
+        if (origin is null) return true;
+        var mine = new Rect(origin.Value, Bounds.Size);
+        return mine.Intersects(new Rect(_scroller.Bounds.Size));
+    }
+
+    private void OnHostScrollChanged(object? sender, ScrollChangedEventArgs e)
+    {
+        if (_isRunning)
+        {
+            if (!IsInView()) ParkOutOfView();
+        }
+        else if (_waitingForView && IsInView())
+        {
+            _waitingForView = false;
+            ScheduleNextLap();
+        }
+    }
+
+    /// <summary>Stop the lap at the start position and wait for the row to scroll back in.</summary>
+    private void ParkOutOfView()
+    {
+        StopScrolling();
+        _offset = 0;
+        _transform.X = 0;
+        _waitingForView = true;
     }
 
     private void OnGlobalSettingsChanged(object? sender, EventArgs e) => ResetAndRecalc();
@@ -364,6 +413,12 @@ public class MarqueeTextBlock : UserControl
     private void StartScrolling()
     {
         if (_isRunning || VisualRoot == null) return;
+        if (!IsInView())
+        {
+            _waitingForView = true;
+            return;
+        }
+        _waitingForView = false;
         _isRunning = true;
         _lastFrameTimestamp = Stopwatch.GetTimestamp();
         QueueNextFrame();
@@ -396,6 +451,11 @@ public class MarqueeTextBlock : UserControl
         {
             StopScrolling();
             ResetAndRecalc();
+            return;
+        }
+        if (!IsInView())
+        {
+            ParkOutOfView();
             return;
         }
 

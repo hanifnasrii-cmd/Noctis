@@ -295,7 +295,6 @@ public partial class MiniPlayerViewModel : ViewModelBase
     private DispatcherTimer? _searchDebounce;
     // Bumped per fill so an in-flight streamed fill (StreamingFill) yields to a newer one.
     private int _searchFillGeneration;
-    private int _queueFillGeneration;
 
     /// <summary>True while the window is sliding the drawer open/closed (set by the window).
     /// Row streaming waits for it: rows inflated mid-slide are re-laid-out on every resize
@@ -426,10 +425,12 @@ public partial class MiniPlayerViewModel : ViewModelBase
 
     private void RefreshQueuePreview()
     {
-        // Streamed (see StreamingFill): a hundred artwork rows inflated on the open
-        // frame was the hitch on the Queue button.
-        StreamingFill.Into(QueuePreview, Player.UpNext.Take(QueuePreviewCap).ToList(),
-            ++_queueFillGeneration, () => _queueFillGeneration, gate: () => !IsDrawerAnimating);
+        // Filled in one go, not streamed: the list's panel is virtualized (see
+        // MiniPlayerWindow.axaml), so only the handful of rows in the viewport are ever
+        // inflated and the whole fill measured 13-24 ms. Streaming it in ten-row slices
+        // was what the non-virtualized list needed, and it left the drawer's scrollbar
+        // growing under the user's thumb for the first second of scrolling.
+        QueuePreview.ReplaceAll(Player.UpNext.Take(QueuePreviewCap).ToList());
         QueuePreviewTruncated = Player.UpNext.Count > QueuePreviewCap;
     }
 
