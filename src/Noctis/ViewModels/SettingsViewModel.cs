@@ -569,6 +569,25 @@ public partial class SettingsViewModel : ViewModelBase
     private Dictionary<string, string> _lyricsBackgroundOverrides = new(StringComparer.OrdinalIgnoreCase);
     /// <summary>Freeze the lyrics background video while playback is paused.</summary>
     [ObservableProperty] private bool _lyricsBackgroundPausesWithPlayback;
+
+    /// <summary>Music videos next to the song replace the cover on the lyrics page.</summary>
+    [ObservableProperty] private bool _musicVideosEnabled = true;
+    [ObservableProperty] private bool _musicVideoRoundedCorners = true;
+
+    partial void OnMusicVideosEnabledChanged(bool value)
+    {
+        ApplyPlayerSettings();
+        if (_settingsLoaded) _ = SaveAsync();
+    }
+
+    partial void OnMusicVideoRoundedCornersChanged(bool value)
+    {
+        ApplyPlayerSettings();
+        if (_settingsLoaded) _ = SaveAsync();
+    }
+
+    [RelayCommand]
+    private void ToggleMusicVideos() => MusicVideosEnabled = !MusicVideosEnabled;
     [ObservableProperty] private bool _lyricsFullScreenFocusEnabled;
     [ObservableProperty] private bool _lyricsJoinSplitWords;
 
@@ -1838,6 +1857,8 @@ public partial class SettingsViewModel : ViewModelBase
             foreach (var (key, path) in _settings.LyricsBackgroundMediaOverrides ?? new Dictionary<string, string>())
                 if (!string.IsNullOrEmpty(path) && File.Exists(path)) _lyricsBackgroundOverrides[key] = path;
             LyricsBackgroundPausesWithPlayback = _settings.LyricsBackgroundPausesWithPlayback;
+            MusicVideosEnabled = _settings.MusicVideosEnabled;
+            MusicVideoRoundedCorners = _settings.MusicVideoRoundedCorners;
             LyricsFullScreenFocusEnabled = _settings.LyricsFullScreenFocusEnabled;
             LyricsJoinSplitWords = _settings.LyricsJoinSplitWords;
             MinimizeToTray = _settings.MinimizeToTray;
@@ -2228,6 +2249,8 @@ public partial class SettingsViewModel : ViewModelBase
         _settings.LyricsBackgroundMediaPath = LyricsBackgroundMediaPath ?? string.Empty;
         _settings.LyricsBackgroundMediaOverrides = new Dictionary<string, string>(_lyricsBackgroundOverrides);
         _settings.LyricsBackgroundPausesWithPlayback = LyricsBackgroundPausesWithPlayback;
+        _settings.MusicVideosEnabled = MusicVideosEnabled;
+        _settings.MusicVideoRoundedCorners = MusicVideoRoundedCorners;
         _settings.LyricsFullScreenFocusEnabled = LyricsFullScreenFocusEnabled;
         _settings.LyricsJoinSplitWords = LyricsJoinSplitWords;
         _settings.MinimizeToTray = MinimizeToTray;
@@ -2480,6 +2503,8 @@ public partial class SettingsViewModel : ViewModelBase
         _player.SetLyricsBackgroundSources(LyricsBackgroundMediaPath ?? string.Empty,
             new Dictionary<string, string>(_lyricsBackgroundOverrides, StringComparer.OrdinalIgnoreCase));
         _player.LyricsBackgroundPausesWithPlayback = LyricsBackgroundPausesWithPlayback;
+        _player.MusicVideosEnabled = MusicVideosEnabled;
+        _player.MusicVideoCornerRadius = MusicVideoRoundedCorners ? 18 : 0;
         _player.LyricsFullScreenFocusEnabled = LyricsFullScreenFocusEnabled;
         _player.LyricsJoinSplitWords = LyricsJoinSplitWords;
         Controls.MarqueeTextBlock.GlobalCoverFlowScrollEnabled = CoverFlowMarqueeEnabled;

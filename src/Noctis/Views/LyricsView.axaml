@@ -571,15 +571,29 @@
                          FallbackSource is the mini-player's already-decoded 768px bitmap:
                          it prevents the gray placeholder flashing between page-attach and
                          the 1280px CachedImage decode. -->
-                    <controls:MediaArtwork
-                        SourcePath="{Binding Player.CurrentTrack.AlbumArtworkPath}"
-                        FallbackSource="{Binding Player.AlbumArt}"
-                        DecodeWidth="1280"
-                        AnimatedSource="{Binding Player.CurrentAnimatedCoverPath}"
-                        AnimatedActive="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).Settings.EnableAnimatedCovers, FallbackValue=False}"
-                        Medium="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).Settings.NowPlayingArtworkMedium, FallbackValue={x:Static m:ArtworkMedium.Cover}}"
-                        IsSpinning="{Binding Player.IsPlaying}"
+                    <Panel>
+                        <controls:MediaArtwork
+                            SourcePath="{Binding Player.CurrentTrack.AlbumArtworkPath}"
+                            FallbackSource="{Binding Player.AlbumArt}"
+                            DecodeWidth="1280"
+                            AnimatedSource="{Binding Player.CurrentAnimatedCoverPath}"
+                            AnimatedActive="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).Settings.EnableAnimatedCovers, FallbackValue=False}"
+                            Medium="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).Settings.NowPlayingArtworkMedium, FallbackValue={x:Static m:ArtworkMedium.Cover}}"
+                            IsSpinning="{Binding Player.IsPlaying}"
+                            IsVisible="{Binding !Player.HasMusicVideo}"
 />
+                        <!-- Music video (Settings → Lyrics Studio → Music videos): the clip found next
+                             to the song plays here in place of the cover, letterboxed to the slot and
+                             kept in step with the song's position; the song's own audio is what plays. -->
+                        <controls:VideoBackdrop x:Name="MusicVideo"
+                                                Source="{Binding Player.CurrentMusicVideoPath}"
+                                                SyncPosition="{Binding Player.Position}"
+                                                IsPaused="{Binding !Player.IsPlaying}"
+                                                Stretch="Uniform"
+                                                CornerRadius="{Binding Player.MusicVideoCornerRadius}"
+                                                IsVisible="{Binding Player.HasMusicVideo}"
+                                                IsActive="{Binding $self.IsVisible}" />
+                    </Panel>
                 </Border>
 
                 <!-- Track Info -->

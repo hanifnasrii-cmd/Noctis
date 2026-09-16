@@ -76,6 +76,26 @@
             </Grid>
         </Border>
 
+        <!-- Music videos (Discord, aaron 09-15): a clip named like the song, next to it or in a
+             videos folder, replaces the cover on the lyrics page and follows playback. -->
+        <Border DockPanel.Dock="Top" CornerRadius="16" Padding="18,12" Margin="0,0,0,12"
+                Background="{DynamicResource SystemControlBackgroundListLowBrush}"
+                DataContext="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).Settings}"
+                x:DataType="vm:SettingsViewModel">
+            <Grid ColumnDefinitions="*,Auto,Auto">
+                <StackPanel Grid.Column="0" Spacing="2" VerticalAlignment="Center">
+                    <TextBlock Text="{loc:T Settings.MusicVideos}" FontSize="15" FontWeight="SemiBold"/>
+                    <TextBlock Text="{loc:T Settings.MusicVideosHint}" FontSize="12" Opacity="0.5" TextWrapping="Wrap"/>
+                </StackPanel>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center" Margin="24,0,20,0"
+                            ToolTip.Tip="{loc:T Settings.MusicVideoRoundedHint}">
+                    <TextBlock Text="{loc:T Settings.MusicVideoRounded}" FontSize="12.5" FontWeight="SemiBold" Opacity="0.85" VerticalAlignment="Center"/>
+                    <controls:LottieToggle IsChecked="{Binding MusicVideoRoundedCorners}" VerticalAlignment="Center"/>
+                </StackPanel>
+                <controls:LottieToggle Grid.Column="2" IsChecked="{Binding MusicVideosEnabled}" VerticalAlignment="Center"/>
+            </Grid>
+        </Border>
+
         <!-- Body -->
         <Border CornerRadius="20" ClipToBounds="True" Background="{DynamicResource SystemControlBackgroundListLowBrush}" Margin="0,0,0,20">
             <Panel>

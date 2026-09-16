@@ -61,6 +61,24 @@ public partial class PlayerViewModel : ViewModelBase
     [ObservableProperty] private bool _isMuted;
     [ObservableProperty] private Bitmap? _albumArt;
     [ObservableProperty] private string? _currentAnimatedCoverPath;
+
+    // ── Music video (Discord, aaron 09-15): a clip next to the song replaces the cover
+    // on the lyrics page and follows playback. Video only — the song's own audio plays.
+    [ObservableProperty] private string? _currentMusicVideoPath;
+    [ObservableProperty] private bool _musicVideosEnabled;
+    /// <summary>0 = flat, otherwise the rounded corner radius of the video frame.</summary>
+    [ObservableProperty] private double _musicVideoCornerRadius = 18;
+    public bool HasMusicVideo => !string.IsNullOrEmpty(CurrentMusicVideoPath);
+    partial void OnCurrentMusicVideoPathChanged(string? value) => OnPropertyChanged(nameof(HasMusicVideo));
+    partial void OnMusicVideosEnabledChanged(bool value) => ResolveMusicVideo();
+
+    private void ResolveMusicVideo()
+    {
+        var track = CurrentTrack;
+        CurrentMusicVideoPath = MusicVideosEnabled && track != null && !track.IsRemoteStream
+            ? Helpers.MusicVideoLocator.Find(track.FilePath)
+            : null;
+    }
     [ObservableProperty] private string _positionText = "0:00";
     [ObservableProperty] private string _durationText = "0:00";
     [ObservableProperty] private string _remainingTimeText = "0:00";
@@ -1362,6 +1380,7 @@ public partial class PlayerViewModel : ViewModelBase
     {
         OnPropertyChanged(nameof(HasContent));
         ResolveLyricsBackground();
+        ResolveMusicVideo();
         // Re-apply ReplayGain so the new track's RG tags take effect. The
         // player already reads tags at Play() time, but settings or playback
         // path changes can leave us here without a Play() call.

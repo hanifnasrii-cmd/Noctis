@@ -572,6 +572,12 @@ public class AppSettings
     /// <summary>Freeze the lyrics background video while playback is paused (off = keep looping).</summary>
     public bool LyricsBackgroundPausesWithPlayback { get; set; }
 
+    /// <summary>Show a music video found next to the song (same name, or a videos folder) in place of the cover on the lyrics page.</summary>
+    public bool MusicVideosEnabled { get; set; } = true;
+
+    /// <summary>Music video frame: rounded like the cover (true) or flat (false).</summary>
+    public bool MusicVideoRoundedCorners { get; set; } = true;
+
     /// <summary>Opt-in fullscreen focus — dims everything but the active line and its
     /// closest neighbors while the lyrics page is fullscreen.</summary>
     public bool LyricsFullScreenFocusEnabled { get; set; }

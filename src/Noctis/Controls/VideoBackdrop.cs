@@ -63,6 +63,39 @@ public sealed class VideoBackdrop : Control
         set => SetValue(IsPausedProperty, value);
     }
 
+    /// <summary>
+    /// Music-video mode: the clip follows this playback position instead of looping
+    /// freely. Null (default) keeps the free-running backdrop behaviour. The clip is
+    /// re-seeked whenever it drifts more than <see cref="SyncToleranceMs"/> from it.
+    /// </summary>
+    public static readonly StyledProperty<TimeSpan?> SyncPositionProperty =
+        AvaloniaProperty.Register<VideoBackdrop, TimeSpan?>(nameof(SyncPosition));
+    public TimeSpan? SyncPosition
+    {
+        get => GetValue(SyncPositionProperty);
+        set => SetValue(SyncPositionProperty, value);
+    }
+
+    /// <summary>UniformToFill (backdrop) or Uniform (music video inside the artwork slot).</summary>
+    public static readonly StyledProperty<Stretch> StretchProperty =
+        AvaloniaProperty.Register<VideoBackdrop, Stretch>(nameof(Stretch), defaultValue: Stretch.UniformToFill);
+    public Stretch Stretch
+    {
+        get => GetValue(StretchProperty);
+        set => SetValue(StretchProperty, value);
+    }
+
+    /// <summary>Corner radius of the painted frame (music video: flat or rounded).</summary>
+    public static readonly StyledProperty<double> CornerRadiusProperty =
+        AvaloniaProperty.Register<VideoBackdrop, double>(nameof(CornerRadius));
+    public double CornerRadius
+    {
+        get => GetValue(CornerRadiusProperty);
+        set => SetValue(CornerRadiusProperty, value);
+    }
+
+    public const int SyncToleranceMs = 350;
+
     /// <summary>Long-side cap for the decode buffer.</summary>
     public const int MaxLongSide = 960;
 
@@ -128,6 +161,12 @@ public sealed class VideoBackdrop : Control
             Refresh();
         else if (change.Property == IsPausedProperty)
             _session?.SetPaused(IsPaused || _windowMinimized);
+        else if (change.Property == SyncPositionProperty)
+        {
+            if (SyncPosition is { } pos) _session?.SyncTo((long)pos.TotalMilliseconds);
+        }
+        else if (change.Property == StretchProperty || change.Property == CornerRadiusProperty)
+            InvalidateVisual();
     }
 
     public override void Render(DrawingContext context)
@@ -138,11 +177,23 @@ public sealed class VideoBackdrop : Control
         var bounds = Bounds;
         var src = frame.Size;
         if (src.Width <= 0 || src.Height <= 0 || bounds.Width <= 0 || bounds.Height <= 0) return;
-        var scale = Math.Max(bounds.Width / src.Width, bounds.Height / src.Height);
+        var scale = Stretch == Stretch.Uniform
+            ? Math.Min(bounds.Width / src.Width, bounds.Height / src.Height)
+            : Math.Max(bounds.Width / src.Width, bounds.Height / src.Height);
         var w = src.Width * scale;
         var h = src.Height * scale;
         var dest = new Rect((bounds.Width - w) / 2, (bounds.Height - h) / 2, w, h);
-        context.DrawImage(frame, new Rect(src), dest);
+        var radius = CornerRadius;
+        if (radius > 0)
+        {
+            var clipRect = Stretch == Stretch.Uniform ? dest : new Rect(bounds.Size);
+            using (context.PushClip(new RoundedRect(clipRect, radius)))
+                context.DrawImage(frame, new Rect(src), dest);
+        }
+        else
+        {
+            context.DrawImage(frame, new Rect(src), dest);
+        }
     }
 
     private void Refresh()
@@ -155,6 +206,7 @@ public sealed class VideoBackdrop : Control
 
         var generation = _generation;
         var startPaused = _windowMinimized || IsPaused;
+        var syncStart = SyncPosition;
         ThreadPool.QueueUserWorkItem(_ =>
         {
             Session session;
@@ -181,9 +233,12 @@ public sealed class VideoBackdrop : Control
 
             try
             {
-                using var media = new Media(SharedLibVlc.Instance, source, FromType.FromPath,
-                    ":no-audio", ":input-repeat=65535");
+                // A synced music video plays once and follows the song; a backdrop loops.
+                using var media = syncStart is null
+                    ? new Media(SharedLibVlc.Instance, source, FromType.FromPath, ":no-audio", ":input-repeat=65535")
+                    : new Media(SharedLibVlc.Instance, source, FromType.FromPath, ":no-audio");
                 session.Player.Play(media);
+                if (syncStart is { } start) session.SyncTo((long)start.TotalMilliseconds, force: true);
                 if (startPaused) session.SetPaused(true);
                 DebugLogger.Info(DebugLogger.Category.Playback, "Backdrop.Play", $"src={Path.GetFileName(source)}");
             }
@@ -251,6 +306,29 @@ public sealed class VideoBackdrop : Control
         {
             if (_dead) return;
             ThreadPool.QueueUserWorkItem(_ => { try { Player.SetPause(paused); } catch { } });
+        }
+
+        private int _syncInFlight;
+
+        /// <summary>
+        /// Keeps the clip within <see cref="SyncToleranceMs"/> of the song. Reading and
+        /// setting the native time happens off the UI thread; at most one check runs at a
+        /// time so a busy position stream cannot queue seeks.
+        /// </summary>
+        public void SyncTo(long targetMs, bool force = false)
+        {
+            if (_dead) return;
+            if (Interlocked.CompareExchange(ref _syncInFlight, 1, 0) != 0) return;
+            ThreadPool.QueueUserWorkItem(_ =>
+            {
+                try
+                {
+                    if (force || Math.Abs(Player.Time - targetMs) > SyncToleranceMs)
+                        Player.Time = targetMs;
+                }
+                catch { }
+                finally { Interlocked.Exchange(ref _syncInFlight, 0); }
+            });
         }
 
         private IntPtr OnLock(IntPtr opaque, IntPtr planes)

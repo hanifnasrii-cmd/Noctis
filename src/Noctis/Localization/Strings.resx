@@ -244,6 +244,11 @@
   <data name="Settings.Mirror" xml:space="preserve"><value>Mirror</value><comment>Text in SettingsView.axaml</comment></data>
   <data name="Settings.SmoothFilledCurveTip" xml:space="preserve"><value>A smooth filled curve</value><comment>ToolTip.Tip in SettingsView.axaml</comment></data>
   <data name="Settings.Wave" xml:space="preserve"><value>Wave</value><comment>Text in SettingsView.axaml</comment></data>
+  <data name="Settings.MusicVideos" xml:space="preserve"><value>Music videos</value><comment>Lyrics Studio card in LyricsStudioView.axaml</comment></data>
+  <data name="Settings.MusicVideosHint" xml:space="preserve"><value>Play a video named like the song (next to it, or in a videos folder) in place of the cover on the lyrics page. The song’s own audio plays.</value><comment>Lyrics Studio card hint</comment></data>
+  <data name="Settings.MusicVideoRounded" xml:space="preserve"><value>Rounded</value><comment>Lyrics Studio card toggle</comment></data>
+  <data name="Settings.MusicVideoRoundedHint" xml:space="preserve"><value>Rounded corners like the cover, or a flat frame</value><comment>Lyrics Studio card toggle tooltip</comment></data>
+  <data name="PlaybackBar.MusicVideo" xml:space="preserve"><value>Music video</value><comment>Options menu toggle in PlaybackBarView.axaml</comment></data>
   <data name="Settings.LyricsBackgroundVideo" xml:space="preserve"><value>Lyrics Background Video</value><comment>Text in SettingsView.axaml</comment></data>
   <data name="Settings.LoopVideoGIFBehind" xml:space="preserve"><value>Loop a video or GIF behind the lyrics instead of the blurred cover.</value><comment>Text in SettingsView.axaml</comment></data>
   <data name="Settings.Choose" xml:space="preserve"><value>Choose</value><comment>Content in SettingsView.axaml</comment></data>
