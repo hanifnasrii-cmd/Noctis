@@ -65,6 +65,86 @@ public class ArtistImageService
     public bool IsImageRemoved(Guid artistId)
         => File.Exists(GetRemovedMarkerPath(artistId));
 
+    // ── Deezer fan count (artist page "7,994,069 fans", 09-15) ──
+    // The portrait search already reads nb_fan to tell the real account from a same-name
+    // impostor, so the number is recorded beside the portrait for free; an artist whose
+    // portrait predates this (or is custom/removed) gets one paced search of its own.
+
+    /// <summary>How long a recorded fan count is shown before Deezer is asked again.</summary>
+    internal static readonly TimeSpan FanCountRefreshInterval = TimeSpan.FromDays(7);
+
+    private string GetFanCountPath(Guid artistId)
+        => Path.Combine(_artistArtworkDir, $"{artistId}.fans");
+
+    /// <summary>The last recorded Deezer fan count, or null when none was ever recorded.</summary>
+    public long? TryGetCachedFanCount(Guid artistId)
+    {
+        try
+        {
+            var path = GetFanCountPath(artistId);
+            if (!File.Exists(path)) return null;
+            return long.TryParse(File.ReadAllText(path).Trim(), out var fans) && fans >= 0 ? fans : null;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    internal void WriteFanCount(Guid artistId, long fans)
+    {
+        if (fans < 0) return;
+        try
+        {
+            var path = GetFanCountPath(artistId);
+            File.WriteAllText(path, fans.ToString(System.Globalization.CultureInfo.InvariantCulture));
+            File.SetLastWriteTimeUtc(path, DateTime.UtcNow);
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[ArtistImage] Failed to record fan count for {artistId}: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// The artist's Deezer fan count: the recorded one while it is fresh, else one search
+    /// (same match ranking as the portrait). Never throws except for cancellation; a
+    /// failed lookup returns whatever was recorded before, or null.
+    /// </summary>
+    public async Task<long?> GetFanCountAsync(Guid artistId, string artistName, CancellationToken ct = default)
+    {
+        var cached = TryGetCachedFanCount(artistId);
+        if (cached != null)
+        {
+            try
+            {
+                if (DateTime.UtcNow - File.GetLastWriteTimeUtc(GetFanCountPath(artistId)) < FanCountRefreshInterval)
+                    return cached;
+            }
+            catch { return cached; }
+        }
+
+        if (string.IsNullOrWhiteSpace(artistName) || artistName == "Unknown Artist")
+            return cached;
+
+        try
+        {
+            await Task.Delay(RequestPacingMs, ct).ConfigureAwait(false);
+            using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+            timeoutCts.CancelAfter(DownloadTimeout);
+            var match = await FindDeezerArtistAsync(artistName.Trim(), timeoutCts.Token).ConfigureAwait(false);
+            if (match == null) return cached;
+            WriteFanCount(artistId, match.Fans);
+            return match.Fans;
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested) { throw; }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[ArtistImage] Fan count lookup failed for '{artistName}': {ex.Message}");
+            return cached;
+        }
+    }
+
     /// <summary>Sentinel marking a user-picked portrait: the refresh sweep must never
     /// replace it with whatever the service currently serves.</summary>
     private string GetCustomMarkerPath(Guid artistId)
@@ -322,16 +402,17 @@ public class ArtistImageService
         timeoutCts.CancelAfter(DownloadTimeout);
         var token = timeoutCts.Token;
 
-        var imageUrl = await GetDeezerArtistImageUrlAsync(artistName, token).ConfigureAwait(false);
-        if (string.IsNullOrWhiteSpace(imageUrl))
+        var match = await FindDeezerArtistAsync(artistName, token).ConfigureAwait(false);
+        if (match == null)
             return false;
+        WriteFanCount(artistId, match.Fans);
 
-        var imageData = await DownloadImageBytesAsync(imageUrl, token).ConfigureAwait(false);
+        var imageData = await DownloadImageBytesAsync(match.ImageUrl, token).ConfigureAwait(false);
         if (imageData == null)
             return false;
 
         await WriteImageAtomicAsync(cachedPath, imageData, token).ConfigureAwait(false);
-        WriteSourceMarker(artistId, imageUrl);
+        WriteSourceMarker(artistId, match.ImageUrl);
         return true;
     }
 
@@ -392,9 +473,11 @@ public class ArtistImageService
         using var timeoutCts = new CancellationTokenSource(DownloadTimeout);
         var token = timeoutCts.Token;
 
-        var imageUrl = await GetDeezerArtistImageUrlAsync(artistName, token).ConfigureAwait(false);
-        if (string.IsNullOrWhiteSpace(imageUrl))
+        var match = await FindDeezerArtistAsync(artistName, token).ConfigureAwait(false);
+        if (match == null)
             return false; // service outage / no match: keep what we have, retry next sweep
+        WriteFanCount(artistId, match.Fans);
+        var imageUrl = match.ImageUrl;
 
         var src = GetSourceMarkerPath(artistId);
         var knownUrl = ReadSourceMarker(src);
@@ -498,11 +581,14 @@ public class ArtistImageService
         catch { }
     }
 
+    /// <summary>The Deezer account chosen for an artist: its photo URL and fan count.</summary>
+    internal sealed record DeezerArtistMatch(string ImageUrl, long Fans);
+
     /// <summary>
-    /// Searches Deezer for the artist and returns a 500x500 image URL.
+    /// Searches Deezer for the artist and returns the best account's photo URL and fan count.
     /// Tries the full artist name first, then the primary artist for collaborations.
     /// </summary>
-    private async Task<string?> GetDeezerArtistImageUrlAsync(string artistName, CancellationToken ct = default)
+    private async Task<DeezerArtistMatch?> FindDeezerArtistAsync(string artistName, CancellationToken ct = default)
     {
         foreach (var candidate in BuildArtistCandidates(artistName))
         {
@@ -556,7 +642,7 @@ public class ArtistImageService
             }
 
             if (!string.IsNullOrWhiteSpace(bestImageUrl))
-                return bestImageUrl;
+                return new DeezerArtistMatch(bestImageUrl, bestFans);
         }
 
         return null;

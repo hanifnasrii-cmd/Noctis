@@ -65,7 +65,9 @@ public class ArtistDetailSectionsTests
 
         vm.ApplyFilter("neverita");
         Assert.Equal(2, vm.Releases.Count);           // album name OR any track title
+        vm.SelectTabCommand.Execute("singles");        // tab grids fill when their tab opens (09-15)
         Assert.Equal(new[] { "Neverita Live" }, vm.SingleReleases.Select(a => a.Name));
+        vm.SelectTabCommand.Execute("albums");
         Assert.Equal(new[] { "Un Verano Sin Ti" }, vm.AlbumReleases.Select(a => a.Name));
     }
 

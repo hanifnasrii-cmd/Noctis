@@ -41,6 +41,61 @@ public class ArtistImageServiceTests
         Assert.True(File.Exists(artist.ImagePath));
     }
 
+    /// <summary>09-15: the artist page shows Deezer's fan count. The portrait search
+    /// records the chosen account's nb_fan beside the portrait (no extra request), the
+    /// real account wins over a same-name impostor, and a later ask reads the sidecar.</summary>
+    [Fact]
+    public async Task FetchAndCacheAsync_RecordsTheChosenAccountsFanCount_AndGetFanCountReadsIt()
+    {
+        using var persistence = new TestPersistenceService();
+        var searches = 0;
+        var handler = new StubHttpMessageHandler(request =>
+        {
+            var url = request.RequestUri!.ToString();
+            if (url.StartsWith("https://api.deezer.com/search/artist", StringComparison.Ordinal))
+            {
+                searches++;
+                return JsonResponse("""
+                {
+                  "data": [
+                    { "name": "Bad Bunny", "nb_fan": 6, "nb_album": 1, "picture_xl": "https://images.example/fake.jpg" },
+                    { "name": "Bad Bunny", "nb_fan": 7994069, "nb_album": 88, "picture_xl": "https://images.example/real.jpg" }
+                  ]
+                }
+                """);
+            }
+            return ImageResponse();
+        });
+        var service = new ArtistImageService(new HttpClient(handler), persistence);
+        var artist = new Artist { Id = Guid.NewGuid(), Name = "Bad Bunny" };
+
+        Assert.Null(service.TryGetCachedFanCount(artist.Id));
+        await service.FetchAndCacheAsync(new[] { artist });
+
+        Assert.Equal("https://images.example/real.jpg", handler.RequestedImageUrls.Single());
+        Assert.Equal(7994069, service.TryGetCachedFanCount(artist.Id));
+        Assert.Equal(1, searches);
+
+        // Fresh sidecar: served from disk, no second search.
+        Assert.Equal(7994069, await service.GetFanCountAsync(artist.Id, artist.Name));
+        Assert.Equal(1, searches);
+    }
+
+    [Fact]
+    public async Task GetFanCountAsync_LooksTheArtistUpWhenNothingIsRecorded()
+    {
+        using var persistence = new TestPersistenceService();
+        var handler = new StubHttpMessageHandler(request => JsonResponse("""
+            { "data": [ { "name": "Aventura", "nb_fan": 1234567, "picture_xl": "https://images.example/a.jpg" } ] }
+            """));
+        var service = new ArtistImageService(new HttpClient(handler), persistence);
+        var id = Guid.NewGuid();
+
+        Assert.Equal(1234567, await service.GetFanCountAsync(id, "Aventura"));
+        Assert.Equal(1234567, service.TryGetCachedFanCount(id));
+        Assert.Empty(handler.RequestedImageUrls); // the count alone never downloads a photo
+    }
+
     [Fact]
     public async Task FetchAndCacheAsync_QueuesConcurrentRequests()
     {

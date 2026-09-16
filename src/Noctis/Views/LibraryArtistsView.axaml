@@ -68,21 +68,22 @@
                                          so the gap between two tiles, the square corners around the disc and
                                          the name underneath no longer open the artist. -->
                                     <StackPanel Spacing="10" HorizontalAlignment="Center" Margin="4,6">
-                                    <Panel HorizontalAlignment="Center" Width="160" Height="160">
+                                    <!-- 190px disc (user ask 09-15, up from 160); the artist page's Similar Artists tiles match. -->
+                                    <Panel HorizontalAlignment="Center" Width="190" Height="190">
                                     <Button Classes="artist-tile"
                                             Focusable="False"
                                             Background="Transparent"
                                             BorderThickness="0"
                                             Padding="0"
-                                            Width="160" Height="160"
-                                            CornerRadius="80"
+                                            Width="190" Height="190"
+                                            CornerRadius="95"
                                             HorizontalAlignment="Center"
                                             VerticalAlignment="Center"
                                             Cursor="Hand"
                                             Command="{Binding $parent[UserControl].((vm:LibraryArtistsViewModel)DataContext).OpenArtistCommand, FallbackValue={x:Null}}"
                                             CommandParameter="{Binding}">
                                         <Button.Clip>
-                                            <EllipseGeometry Center="80,80" RadiusX="80" RadiusY="80" />
+                                            <EllipseGeometry Center="95,95" RadiusX="95" RadiusY="95" />
                                         </Button.Clip>
                                         <Button.ContextMenu>
                                             <ContextMenu DataContext="{Binding}">
@@ -101,8 +102,8 @@
                                             </ContextMenu>
                                         </Button.ContextMenu>
                                         <!-- Circular portrait with icon fallback -->
-                                        <Border Width="160" Height="160"
-                                                CornerRadius="80"
+                                        <Border Width="190" Height="190"
+                                                CornerRadius="95"
                                                 Background="#2E2E2E"
                                                 ClipToBounds="True">
                                             <Panel>
@@ -118,8 +119,8 @@
                                                       Opacity="0.35" />
                                                 <ctrl:CachedImage SourcePath="{Binding ImagePath}"
                                                                   Stretch="UniformToFill"
-                                                                  Width="160"
-                                                                  Height="160"
+                                                                  Width="190"
+                                                                  Height="190"
                                                                   IsVisible="{Binding ImagePath, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
                                             </Panel>
                                         </Border>
@@ -148,7 +149,7 @@
                                                              MaxLines="1"
                                                              TextTrimming="CharacterEllipsis"
                                                              TextAlignment="Center"
-                                                             MaxWidth="168"
+                                                             MaxWidth="198"
                                                              HorizontalAlignment="Center" />
                                     </StackPanel>
                                 </DataTemplate>

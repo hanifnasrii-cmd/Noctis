@@ -96,6 +96,19 @@ public class PlaylistBannerLayoutProbeTests
         Assert.True(np.X > cp.X + 156, "name block starts right of the cover");
         Assert.True(hero.IsVisualAncestorOf(sort));
         Assert.InRange(Math.Abs(sp2.Y - pp.Y), 0, 6); // same row as Play
+        // 09-15: the Sort pill sat higher (and taller) than the star/options pills: its
+        // "12,6" padding around 12px text measured a different height from their "0,8"
+        // around a 14px icon, and Fluent centres each button in the row. All the glass
+        // pills now share one explicit height, so their tops and bottoms line up.
+        var pills = view.GetVisualDescendants().OfType<Button>().Where(b => b.Classes.Contains("glass-pill") && b.IsVisible).ToList();
+        foreach (var p in pills)
+        {
+            var pt = p.TranslatePoint(new Point(0, 0), win)!.Value;
+            _o.WriteLine($"glass pill top={pt.Y:0.##} height={p.Bounds.Height:0.##} width={p.Bounds.Width:0.##}");
+        }
+        Assert.Equal(3, pills.Count);
+        Assert.Single(pills.Select(p => Math.Round(p.Bounds.Height, 1)).Distinct());
+        Assert.Single(pills.Select(p => Math.Round(p.TranslatePoint(new Point(0, 0), win)!.Value.Y, 1)).Distinct());
         Assert.Equal(2, stars.Count);
         Assert.Equal(1, stars.Count(s => s.IsVisible));
 

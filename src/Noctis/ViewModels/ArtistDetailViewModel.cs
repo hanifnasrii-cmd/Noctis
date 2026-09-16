@@ -9,6 +9,7 @@ using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Noctis.Helpers;
+using Noctis.Localization;
 using Noctis.Models;
 using Noctis.Services;
 
@@ -71,6 +72,8 @@ public partial class ArtistDetailViewModel : ViewModelBase, ISearchable, IDispos
     private string _query = string.Empty;
     private int _heroGeneration;
     private int _songsGeneration;
+    private int _albumsGeneration;
+    private int _singlesGeneration;
     private bool _similarRequested;
 
     // Unfiltered results; the observable collections below hold the searched/filtered view.
@@ -109,6 +112,17 @@ public partial class ArtistDetailViewModel : ViewModelBase, ISearchable, IDispos
     [ObservableProperty] private IBrush? _heroBackgroundBrush;
 
     [ObservableProperty] private bool _isFavorite;
+
+    /// <summary>Deezer fan count for the hero ("7,994,069 fans", 09-15); -1 until known.
+    /// The cached number paints at once, the weekly re-check swaps in behind it.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasFans))]
+    [NotifyPropertyChangedFor(nameof(FansDisplay))]
+    private long _fanCount = -1;
+    public bool HasFans => FanCount > 0;
+    public string FansDisplay => HasFans
+        ? Loc.T("ArtistDetail.FansCount", FanCount.ToString("N0", System.Globalization.CultureInfo.CurrentCulture))
+        : string.Empty;
 
     /// <summary>Hero kicker above the name ("HIP HOP"): the artist's most common library
     /// genre tag, else the first MusicBrainz genre once About loads, else hidden.</summary>
@@ -150,8 +164,19 @@ public partial class ArtistDetailViewModel : ViewModelBase, ISearchable, IDispos
     public BulkObservableCollection<TopSongRow> AllSongs { get; } = new();
     /// <summary>Every release (albums and singles), newest first, narrowed by search.</summary>
     public ObservableCollection<Album> Releases { get; } = new();
-    public ObservableCollection<Album> AlbumReleases { get; } = new();
-    public ObservableCollection<Album> SingleReleases { get; } = new();
+    /// <summary>Albums / Singles &amp; EPs tab grids. Filled in slices when their tab opens
+    /// (like <see cref="AllSongs"/>, 09-15): the tab panels are hidden until picked, so the
+    /// first visit inflated every tile in one layout pass and the tab's fade-in was over
+    /// before the frame with the tiles could paint. One row lands with the switch, the
+    /// rest arrive a couple of rows per idle turn under the fade. Counts and the
+    /// "has any" flags read the full lists, so the header never shows a partial number.</summary>
+    public BulkObservableCollection<Album> AlbumReleases { get; } = new();
+    public BulkObservableCollection<Album> SingleReleases { get; } = new();
+    private List<Album> _tabAlbums = new();
+    private List<Album> _tabSingles = new();
+    /// <summary>The lists the tab grids were last filled from (null once cleared).</summary>
+    private List<Album>? _albumsFilled;
+    private List<Album>? _singlesFilled;
     /// <summary>Overview rows: the newest four (eight when the other row is empty), or
     /// every match while searching.</summary>
     public ObservableCollection<Album> OverviewAlbums { get; } = new();
@@ -166,8 +191,8 @@ public partial class ArtistDetailViewModel : ViewModelBase, ISearchable, IDispos
     public bool HasPopular => PopularSongs.Count > 0;
     public bool HasFavorites => FavoriteSongs.Count > 0;
     public bool HasReleases => Releases.Count > 0;
-    public bool HasAlbums => AlbumReleases.Count > 0;
-    public bool HasSingles => SingleReleases.Count > 0;
+    public bool HasAlbums => _tabAlbums.Count > 0;
+    public bool HasSingles => _tabSingles.Count > 0;
     public bool HasOverviewAlbums => OverviewAlbums.Count > 0;
     public bool HasOverviewSingles => OverviewSingles.Count > 0;
     public bool HasAppearsOn => AppearsOn.Count > 0;
@@ -176,8 +201,8 @@ public partial class ArtistDetailViewModel : ViewModelBase, ISearchable, IDispos
     /// <summary>Overview rows are stacked full-width (09-14, tiles at Home size): one row of each.</summary>
     public int OverviewAlbumColumns => GridColumns;
     public int OverviewSingleColumns => GridColumns;
-    public int AlbumCount => AlbumReleases.Count;
-    public int SingleCount => SingleReleases.Count;
+    public int AlbumCount => _tabAlbums.Count;
+    public int SingleCount => _tabSingles.Count;
 
     // ── Latest release (by release date, falling back to year) ──
     [ObservableProperty]
@@ -307,6 +332,7 @@ public partial class ArtistDetailViewModel : ViewModelBase, ISearchable, IDispos
 
         Rebuild();
         ResolveImage();
+        _ = LoadFansAsync();
         _ = LoadAboutAsync();
         _ = LoadSimilarAsync(); // the Overview carries a Similar Artists row, so load on open
 
@@ -475,8 +501,12 @@ public partial class ArtistDetailViewModel : ViewModelBase, ISearchable, IDispos
         var singles = FilterReleases(matching, "singles").ToList();
 
         ReplaceAlbums(Releases, matching);
-        ReplaceAlbums(AlbumReleases, albums);
-        ReplaceAlbums(SingleReleases, singles);
+        _tabAlbums = albums;
+        _tabSingles = singles;
+        if (IsTabAlbums) FillTabAlbums();
+        else { _albumsFilled = null; ++_albumsGeneration; AlbumReleases.ReplaceAll(Array.Empty<Album>()); }
+        if (IsTabSingles) FillTabSingles();
+        else { _singlesFilled = null; ++_singlesGeneration; SingleReleases.ReplaceAll(Array.Empty<Album>()); }
 
         // One full-width row of each on the Overview: the newest GridColumns releases.
         var albumCap = searching ? 0 : GridColumns;
@@ -520,11 +550,52 @@ public partial class ArtistDetailViewModel : ViewModelBase, ISearchable, IDispos
         OnPropertyChanged(nameof(HasAllSongs));
     }
 
+    /// <summary>Tiles per slice for the tab grids: one row with the switch, two rows per idle turn.</summary>
+    private int TabGridFirstSlice => Math.Max(1, GridColumns);
+    private int TabGridSlice => Math.Max(1, GridColumns * 2);
+
+    private void FillTabAlbums()
+    {
+        if (_albumsFilled != null && SameAlbums(_albumsFilled, _tabAlbums)) return;
+        _albumsFilled = _tabAlbums;
+        var generation = ++_albumsGeneration;
+        StreamingFill.Into(AlbumReleases, _tabAlbums, generation, () => _albumsGeneration, first: TabGridFirstSlice, chunk: TabGridSlice);
+    }
+
+    private void FillTabSingles()
+    {
+        if (_singlesFilled != null && SameAlbums(_singlesFilled, _tabSingles)) return;
+        _singlesFilled = _tabSingles;
+        var generation = ++_singlesGeneration;
+        StreamingFill.Into(SingleReleases, _tabSingles, generation, () => _singlesGeneration, first: TabGridFirstSlice, chunk: TabGridSlice);
+    }
+
     partial void OnSelectedTabChanged(string value)
     {
+        if (IsTabAlbums) FillTabAlbums();
+        if (IsTabSingles) FillTabSingles();
         if (IsTabSongs && AllSongs.Count == 0) FillAllSongs();
         if (IsTabSimilar) _ = LoadSimilarAsync();
         TabChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    // ── Deezer fan count ──
+
+    private async Task LoadFansAsync()
+    {
+        if (_images == null) return;
+        if (_images.TryGetCachedFanCount(Artist.Id) is { } cached) FanCount = cached;
+        try
+        {
+            var fans = await _images.GetFanCountAsync(Artist.Id, ArtistName, _cts.Token).ConfigureAwait(false);
+            if (fans is not { } f || _cts.IsCancellationRequested) return;
+            await Dispatcher.UIThread.InvokeAsync(() => FanCount = f);
+        }
+        catch (OperationCanceledException) { }
+        catch (Exception ex)
+        {
+            DebugLogger.Warn(DebugLogger.Category.UI, "Artist.Fans", ex.Message);
+        }
     }
 
     private void ResolveImage()

@@ -88,15 +88,22 @@ public class ArtistDetailViewModelTests
 
         Assert.Equal(3, vm.Releases.Count);
         Assert.True(vm.IsTabOverview);
-        Assert.Equal(new[] { "LP" }, vm.AlbumReleases.Select(a => a.Name));
-        Assert.Equal(new[] { "EP", "Single" }, vm.SingleReleases.Select(a => a.Name));
+        // Counts come from the full split; the tab grids themselves fill when their tab
+        // opens (09-15, sliced like the Songs list) and are empty while hidden.
         Assert.Equal(1, vm.AlbumCount);
         Assert.Equal(2, vm.SingleCount);
+        Assert.True(vm.HasAlbums);
+        Assert.True(vm.HasSingles);
+        Assert.Empty(vm.AlbumReleases);
+        Assert.Empty(vm.SingleReleases);
 
         vm.SelectTabCommand.Execute("albums");
         Assert.True(vm.IsTabAlbums);
+        Assert.Equal(new[] { "LP" }, vm.AlbumReleases.Select(a => a.Name));
         vm.SelectTabCommand.Execute("singles");
         Assert.True(vm.IsTabSingles);
+        Assert.Equal(new[] { "EP", "Single" }, vm.SingleReleases.Select(a => a.Name));
+        Assert.Equal(new[] { "LP" }, vm.AlbumReleases.Select(a => a.Name)); // a visited grid stays, so returning is instant
         vm.SelectTabCommand.Execute("similar");
         Assert.True(vm.IsTabSimilar);
         Assert.True(vm.SimilarLoaded);                    // no service wired → settles empty

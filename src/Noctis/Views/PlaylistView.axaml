@@ -540,8 +540,9 @@
                         </Button>
                         <!-- Star in sidebar (09-14): mirrors the tile menu's Star/Unstar. -->
                         <Button Classes="glass-pill"
-                                Width="42"
-                                Padding="0,8"
+                                Width="42" Height="34"
+                                Padding="0"
+                                VerticalAlignment="Center"
                                 HorizontalContentAlignment="Center"
                                 VerticalContentAlignment="Center"
                                 Cursor="Hand"
@@ -551,8 +552,9 @@
                             <PathIcon Data="{StaticResource StarIcon}" Width="14" Height="14" Opacity="0.85" />
                         </Button>
                         <Button Classes="glass-pill"
-                                Width="42"
-                                Padding="0,8"
+                                Width="42" Height="34"
+                                Padding="0"
+                                VerticalAlignment="Center"
                                 HorizontalContentAlignment="Center"
                                 VerticalContentAlignment="Center"
                                 Cursor="Hand"
@@ -562,8 +564,9 @@
                             <PathIcon Data="{StaticResource StarIcon}" Width="14" Height="14" Foreground="{DynamicResource AccentColorBrush}" />
                         </Button>
                         <Button Classes="glass-pill"
-                                Width="42"
-                                Padding="0,8"
+                                Width="42" Height="34"
+                                Padding="0"
+                                VerticalAlignment="Center"
                                 HorizontalContentAlignment="Center"
                                 VerticalContentAlignment="Center"
                                 Cursor="Hand"
@@ -611,10 +614,16 @@
                             </Button.Flyout>
                         </Button>
                     <!-- Sort (view-only display order; does not change the saved playlist order).
-                             Sits with the other pills (09-14) instead of on its own row above the list. -->
+                             Sits with the other pills (09-14) instead of on its own row above the list.
+                             Same explicit 34px height as the star/options pills (09-15): with padding
+                             alone its text row measured a different height, and Fluent centres each
+                             button in the row, so this pill sat higher than its neighbours. -->
                             <Button Classes="glass-pill"
-                                Padding="12,6"
+                                Height="34"
+                                Padding="12,0"
+                                VerticalContentAlignment="Center"
                                 HorizontalAlignment="Left"
+                                VerticalAlignment="Center"
                                 Cursor="Hand"
                                 ToolTip.Tip="{loc:T Playlist.ChangeDisplayedOrderManualTip}">
                             <StackPanel Orientation="Horizontal" Spacing="6">

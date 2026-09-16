@@ -120,14 +120,14 @@
             <Setter Property="RenderTransform" Value="translateY(0px)"/>
             <Setter Property="Transitions">
                 <Transitions>
-                    <DoubleTransition Property="Opacity" Duration="0:0:0.16" Easing="CubicEaseOut"/>
-                    <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.16" Easing="CubicEaseOut"/>
+                    <DoubleTransition Property="Opacity" Duration="0:0:0.24" Easing="CubicEaseOut"/>
+                    <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.24" Easing="CubicEaseOut"/>
                 </Transitions>
             </Setter>
         </Style>
         <Style Selector="StackPanel.tab-page[IsVisible=False]">
             <Setter Property="Opacity" Value="0"/>
-            <Setter Property="RenderTransform" Value="translateY(6px)"/>
+            <Setter Property="RenderTransform" Value="translateY(10px)"/>
         </Style>
         <Style Selector="Button.album-tile:pointerover">
             <Setter Property="RenderTransform" Value="scale(1)" />
@@ -569,31 +569,32 @@
 
         <!-- Similar Artists tile: round portrait + name; in-library tiles open the artist. -->
         <DataTemplate x:Key="SimilarTile" x:DataType="vm:SimilarArtistRow">
-            <StackPanel Spacing="10" Width="150" Margin="0,0,22,26">
+            <!-- 190px disc: the same size as the Artists grid tiles (user ask 09-15). -->
+            <StackPanel Spacing="10" Width="190" Margin="0,0,22,26">
                 <Button Classes="similar-tile"
                         Focusable="False"
                         Background="Transparent"
                         BorderThickness="0"
                         Padding="0"
-                        Width="150" Height="150"
-                        CornerRadius="75"
+                        Width="190" Height="190"
+                        CornerRadius="95"
                         HorizontalAlignment="Center"
                         Cursor="Hand"
                         IsEnabled="{Binding IsInLibrary}"
                         Command="{Binding $parent[UserControl].((vm:ArtistDetailViewModel)DataContext).OpenSimilarArtistCommand}"
                         CommandParameter="{Binding}">
                     <Button.Clip>
-                        <EllipseGeometry Center="75,75" RadiusX="75" RadiusY="75" />
+                        <EllipseGeometry Center="95,95" RadiusX="95" RadiusY="95" />
                     </Button.Clip>
-                    <Border Width="150" Height="150" CornerRadius="75" Background="#2E2E2E" ClipToBounds="True">
+                    <Border Width="190" Height="190" CornerRadius="95" Background="#2E2E2E" ClipToBounds="True">
                         <Panel>
                             <Path Data="{StaticResource ArtistsIcon}" Stretch="Uniform"
                                   Fill="{DynamicResource SystemControlForegroundBaseHighBrush}" Height="52"
                                   HorizontalAlignment="Center" VerticalAlignment="Center" Opacity="0.35" />
                             <ctrl:CachedImage SourcePath="{Binding ImagePath}"
-                                              DecodeWidth="300"
+                                              DecodeWidth="380"
                                               Stretch="UniformToFill"
-                                              Width="150" Height="150"
+                                              Width="190" Height="190"
                                               IsVisible="{Binding HasImage}" />
                         </Panel>
                     </Border>
@@ -621,13 +622,15 @@
                 <!-- Colour wash from the backdrop art's edge colour (VM, off-thread): the
                      ground when there is no portrait, and what shows through the fades. -->
                 <Border Background="{Binding HeroBackgroundBrush}" />
-                <!-- No portrait: the newest cover as an abstract glow (heavy blur, zoomed
-                     past the frame, faint) so the header is never a flat slab. -->
+                <!-- Backdrop: the portrait (else the newest cover) as an abstract glow,
+                     heavy blur, zoomed past the frame, faint, so the band is never a
+                     flat slab. Before 09-15 the sharp portrait itself was stretched across
+                     the whole band: a 1800px square blown up to the window width and
+                     centre-cropped to a 400px strip, i.e. a soft close-up of the eyes. -->
                 <ctrl:CachedImage SourcePath="{Binding HeroArtPath}"
                                   DecodeWidth="512"
                                   Stretch="UniformToFill"
-                                  Opacity="0.38"
-                                  IsVisible="{Binding !HasImage}">
+                                  Opacity="0.45">
                     <ctrl:CachedImage.Effect>
                         <BlurEffect Radius="130" />
                     </ctrl:CachedImage.Effect>
@@ -635,17 +638,25 @@
                         <ScaleTransform ScaleX="1.7" ScaleY="1.7" />
                     </ctrl:CachedImage.RenderTransform>
                 </ctrl:CachedImage>
-                <!-- Portrait: the whole photo as the hero's background, sharp, filling the
-                     band edge to edge (centre crop). A left scrim keeps the name legible
-                     over a bright photo; the page-background fade below dissolves its
-                     bottom into the sections. -->
+                <!-- Portrait: the whole photo, sharp and uncropped, at the band's height on
+                     the right (1800px source scaled DOWN to 400 logical px, so it stays
+                     crisp at any DPI). Its left edge dissolves into the blurred backdrop;
+                     the page-background fade below dissolves its bottom into the sections. -->
                 <ctrl:CachedImage SourcePath="{Binding ImagePath}"
-                                  DecodeWidth="2048"
-                                  Stretch="UniformToFill"
-                                  HorizontalAlignment="Stretch"
-                                  VerticalAlignment="Stretch"
+                                  DecodeWidth="1024"
+                                  Stretch="Uniform"
+                                  Width="400" Height="400"
+                                  HorizontalAlignment="Right"
+                                  VerticalAlignment="Top"
                                   RenderOptions.BitmapInterpolationMode="HighQuality"
-                                  IsVisible="{Binding HasImage}" />
+                                  IsVisible="{Binding HasImage}">
+                    <ctrl:CachedImage.OpacityMask>
+                        <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,0%">
+                            <GradientStop Color="#00000000" Offset="0" />
+                            <GradientStop Color="#FF000000" Offset="0.45" />
+                        </LinearGradientBrush>
+                    </ctrl:CachedImage.OpacityMask>
+                </ctrl:CachedImage>
                 <Rectangle Fill="#30000000" />
                 <Rectangle IsVisible="{Binding HasImage}">
                     <Rectangle.Fill>
@@ -686,6 +697,13 @@
                                    TextTrimming="CharacterEllipsis"
                                    MaxLines="2"
                                    TextWrapping="Wrap" />
+                        <!-- Deezer fan count (09-15), the way Deezer's own artist page shows it. -->
+                        <TextBlock Text="{Binding FansDisplay}"
+                                   FontSize="13"
+                                   FontWeight="SemiBold"
+                                   Opacity="0.62"
+                                   Margin="1,4,0,0"
+                                   IsVisible="{Binding HasFans}" />
                         <StackPanel Orientation="Horizontal" Spacing="12" Margin="0,14,0,0" VerticalAlignment="Center">
                             <Button Command="{Binding PlayAllCommand}"
                                     Classes="accent-btn album-header-action"

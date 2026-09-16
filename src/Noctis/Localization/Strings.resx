@@ -561,6 +561,7 @@
   <data name="ArtistDetail.MostPlayedTile" xml:space="preserve"><value>Most played</value><comment>Text in ArtistDetailView.axaml</comment></data>
   <data name="ArtistDetail.SinceTile" xml:space="preserve"><value>In library since</value><comment>Text in ArtistDetailView.axaml</comment></data>
   <data name="ArtistDetail.NotInLibrary" xml:space="preserve"><value>Not in your library</value><comment>Text in ArtistDetailView.axaml</comment></data>
+  <data name="ArtistDetail.FansCount" xml:space="preserve"><value>{0} fans</value><comment>Hero line under the artist name; {0} = Deezer fan count</comment></data>
   <data name="ArtistDetail.FindingSimilar" xml:space="preserve"><value>Finding similar artists…</value><comment>Text in ArtistDetailView.axaml</comment></data>
   <data name="ArtistDetail.NoSimilar" xml:space="preserve"><value>No similar artists found.</value><comment>Text in ArtistDetailView.axaml</comment></data>
   <data name="ArtistDetail.LookingUp" xml:space="preserve"><value>Looking up the artist…</value><comment>Text in ArtistDetailView.axaml</comment></data>
