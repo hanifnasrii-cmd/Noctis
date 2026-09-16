@@ -618,33 +618,39 @@
                             <TextBox Classes="metadata-info-field" Text="{Binding Title, UpdateSourceTrigger=PropertyChanged}" />
                         </StackPanel>
 
-                        <!-- Use Work & Movement -->
-                        <CheckBox Classes="metadata-pill-checkbox"
-                                  Content="{loc:T Metadata.UseWorkMovement}"
-                                  IsChecked="{Binding UseWorkAndMovement}" />
+                        <!-- Use Work & Movement: the fields glide open under the toggle (same
+                             CollapsibleContent as the Discord "Show album" row). The toggle and the
+                             body share one spacing-free panel so the closed state adds no gap. -->
+                        <StackPanel>
+                            <CheckBox Classes="metadata-pill-checkbox"
+                                      Content="{loc:T Metadata.UseWorkMovement}"
+                                      IsChecked="{Binding UseWorkAndMovement}" />
+                            <controls:CollapsibleContent IsOpen="{Binding UseWorkAndMovement}" Lift="10" Motion="Glide">
+                                <StackPanel Spacing="16" Margin="0,16,0,0">
+                                    <!-- Work Name -->
+                                    <StackPanel Spacing="4">
+                                        <TextBlock Text="{loc:T Metadata.WorkName}" FontSize="12" Opacity="0.5" />
+                                        <TextBox Classes="metadata-info-field" Text="{Binding WorkName, UpdateSourceTrigger=PropertyChanged}" />
+                                    </StackPanel>
 
-                        <!-- Work Name (visible only when Work & Movement is enabled) -->
-                        <StackPanel Spacing="4" IsVisible="{Binding UseWorkAndMovement}">
-                            <TextBlock Text="{loc:T Metadata.WorkName}" FontSize="12" Opacity="0.5" />
-                            <TextBox Classes="metadata-info-field" Text="{Binding WorkName, UpdateSourceTrigger=PropertyChanged}" />
+                                    <!-- Movement index + count + title -->
+                                    <Grid ColumnDefinitions="Auto,8,Auto,16,*">
+                                        <StackPanel Grid.Column="0" Spacing="4">
+                                            <TextBlock Text="{loc:T Metadata.Movement}" FontSize="12" Opacity="0.5" />
+                                            <TextBox Classes="metadata-info-field" Text="{Binding MovementNumber, UpdateSourceTrigger=PropertyChanged}" Width="80" />
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="2" Spacing="4">
+                                            <TextBlock Text="of" FontSize="12" Opacity="0.5" />
+                                            <TextBox Classes="metadata-info-field" Text="{Binding MovementCount, UpdateSourceTrigger=PropertyChanged}" Width="80" />
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="4" Spacing="4">
+                                            <TextBlock Text="{loc:T Metadata.Title}" FontSize="12" Opacity="0.5" />
+                                            <TextBox Classes="metadata-info-field" Text="{Binding MovementName, UpdateSourceTrigger=PropertyChanged}" />
+                                        </StackPanel>
+                                    </Grid>
+                                </StackPanel>
+                            </controls:CollapsibleContent>
                         </StackPanel>
-
-                        <!-- Movement index + count + title -->
-                        <Grid ColumnDefinitions="Auto,8,Auto,16,*"
-                              IsVisible="{Binding UseWorkAndMovement}">
-                            <StackPanel Grid.Column="0" Spacing="4">
-                                <TextBlock Text="{loc:T Metadata.Movement}" FontSize="12" Opacity="0.5" />
-                                <TextBox Classes="metadata-info-field" Text="{Binding MovementNumber, UpdateSourceTrigger=PropertyChanged}" Width="80" />
-                            </StackPanel>
-                            <StackPanel Grid.Column="2" Spacing="4">
-                                <TextBlock Text="of" FontSize="12" Opacity="0.5" />
-                                <TextBox Classes="metadata-info-field" Text="{Binding MovementCount, UpdateSourceTrigger=PropertyChanged}" Width="80" />
-                            </StackPanel>
-                            <StackPanel Grid.Column="4" Spacing="4">
-                                <TextBlock Text="{loc:T Metadata.Title}" FontSize="12" Opacity="0.5" />
-                                <TextBox Classes="metadata-info-field" Text="{Binding MovementName, UpdateSourceTrigger=PropertyChanged}" />
-                            </StackPanel>
-                        </Grid>
 
                         <!-- Album -->
                         <StackPanel Spacing="4">
