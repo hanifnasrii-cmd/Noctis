@@ -1175,6 +1175,33 @@ public partial class PlayerViewModel : ViewModelBase
     }
 
     /// <summary>
+    /// Plays the track <paramref name="index"/> steps back in History (0 = most recent).
+    /// The current track and every history entry skipped over go to the FRONT of UpNext
+    /// in their original order, so after the jump the queue replays them in sequence —
+    /// the same bookkeeping as <see cref="GoBackInQueue"/>, applied N deep at once
+    /// (Cover Flow: clicking the −2 card).
+    /// </summary>
+    public void PlayFromHistoryAt(int index)
+    {
+        if (index < 0 || index >= History.Count) return;
+        DebugLogger.Info(DebugLogger.Category.Playback, "PlayFromHistoryAt", $"index={index}, historyLen={History.Count}");
+        CancelAutoMixTransition("user skipped");
+        MarkQueueChanged();
+
+        if (CurrentTrack != null)
+            UpNext.Insert(0, CurrentTrack);
+        // History[0] is the most recent, so it plays soonest after the target: insert in
+        // order at 0,1,2… → [h0, h1, …, current, rest].
+        for (var i = 0; i < index; i++)
+            UpNext.Insert(i, History[i]);
+
+        var target = History[index];
+        for (var i = index; i >= 0; i--)
+            History.RemoveAt(i);
+        PlayTrack(target);
+    }
+
+    /// <summary>
     /// Saves the current queue (now playing + up next) as a playlist via the
     /// unified Add to Playlist dialog.
     /// </summary>

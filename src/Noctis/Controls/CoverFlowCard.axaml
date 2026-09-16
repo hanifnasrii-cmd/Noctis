@@ -40,29 +40,45 @@
          Clip    - clips the slab at radius - rim, inside the rim.
          Inside: ONE glass slab (CardGlass) under everything - the artwork sits inset on
          it with its own rounded corners and the caption rests on the same surface, the
-         way the reference cards read as a single piece of frosted glass. -->
+         way the reference cards read as a single piece of frosted LIGHT glass: a
+         translucent white-grey panel over the blurred cover, not a dark tile. -->
     <Border x:Name="Shadow"
             CornerRadius="{Binding #Root.CardCornerRadius}"
-            BoxShadow="0 18 44 0 #8C000000"
+            BoxShadow="0 14 36 0 #59000000"
             HorizontalAlignment="Center"
             VerticalAlignment="Center">
         <Border x:Name="Frame"
                 CornerRadius="{Binding #Root.CardCornerRadius}"
-                BorderThickness="2"
-                BorderBrush="#8CFFFFFF">
+                BorderThickness="1"
+                BorderBrush="#1FFFFFFF">
           <Border x:Name="Clip"
                   CornerRadius="{Binding #Root.InnerCornerRadius}"
                   ClipToBounds="True">
             <Panel>
-                <!-- The slab. Liquid Glass OFF: an opaque grey fill (it must not be
-                     see-through then: the neighbouring cards pass behind the centre card
-                     and would show as sharp notches). ON: frosts and tints what is beneath. -->
+                <!-- The slab: REAL translucent frosted glass, always — it does not follow the
+                     app-wide Liquid Glass switch (UseAppGlass off, IsGlassActive on), because
+                     the reference is a see-through frosted card and a flat fill cannot read
+                     that way: a translucent flat slab showed the neighbours' rims and captions
+                     as hard shapes through the centre card, an opaque one looked like a grey
+                     tile. The blur dissolves what is behind into a soft tint instead. The tint
+                     is SMOKY GREY, not white: a white tint over a blurred cover reads milky
+                     and, under the light rim, as a white outline round every card. -->
                 <controls:GlassPanel x:Name="CardGlass"
-                                     Background="#FF343440"
-                                     GlassTint="#2E2E38"
+                                     UseAppGlass="False"
+                                     IsGlassActive="True"
+                                     GlassTint="#808080"
                                      GlassTintOpacity="{Binding #Root.CardTintOpacity}"
                                      BlurRadius="{Binding #Root.CardBlurRadius}"
                                      EdgeThickness="0" />
+
+                <!-- Catch-light: a single 1px line along the TOP edge only (8% white),
+                     inside the rounded clip so it dies into the corners. This is the whole
+                     of the card's "lit edge" — the rim itself stays near-invisible. -->
+                <Border x:Name="TopHighlight"
+                        Height="1"
+                        VerticalAlignment="Top"
+                        Background="#14FFFFFF"
+                        IsHitTestVisible="False" />
                 <Grid RowDefinitions="Auto,Auto">
                     <!-- Artwork: square, inset on the slab with its own rounded corners -->
                     <Border Grid.Row="0" x:Name="ArtworkFrame"
@@ -91,7 +107,7 @@
                     <!-- Frosted caption strip: title + artist, every card carries its own -->
                     <!-- Caption: title + artist resting on the slab under the artwork -->
                     <Border Grid.Row="1" x:Name="Caption"
-                            Padding="16,10,16,18">
+                            Padding="14,10,14,16">
                         <StackPanel Spacing="2">
                             <!-- Auto columns, not a horizontal StackPanel: that measures the
                                  title at infinite width and CharacterEllipsis never trims. -->
@@ -121,7 +137,7 @@
                             <TextBlock x:Name="ArtistText"
                                        Text="{Binding #Root.Artist}"
                                        FontSize="{Binding #Root.ArtistFontSize}"
-                                       Foreground="#C9FFFFFF"
+                                       Foreground="{DynamicResource AccentColorBrush}"
                                        TextTrimming="CharacterEllipsis"
                                        TextAlignment="Center"
                                        MaxWidth="{Binding #Root.TitleMaxWidth}"
@@ -133,7 +149,7 @@
                                     IsVisible="{Binding #Root.ArtistCommand, Converter={x:Static ObjectConverters.IsNotNull}}">
                                 <TextBlock Text="{Binding #Root.Artist}"
                                            FontSize="{Binding #Root.ArtistFontSize}"
-                                           Foreground="#C9FFFFFF"
+                                           Foreground="{DynamicResource AccentColorBrush}"
                                            TextTrimming="CharacterEllipsis"
                                            TextAlignment="Center"
                                            MaxWidth="{Binding #Root.TitleMaxWidth}" />

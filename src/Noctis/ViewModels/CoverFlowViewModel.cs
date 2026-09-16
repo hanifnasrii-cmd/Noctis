@@ -144,6 +144,39 @@ public partial class CoverFlowViewModel : ViewModelBase, IDisposable
 
     public PlayerViewModel Player => _player;
 
+    /// <summary>
+    /// Raised after the slots are refreshed whenever the centre track changed. The
+    /// argument is how many slots the row moved: +1/+2 when the new centre was the next /
+    /// far-next card, −1/−2 when it was the previous / far-previous one, 0 when the new
+    /// centre came from nowhere in the row (a fresh album, a direct play) — the view
+    /// slides the cards for a non-zero step and snaps for zero.
+    /// </summary>
+    public event EventHandler<int>? CarouselShifted;
+
+    /// <summary>Slots moved between two centre tracks, judged from the OLD row: the new
+    /// centre is looked up among the old neighbours. Reference identity — the queue and
+    /// history hold the very same Track instances.</summary>
+    internal static int StepBetween(Track? oldCenter, Track? newCenter,
+        Track? oldPrev1, Track? oldPrev2, Track? oldNext1, Track? oldNext2)
+    {
+        if (newCenter == null || ReferenceEquals(oldCenter, newCenter)) return 0;
+        if (ReferenceEquals(newCenter, oldNext1)) return 1;
+        if (ReferenceEquals(newCenter, oldNext2)) return 2;
+        if (ReferenceEquals(newCenter, oldPrev1)) return -1;
+        if (ReferenceEquals(newCenter, oldPrev2)) return -2;
+        return 0;
+    }
+
+    /// <summary>Carousel click / wheel / arrow keys: play the track <paramref name="offset"/>
+    /// slots away (+ = up next, − = history). Jumping into history re-queues what was
+    /// skipped over so the order survives; 0 is a no-op.</summary>
+    [RelayCommand]
+    private void JumpTo(int offset)
+    {
+        if (offset > 0) _player.PlayFromUpNextAt(offset - 1);
+        else if (offset < 0) _player.PlayFromHistoryAt(-offset - 1);
+    }
+
     public CoverFlowViewModel(PlayerViewModel player)
     {
         _player = player;
@@ -205,6 +238,10 @@ public partial class CoverFlowViewModel : ViewModelBase, IDisposable
         var history = _player.History;
 
         HasQueue = current != null || upNext.Count > 0;
+
+        // Judge the slide BEFORE the slots move: the old neighbours are still in place.
+        var centerChanged = !ReferenceEquals(CenterTrack, current);
+        var step = StepBetween(CenterTrack, current, PreviousTrack, FarPreviousTrack, NextTrack, FarNextTrack);
 
         // Track center track property changes (e.g. IsFavorite toggle)
         if (_subscribedCenterTrack != current)
@@ -309,6 +346,9 @@ public partial class CoverFlowViewModel : ViewModelBase, IDisposable
         Next29Track = upNext.Count > 28 ? upNext[28] : null;
         Next30Track = upNext.Count > 29 ? upNext[29] : null;
         Next31Track = upNext.Count > 30 ? upNext[30] : null;
+
+        if (centerChanged)
+            CarouselShifted?.Invoke(this, step);
     }
 
     private void OnCenterTrackPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)

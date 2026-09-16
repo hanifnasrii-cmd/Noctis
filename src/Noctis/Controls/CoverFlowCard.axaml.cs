@@ -35,7 +35,7 @@ public partial class CoverFlowCard : UserControl
         AvaloniaProperty.Register<CoverFlowCard, double>(nameof(ArtworkSize), 300);
 
     public static readonly StyledProperty<CornerRadius> CardCornerRadiusProperty =
-        AvaloniaProperty.Register<CoverFlowCard, CornerRadius>(nameof(CardCornerRadius), new CornerRadius(24));
+        AvaloniaProperty.Register<CoverFlowCard, CornerRadius>(nameof(CardCornerRadius), new CornerRadius(20));
 
     public static readonly StyledProperty<int> DecodeWidthProperty =
         AvaloniaProperty.Register<CoverFlowCard, int>(nameof(DecodeWidth), 512);
@@ -61,16 +61,17 @@ public partial class CoverFlowCard : UserControl
     public static readonly DirectProperty<CoverFlowCard, double> PlaceholderFontSizeProperty =
         AvaloniaProperty.RegisterDirect<CoverFlowCard, double>(nameof(PlaceholderFontSize), o => o.PlaceholderFontSize);
 
-    /// <summary>Caption type scales with the card: title ≈ 7% and artist ≈ 5.8% of the cover width.</summary>
+    /// <summary>Caption type scales with the card: title ≈ 5.5% (cap 20) and artist ≈ 4.5%
+    /// (cap 16) of the cover width — 20/16 on the 360px centre card.</summary>
     public static readonly DirectProperty<CoverFlowCard, double> TitleFontSizeProperty =
         AvaloniaProperty.RegisterDirect<CoverFlowCard, double>(nameof(TitleFontSize), o => o.TitleFontSize);
 
     public static readonly DirectProperty<CoverFlowCard, double> ArtistFontSizeProperty =
         AvaloniaProperty.RegisterDirect<CoverFlowCard, double>(nameof(ArtistFontSize), o => o.ArtistFontSize);
 
-    /// <summary>Glass tint opacity of the slab: a frosted slab can stay lighter (the blur
-    /// already dissolves what is behind), a tint-only slab must be heavier or the neighbours
-    /// read straight through it.</summary>
+    /// <summary>Glass tint opacity of the slab: a frosted slab stays light and see-through
+    /// (the blur already dissolves what is behind, as in the reference); a tint-only slab
+    /// (blur 0) must be heavier or the neighbours read straight through it.</summary>
     public static readonly DirectProperty<CoverFlowCard, double> CardTintOpacityProperty =
         AvaloniaProperty.RegisterDirect<CoverFlowCard, double>(nameof(CardTintOpacity), o => o.CardTintOpacity);
 
@@ -78,43 +79,49 @@ public partial class CoverFlowCard : UserControl
     public static readonly DirectProperty<CoverFlowCard, Thickness> ArtworkMarginProperty =
         AvaloniaProperty.RegisterDirect<CoverFlowCard, Thickness>(nameof(ArtworkMargin), o => o.ArtworkMargin);
 
-    /// <summary>Artwork corner radius: concentric with the slab (inner radius − inset).</summary>
+    /// <summary>Artwork corner radius: a touch tighter than the clip radius (inner − 4, so
+    /// 14 on the default 20px card), the way the reference cover sits in its slab.</summary>
     public static readonly DirectProperty<CoverFlowCard, CornerRadius> ArtworkCornerRadiusProperty =
         AvaloniaProperty.RegisterDirect<CoverFlowCard, CornerRadius>(nameof(ArtworkCornerRadius), o => o.ArtworkCornerRadius);
 
     /// <summary>Space between the artwork and the slab edge — the visible glass margin
     /// that makes the card read as a slab with the cover set into it.</summary>
-    public const double ArtworkInset = 12;
+    public const double ArtworkInset = 10;
 
     /// <summary>Clip radius for the content inside the rim: CardCornerRadius minus RimThickness.</summary>
     public static readonly DirectProperty<CoverFlowCard, CornerRadius> InnerCornerRadiusProperty =
         AvaloniaProperty.RegisterDirect<CoverFlowCard, CornerRadius>(nameof(InnerCornerRadius), o => o.InnerCornerRadius);
 
-    /// <summary>Width of the light rim the Frame border draws (2px reads at full strength
-    /// through the side cards' tilt + downscale; 1px broke at the corners).</summary>
-    public const double RimThickness = 2;
+    /// <summary>Width of the rim the Frame border draws. 1px at 12% white: barely visible,
+    /// just defining the edge. Anything heavier read as a white outline — worst on the side
+    /// cards, whose near edge the perspective enlarges (2px/70% then 1.5px/40% both did).
+    /// The lit edge is the 1px top highlight inside the clip, not the rim.</summary>
+    public const double RimThickness = 1;
 
-    private double _titleMaxWidth = 300 + 2 * ArtworkInset - 32 - 30;
+    private double _titleMaxWidth = 300 + 2 * ArtworkInset - 28 - 30;
     private double _placeholderFontSize = 300 * 0.23;
     private double _titleFontSize = TitleFor(300);
     private double _artistFontSize = ArtistFor(300);
-    private CornerRadius _innerCornerRadius = InnerFor(new CornerRadius(24));
-    private CornerRadius _artworkCornerRadius = ArtFor(InnerFor(new CornerRadius(24)));
+    private CornerRadius _innerCornerRadius = InnerFor(new CornerRadius(20));
+    private CornerRadius _artworkCornerRadius = ArtFor(InnerFor(new CornerRadius(20)));
     private Thickness _artworkMargin = new(ArtworkInset);
     private double _cardTintOpacity = TintFor(18);
 
-    private static double TintFor(double blur) => blur > 0 ? 0.62 : 0.86;
+    private static double TintFor(double blur) => blur > 0 ? 0.40 : 0.72;
+
+    /// <summary>How much tighter the artwork corners are than the clip radius.</summary>
+    public const double ArtworkRadiusStep = 4;
 
     private static CornerRadius ArtFor(CornerRadius inner) => new(
-        System.Math.Max(4, inner.TopLeft - ArtworkInset), System.Math.Max(4, inner.TopRight - ArtworkInset),
-        System.Math.Max(4, inner.BottomRight - ArtworkInset), System.Math.Max(4, inner.BottomLeft - ArtworkInset));
+        System.Math.Max(4, inner.TopLeft - ArtworkRadiusStep), System.Math.Max(4, inner.TopRight - ArtworkRadiusStep),
+        System.Math.Max(4, inner.BottomRight - ArtworkRadiusStep), System.Math.Max(4, inner.BottomLeft - ArtworkRadiusStep));
 
     private static CornerRadius InnerFor(CornerRadius r) => new(
         System.Math.Max(0, r.TopLeft - RimThickness), System.Math.Max(0, r.TopRight - RimThickness),
         System.Math.Max(0, r.BottomRight - RimThickness), System.Math.Max(0, r.BottomLeft - RimThickness));
 
-    private static double TitleFor(double size) => System.Math.Round(System.Math.Clamp(size * 0.07, 13, 30));
-    private static double ArtistFor(double size) => System.Math.Round(System.Math.Clamp(size * 0.058, 11, 26));
+    private static double TitleFor(double size) => System.Math.Round(System.Math.Clamp(size * 0.055, 13, 20));
+    private static double ArtistFor(double size) => System.Math.Round(System.Math.Clamp(size * 0.045, 11, 16));
 
     static CoverFlowCard()
     {
@@ -195,9 +202,9 @@ public partial class CoverFlowCard : UserControl
     private void OnArtworkSizeChanged()
     {
         var size = ArtworkSize;
-        // Caption spans the slab (artwork + inset each side); 16px padding each side, plus
+        // Caption spans the slab (artwork + inset each side); 14px padding each side, plus
         // room for the explicit badge beside the title.
-        TitleMaxWidth = System.Math.Max(40, size + 2 * ArtworkInset - 32 - 30);
+        TitleMaxWidth = System.Math.Max(40, size + 2 * ArtworkInset - 28 - 30);
         PlaceholderFontSize = System.Math.Max(24, size * 0.23);
         TitleFontSize = TitleFor(size);
         ArtistFontSize = ArtistFor(size);
