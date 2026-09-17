@@ -1,7 +1,9 @@
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.Media.Transformation;
 using Avalonia.Platform.Storage;
+using Avalonia.Threading;
 using Noctis.ViewModels;
 
 namespace Noctis.Views;
@@ -13,10 +15,35 @@ public partial class PlaylistImportDialog : Window
         InitializeComponent();
     }
 
+    private bool _closing;
+
+    /// <summary>Settles the scrim and card to their open state on the frame after the
+    /// window appears, so the transitions declared in XAML have something to animate to.</summary>
+    protected override void OnOpened(EventArgs e)
+    {
+        base.OnOpened(e);
+        Dispatcher.UIThread.Post(() =>
+        {
+            DialogOverlay.Opacity = 1;
+            DialogCard.RenderTransform = TransformOperations.Parse("scale(1)");
+        }, DispatcherPriority.Loaded);
+    }
+
+    /// <summary>Plays the fade/scale close animation, then closes the window.</summary>
+    private async Task CloseAnimatedAsync()
+    {
+        if (_closing) return;
+        _closing = true;
+        DialogOverlay.Opacity = 0;
+        DialogCard.RenderTransform = TransformOperations.Parse("scale(0.96)");
+        await Task.Delay(200);
+        Close();
+    }
+
     public PlaylistImportDialog(PlaylistImportViewModel vm) : this()
     {
         DataContext = vm;
-        vm.Closed += (_, _) => Close();
+        vm.Closed += (_, _) => _ = CloseAnimatedAsync();
         ChooseFileButton.Click += OnChooseFile;
 
         // Drop an export file anywhere on the dialog instead of hunting for it in the picker.

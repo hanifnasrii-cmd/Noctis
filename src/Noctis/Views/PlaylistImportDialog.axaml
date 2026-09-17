@@ -26,6 +26,11 @@
             <Setter Property="BorderThickness" Value="1.5" />
             <Setter Property="UseLayoutRounding" Value="True" />
         </Style>
+        <!-- A CornerRadius set on the TextBox does not reach Fluent's border part, so the
+             link box's pill has to be pinned here as well as inline. -->
+        <Style Selector="TextBox[CornerRadius=999] /template/ Border#PART_BorderElement">
+            <Setter Property="CornerRadius" Value="999" />
+        </Style>
         <Style Selector="TextBox:pointerover /template/ Border#PART_BorderElement">
             <Setter Property="BorderBrush" Value="#99A0A0A8" />
         </Style>
@@ -73,8 +78,21 @@
         </Style>
     </Window.Styles>
 
-    <Border Background="#50000000">
-        <Border CornerRadius="20"
+    <!-- Fade/scale open-close animation: the same pattern the New Playlist and New Smart
+         Playlist dialogs use (code-behind settles to the open state on the next frame and
+         mirrors it on close), so every entry in the New menu opens the same way. -->
+    <Border x:Name="DialogOverlay" Background="#50000000" Opacity="0">
+        <Border.Transitions>
+            <Transitions>
+                <DoubleTransition Property="Opacity" Duration="0:0:0.18">
+                    <DoubleTransition.Easing>
+                        <CubicEaseOut/>
+                    </DoubleTransition.Easing>
+                </DoubleTransition>
+            </Transitions>
+        </Border.Transitions>
+        <Border x:Name="DialogCard"
+                CornerRadius="20"
                 ClipToBounds="True"
                 Background="{DynamicResource AppMainBackground}"
                 Width="640"
@@ -82,7 +100,18 @@
                 Margin="0,50"
                 HorizontalAlignment="Center"
                 VerticalAlignment="Stretch"
+                RenderTransformOrigin="50%,50%"
+                RenderTransform="scale(0.96)"
                 BoxShadow="0 8 32 0 #80000000, 0 0 0 1 #33FFFFFF">
+            <Border.Transitions>
+                <Transitions>
+                    <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.18">
+                        <TransformOperationsTransition.Easing>
+                            <CubicEaseOut/>
+                        </TransformOperationsTransition.Easing>
+                    </TransformOperationsTransition>
+                </Transitions>
+            </Border.Transitions>
             <DockPanel>
                 <!-- Header: centred title + one-line description, round X at the top-right. -->
                 <Panel DockPanel.Dock="Top" Margin="24,18,18,8">
@@ -134,7 +163,18 @@
                         <StackPanel Spacing="4">
                             <TextBlock Text="{loc:T Import.LinkLabel}" FontSize="12" FontWeight="SemiBold" Opacity="0.75" />
                             <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                                <!-- Pill, and the URL centred on both axes: the box sits beside
+                                     a pill button, so a square-cornered left-aligned field read
+                                     as a different family of control. MinHeight 0 + explicit
+                                     padding because Fluent's default 32px min height leaves the
+                                     text riding the top of a pill this tall. -->
                                 <TextBox Grid.Column="0" Text="{Binding LinkText}"
+                                         CornerRadius="999"
+                                         MinHeight="0"
+                                         Padding="16,9"
+                                         TextAlignment="Center"
+                                         HorizontalContentAlignment="Center"
+                                         VerticalContentAlignment="Center"
                                          Watermark="https://www.deezer.com/en/playlist/…  ·  https://tidal.com/playlist/…" />
                                 <Button Grid.Column="1" Content="{loc:T Import.LinkButton}" Command="{Binding ImportLinkCommand}"
                                         IsEnabled="{Binding CanImportLink}" Classes="pill-outline"

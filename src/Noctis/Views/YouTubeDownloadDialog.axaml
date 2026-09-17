@@ -72,8 +72,20 @@
         </Style>
     </Window.Styles>
 
-    <Border Background="#50000000">
-        <Border CornerRadius="20"
+    <!-- Fade/scale open-close animation: the same pattern the New Playlist and New Smart
+         Playlist dialogs use, so every entry in the New menu opens the same way. -->
+    <Border x:Name="DialogOverlay" Background="#50000000" Opacity="0">
+        <Border.Transitions>
+            <Transitions>
+                <DoubleTransition Property="Opacity" Duration="0:0:0.18">
+                    <DoubleTransition.Easing>
+                        <CubicEaseOut/>
+                    </DoubleTransition.Easing>
+                </DoubleTransition>
+            </Transitions>
+        </Border.Transitions>
+        <Border x:Name="DialogCard"
+                CornerRadius="20"
                 ClipToBounds="True"
                 Background="{DynamicResource AppMainBackground}"
                 Width="720"
@@ -81,7 +93,18 @@
                 Margin="0,50"
                 HorizontalAlignment="Center"
                 VerticalAlignment="Stretch"
+                RenderTransformOrigin="50%,50%"
+                RenderTransform="scale(0.96)"
                 BoxShadow="0 8 32 0 #80000000, 0 0 0 1 #33FFFFFF">
+            <Border.Transitions>
+                <Transitions>
+                    <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.18">
+                        <TransformOperationsTransition.Easing>
+                            <CubicEaseOut/>
+                        </TransformOperationsTransition.Easing>
+                    </TransformOperationsTransition>
+                </Transitions>
+            </Border.Transitions>
             <DockPanel>
                 <!-- Header -->
                 <StackPanel DockPanel.Dock="Top" Margin="24,18,24,12" Spacing="10">
