@@ -38,6 +38,42 @@ public class MarqueeTextBlock : UserControl
 
     private const double OverflowThreshold = 1.0;
     private const double ScrollSpeed = 26.0;
+
+    // ── Edge fade ──
+    // While the text overflows, the viewport clips it mid-glyph and a sliver of the next
+    // letter sits hard against the edge — the "artifact" reported next to the mini player's
+    // heart button. The playback bar already ramps its own marquee's edges out for exactly
+    // this reason (PlaybackBarView.axaml, 09-14); these are the same two masks for the
+    // shared control. Relative stops, so one pair of brushes serves every viewport width:
+    // 10% is ~24px on the Bar form's 244px title and ~15px on the Card form's 148px.
+    // Frozen: an OpacityMask is read on the render thread and these are shared by every
+    // marquee in the app.
+    private static readonly IImmutableBrush TrailingFade = BuildFade(fadeLeading: false);
+    private static readonly IImmutableBrush BothEndsFade = BuildFade(fadeLeading: true);
+
+    private static IImmutableBrush BuildFade(bool fadeLeading)
+    {
+        var stops = new GradientStops();
+        if (fadeLeading)
+        {
+            stops.Add(new GradientStop(Colors.Transparent, 0));
+            stops.Add(new GradientStop(Colors.White, 0.1));
+        }
+        else
+        {
+            stops.Add(new GradientStop(Colors.White, 0));
+        }
+        stops.Add(new GradientStop(Colors.White, 0.9));
+        stops.Add(new GradientStop(Colors.Transparent, 1));
+
+        return (IImmutableBrush)new LinearGradientBrush
+        {
+            StartPoint = new RelativePoint(0, 0, RelativeUnit.Relative),
+            EndPoint = new RelativePoint(1, 0, RelativeUnit.Relative),
+            GradientStops = stops,
+        }.ToImmutable();
+    }
+
     /// <summary>How long the text rests at its start position between laps. The marquee
     /// does a full loop (out the left edge, back in from the right), lands at the start,
     /// holds for this long, then goes around again.</summary>
@@ -192,6 +228,10 @@ public class MarqueeTextBlock : UserControl
     private double _textWidth;
     private double _viewportWidth;
     private double _offset;
+    // Which fade the viewport is wearing, so a lap does not reassign the same brush 60
+    // times a second (the bar's Classes.Set is a no-op when unchanged; this is the same
+    // idea for a plain property).
+    private bool? _fadesLeadingEdge;
 
     public MarqueeTextBlock()
     {
@@ -335,7 +375,24 @@ public class MarqueeTextBlock : UserControl
         StopScrolling();
         _offset = 0;
         _transform.X = 0;
+        ApplyEdgeFade(false);
         _waitingForView = true;
+    }
+
+    /// <summary>Ramps the clipped edges out. <paramref name="fadeLeading"/> is true once the
+    /// text has travelled left, so its head is cut by the near edge as well. Pass null to
+    /// go back to crisp edges — the static path ellipsizes inside the viewport and never
+    /// cuts a glyph, so fading there would only wash out the "…".</summary>
+    private void ApplyEdgeFade(bool? fadeLeading)
+    {
+        if (_fadesLeadingEdge == fadeLeading) return;
+        _fadesLeadingEdge = fadeLeading;
+        _viewport.OpacityMask = fadeLeading switch
+        {
+            null => null,
+            false => TrailingFade,
+            true => BothEndsFade,
+        };
     }
 
     private void OnGlobalSettingsChanged(object? sender, EventArgs e) => ResetAndRecalc();
@@ -385,6 +442,7 @@ public class MarqueeTextBlock : UserControl
             if (InlineContent is { IsVisible: true, Bounds.Width: > 0 } ic2)
                 staticWidth = Math.Max(0, staticWidth - _contentPanel.Spacing - ic2.Bounds.Width);
             _textBlock.Width = _overflow > OverflowThreshold ? staticWidth : double.NaN;
+            ApplyEdgeFade(null);
             return;
         }
 
@@ -394,6 +452,7 @@ public class MarqueeTextBlock : UserControl
 
         _offset = 0;
         _transform.X = 0;
+        ApplyEdgeFade(false);
         ScheduleNextLap();
     }
 
@@ -484,6 +543,7 @@ public class MarqueeTextBlock : UserControl
             // the outbound pass STARTS at zero, so this never fires on the way out.
             _offset = 0;
             _transform.X = 0;
+            ApplyEdgeFade(false);
             StopScrolling();
             ScheduleNextLap();
             return;
@@ -491,6 +551,10 @@ public class MarqueeTextBlock : UserControl
 
         _offset = next;
         _transform.X = next;
+        // Once the text has moved left its head is cut by the near edge too, so that one
+        // ramps out as well; the wrapped pass comes back in from the right at a positive
+        // offset, where the leading edge is clear again.
+        ApplyEdgeFade(next < -0.5);
         QueueNextFrame();
     }
 
