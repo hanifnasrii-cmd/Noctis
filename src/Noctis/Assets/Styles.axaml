@@ -404,6 +404,27 @@
         <Setter Property="VerticalContentAlignment" Value="Center" />
     </Style>
 
+    <!-- The "bubble" behind the number. Background on the TextBox above does not reach
+         Fluent's own border part, and Fluent repaints that part per state (rest, hover,
+         focus, DISABLED), so a filled lozenge — sized to the digits and rounded to 999 by
+         the rules above — sat inside the pill in every state, including greyed out. Pin the
+         part itself transparent everywhere; the surrounding pill is the only chrome here. -->
+    <Style Selector="NumericUpDown.limit-pill-number /template/ TextBox /template/ Border#PART_BorderElement,
+                     NumericUpDown.limit-pill-number /template/ TextBox:pointerover /template/ Border#PART_BorderElement,
+                     NumericUpDown.limit-pill-number /template/ TextBox:focus /template/ Border#PART_BorderElement,
+                     NumericUpDown.limit-pill-number /template/ TextBox:focus-within /template/ Border#PART_BorderElement,
+                     NumericUpDown.limit-pill-number /template/ TextBox:disabled /template/ Border#PART_BorderElement">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+    </Style>
+
+    <!-- Selection paints even when the box does not have focus, which put an accent-coloured
+         lozenge around the digits the moment the field had ever been entered. Only show it
+         while the box is actually being edited. -->
+    <Style Selector="NumericUpDown.limit-pill-number:not(:focus-within) /template/ TextBox">
+        <Setter Property="SelectionBrush" Value="Transparent" />
+    </Style>
+
     <!-- Smooth scrolling for all ScrollViewers -->
     <Style Selector="ScrollViewer">
         <!-- Persistent (non-fading) scrollbars app-wide: with Auto visibility the bar
