@@ -203,6 +203,21 @@ public partial class App : Application
     public const string ThemeDark = "Dark";
     public const string ThemeLight = "Light";
     public const string ThemeMidnight = "Midnight";
+    public const string ThemeHazeLight = "HazeLight";
+    public const string ThemeHazeDark = "HazeDark";
+    public const string ThemeEditorialLight = "EditorialLight";
+    public const string ThemeEditorialDark = "EditorialDark";
+    public const string ThemeGlassLight = "GlassLight";
+    public const string ThemeGlassDark = "GlassDark";
+
+    /// <summary>Built-in themes that run on the Light variant; every other name runs on Dark.</summary>
+    private static readonly HashSet<string> LightVariantThemes = new(StringComparer.Ordinal)
+    {
+        ThemeLight, ThemeHazeLight, ThemeEditorialLight, ThemeGlassLight,
+    };
+
+    public static bool IsLightVariantTheme(string? themeName) =>
+        themeName != null && LightVariantThemes.Contains(themeName);
 
     private ResourceInclude? _activeThemeOverlay;
     private Avalonia.Controls.ResourceDictionary? _activeCustomOverlay;
@@ -215,9 +230,9 @@ public partial class App : Application
     public Func<string, Noctis.Models.CustomThemeDefinition?>? CustomThemeResolver { get; set; }
 
     /// <summary>
-    /// Switches the application theme at runtime. Light maps to the Light variant;
-    /// every other theme runs on the Dark variant with an optional overlay merged on top
-    /// (Gray uses the base Dark dictionary as-is).
+    /// Switches the application theme at runtime. Light-variant themes (see
+    /// <see cref="IsLightVariantTheme"/>) run on the Light dictionary, every other theme on
+    /// Dark, with an optional overlay merged on top (Gray / Light use the base dictionary as-is).
     /// </summary>
     public void SetTheme(string themeName)
     {
@@ -265,7 +280,7 @@ public partial class App : Application
             themeName = ThemeGray;
         }
 
-        RequestedThemeVariant = themeName == ThemeLight
+        RequestedThemeVariant = IsLightVariantTheme(themeName)
             ? Avalonia.Styling.ThemeVariant.Light
             : Avalonia.Styling.ThemeVariant.Dark;
 
@@ -273,6 +288,12 @@ public partial class App : Application
         {
             ThemeDark => "avares://Noctis/Assets/Themes/Dark.axaml",
             ThemeMidnight => "avares://Noctis/Assets/Themes/Midnight.axaml",
+            ThemeHazeLight => "avares://Noctis/Assets/Themes/HazeLight.axaml",
+            ThemeHazeDark => "avares://Noctis/Assets/Themes/HazeDark.axaml",
+            ThemeEditorialLight => "avares://Noctis/Assets/Themes/EditorialLight.axaml",
+            ThemeEditorialDark => "avares://Noctis/Assets/Themes/EditorialDark.axaml",
+            ThemeGlassLight => "avares://Noctis/Assets/Themes/GlassLight.axaml",
+            ThemeGlassDark => "avares://Noctis/Assets/Themes/GlassDark.axaml",
             _ => null
         };
 
@@ -387,9 +408,36 @@ public partial class App : Application
         // whichever of black/white actually contrasts. Every accent that reads either way
         // keeps the theme colour, so this changes nothing for the common ones.
         var themeRowForeground = isLightTheme ? Colors.Black : Colors.White;
-        var nowPlayingRowForeground = ContrastRatio(themeRowForeground, color) >= 3.0
-            ? themeRowForeground
-            : HighestContrastForeground(color);
+        // A theme may pin the now-playing row to a fixed fill instead of the accent
+        // (Editorial: a solid blue row under a coral accent). The row text is then judged
+        // against that fill by the same rule.
+        var rowColor = Resources.TryGetResource("NowPlayingRowFixedColor", RequestedThemeVariant, out var fixedRow)
+                       && fixedRow is Color fixedRowColor
+            ? fixedRowColor
+            : color;
+        // With a pinned fill the theme also owns the row text (the accent overlay is not
+        // merged yet, so this reads the theme's own NowPlayingRowForegroundBrush).
+        var nowPlayingRowForeground =
+            rowColor != color
+            && Resources.TryGetResource("NowPlayingRowForegroundBrush", RequestedThemeVariant, out var fixedFg)
+            && fixedFg is ISolidColorBrush fixedFgBrush
+                ? fixedFgBrush.Color
+                : ContrastRatio(themeRowForeground, rowColor) >= 3.0
+                    ? themeRowForeground
+                    : HighestContrastForeground(rowColor);
+        // A theme may ask for a gradient on accent-filled action buttons (Haze: accent to a
+        // hue-shifted accent). Built from the live accent so the user's pick still drives it.
+        IBrush accentButtonBackground = new SolidColorBrush(color);
+        if (Resources.TryGetResource("AccentButtonGradientHueShift", RequestedThemeVariant, out var shiftObj)
+            && shiftObj is double hueShift)
+        {
+            accentButtonBackground = new LinearGradientBrush
+            {
+                StartPoint = new RelativePoint(0, 0, RelativeUnit.Relative),
+                EndPoint = new RelativePoint(1, 1, RelativeUnit.Relative),
+                GradientStops = { new GradientStop(color, 0), new GradientStop(ShiftHue(color, hueShift), 1) },
+            };
+        }
         // Outline around accent-filled pills. Only meaningful when the accent fill
         // would be indistinguishable from the page background — in practice that's
         // a white / very-light accent on the Light theme. In every other case the
@@ -427,7 +475,7 @@ public partial class App : Application
             // it exists as its own key so MainWindow's Liquid Glass overlay can frost the
             // buttons without making every accent surface (sliders, now-playing row,
             // sidebar selection, drag preview) translucent too.
-            ["AccentButtonBackground"]             = new SolidColorBrush(color),
+            ["AccentButtonBackground"]             = accentButtonBackground,
             ["AccentForegroundBrush"]              = new SolidColorBrush(accentForeground),
             ["AccentBorderBrush"]                  = new SolidColorBrush(accentBorder),
             ["AccentTextBrush"]                    = new SolidColorBrush(accentText),
@@ -438,7 +486,7 @@ public partial class App : Application
             // Now-playing track row box. Previously retinted at runtime from the current
             // artwork's vibrant colour, which ignored the user's accent; it now follows the
             // accent like every other accent-filled surface.
-            ["NowPlayingRowBrush"]           = new SolidColorBrush(color),
+            ["NowPlayingRowBrush"]           = new SolidColorBrush(rowColor),
             ["NowPlayingRowForegroundBrush"] = new SolidColorBrush(nowPlayingRowForeground),
             ["ToggleSwitchFillOn"]                 = new SolidColorBrush(color),
             ["ToggleSwitchFillOnPointerOver"]      = new SolidColorBrush(light1),
@@ -480,6 +528,15 @@ public partial class App : Application
         _activeAccentOverlay = rd;
 
         AccentApplied?.Invoke(this, EventArgs.Empty);
+    }
+
+    /// <summary>Rotates the hue by <paramref name="degrees"/>, keeping saturation and lightness.</summary>
+    private static Color ShiftHue(Color c, double degrees)
+    {
+        var hsl = c.ToHsl();
+        var h = (hsl.H + degrees) % 360;
+        if (h < 0) h += 360;
+        return new HslColor(hsl.A, h, hsl.S, hsl.L).ToRgb();
     }
 
     private static Color Mix(Color a, Color b, double t)

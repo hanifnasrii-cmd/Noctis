@@ -104,7 +104,7 @@
                                         <!-- Circular portrait with icon fallback -->
                                         <Border Width="190" Height="190"
                                                 CornerRadius="95"
-                                                Background="#2E2E2E"
+                                                Background="{DynamicResource ArtworkPlaceholderBackground}"
                                                 ClipToBounds="True">
                                             <Panel>
                                                 <!-- Path shapes, not PathIcon: PathIcon is a templated control and the two per tile

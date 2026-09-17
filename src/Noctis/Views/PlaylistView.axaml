@@ -305,7 +305,7 @@
                         <Border Background="{Binding PlaylistColor, Converter={StaticResource HexColorConverter}}" />
                         <PathIcon Data="{StaticResource PlaylistsIcon}"
                                   Width="56" Height="56"
-                                  Foreground="#4DFFFFFF"
+                                  Foreground="{DynamicResource TertiaryTextBrush}"
                                   HorizontalAlignment="Center"
                                   VerticalAlignment="Center"
                                   IsVisible="{Binding ShowFallbackIcon}" />
@@ -359,7 +359,7 @@
                         <Border Background="{Binding PlaylistColor, Converter={StaticResource HexColorConverter}}" />
                         <PathIcon Data="{StaticResource PlaylistsIcon}"
                                   Width="56" Height="56"
-                                  Foreground="#4DFFFFFF"
+                                  Foreground="{DynamicResource TertiaryTextBrush}"
                                   HorizontalAlignment="Center"
                                   VerticalAlignment="Center"
                                   IsVisible="{Binding ShowFallbackIcon}" />
@@ -1158,7 +1158,7 @@
                                                     Width="44" Height="44"
                                                     CornerRadius="22"
                                                     ClipToBounds="True"
-                                                    Background="#2E2E2E">
+                                                    Background="{DynamicResource ArtworkPlaceholderBackground}">
                                                 <Panel>
                                                     <controls:CachedImage SourcePath="{Binding ImagePath}"
                                                                           Stretch="UniformToFill"
@@ -1166,7 +1166,7 @@
                                                                           IsVisible="{Binding ImagePath, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
                                                     <PathIcon Data="{StaticResource ArtistsIcon}"
                                                               Width="18" Height="18"
-                                                              Foreground="#66FFFFFF"
+                                                              Foreground="{DynamicResource SecondaryTextBrush}"
                                                               HorizontalAlignment="Center"
                                                               VerticalAlignment="Center"
                                                               IsVisible="{Binding ImagePath, Converter={x:Static StringConverters.IsNullOrEmpty}}" />

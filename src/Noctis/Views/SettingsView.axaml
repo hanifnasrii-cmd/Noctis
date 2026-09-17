@@ -1579,6 +1579,138 @@
                             </StackPanel>
                         </Button>
 
+                        <!-- Haze (light) -->
+                        <Button Classes="theme-btn"
+                                Classes.active="{Binding IsHazeLightTheme}"
+                                Command="{Binding SetHazeLightThemeCommand}">
+                            <StackPanel Spacing="8" HorizontalAlignment="Center">
+                                <Border Width="64" Height="40" CornerRadius="6"
+                                        Background="#F3E6F2"
+                                        BorderBrush="#E2D6EE" BorderThickness="1">
+                                    <StackPanel Margin="6,5" Spacing="3">
+                                        <Border Height="3" Width="30" CornerRadius="1.5"
+                                                Background="#874CF2" HorizontalAlignment="Left"/>
+                                        <Border Height="3" Width="20" CornerRadius="1.5"
+                                                Background="#C24CE0" HorizontalAlignment="Left"/>
+                                        <Border Height="3" Width="36" CornerRadius="1.5"
+                                                Background="#D9D4F3" HorizontalAlignment="Left"/>
+                                    </StackPanel>
+                                </Border>
+                                <TextBlock Text="{loc:T Settings.HazeLight}" FontSize="12"
+                                           HorizontalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+
+                        <!-- Haze (dark) -->
+                        <Button Classes="theme-btn"
+                                Classes.active="{Binding IsHazeDarkTheme}"
+                                Command="{Binding SetHazeDarkThemeCommand}">
+                            <StackPanel Spacing="8" HorizontalAlignment="Center">
+                                <Border Width="64" Height="40" CornerRadius="6"
+                                        Background="#1B1530"
+                                        BorderBrush="#2E2650" BorderThickness="1">
+                                    <StackPanel Margin="6,5" Spacing="3">
+                                        <Border Height="3" Width="30" CornerRadius="1.5"
+                                                Background="#874CF2" HorizontalAlignment="Left"/>
+                                        <Border Height="3" Width="20" CornerRadius="1.5"
+                                                Background="#B9AEDA" HorizontalAlignment="Left"/>
+                                        <Border Height="3" Width="36" CornerRadius="1.5"
+                                                Background="#3A2F63" HorizontalAlignment="Left"/>
+                                    </StackPanel>
+                                </Border>
+                                <TextBlock Text="{loc:T Settings.HazeDark}" FontSize="12"
+                                           HorizontalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+
+                        <!-- Editorial (light) -->
+                        <Button Classes="theme-btn"
+                                Classes.active="{Binding IsEditorialLightTheme}"
+                                Command="{Binding SetEditorialLightThemeCommand}">
+                            <StackPanel Spacing="8" HorizontalAlignment="Center">
+                                <Border Width="64" Height="40" CornerRadius="6"
+                                        Background="#FAFAFA"
+                                        BorderBrush="#DDDDDD" BorderThickness="1">
+                                    <StackPanel Margin="6,5" Spacing="3">
+                                        <Border Height="3" Width="30" CornerRadius="1.5"
+                                                Background="#D63A2E" HorizontalAlignment="Left"/>
+                                        <Border Height="3" Width="20" CornerRadius="1.5"
+                                                Background="#2B66D9" HorizontalAlignment="Left"/>
+                                        <Border Height="3" Width="36" CornerRadius="1.5"
+                                                Background="#5C5C5C" HorizontalAlignment="Left"/>
+                                    </StackPanel>
+                                </Border>
+                                <TextBlock Text="{loc:T Settings.EditorialLight}" FontSize="12"
+                                           HorizontalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+
+                        <!-- Editorial (dark) -->
+                        <Button Classes="theme-btn"
+                                Classes.active="{Binding IsEditorialDarkTheme}"
+                                Command="{Binding SetEditorialDarkThemeCommand}">
+                            <StackPanel Spacing="8" HorizontalAlignment="Center">
+                                <Border Width="64" Height="40" CornerRadius="6"
+                                        Background="#0F0F0F"
+                                        BorderBrush="#2A2A2A" BorderThickness="1">
+                                    <StackPanel Margin="6,5" Spacing="3">
+                                        <Border Height="3" Width="30" CornerRadius="1.5"
+                                                Background="#D63A2E" HorizontalAlignment="Left"/>
+                                        <Border Height="3" Width="20" CornerRadius="1.5"
+                                                Background="#2B66D9" HorizontalAlignment="Left"/>
+                                        <Border Height="3" Width="36" CornerRadius="1.5"
+                                                Background="#A3A3A3" HorizontalAlignment="Left"/>
+                                    </StackPanel>
+                                </Border>
+                                <TextBlock Text="{loc:T Settings.EditorialDark}" FontSize="12"
+                                           HorizontalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+
+                        <!-- Glass (light) -->
+                        <Button Classes="theme-btn"
+                                Classes.active="{Binding IsGlassLightTheme}"
+                                Command="{Binding SetGlassLightThemeCommand}">
+                            <StackPanel Spacing="8" HorizontalAlignment="Center">
+                                <Border Width="64" Height="40" CornerRadius="6"
+                                        Background="#EEF0F5"
+                                        BorderBrush="#D5D9E3" BorderThickness="1">
+                                    <StackPanel Margin="6,5" Spacing="3">
+                                        <Border Height="3" Width="30" CornerRadius="1.5"
+                                                Background="#2F6ACB" HorizontalAlignment="Left"/>
+                                        <Border Height="3" Width="20" CornerRadius="1.5"
+                                                Background="#BFC5D3" HorizontalAlignment="Left"/>
+                                        <Border Height="3" Width="36" CornerRadius="1.5"
+                                                Background="#FFFFFF" HorizontalAlignment="Left"/>
+                                    </StackPanel>
+                                </Border>
+                                <TextBlock Text="{loc:T Settings.GlassLight}" FontSize="12"
+                                           HorizontalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+
+                        <!-- Glass (dark) -->
+                        <Button Classes="theme-btn"
+                                Classes.active="{Binding IsGlassDarkTheme}"
+                                Command="{Binding SetGlassDarkThemeCommand}">
+                            <StackPanel Spacing="8" HorizontalAlignment="Center">
+                                <Border Width="64" Height="40" CornerRadius="6"
+                                        Background="#2A2D38"
+                                        BorderBrush="#3E4250" BorderThickness="1">
+                                    <StackPanel Margin="6,5" Spacing="3">
+                                        <Border Height="3" Width="30" CornerRadius="1.5"
+                                                Background="#2F6ACB" HorizontalAlignment="Left"/>
+                                        <Border Height="3" Width="20" CornerRadius="1.5"
+                                                Background="#8A8F9E" HorizontalAlignment="Left"/>
+                                        <Border Height="3" Width="36" CornerRadius="1.5"
+                                                Background="#4A4E5A" HorizontalAlignment="Left"/>
+                                    </StackPanel>
+                                </Border>
+                                <TextBlock Text="{loc:T Settings.GlassDark}" FontSize="12"
+                                           HorizontalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+
                         <!-- User-created themes -->
                         <ItemsControl ItemsSource="{Binding CustomThemes}">
                             <ItemsControl.ItemsPanel>

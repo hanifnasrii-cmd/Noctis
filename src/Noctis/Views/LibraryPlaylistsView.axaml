@@ -140,7 +140,7 @@
                                             <!-- Layer 1: Fallback playlist icon -->
                                             <PathIcon Data="{StaticResource PlaylistsIcon}"
                                                       Width="48" Height="48"
-                                                      Foreground="#4DFFFFFF"
+                                                      Foreground="{DynamicResource TertiaryTextBrush}"
                                                       HorizontalAlignment="Center"
                                                       VerticalAlignment="Center"
                                                       IsVisible="{Binding ShowFallbackIcon}" />

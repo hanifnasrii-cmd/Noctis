@@ -299,6 +299,9 @@ public partial class MainWindow : Window
         _liquidGlassOverlay = new ResourceDictionary
         {
             ["AppMainBackground"] = new SolidColorBrush(main, 0.35),
+            // The window root paints AppWindowBackgroundBrush (a gradient on some themes);
+            // while glass is on it goes translucent with the content surface.
+            ["AppWindowBackgroundBrush"] = new SolidColorBrush(main, 0.35),
             ["AppSidebarBackground"] = new SolidColorBrush(sidebar, 0.55),
             // Accent action buttons deliberately keep their solid accent fill: frosting
             // them (2026-08-06) read as washed-out, muddy buttons and was reverted 09-07.

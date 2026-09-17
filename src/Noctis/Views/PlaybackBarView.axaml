@@ -453,7 +453,7 @@
                  Border's 12px padding so the fill covers the whole pill as before. -->
             <controls:GlassPanel CornerRadius="999" Margin="-12,0" Padding="12,0" BlurRadius="14">
               <controls:GlassPanel.Background>
-                <SolidColorBrush Color="#202020" Opacity="{Binding IslandBackgroundOpacity}"/>
+                <SolidColorBrush Color="{DynamicResource IslandBackgroundColor}" Opacity="{Binding IslandBackgroundOpacity}"/>
               </controls:GlassPanel.Background>
             <Panel>
             <Grid HorizontalAlignment="Center">

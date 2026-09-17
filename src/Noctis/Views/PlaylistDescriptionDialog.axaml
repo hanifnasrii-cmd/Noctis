@@ -96,7 +96,7 @@
                                 <Border Background="{Binding PlaylistColor, Converter={StaticResource HexColorConverter}}" />
                                 <PathIcon Data="{StaticResource PlaylistsIcon}"
                                           Width="56" Height="56"
-                                          Foreground="#4DFFFFFF"
+                                          Foreground="{DynamicResource TertiaryTextBrush}"
                                           HorizontalAlignment="Center"
                                           VerticalAlignment="Center"
                                           IsVisible="{Binding ShowFallbackIcon}" />

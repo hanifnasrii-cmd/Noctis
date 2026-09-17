@@ -586,7 +586,7 @@
                     <Button.Clip>
                         <EllipseGeometry Center="95,95" RadiusX="95" RadiusY="95" />
                     </Button.Clip>
-                    <Border Width="190" Height="190" CornerRadius="95" Background="#2E2E2E" ClipToBounds="True">
+                    <Border Width="190" Height="190" CornerRadius="95" Background="{DynamicResource ArtworkPlaceholderBackground}" ClipToBounds="True">
                         <Panel>
                             <Path Data="{StaticResource ArtistsIcon}" Stretch="Uniform"
                                   Fill="{DynamicResource SystemControlForegroundBaseHighBrush}" Height="52"

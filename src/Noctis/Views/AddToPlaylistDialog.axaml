@@ -203,7 +203,7 @@
                                                             CornerRadius="6" />
                                                     <PathIcon Data="{StaticResource PlaylistsIcon}"
                                                               Width="14" Height="14"
-                                                              Foreground="#80FFFFFF"
+                                                              Foreground="{DynamicResource SecondaryTextBrush}"
                                                               HorizontalAlignment="Center"
                                                               VerticalAlignment="Center"
                                                               IsVisible="{Binding ShowFallbackIcon}" />

@@ -128,6 +128,22 @@
                     <SolidColorBrush x:Key="SidebarSelectedBrush" Color="#545454" />
                     <SolidColorBrush x:Key="SidebarSelectedHoverBrush" Color="#626262" />
                     <SolidColorBrush x:Key="SidebarHoverBrush" Color="#20FFFFFF" />
+
+                    <!-- Keys introduced with the Haze / Editorial / Glass themes. Values here
+                         reproduce the literals the views used to carry, so Gray/Dark/Midnight
+                         render byte-identically; the new overlays give them real palettes. -->
+                    <SolidColorBrush x:Key="AppWindowBackgroundBrush" Color="#252525" />
+                    <Color x:Key="IslandBackgroundColor">#202020</Color>
+                    <SolidColorBrush x:Key="PrimaryTextBrush" Color="White" />
+                    <SolidColorBrush x:Key="SecondaryTextBrush" Color="#80FFFFFF" />
+                    <SolidColorBrush x:Key="TertiaryTextBrush" Color="#4DFFFFFF" />
+                    <SolidColorBrush x:Key="QueueDrawerBackground" Color="#E61C1C1C" />
+                    <SolidColorBrush x:Key="QueueDrawerForeground" Color="White" />
+                    <SolidColorBrush x:Key="InputOutlineBrush" Color="White" />
+                    <SolidColorBrush x:Key="TrackListMultiSelectBrush" Color="#3FFFFFFF" />
+                    <SolidColorBrush x:Key="ToggleTrackOffBrush" Color="#484C54" />
+                    <SolidColorBrush x:Key="ToggleKnobOffBrush" Color="White" />
+                    <SolidColorBrush x:Key="ArtworkPlaceholderBackground" Color="#2E2E2E" />
                 </ResourceDictionary>
 
                 <ResourceDictionary x:Key="Light">
@@ -253,6 +269,22 @@
                     <SolidColorBrush x:Key="SidebarSelectedBrush" Color="#545454" />
                     <SolidColorBrush x:Key="SidebarSelectedHoverBrush" Color="#D0D0D0" />
                     <SolidColorBrush x:Key="SidebarHoverBrush" Color="#20FFFFFF" />
+
+                    <!-- Keys introduced with the Haze / Editorial / Glass themes (see the Dark
+                         block). The Light theme keeps its current look, so the drawer, toggle
+                         and multi-select values stay the dark-tuned literals they were. -->
+                    <SolidColorBrush x:Key="AppWindowBackgroundBrush" Color="#FFFFFF" />
+                    <Color x:Key="IslandBackgroundColor">#202020</Color>
+                    <SolidColorBrush x:Key="PrimaryTextBrush" Color="Black" />
+                    <SolidColorBrush x:Key="SecondaryTextBrush" Color="#80FFFFFF" />
+                    <SolidColorBrush x:Key="TertiaryTextBrush" Color="#4DFFFFFF" />
+                    <SolidColorBrush x:Key="QueueDrawerBackground" Color="#E61C1C1C" />
+                    <SolidColorBrush x:Key="QueueDrawerForeground" Color="White" />
+                    <SolidColorBrush x:Key="InputOutlineBrush" Color="White" />
+                    <SolidColorBrush x:Key="TrackListMultiSelectBrush" Color="#3FFFFFFF" />
+                    <SolidColorBrush x:Key="ToggleTrackOffBrush" Color="#484C54" />
+                    <SolidColorBrush x:Key="ToggleKnobOffBrush" Color="White" />
+                    <SolidColorBrush x:Key="ArtworkPlaceholderBackground" Color="#2E2E2E" />
                 </ResourceDictionary>
             </ResourceDictionary.ThemeDictionaries>
 
@@ -1084,30 +1116,30 @@
         <Setter Property="RenderTransform" Value="scale(1)" />
     </Style>
 
-    <!-- Ctrl+Click multi-select highlight for track rows (gray background) -->
+    <!-- Ctrl+Click multi-select highlight for track rows (theme-keyed wash) -->
     <Style Selector="ListBox.track-list ListBoxItem.ctrl-selected">
-        <Setter Property="Background" Value="#3FFFFFFF" />
+        <Setter Property="Background" Value="{DynamicResource TrackListMultiSelectBrush}" />
     </Style>
     <Style Selector="ListBox.track-list ListBoxItem.ctrl-selected:nth-child(2n)">
-        <Setter Property="Background" Value="#3FFFFFFF" />
+        <Setter Property="Background" Value="{DynamicResource TrackListMultiSelectBrush}" />
     </Style>
     <Style Selector="ListBox.track-list ListBoxItem.ctrl-selected:pointerover">
-        <Setter Property="Background" Value="#3FFFFFFF" />
+        <Setter Property="Background" Value="{DynamicResource TrackListMultiSelectBrush}" />
     </Style>
     <Style Selector="ListBox.track-list ListBoxItem.ctrl-selected:nth-child(2n):pointerover">
-        <Setter Property="Background" Value="#3FFFFFFF" />
+        <Setter Property="Background" Value="{DynamicResource TrackListMultiSelectBrush}" />
     </Style>
     <Style Selector="ListBox.track-list ListBoxItem.ctrl-selected /template/ ContentPresenter">
-        <Setter Property="Background" Value="#3FFFFFFF" />
+        <Setter Property="Background" Value="{DynamicResource TrackListMultiSelectBrush}" />
     </Style>
     <Style Selector="ListBox.track-list ListBoxItem.ctrl-selected:pointerover /template/ ContentPresenter">
-        <Setter Property="Background" Value="#3FFFFFFF" />
+        <Setter Property="Background" Value="{DynamicResource TrackListMultiSelectBrush}" />
     </Style>
     <Style Selector="ListBox.track-list ListBoxItem.ctrl-selected:selected">
-        <Setter Property="Background" Value="#3FFFFFFF" />
+        <Setter Property="Background" Value="{DynamicResource TrackListMultiSelectBrush}" />
     </Style>
     <Style Selector="ListBox.track-list ListBoxItem.ctrl-selected:selected /template/ ContentPresenter">
-        <Setter Property="Background" Value="#3FFFFFFF" />
+        <Setter Property="Background" Value="{DynamicResource TrackListMultiSelectBrush}" />
     </Style>
 
     <!-- Generic pill-shaped button (fully rounded) -->
@@ -1312,20 +1344,20 @@
         <Setter Property="BorderThickness" Value="0"/>
     </Style>
 
-    <!-- Global crisp input outline: white 1.5px outline, focus turns #E74856 -->
+    <!-- Global crisp input outline: theme-keyed 1.5px outline, focus turns accent -->
     <Style Selector="TextBox.crisp-input">
         <Setter Property="BorderThickness" Value="1.5" />
-        <Setter Property="BorderBrush" Value="White" />
+        <Setter Property="BorderBrush" Value="{DynamicResource InputOutlineBrush}" />
         <Setter Property="UseLayoutRounding" Value="True" />
     </Style>
     <Style Selector="TextBox.crisp-input /template/ Border#PART_BorderElement">
         <Setter Property="BorderThickness" Value="1.5" />
-        <Setter Property="BorderBrush" Value="White" />
+        <Setter Property="BorderBrush" Value="{DynamicResource InputOutlineBrush}" />
         <Setter Property="UseLayoutRounding" Value="True" />
     </Style>
     <Style Selector="TextBox.crisp-input:pointerover /template/ Border#PART_BorderElement">
         <Setter Property="BorderThickness" Value="1.5" />
-        <Setter Property="BorderBrush" Value="White" />
+        <Setter Property="BorderBrush" Value="{DynamicResource InputOutlineBrush}" />
     </Style>
     <Style Selector="TextBox.crisp-input:focus /template/ Border#PART_BorderElement">
         <Setter Property="BorderThickness" Value="1.5" />

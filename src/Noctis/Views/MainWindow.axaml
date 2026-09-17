@@ -14,7 +14,7 @@
         Width="1280" Height="800"
         MinWidth="780" MinHeight="500"
         WindowStartupLocation="CenterScreen"
-        Background="{DynamicResource AppMainBackground}"
+        Background="{DynamicResource AppWindowBackgroundBrush}"
         DragDrop.AllowDrop="True">
 
     <Window.Resources>
@@ -711,8 +711,8 @@
                         Margin="0,8,8,8"
                         CornerRadius="16"
                         ClipToBounds="True"
-                        Background="#E61C1C1C"
-                        TextElement.Foreground="White"
+                        Background="{DynamicResource QueueDrawerBackground}"
+                        TextElement.Foreground="{DynamicResource QueueDrawerForeground}"
                         IsVisible="False"
                         Opacity="0"
                         RenderTransformOrigin="100%,50%"
@@ -785,11 +785,11 @@
                             <TextBlock Text="{loc:T Main.Queue}"
                                        FontSize="18"
                                        FontWeight="Bold"
-                                       Foreground="White" />
+                                       Foreground="{DynamicResource QueueDrawerForeground}" />
                             <TextBlock Text="{Binding Player.UpNext.Count, StringFormat='&#x2022; {0}'}"
                                        FontSize="15"
                                        FontWeight="SemiBold"
-                                       Foreground="White"
+                                       Foreground="{DynamicResource QueueDrawerForeground}"
                                        Opacity="0.5"
                                        VerticalAlignment="Center"
                                        Margin="0,2,0,0"
@@ -916,7 +916,7 @@
                                                                Classes="one-line-explicit-title"
                                                                FontSize="13"
                                                                FontWeight="SemiBold"
-                                                               Foreground="White"
+                                                               Foreground="{DynamicResource QueueDrawerForeground}"
                                                                MaxWidth="165" />
                                                     <Border Grid.Column="1"
                                                             Classes="explicit-badge compact"
@@ -941,7 +941,7 @@
                                                         <TextBlock Text="{Binding ArtistDisplay}"
                                                                    FontSize="11"
                                                                    FontWeight="SemiBold"
-                                                                   Foreground="White"
+                                                                   Foreground="{DynamicResource QueueDrawerForeground}"
                                                                    Opacity="0.55"
                                                                    TextTrimming="CharacterEllipsis"
                                                                    MaxLines="1" />
@@ -954,7 +954,7 @@
                                                        x:Name="QueueRowNumber"
                                                        FontSize="14"
                                                        FontWeight="SemiBold"
-                                                       Foreground="White"
+                                                       Foreground="{DynamicResource QueueDrawerForeground}"
                                                        Opacity="0.4"
                                                        MinWidth="20"
                                                        TextAlignment="Right"

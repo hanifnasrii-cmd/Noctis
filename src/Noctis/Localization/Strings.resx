@@ -162,6 +162,12 @@
   <data name="Settings.Gray" xml:space="preserve"><value>Gray</value><comment>Text in SettingsView.axaml</comment></data>
   <data name="Settings.Midnight" xml:space="preserve"><value>Midnight</value><comment>Text in SettingsView.axaml</comment></data>
   <data name="Settings.Light" xml:space="preserve"><value>Light</value><comment>Text in SettingsView.axaml</comment></data>
+  <data name="Settings.HazeLight" xml:space="preserve"><value>Haze (light)</value><comment>Text in SettingsView.axaml</comment></data>
+  <data name="Settings.HazeDark" xml:space="preserve"><value>Haze (dark)</value><comment>Text in SettingsView.axaml</comment></data>
+  <data name="Settings.EditorialLight" xml:space="preserve"><value>Editorial (light)</value><comment>Text in SettingsView.axaml</comment></data>
+  <data name="Settings.EditorialDark" xml:space="preserve"><value>Editorial (dark)</value><comment>Text in SettingsView.axaml</comment></data>
+  <data name="Settings.GlassLight" xml:space="preserve"><value>Glass (light)</value><comment>Text in SettingsView.axaml</comment></data>
+  <data name="Settings.GlassDark" xml:space="preserve"><value>Glass (dark)</value><comment>Text in SettingsView.axaml</comment></data>
   <data name="Settings.Edit" xml:space="preserve"><value>Edit</value><comment>Header in SettingsView.axaml</comment></data>
   <data name="Settings.Delete" xml:space="preserve"><value>Delete</value><comment>Header in SettingsView.axaml</comment></data>
   <data name="Settings.CreateCustomThemeTip" xml:space="preserve"><value>Create custom theme</value><comment>ToolTip.Tip in SettingsView.axaml</comment></data>
