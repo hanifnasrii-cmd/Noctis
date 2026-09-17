@@ -59,7 +59,9 @@
 
         <Button.Flyout>
             <Flyout Placement="Bottom" ShowMode="Standard">
-                <Border Padding="16" CornerRadius="18"
+                <!-- Named so code-behind can reach the FlyoutPresenter above it: the presenter
+                     is what plays the Settings-style open/close fade+scale (see the .cs). -->
+                <Border x:Name="PickerBody" Padding="16" CornerRadius="18"
                         Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}"
                         MinWidth="392">
                     <StackPanel Spacing="14">

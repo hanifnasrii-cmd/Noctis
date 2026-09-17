@@ -1,8 +1,14 @@
 using System;
+using System.ComponentModel;
 using Avalonia;
+using Avalonia.Animation;
+using Avalonia.Animation.Easings;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Media;
+using Avalonia.Media.Transformation;
+using Avalonia.Threading;
+using Avalonia.VisualTree;
 
 namespace Noctis.Controls;
 
@@ -51,6 +57,16 @@ public partial class ColorPickerFlyout : UserControl
     private double _value = 1;
     private bool _suppressHexEcho;
 
+    // Open/close motion: the same 140ms CubicEaseOut fade + 0.96 scale the Settings
+    // card plays (MainWindow SettingsCard), so the picker feels like part of that dialog.
+    private static readonly TimeSpan MotionDuration = TimeSpan.FromMilliseconds(140);
+    private static readonly TransformOperations Shrunk = TransformOperations.Parse("scale(0.96)");
+    private static readonly TransformOperations Rest = TransformOperations.Parse("scale(1)");
+    /// <summary>A close was cancelled so the fade-out can play; the next Closing is the real one.</summary>
+    private bool _closeHeld;
+    /// <summary>The popup body being animated (the FlyoutPresenter), while the flyout is open.</summary>
+    private Control? _motionBody;
+
     public ColorPickerFlyout()
     {
         InitializeComponent();
@@ -58,8 +74,70 @@ public partial class ColorPickerFlyout : UserControl
         HueTrack.SizeChanged += (_, _) => UpdateVisuals();
         HexInput.LostFocus += OnHexInputLostFocus;
         HexInput.KeyDown += OnHexInputKeyDown;
+        if (SwatchButton.Flyout is Flyout flyout)
+        {
+            flyout.Opened += OnFlyoutOpened;
+            flyout.Closing += OnFlyoutClosing;
+        }
         SyncFromHex(Hex);
         UpdateVisuals();
+    }
+
+    private static Transitions BuildMotion() => new()
+    {
+        new DoubleTransition { Property = OpacityProperty, Duration = MotionDuration, Easing = new CubicEaseOut() },
+        new TransformOperationsTransition { Property = RenderTransformProperty, Duration = MotionDuration, Easing = new CubicEaseOut() },
+    };
+
+    /// <summary>Start state is written with transitions off, the rest state posted at Render
+    /// priority so the transitions carry it in (same recipe as the Settings overlay).</summary>
+    private void OnFlyoutOpened(object? sender, EventArgs e)
+    {
+        var body = PickerBody.FindAncestorOfType<FlyoutPresenter>() ?? (Control)PickerBody;
+        if (!ReferenceEquals(_motionBody, body))
+        {
+            _motionBody = body;
+            body.PropertyChanged += OnMotionBodyPropertyChanged;
+        }
+        body.Transitions = null;
+        body.RenderTransformOrigin = RelativePoint.Center;
+        body.Opacity = 0;
+        body.RenderTransform = Shrunk;
+        body.Transitions = BuildMotion();
+        Dispatcher.UIThread.Post(() =>
+        {
+            body.Opacity = 1;
+            body.RenderTransform = Rest;
+        }, DispatcherPriority.Render);
+    }
+
+    /// <summary>Every close (X, Escape, light dismiss) arrives here cancellable. The first
+    /// pass is cancelled and plays the mirror of the open; the real Hide fires once the
+    /// fade lands on 0 (see <see cref="OnMotionBodyPropertyChanged"/>).</summary>
+    private void OnFlyoutClosing(object? sender, CancelEventArgs e)
+    {
+        if (_closeHeld)
+        {
+            _closeHeld = false;
+            return;
+        }
+        if (_motionBody is not { } body) return;
+
+        e.Cancel = true;
+        _closeHeld = true;
+        body.Transitions = BuildMotion();
+        Dispatcher.UIThread.Post(() =>
+        {
+            body.Opacity = 0;
+            body.RenderTransform = Shrunk;
+        }, DispatcherPriority.Render);
+    }
+
+    private void OnMotionBodyPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
+    {
+        if (e.Property != OpacityProperty || !_closeHeld) return;
+        if (sender is not Control body || body.Opacity > 0.001) return;
+        if (SwatchButton.Flyout is Flyout flyout) flyout.Hide();
     }
 
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
