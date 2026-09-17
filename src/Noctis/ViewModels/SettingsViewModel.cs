@@ -345,12 +345,8 @@ public partial class SettingsViewModel : ViewModelBase
     [ObservableProperty] private bool _isLightTheme;
     [ObservableProperty] private bool _isSystemTheme;
     [ObservableProperty] private bool _isMidnightTheme;
-    [ObservableProperty] private bool _isHazeLightTheme;
-    [ObservableProperty] private bool _isHazeDarkTheme;
-    [ObservableProperty] private bool _isEditorialLightTheme;
-    [ObservableProperty] private bool _isEditorialDarkTheme;
-    [ObservableProperty] private bool _isGlassLightTheme;
-    [ObservableProperty] private bool _isGlassDarkTheme;
+    [ObservableProperty] private bool _isInkTheme;
+    [ObservableProperty] private bool _isSmokeTheme;
 
     /// <summary>User-created themes shown in the Themes row alongside the built-ins.</summary>
     public ObservableCollection<CustomThemeTile> CustomThemes { get; } = new();
@@ -2174,12 +2170,8 @@ public partial class SettingsViewModel : ViewModelBase
         else if (IsDarkTheme) _settings.Theme = "Dark";
         else if (IsLightTheme) _settings.Theme = "Light";
         else if (IsMidnightTheme) _settings.Theme = "Midnight";
-        else if (IsHazeLightTheme) _settings.Theme = "HazeLight";
-        else if (IsHazeDarkTheme) _settings.Theme = "HazeDark";
-        else if (IsEditorialLightTheme) _settings.Theme = "EditorialLight";
-        else if (IsEditorialDarkTheme) _settings.Theme = "EditorialDark";
-        else if (IsGlassLightTheme) _settings.Theme = "GlassLight";
-        else if (IsGlassDarkTheme) _settings.Theme = "GlassDark";
+        else if (IsInkTheme) _settings.Theme = "Ink";
+        else if (IsSmokeTheme) _settings.Theme = "Smoke";
         else _settings.Theme = "System";
 
         if (!string.IsNullOrEmpty(ActiveCustomThemeId)) _settings.Theme = "Custom:" + ActiveCustomThemeId;
@@ -2743,12 +2735,8 @@ public partial class SettingsViewModel : ViewModelBase
     [RelayCommand] private void SetLightTheme() => ApplyTheme("Light");
     [RelayCommand] private void SetSystemTheme() => ApplyTheme("System");
     [RelayCommand] private void SetMidnightTheme() => ApplyTheme("Midnight");
-    [RelayCommand] private void SetHazeLightTheme() => ApplyTheme("HazeLight");
-    [RelayCommand] private void SetHazeDarkTheme() => ApplyTheme("HazeDark");
-    [RelayCommand] private void SetEditorialLightTheme() => ApplyTheme("EditorialLight");
-    [RelayCommand] private void SetEditorialDarkTheme() => ApplyTheme("EditorialDark");
-    [RelayCommand] private void SetGlassLightTheme() => ApplyTheme("GlassLight");
-    [RelayCommand] private void SetGlassDarkTheme() => ApplyTheme("GlassDark");
+    [RelayCommand] private void SetInkTheme() => ApplyTheme("Ink");
+    [RelayCommand] private void SetSmokeTheme() => ApplyTheme("Smoke");
 
     [RelayCommand]
     private void ApplyCustomTheme(string id)
@@ -2969,18 +2957,14 @@ public partial class SettingsViewModel : ViewModelBase
         IsLightTheme = themeKey == "Light";
         IsSystemTheme = themeKey == "System";
         IsMidnightTheme = themeKey == "Midnight";
-        IsHazeLightTheme = themeKey == "HazeLight";
-        IsHazeDarkTheme = themeKey == "HazeDark";
-        IsEditorialLightTheme = themeKey == "EditorialLight";
-        IsEditorialDarkTheme = themeKey == "EditorialDark";
-        IsGlassLightTheme = themeKey == "GlassLight";
-        IsGlassDarkTheme = themeKey == "GlassDark";
+        IsInkTheme = themeKey == "Ink";
+        IsSmokeTheme = themeKey == "Smoke";
 
         if (themeKey == "__Custom") return; // custom-theme active: all built-in flags stay false
 
         // Default-safety: if no flag matched, fall back to Gray.
         if (!IsGrayTheme && !IsDarkTheme && !IsLightTheme && !IsSystemTheme && !IsMidnightTheme
-            && !IsHazeLightTheme && !IsHazeDarkTheme && !IsEditorialLightTheme && !IsEditorialDarkTheme && !IsGlassLightTheme && !IsGlassDarkTheme)
+            && !IsInkTheme && !IsSmokeTheme)
             IsGrayTheme = true;
     }
 
@@ -3004,12 +2988,8 @@ public partial class SettingsViewModel : ViewModelBase
         if (IsLightTheme) return "Light";
         if (IsDarkTheme) return "Dark";
         if (IsMidnightTheme) return "Midnight";
-        if (IsHazeLightTheme) return "HazeLight";
-        if (IsHazeDarkTheme) return "HazeDark";
-        if (IsEditorialLightTheme) return "EditorialLight";
-        if (IsEditorialDarkTheme) return "EditorialDark";
-        if (IsGlassLightTheme) return "GlassLight";
-        if (IsGlassDarkTheme) return "GlassDark";
+        if (IsInkTheme) return "Ink";
+        if (IsSmokeTheme) return "Smoke";
         if (IsSystemTheme) return IsSystemDarkMode() ? "Gray" : "Light";
         return "Gray";
     }

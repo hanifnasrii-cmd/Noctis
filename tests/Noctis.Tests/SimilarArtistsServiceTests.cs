@@ -28,6 +28,21 @@ public class SimilarArtistsServiceTests
         Assert.Equal(0, SimilarArtistsService.PickBestMatch(doc.RootElement, "Nobody"));
     }
 
+    /// <summary>Real "Arcángel" search: the 1.7M-fan account is spelled "Arcangel".</summary>
+    [Fact]
+    public void PickBestMatch_IgnoresDiacritics()
+    {
+        using var doc = JsonDocument.Parse("""
+        {"data":[
+          {"id":14033577,"name":"Arcángel","nb_fan":1683},
+          {"id":9216716,"name":"Arcángel & DJ Luian","nb_fan":3589},
+          {"id":5536564,"name":"Arcangel","nb_fan":1704853}
+        ]}
+        """);
+        Assert.Equal(5536564, SimilarArtistsService.PickBestMatch(doc.RootElement, "Arcángel"));
+        Assert.Equal(5536564, SimilarArtistsService.PickBestMatch(doc.RootElement, "arcangel"));
+    }
+
     [Fact]
     public void ParseRelated_KeepsOrder_PrefersBigPicture_SkipsPlaceholders()
     {

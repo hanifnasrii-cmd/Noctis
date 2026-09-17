@@ -957,6 +957,40 @@
                                                    TextAlignment="Center"
                                                    Foreground="{DynamicResource IslandIconFill}" />
                                     </Border>
+                                    <!-- Ticker loop copy (09-17): the same title + badge one gap behind,
+                                         so the head is already sliding in from the right while the tail
+                                         leaves on the left — the viewport is never blank. Margin absorbs
+                                         the panel spacing (48 − 6); code-behind shows it only while the
+                                         marquee owns the title. -->
+                                    <StackPanel x:Name="TrackTitleLoopCopy"
+                                                Orientation="Horizontal"
+                                                Spacing="6"
+                                                Margin="42,0,0,0"
+                                                IsVisible="False">
+                                        <TextBlock Text="{Binding CurrentTrack, Converter={StaticResource DisplayTitle}, FallbackValue=''}"
+                                                   Classes="one-line-explicit-title"
+                                                   FontSize="12"
+                                                   FontWeight="SemiBold"
+                                                   MaxLines="1"
+                                                   Margin="1,0,2,0"
+                                                   VerticalAlignment="Center"
+                                                   Foreground="{DynamicResource IslandForeground}" />
+                                        <Border Background="{DynamicResource IslandExplicitBadge}"
+                                                CornerRadius="2"
+                                                Padding="4,0"
+                                                Height="14"
+                                                VerticalAlignment="Center"
+                                                DataContext="{Binding CurrentTrack}"
+                                                x:DataType="m:Track"
+                                                IsVisible="{Binding IsExplicit, FallbackValue=False}">
+                                            <TextBlock Text="E"
+                                                       FontSize="9"
+                                                       FontWeight="Bold"
+                                                       VerticalAlignment="Center"
+                                                       TextAlignment="Center"
+                                                       Foreground="{DynamicResource IslandIconFill}" />
+                                        </Border>
+                                    </StackPanel>
                                 </StackPanel>
                                 </Button>
                             </Border>
@@ -998,6 +1032,20 @@
                                                 </TextBlock.RenderTransform>
                                             </TextBlock>
                                         </Border>
+                                        <!-- Ticker loop copy (09-17), see TrackTitleLoopCopy. Margin =
+                                             48 − the hover border's 3px padding, so it sits one gap after
+                                             the text; it rides the same offset as the text. -->
+                                        <TextBlock x:Name="ArtistNameLoopCopy"
+                                                   Text="{Binding CurrentTrack, Converter={StaticResource DisplayArtist}, FallbackValue=''}"
+                                                   FontSize="10"
+                                                   MaxLines="1"
+                                                   Foreground="{DynamicResource AccentColorBrush}"
+                                                   Margin="45,1,0,0"
+                                                   IsVisible="False">
+                                            <TextBlock.RenderTransform>
+                                                <TranslateTransform X="0" />
+                                            </TextBlock.RenderTransform>
+                                        </TextBlock>
                                     </StackPanel>
                                 </Button>
                             </Border>

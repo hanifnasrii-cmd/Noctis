@@ -1,5 +1,6 @@
 using Avalonia.Headless.XUnit;
 using Avalonia.Media;
+using Avalonia.Styling;
 using Noctis.Models;
 using Noctis.Services;
 using Noctis.ViewModels;
@@ -115,12 +116,49 @@ public class AlbumPageTintTests
     [AvaloniaFact]
     public void NoTint_ResetsToThemeDefaults()
     {
-        var vm = MakeVm();
-        vm.ApplyTint(Color.FromRgb(0xF6, 0xD5, 0xE0));
-        vm.ApplyTint(null);
-        Assert.Null(vm.BackgroundBrush);
-        Assert.False(vm.IsLightTint);
-        Assert.Same(Brushes.White, vm.PageForegroundBrush);
+        var app = Avalonia.Application.Current!;
+        var previous = app.RequestedThemeVariant;
+        try
+        {
+            app.RequestedThemeVariant = ThemeVariant.Dark;
+            var vm = MakeVm();
+            vm.ApplyTint(Color.FromRgb(0xF6, 0xD5, 0xE0));
+            vm.ApplyTint(null);
+            Assert.Null(vm.BackgroundBrush);
+            Assert.False(vm.IsLightTint);
+            Assert.Same(Brushes.White, vm.PageForegroundBrush);
+        }
+        finally
+        {
+            app.RequestedThemeVariant = previous;
+        }
+    }
+
+    /// <summary>Light theme, tint off: the page text was hard-coded white on a white
+    /// surface (album title, facts, description and every track row invisible, 09-17).</summary>
+    [AvaloniaFact]
+    public void NoTint_OnLightTheme_UsesDarkPageText()
+    {
+        var app = Avalonia.Application.Current!;
+        var previous = app.RequestedThemeVariant;
+        try
+        {
+            app.RequestedThemeVariant = ThemeVariant.Light;
+            var vm = MakeVm();
+            vm.ApplyTint(null);
+            Assert.Null(vm.BackgroundBrush);
+            Assert.False(vm.IsLightTint);
+            Assert.Equal(Color.FromRgb(0x11, 0x11, 0x11), ((SolidColorBrush)vm.PageForegroundBrush).Color);
+            Assert.Equal(Color.FromArgb(0x66, 0x00, 0x00, 0x00), ((SolidColorBrush)vm.PageSubtleForegroundBrush).Color);
+
+            // A dark cover tint still wins over the theme.
+            vm.ApplyTint(Color.FromRgb(0x2A, 0x1B, 0x14));
+            Assert.Same(Brushes.White, vm.PageForegroundBrush);
+        }
+        finally
+        {
+            app.RequestedThemeVariant = previous;
+        }
     }
 
     [AvaloniaFact]

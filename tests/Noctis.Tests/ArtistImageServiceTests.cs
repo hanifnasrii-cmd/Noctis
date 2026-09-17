@@ -149,7 +149,7 @@ public class ArtistImageServiceTests
             return ImageResponse(fill);
         });
 
-    private static string Sidecar(string url) => "v2\n" + url + "\n";
+    private static string Sidecar(string url) => "v3\n" + url + "\n";
 
     private static string SidecarUrl(string artworkDir, Guid id)
         => File.ReadAllLines(Path.Combine(artworkDir, $"{id}.src"))[1].Trim();
@@ -188,6 +188,89 @@ public class ArtistImageServiceTests
         Assert.Equal("https://images.example/real.jpg", handler.RequestedImageUrls.Single());
         Assert.Equal("https://images.example/real.jpg", SidecarUrl(ArtworkDir(persistence), artist.Id));
     }
+
+    /// <summary>Real Deezer response for "Arcángel" (09-17): the real account (1.7M fans,
+    /// id 5536564) is spelled "Arcangel", while an accent-exact duplicate has 1,683 fans.
+    /// An accent-exact tier picked the duplicate; names fold diacritics now.</summary>
+    [Fact]
+    public async Task FetchAndCacheAsync_MatchesNamesWithoutDiacritics()
+    {
+        using var persistence = new TestPersistenceService();
+        var handler = new StubHttpMessageHandler(request =>
+        {
+            var url = request.RequestUri!.ToString();
+            if (url.StartsWith("https://api.deezer.com/search/artist", StringComparison.Ordinal))
+                return JsonResponse("""
+                { "data": [
+                    { "id": 411188252, "name": "Arcangel", "nb_fan": 1, "nb_album": 15, "picture_xl": "https://images.example/one-fan.jpg" },
+                    { "id": 14033577, "name": "Arcángel", "nb_fan": 1683, "nb_album": 22, "picture_xl": "https://images.example/duplicate.jpg" },
+                    { "id": 9216716, "name": "Arcángel & DJ Luian", "nb_fan": 3589, "nb_album": 0, "picture_xl": "https://images.example/duo.jpg" },
+                    { "id": 5536564, "name": "Arcangel", "nb_fan": 1704853, "nb_album": 183, "picture_xl": "https://images.example/real.jpg" }
+                ] }
+                """);
+            return ImageResponse();
+        });
+        var service = new ArtistImageService(new HttpClient(handler), persistence);
+        var artist = new Artist { Id = Guid.NewGuid(), Name = "Arcángel" };
+
+        await service.FetchAndCacheAsync(new[] { artist });
+
+        Assert.Equal("https://images.example/real.jpg", handler.RequestedImageUrls.Single());
+        Assert.Equal(1704853, await service.GetFanCountAsync(artist.Id, artist.Name));
+    }
+
+    /// <summary>Same-name accounts are verified against the library: the account whose
+    /// Deezer top tracks contain the titles the library holds for the artist wins even
+    /// when another account of that name has far more fans.</summary>
+    [Fact]
+    public async Task FetchAndCacheAsync_SameNameAccounts_PicksTheOneWhoseTopTracksMatchTheLibrary()
+    {
+        using var persistence = new TestPersistenceService();
+        var requestedTops = new List<string>();
+        var handler = new StubHttpMessageHandler(request =>
+        {
+            var url = request.RequestUri!.ToString();
+            if (url.StartsWith("https://api.deezer.com/search/artist", StringComparison.Ordinal))
+                return JsonResponse("""
+                { "data": [
+                    { "id": 1, "name": "Nova", "nb_fan": 900000, "nb_album": 12, "picture_xl": "https://images.example/popstar.jpg" },
+                    { "id": 2, "name": "Nova", "nb_fan": 4000, "nb_album": 3, "picture_xl": "https://images.example/indie.jpg" },
+                    { "id": 3, "name": "Nova", "nb_fan": 7, "nb_album": 1, "picture_xl": "https://images.example/nobody.jpg" }
+                ] }
+                """);
+            if (url.StartsWith("https://api.deezer.com/artist/", StringComparison.Ordinal))
+            {
+                requestedTops.Add(url);
+                if (url.Contains("/artist/1/"))
+                    return JsonResponse("""{ "data": [ { "title_short": "Neon Nights", "title": "Neon Nights" }, { "title_short": "Runaway", "title": "Runaway" } ] }""");
+                if (url.Contains("/artist/2/"))
+                    return JsonResponse("""{ "data": [ { "title_short": "Café Con Leche", "title": "Café Con Leche (feat. Someone)" }, { "title_short": "Sin Ti", "title": "Sin Ti" } ] }""");
+                return JsonResponse("""{ "data": [] }""");
+            }
+            return ImageResponse();
+        });
+        var library = new FakeLibraryService();
+        library.TrackList.Add(new Track { Id = Guid.NewGuid(), Title = "Cafe con Leche (feat. Someone)", Artist = "Nova", AlbumArtist = "Nova" });
+        library.TrackList.Add(new Track { Id = Guid.NewGuid(), Title = "Sin Ti - Remix", Artist = "Nova & Friend", AlbumArtist = "Nova" });
+        library.TrackList.Add(new Track { Id = Guid.NewGuid(), Title = "Runaway", Artist = "Somebody Else", AlbumArtist = "Somebody Else" });
+        var service = new ArtistImageService(new HttpClient(handler), persistence, library);
+        var artist = new Artist { Id = Guid.NewGuid(), Name = "Nova" };
+
+        await service.FetchAndCacheAsync(new[] { artist });
+
+        Assert.Equal("https://images.example/indie.jpg", handler.RequestedImageUrls.Single());
+        Assert.Equal(4000, await service.GetFanCountAsync(artist.Id, artist.Name));
+        // Every same-name account was checked (fan order), nothing beyond the tier.
+        Assert.Equal(3, requestedTops.Count);
+    }
+
+    [Theory]
+    [InlineData("Me Acostumbré (feat. Bad Bunny)", "meacostumbre")]
+    [InlineData("Sin Ti - Remix", "sinti")]
+    [InlineData("Pa' Que La Pases Bien", "paquelapasesbien")]
+    [InlineData("  ", "")]
+    public void TitleKey_FoldsAccentsPunctuationAndSuffixes(string title, string expected)
+        => Assert.Equal(expected, ArtistImageService.TitleKey(title));
 
     [Fact]
     public async Task FetchAndCacheAsync_OldFormatSidecarIsRecheckedImmediately()

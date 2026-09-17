@@ -129,7 +129,7 @@
                     <SolidColorBrush x:Key="SidebarSelectedHoverBrush" Color="#626262" />
                     <SolidColorBrush x:Key="SidebarHoverBrush" Color="#20FFFFFF" />
 
-                    <!-- Keys introduced with the Haze / Editorial / Glass themes. Values here
+                    <!-- Keys introduced with the Ink / Smoke themes. Values here
                          reproduce the literals the views used to carry, so Gray/Dark/Midnight
                          render byte-identically; the new overlays give them real palettes. -->
                     <SolidColorBrush x:Key="AppWindowBackgroundBrush" Color="#252525" />
@@ -270,7 +270,7 @@
                     <SolidColorBrush x:Key="SidebarSelectedHoverBrush" Color="#D0D0D0" />
                     <SolidColorBrush x:Key="SidebarHoverBrush" Color="#20FFFFFF" />
 
-                    <!-- Keys introduced with the Haze / Editorial / Glass themes (see the Dark
+                    <!-- Keys introduced with the Ink / Smoke themes (see the Dark
                          block). The Light theme keeps its current look, so the drawer, toggle
                          and multi-select values stay the dark-tuned literals they were. -->
                     <SolidColorBrush x:Key="AppWindowBackgroundBrush" Color="#FFFFFF" />
@@ -1223,6 +1223,17 @@
                     </TransformOperationsTransition.Easing>
                 </TransformOperationsTransition>
             </Transitions>
+        </Setter>
+    </Style>
+
+    <!-- A theme switch re-resolves every Button's Background; lerping a translucent white
+         into an opaque fill (Gray's #18FFFFFF card → Ink's #1C1C1C) passes through a much
+         lighter grey and read as a white flash on the Home tiles. App.SetTheme puts
+         theme-switching on the main window for the swap so it lands in one frame
+         (HomeTileThemeSwitchTests). -->
+    <Style Selector=":is(Window).theme-switching Button">
+        <Setter Property="Transitions">
+            <Transitions/>
         </Setter>
     </Style>
 

@@ -10,6 +10,7 @@ using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
+using Noctis.Controls;
 using Noctis.ViewModels;
 using Avalonia.LogicalTree;
 using Noctis.Helpers;
@@ -31,11 +32,14 @@ public partial class PlaybackBarView : UserControl
     }
 
     private const double TrackTitleOverflowThreshold = 1.0;
-    private const double TrackTitleScrollSpeed = 26.0;
+    private const double TrackTitleScrollSpeed = 30.0;
     private const double TrackTitleBadgeSpacing = 6.0;
-    private const double TrackTitleBadgeTrailingPadding = 8.0;
-    /// <summary>Rest at the start position between laps — full loop out the left edge and
-    /// back in from the right, matching MarqueeTextBlock's behavior app-wide.</summary>
+    /// <summary>The hover border round the title / artist text adds 1 + 2 px of padding; the
+    /// loop copy sits after that border, so one lap is text + padding + gap.</summary>
+    private const double MarqueeTextPadding = 3.0;
+    /// <summary>Rest at the start position between laps. A lap is a ticker pass: the text and
+    /// its loop copy travel left until the copy stands where the text started, matching
+    /// MarqueeTextBlock's behavior app-wide (the viewport is never blank mid-lap).</summary>
     private static readonly TimeSpan TrackTitleRestPause = TimeSpan.FromSeconds(7);
     // Frame-clock driven (TopLevel.RequestAnimationFrame), NOT a DispatcherTimer: a 16 ms
     // timer defaults to Background priority (starved by layout/render work) and beats
@@ -47,8 +51,8 @@ public partial class PlaybackBarView : UserControl
     private int _marqueeResumeGeneration;
     private PlayerViewModel? _observedPlayerViewModel;
     private double _trackTitleOverflow;
-    private double _trackTitleTextWidth;
-    private double _trackTitleViewportWidth;
+    /// <summary>Distance from the title's start to its loop copy's start.</summary>
+    private double _trackTitleLapDistance;
     private double _trackTitleOffset;
     private double _trackTitlePauseRemainingMs = TrackTitleRestPause.TotalMilliseconds;
     private bool _trackTitleUpdateScheduled;
@@ -58,8 +62,7 @@ public partial class PlaybackBarView : UserControl
 
     // Artist name marquee state (syncs with title marquee via same timer)
     private double _artistNameOverflow;
-    private double _artistNameTextWidth;
-    private double _artistNameViewportWidth;
+    private double _artistNameLapDistance;
     private double _artistNameOffset;
     private double _artistNamePauseRemainingMs = TrackTitleRestPause.TotalMilliseconds;
     private bool _artistNameUpdateScheduled;
@@ -297,21 +300,16 @@ public partial class PlaybackBarView : UserControl
         if (textWidth <= 0)
             return;
 
-        var measuredOverflow = Math.Max(0, textWidth - viewportWidth);
-        var hasOverflow = measuredOverflow > TrackTitleOverflowThreshold;
-        _trackTitleOverflow = hasOverflow && ExplicitBadge.IsVisible
-            ? measuredOverflow + TrackTitleBadgeTrailingPadding
-            : measuredOverflow;
-        // Loop geometry: the badge's trailing pad must clear the edge before the wrap,
-        // same reason it's added to the overflow above.
-        _trackTitleTextWidth = hasOverflow && ExplicitBadge.IsVisible
-            ? textWidth + TrackTitleBadgeTrailingPadding
-            : textWidth;
-        _trackTitleViewportWidth = viewportWidth;
+        _trackTitleOverflow = Math.Max(0, textWidth - viewportWidth);
+        var hasOverflow = _trackTitleOverflow > TrackTitleOverflowThreshold;
+        // Loop geometry: the copy's panel sits after the hover border (text + 3px padding),
+        // the badge (already inside textWidth) and its own 42px margin + 6px spacing = 48.
+        _trackTitleLapDistance = textWidth + MarqueeTextPadding + MarqueeTextBlock.LoopGap;
         var shouldAnimate = vm.TrackTitleMarqueeEnabled && hasOverflow;
         // Edge fade only while the marquee owns the title: the static path ellipsizes
         // inside the viewport and never cuts a glyph.
         TrackTitleViewport.Classes.Set("overflow", shouldAnimate);
+        TrackTitleLoopCopy.IsVisible = shouldAnimate;
         if (!shouldAnimate)
         {
             ApplyTrackTitleStaticPresentation(hasOverflow, viewportWidth);
@@ -321,8 +319,8 @@ public partial class PlaybackBarView : UserControl
         SetTrackTitleWidth(double.NaN);
 
         // Keep the phase across benign re-measures; reset when asked or out of the
-        // loop's valid range (-textWidth, viewportWidth].
-        if (resetAnimation || _trackTitleOffset < -_trackTitleTextWidth || _trackTitleOffset > _trackTitleViewportWidth)
+        // lap's valid range (-lap, 0].
+        if (resetAnimation || _trackTitleOffset < -_trackTitleLapDistance || _trackTitleOffset > 0)
         {
             _trackTitlePauseRemainingMs = TrackTitleRestPause.TotalMilliseconds;
             SetTrackTitleOffset(0);
@@ -469,12 +467,12 @@ public partial class PlaybackBarView : UserControl
             // Tick title marquee
             if (titleActive)
                 TickMarquee(elapsedMs, _trackTitleOffset, ref _trackTitlePauseRemainingMs,
-                    _trackTitleTextWidth, _trackTitleViewportWidth, SetTrackTitleOffset);
+                    _trackTitleLapDistance, SetTrackTitleOffset);
 
             // Tick artist marquee (same speed, independent phase)
             if (artistActive)
                 TickMarquee(elapsedMs, _artistNameOffset, ref _artistNamePauseRemainingMs,
-                    _artistNameTextWidth, _artistNameViewportWidth, SetArtistNameOffset);
+                    _artistNameLapDistance, SetArtistNameOffset);
         }
 
         // While anything is mid-lap, ride the frame clock. When every active marquee is
@@ -503,11 +501,12 @@ public partial class PlaybackBarView : UserControl
         }, TimeSpan.FromMilliseconds(wait));
     }
 
-    /// <summary>Full-loop marquee step, matching MarqueeTextBlock: the text always travels
-    /// left; once its tail clears the viewport's left edge it wraps to just past the right
-    /// edge and slides back in; landing on the start position rests for RestPause.</summary>
-    private static void TickMarquee(double elapsedMs, double offset, ref double pauseRemainingMs,
-        double textWidth, double viewportWidth, Action<double> setOffset)
+    /// <summary>Ticker step, matching MarqueeTextBlock: the text and its loop copy travel
+    /// left together; when the copy reaches the start position the offset snaps back to
+    /// zero (the original now stands exactly where the copy was, so nothing visibly moves)
+    /// and the marquee rests for RestPause.</summary>
+    internal static void TickMarquee(double elapsedMs, double offset, ref double pauseRemainingMs,
+        double lapDistance, Action<double> setOffset)
     {
         if (pauseRemainingMs > 0)
         {
@@ -516,14 +515,8 @@ public partial class PlaybackBarView : UserControl
         }
 
         var nextOffset = offset - TrackTitleScrollSpeed * elapsedMs / 1000.0;
-        if (nextOffset <= -textWidth)
+        if (nextOffset <= -lapDistance)
         {
-            nextOffset += textWidth + viewportWidth;
-        }
-        else if (offset > 0 && nextOffset <= 0)
-        {
-            // Only a wrapped (incoming-from-the-right) pass crosses zero downward —
-            // the outbound pass STARTS at zero, so this never fires on the way out.
             nextOffset = 0;
             pauseRemainingMs = TrackTitleRestPause.TotalMilliseconds;
         }
@@ -599,10 +592,11 @@ public partial class PlaybackBarView : UserControl
             return;
 
         _artistNameOverflow = Math.Max(0, textWidth - viewportWidth);
-        _artistNameTextWidth = textWidth;
-        _artistNameViewportWidth = viewportWidth;
+        // Copy sits after the hover border (text + 3px) with a 45px margin = one 48px gap.
+        _artistNameLapDistance = textWidth + MarqueeTextPadding + MarqueeTextBlock.LoopGap;
         var hasOverflow = _artistNameOverflow > TrackTitleOverflowThreshold;
         var shouldAnimate = vm.ArtistMarqueeEnabled && hasOverflow;
+        ArtistNameLoopCopy.IsVisible = shouldAnimate;
         if (!shouldAnimate)
         {
             ApplyArtistNameStaticPresentation(hasOverflow, viewportWidth);
@@ -612,8 +606,8 @@ public partial class PlaybackBarView : UserControl
         SetArtistNameWidth(double.NaN);
 
         // Keep the phase across benign re-measures; reset when asked or out of the
-        // loop's valid range (-textWidth, viewportWidth].
-        if (resetAnimation || _artistNameOffset < -_artistNameTextWidth || _artistNameOffset > _artistNameViewportWidth)
+        // lap's valid range (-lap, 0].
+        if (resetAnimation || _artistNameOffset < -_artistNameLapDistance || _artistNameOffset > 0)
         {
             _artistNamePauseRemainingMs = TrackTitleRestPause.TotalMilliseconds;
             SetArtistNameOffset(0);
@@ -682,6 +676,8 @@ public partial class PlaybackBarView : UserControl
 
         if (ArtistNameTextBlock.RenderTransform is TranslateTransform transform)
             transform.X = offset;
+        if (ArtistNameLoopCopy.RenderTransform is TranslateTransform copyTransform)
+            copyTransform.X = offset;
     }
 
     private void OnVolumeSliderPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)

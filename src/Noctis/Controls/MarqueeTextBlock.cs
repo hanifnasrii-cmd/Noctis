@@ -37,7 +37,12 @@ public class MarqueeTextBlock : UserControl
         GlobalSettingsChanged?.Invoke(null, EventArgs.Empty);
 
     private const double OverflowThreshold = 1.0;
-    private const double ScrollSpeed = 26.0;
+    private const double ScrollSpeed = 30.0;
+
+    /// <summary>Space between the end of the text and the copy that follows it round the
+    /// loop, so the viewport is never blank mid-lap: as the tail leaves on the left the
+    /// head of the copy is already coming in on the right (user ask 09-17).</summary>
+    internal const double LoopGap = 48.0;
 
     // ── Edge fade ──
     // While the text overflows, the viewport clips it mid-glyph and a sliver of the next
@@ -203,6 +208,7 @@ public class MarqueeTextBlock : UserControl
 
     private readonly Border _viewport;
     private readonly TextBlock _textBlock;
+    private readonly TextBlock _loopCopy;
     private readonly StackPanel _contentPanel;
     private readonly TranslateTransform _transform;
 
@@ -228,6 +234,9 @@ public class MarqueeTextBlock : UserControl
     private double _textWidth;
     private double _viewportWidth;
     private double _offset;
+    /// <summary>One lap: text width plus the loop gap, where the copy sits exactly where
+    /// the original started.</summary>
+    private double _lapDistance;
     // Which fade the viewport is wearing, so a lap does not reassign the same brush 60
     // times a second (the bar's Classes.Set is a no-op when unchanged; this is the same
     // idea for a plain property).
@@ -249,6 +258,17 @@ public class MarqueeTextBlock : UserControl
             RenderTransform = _transform
         };
         _contentPanel.Children.Add(_textBlock);
+
+        // The loop copy: same text, one gap behind (margin absorbs the panel spacing so
+        // its left edge lands at textWidth + LoopGap). Only shown while scrolling.
+        _loopCopy = new TextBlock
+        {
+            MaxLines = 1,
+            TextTrimming = TextTrimming.None,
+            Margin = new Thickness(LoopGap - 6, 0, 0, 0),
+            IsVisible = false,
+        };
+        _contentPanel.Children.Add(_loopCopy);
 
         _viewport = new Border
         {
@@ -287,21 +307,25 @@ public class MarqueeTextBlock : UserControl
         if (change.Property == TextProperty)
         {
             _textBlock.Text = Text;
+            _loopCopy.Text = Text;
             ResetAndRecalc();
         }
         else if (change.Property == FontSizeProperty)
         {
             _textBlock.FontSize = FontSize;
+            _loopCopy.FontSize = FontSize;
             ResetAndRecalc();
         }
         else if (change.Property == FontWeightProperty)
         {
             _textBlock.FontWeight = FontWeight;
+            _loopCopy.FontWeight = FontWeight;
             ResetAndRecalc();
         }
         else if (change.Property == ForegroundProperty)
         {
             _textBlock.Foreground = Foreground;
+            _loopCopy.Foreground = Foreground;
         }
         else if (change.Property == MaxDisplayWidthProperty)
         {
@@ -313,7 +337,7 @@ public class MarqueeTextBlock : UserControl
             if (change.OldValue is Control old)
                 _contentPanel.Children.Remove(old);
             if (change.NewValue is Control newCtrl)
-                _contentPanel.Children.Add(newCtrl);
+                _contentPanel.Children.Insert(_contentPanel.Children.IndexOf(_loopCopy), newCtrl);
             ResetAndRecalc();
         }
     }
@@ -325,6 +349,10 @@ public class MarqueeTextBlock : UserControl
         _textBlock.FontSize = FontSize;
         _textBlock.FontWeight = FontWeight;
         _textBlock.Foreground = Foreground;
+        _loopCopy.Text = Text;
+        _loopCopy.FontSize = FontSize;
+        _loopCopy.FontWeight = FontWeight;
+        _loopCopy.Foreground = Foreground;
 
         GlobalSettingsChanged += OnGlobalSettingsChanged;
         _scroller = this.FindAncestorOfType<ScrollViewer>();
@@ -442,13 +470,16 @@ public class MarqueeTextBlock : UserControl
             if (InlineContent is { IsVisible: true, Bounds.Width: > 0 } ic2)
                 staticWidth = Math.Max(0, staticWidth - _contentPanel.Spacing - ic2.Bounds.Width);
             _textBlock.Width = _overflow > OverflowThreshold ? staticWidth : double.NaN;
+            _loopCopy.IsVisible = false;
             ApplyEdgeFade(null);
             return;
         }
 
-        // Scrolling mode: no trimming, natural width
+        // Scrolling mode: no trimming, natural width, loop copy one gap behind
         _textBlock.TextTrimming = TextTrimming.None;
         _textBlock.Width = double.NaN;
+        _loopCopy.IsVisible = true;
+        _lapDistance = textWidth + LoopGap;
 
         _offset = 0;
         _transform.X = 0;
@@ -528,19 +559,14 @@ public class MarqueeTextBlock : UserControl
             return;
         }
 
-        // Full-loop marquee, no bounce: the text always travels left. Once its tail has
-        // cleared the viewport's left edge, wrap to just past the right edge so the head
-        // slides back in; landing on the start position ends the lap and rests there.
+        // Ticker marquee, no bounce and no blank: the text travels left with its loop copy
+        // one gap behind, so the copy's head is already inside the viewport as the tail
+        // leaves. When the copy reaches the start position the lap is over — snapping the
+        // offset back to zero puts the original exactly where the copy was, invisibly.
         var next = _offset - ScrollSpeed * elapsedSeconds;
 
-        if (next <= -_textWidth)
+        if (next <= -_lapDistance)
         {
-            next += _textWidth + _viewportWidth;
-        }
-        else if (_offset > 0 && next <= 0)
-        {
-            // Only a wrapped (incoming-from-the-right) pass can cross zero downward —
-            // the outbound pass STARTS at zero, so this never fires on the way out.
             _offset = 0;
             _transform.X = 0;
             ApplyEdgeFade(false);
@@ -552,8 +578,7 @@ public class MarqueeTextBlock : UserControl
         _offset = next;
         _transform.X = next;
         // Once the text has moved left its head is cut by the near edge too, so that one
-        // ramps out as well; the wrapped pass comes back in from the right at a positive
-        // offset, where the leading edge is clear again.
+        // ramps out as well.
         ApplyEdgeFade(next < -0.5);
         QueueNextFrame();
     }

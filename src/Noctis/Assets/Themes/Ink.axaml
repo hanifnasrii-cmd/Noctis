@@ -1,8 +1,8 @@
 <ResourceDictionary xmlns="https://github.com/avaloniaui"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <!--
-        Editorial (dark) — near-black, grey uppercase headers, coral + blue tuned for contrast.
-        Generated from one shared spec (all six new themes carry the same key set;
+        Ink — near-black, grey uppercase headers, coral + blue tuned for contrast.
+        Generated from one shared spec (the Ink and Smoke overlays carry the same key set;
         ThemeOverlayParityTests pins that). Merged on top of the base Dark ThemeDictionary.
     -->
 
@@ -23,9 +23,6 @@
     <SolidColorBrush x:Key="AccentColorBrushDark1" Color="#B53127" />
     <SolidColorBrush x:Key="AccentTextBrush" Color="#F0655A" />
     <SolidColorBrush x:Key="AccentTextExactBrush" Color="#F0655A" />
-    <!-- Now-playing row keeps a fixed fill regardless of the accent (App.SetAccent honours
-         NowPlayingRowFixedColor and recomputes the row text against it). -->
-    <Color x:Key="NowPlayingRowFixedColor">#2B66D9</Color>
     <SolidColorBrush x:Key="NowPlayingRowBrush" Color="#2B66D9" />
     <SolidColorBrush x:Key="NowPlayingRowForegroundBrush" Color="#FFFFFF" />
 

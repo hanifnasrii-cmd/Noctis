@@ -22,9 +22,14 @@ public class ArtistImageService
     /// </summary>
     private const int RequestPacingMs = 120;
 
-    public ArtistImageService(HttpClient http, IPersistenceService persistence)
+    /// <summary>Library the artist's own track titles are read from when several Deezer
+    /// accounts share the name; null (tests, tools) falls back to fan count alone.</summary>
+    private readonly ILibraryService? _library;
+
+    public ArtistImageService(HttpClient http, IPersistenceService persistence, ILibraryService? library = null)
     {
         _http = http;
+        _library = library;
         _artistArtworkDir = Path.Combine(persistence.DataDirectory, "artwork", "artists");
         Directory.CreateDirectory(_artistArtworkDir);
 
@@ -442,8 +447,10 @@ public class ArtistImageService
     /// Sidecar format version. Bump when the way a photo is CHOSEN changes, so every
     /// portrait picked by the old logic is re-evaluated on the next sweep.
     /// v2: exact-name ties broken by Deezer fan count (impostor accounts share the name).
+    /// v3: names compared without diacritics ("Arcángel" is "Arcangel" on Deezer) and
+    ///     same-name accounts verified against the library's own track titles.
     /// </summary>
-    private const string SourceMarkerVersion = "v2";
+    private const string SourceMarkerVersion = "v3";
 
     /// <summary>Returns the recorded URL, or null when the sidecar is missing/outdated.</summary>
     private static string? ReadSourceMarker(string src)
@@ -609,13 +616,13 @@ public class ArtistImageService
             // Deezer's public search has no "verified" flag and returns impostor entries
             // with the SAME name — for "Bad Bunny" a 6-fan, 1-album account came back
             // FIRST and the real artist (7.99M fans, 88 albums) second. Returning on the
-            // first exact match therefore swapped in a fake's photo. Within a name-match
-            // tier the real account is the one with by far the most fans, so fans break
-            // the tie, then album count.
-            string? bestImageUrl = null;
+            // first exact match therefore swapped in a fake's photo. Names are compared
+            // without diacritics: the real "Arcángel" is spelled "Arcangel" on Deezer, and
+            // an accent-exact tier handed the page to a 1,683-fan duplicate (09-17).
+            // Within the best tier the accounts are verified against the library's own
+            // track titles (Deezer top tracks); fans then album count break what is left.
+            var tier = new List<DeezerCandidate>();
             var bestRank = int.MaxValue;
-            long bestFans = -1;
-            long bestAlbums = -1;
 
             foreach (var item in data.EnumerateArray())
             {
@@ -627,25 +634,128 @@ public class ArtistImageService
                     ? nameNode.GetString()
                     : null;
                 var rank = RankDeezerArtistMatch(resultName, candidate);
-                var fans = ReadCount(item, "nb_fan");
-                var albums = ReadCount(item, "nb_album");
-
-                var better = rank < bestRank
-                    || (rank == bestRank && (fans > bestFans || (fans == bestFans && albums > bestAlbums)));
-                if (!better)
+                if (rank > bestRank)
                     continue;
-
-                bestRank = rank;
-                bestFans = fans;
-                bestAlbums = albums;
-                bestImageUrl = imageUrl;
+                if (rank < bestRank)
+                {
+                    bestRank = rank;
+                    tier.Clear();
+                }
+                tier.Add(new DeezerCandidate(ReadCount(item, "id"), imageUrl, ReadCount(item, "nb_fan"), ReadCount(item, "nb_album")));
             }
 
-            if (!string.IsNullOrWhiteSpace(bestImageUrl))
-                return new DeezerArtistMatch(bestImageUrl, bestFans);
+            if (tier.Count == 0)
+                continue;
+
+            tier.Sort((a, b) => b.Fans != a.Fans ? b.Fans.CompareTo(a.Fans) : b.Albums.CompareTo(a.Albums));
+            var chosen = tier.Count > 1
+                ? await VerifyAgainstLibraryAsync(artistName, tier, ct).ConfigureAwait(false)
+                : tier[0];
+            return new DeezerArtistMatch(chosen.ImageUrl, chosen.Fans);
         }
 
         return null;
+    }
+
+    /// <summary>One search hit in the best name tier, in Deezer's own numbers.</summary>
+    internal sealed record DeezerCandidate(long Id, string ImageUrl, long Fans, long Albums);
+
+    private const string DeezerArtistUrl = "https://api.deezer.com/artist";
+
+    /// <summary>How many same-name accounts (fan-ordered) get their top tracks checked.</summary>
+    private const int VerifyCandidateLimit = 3;
+
+    /// <summary>
+    /// Picks between same-name accounts by how many of the library's own titles for the
+    /// artist appear in each account's Deezer top tracks; the most overlaps wins, and with
+    /// no library titles or no overlap at all the fan order stands. Costs one request per
+    /// checked account, only in the ambiguous case.
+    /// </summary>
+    private async Task<DeezerCandidate> VerifyAgainstLibraryAsync(string artistName, List<DeezerCandidate> tier, CancellationToken ct)
+    {
+        var titles = LibraryTitleKeys(artistName);
+        if (titles.Count == 0)
+            return tier[0];
+
+        DeezerCandidate best = tier[0];
+        var bestOverlap = 0;
+        foreach (var candidate in tier.Take(VerifyCandidateLimit))
+        {
+            if (candidate.Id <= 0)
+                continue;
+            var overlap = await CountTopTrackOverlapAsync(candidate.Id, titles, ct).ConfigureAwait(false);
+            if (overlap > bestOverlap)
+            {
+                bestOverlap = overlap;
+                best = candidate;
+            }
+        }
+        return best;
+    }
+
+    /// <summary>Normalised titles of the library tracks credited to the artist.</summary>
+    private HashSet<string> LibraryTitleKeys(string artistName)
+    {
+        var keys = new HashSet<string>(StringComparer.Ordinal);
+        var tracks = _library?.Tracks;
+        if (tracks == null)
+            return keys;
+        foreach (var track in tracks)
+        {
+            if (!ViewModels.LibraryAlbumsViewModel.ContainsArtistToken(track.Artist, artistName)
+                && !ViewModels.LibraryAlbumsViewModel.ContainsArtistToken(track.AlbumArtist, artistName))
+                continue;
+            var key = TitleKey(track.Title);
+            if (key.Length >= 3)
+                keys.Add(key);
+        }
+        return keys;
+    }
+
+    private async Task<int> CountTopTrackOverlapAsync(long deezerId, HashSet<string> libraryKeys, CancellationToken ct)
+    {
+        try
+        {
+            using var response = await _http.GetAsync($"{DeezerArtistUrl}/{deezerId}/top?limit=50", ct).ConfigureAwait(false);
+            if (!response.IsSuccessStatusCode)
+                return 0;
+            var json = await HttpSafety.ReadStringBoundedAsync(response.Content, ct: ct).ConfigureAwait(false);
+            using var doc = JsonDocument.Parse(json);
+            if (!doc.RootElement.TryGetProperty("data", out var data) || data.ValueKind != JsonValueKind.Array)
+                return 0;
+
+            var overlap = 0;
+            foreach (var item in data.EnumerateArray())
+            {
+                var title = item.TryGetProperty("title_short", out var shortNode) ? shortNode.GetString() : null;
+                if (string.IsNullOrWhiteSpace(title) && item.TryGetProperty("title", out var titleNode))
+                    title = titleNode.GetString();
+                var key = TitleKey(title);
+                if (key.Length >= 3 && libraryKeys.Contains(key))
+                    overlap++;
+            }
+            return overlap;
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested) { throw; }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[ArtistImage] Top-track check failed for Deezer artist {deezerId}: {ex.Message}");
+            return 0;
+        }
+    }
+
+    /// <summary>Title comparison key: diacritics folded, case and punctuation dropped, any
+    /// "(feat. …)" / "[…]" / " - …" suffix removed so a tagged "Me Acostumbré (feat. Bad
+    /// Bunny)" meets Deezer's "Me Acostumbré".</summary>
+    internal static string TitleKey(string? title)
+    {
+        if (string.IsNullOrWhiteSpace(title))
+            return string.Empty;
+        var cut = title.IndexOfAny(new[] { '(', '[' });
+        if (cut > 0) title = title[..cut];
+        var dash = title.IndexOf(" - ", StringComparison.Ordinal);
+        if (dash > 0) title = title[..dash];
+        return string.Concat(FoldDiacritics(title).Where(char.IsLetterOrDigit)).ToLowerInvariant();
     }
 
     private static long ReadCount(JsonElement item, string property)
@@ -673,8 +783,8 @@ public class ArtistImageService
         if (string.IsNullOrWhiteSpace(resultName))
             return 100;
 
-        var result = resultName.Trim();
-        var query = queryName.Trim();
+        var result = FoldDiacritics(resultName.Trim());
+        var query = FoldDiacritics(queryName.Trim());
         if (result.Equals(query, StringComparison.OrdinalIgnoreCase))
             return 0;
 
@@ -694,6 +804,19 @@ public class ArtistImageService
 
     private static string RemoveWhitespace(string value)
         => string.Concat(value.Where(c => !char.IsWhiteSpace(c)));
+
+    /// <summary>"Arcángel" → "Arcangel": Deezer spells many Latin artists without accents.</summary>
+    internal static string FoldDiacritics(string value)
+    {
+        var decomposed = value.Normalize(System.Text.NormalizationForm.FormD);
+        var sb = new System.Text.StringBuilder(decomposed.Length);
+        foreach (var c in decomposed)
+        {
+            if (System.Globalization.CharUnicodeInfo.GetUnicodeCategory(c) != System.Globalization.UnicodeCategory.NonSpacingMark)
+                sb.Append(c);
+        }
+        return sb.ToString().Normalize(System.Text.NormalizationForm.FormC);
+    }
 
     private static bool IsDeezerPlaceholderUrl(string url)
         => url.Contains("/artist//", StringComparison.Ordinal)

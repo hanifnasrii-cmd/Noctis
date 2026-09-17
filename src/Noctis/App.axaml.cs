@@ -203,17 +203,13 @@ public partial class App : Application
     public const string ThemeDark = "Dark";
     public const string ThemeLight = "Light";
     public const string ThemeMidnight = "Midnight";
-    public const string ThemeHazeLight = "HazeLight";
-    public const string ThemeHazeDark = "HazeDark";
-    public const string ThemeEditorialLight = "EditorialLight";
-    public const string ThemeEditorialDark = "EditorialDark";
-    public const string ThemeGlassLight = "GlassLight";
-    public const string ThemeGlassDark = "GlassDark";
+    public const string ThemeInk = "Ink";
+    public const string ThemeSmoke = "Smoke";
 
     /// <summary>Built-in themes that run on the Light variant; every other name runs on Dark.</summary>
     private static readonly HashSet<string> LightVariantThemes = new(StringComparer.Ordinal)
     {
-        ThemeLight, ThemeHazeLight, ThemeEditorialLight, ThemeGlassLight,
+        ThemeLight,
     };
 
     public static bool IsLightVariantTheme(string? themeName) =>
@@ -235,6 +231,41 @@ public partial class App : Application
     /// Dark, with an optional overlay merged on top (Gray / Light use the base dictionary as-is).
     /// </summary>
     public void SetTheme(string themeName)
+    {
+        var mainWindow = (ApplicationLifetime as Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime)?.MainWindow;
+        RunWithTransitionsSuppressed(mainWindow, () => SetThemeCore(themeName));
+    }
+
+    /// <summary>Class the main window carries while a theme switch is in flight. Styles that
+    /// animate a themed brush for hover (Home chart rows / rail cards) drop their transitions
+    /// under it, so the DynamicResource swap lands in one frame instead of lerping through a
+    /// lighter semi-opaque grey (HomeTileThemeSwitchTests).</summary>
+    public const string ThemeSwitchingClass = "theme-switching";
+
+    /// <summary>Runs <paramref name="body"/> with <see cref="ThemeSwitchingClass"/> on
+    /// <paramref name="root"/>; the class comes off once the resource change has been
+    /// rendered, so the next hover animates again.</summary>
+    public static void RunWithTransitionsSuppressed(StyledElement? root, Action body)
+    {
+        if (root == null || root.Classes.Contains(ThemeSwitchingClass))
+        {
+            body();
+            return;
+        }
+        root.Classes.Add(ThemeSwitchingClass);
+        try
+        {
+            body();
+        }
+        finally
+        {
+            Avalonia.Threading.Dispatcher.UIThread.Post(
+                () => root.Classes.Remove(ThemeSwitchingClass),
+                Avalonia.Threading.DispatcherPriority.Background);
+        }
+    }
+
+    private void SetThemeCore(string themeName)
     {
         if (_activeThemeOverlay != null)
         {
@@ -288,12 +319,8 @@ public partial class App : Application
         {
             ThemeDark => "avares://Noctis/Assets/Themes/Dark.axaml",
             ThemeMidnight => "avares://Noctis/Assets/Themes/Midnight.axaml",
-            ThemeHazeLight => "avares://Noctis/Assets/Themes/HazeLight.axaml",
-            ThemeHazeDark => "avares://Noctis/Assets/Themes/HazeDark.axaml",
-            ThemeEditorialLight => "avares://Noctis/Assets/Themes/EditorialLight.axaml",
-            ThemeEditorialDark => "avares://Noctis/Assets/Themes/EditorialDark.axaml",
-            ThemeGlassLight => "avares://Noctis/Assets/Themes/GlassLight.axaml",
-            ThemeGlassDark => "avares://Noctis/Assets/Themes/GlassDark.axaml",
+            ThemeInk => "avares://Noctis/Assets/Themes/Ink.axaml",
+            ThemeSmoke => "avares://Noctis/Assets/Themes/Smoke.axaml",
             _ => null
         };
 
@@ -408,36 +435,13 @@ public partial class App : Application
         // whichever of black/white actually contrasts. Every accent that reads either way
         // keeps the theme colour, so this changes nothing for the common ones.
         var themeRowForeground = isLightTheme ? Colors.Black : Colors.White;
-        // A theme may pin the now-playing row to a fixed fill instead of the accent
-        // (Editorial: a solid blue row under a coral accent). The row text is then judged
-        // against that fill by the same rule.
-        var rowColor = Resources.TryGetResource("NowPlayingRowFixedColor", RequestedThemeVariant, out var fixedRow)
-                       && fixedRow is Color fixedRowColor
-            ? fixedRowColor
-            : color;
-        // With a pinned fill the theme also owns the row text (the accent overlay is not
-        // merged yet, so this reads the theme's own NowPlayingRowForegroundBrush).
-        var nowPlayingRowForeground =
-            rowColor != color
-            && Resources.TryGetResource("NowPlayingRowForegroundBrush", RequestedThemeVariant, out var fixedFg)
-            && fixedFg is ISolidColorBrush fixedFgBrush
-                ? fixedFgBrush.Color
-                : ContrastRatio(themeRowForeground, rowColor) >= 3.0
-                    ? themeRowForeground
-                    : HighestContrastForeground(rowColor);
-        // A theme may ask for a gradient on accent-filled action buttons (Haze: accent to a
-        // hue-shifted accent). Built from the live accent so the user's pick still drives it.
+        // The now-playing row is the accent on every theme (Ink's pinned blue row read as
+        // "the theme changes my accent", 09-17).
+        var rowColor = color;
+        var nowPlayingRowForeground = ContrastRatio(themeRowForeground, rowColor) >= 3.0
+            ? themeRowForeground
+            : HighestContrastForeground(rowColor);
         IBrush accentButtonBackground = new SolidColorBrush(color);
-        if (Resources.TryGetResource("AccentButtonGradientHueShift", RequestedThemeVariant, out var shiftObj)
-            && shiftObj is double hueShift)
-        {
-            accentButtonBackground = new LinearGradientBrush
-            {
-                StartPoint = new RelativePoint(0, 0, RelativeUnit.Relative),
-                EndPoint = new RelativePoint(1, 1, RelativeUnit.Relative),
-                GradientStops = { new GradientStop(color, 0), new GradientStop(ShiftHue(color, hueShift), 1) },
-            };
-        }
         // Outline around accent-filled pills. Only meaningful when the accent fill
         // would be indistinguishable from the page background — in practice that's
         // a white / very-light accent on the Light theme. In every other case the
@@ -528,15 +532,6 @@ public partial class App : Application
         _activeAccentOverlay = rd;
 
         AccentApplied?.Invoke(this, EventArgs.Empty);
-    }
-
-    /// <summary>Rotates the hue by <paramref name="degrees"/>, keeping saturation and lightness.</summary>
-    private static Color ShiftHue(Color c, double degrees)
-    {
-        var hsl = c.ToHsl();
-        var h = (hsl.H + degrees) % 360;
-        if (h < 0) h += 360;
-        return new HslColor(hsl.A, h, hsl.S, hsl.L).ToRgb();
     }
 
     private static Color Mix(Color a, Color b, double t)

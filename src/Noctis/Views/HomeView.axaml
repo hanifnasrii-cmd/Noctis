@@ -252,6 +252,14 @@
                 </Transitions>
             </Setter>
         </Style>
+        <!-- A theme switch changes the same Background through HomeCardBackground; without
+             this the hover transition lerps #18FFFFFF → an opaque fill through a lighter grey
+             (the Ink flash). App.SetTheme puts theme-switching on the window for the swap. -->
+        <Style Selector=":is(Window).theme-switching Button.home-chart-row /template/ ContentPresenter#PART_ContentPresenter, :is(Window).theme-switching Button.home-rail-track /template/ ContentPresenter#PART_ContentPresenter, :is(Window).theme-switching Button.home-rail-album /template/ ContentPresenter#PART_ContentPresenter, :is(Window).theme-switching Button.home-rail-card /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Transitions">
+                <Transitions/>
+            </Setter>
+        </Style>
         <Style Selector="Button.home-chart-row:pointerover /template/ ContentPresenter#PART_ContentPresenter">
             <Setter Property="Background" Value="{DynamicResource HomeCardHoverBackground}"/>
         </Style>

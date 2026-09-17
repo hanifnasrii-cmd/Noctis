@@ -41,12 +41,8 @@ public class ThemeRegistrationTests
     }
 
     [AvaloniaTheory]
-    [InlineData("HazeLight", true)]
-    [InlineData("HazeDark", false)]
-    [InlineData("EditorialLight", true)]
-    [InlineData("EditorialDark", false)]
-    [InlineData("GlassLight", true)]
-    [InlineData("GlassDark", false)]
+    [InlineData("Ink", false)]
+    [InlineData("Smoke", false)]
     public void SetTheme_MergesOverlayAndPicksVariant(string name, bool light)
     {
         var app = RealApp();
@@ -68,35 +64,19 @@ public class ThemeRegistrationTests
         Assert.Equal(Color.Parse("#252525"), Resolve(app, "AppMainBackground"));
     }
 
+    /// <summary>Ink used to pin the now-playing row to a fixed blue under any accent; the
+    /// user read that as the theme overriding their accent, so the row is the accent on
+    /// every theme (09-17).</summary>
     [AvaloniaFact]
-    public void Editorial_PinsNowPlayingRow_WhileGrayFollowsAccent()
+    public void NowPlayingRow_FollowsTheAccent_OnEveryTheme()
     {
         var app = RealApp();
-        app.SetTheme(Noctis.App.ThemeEditorialLight);
-        app.SetAccent("#874CF2");
-        Assert.Equal(Color.Parse("#2B66D9"), Resolve(app, "NowPlayingRowBrush"));
-        Assert.Equal(Colors.White, Resolve(app, "NowPlayingRowForegroundBrush"));
-
-        app.SetTheme(Noctis.App.ThemeGray);
-        app.SetAccent("#874CF2");
-        Assert.Equal(Color.Parse("#874CF2"), Resolve(app, "NowPlayingRowBrush"));
-    }
-
-    [AvaloniaFact]
-    public void Haze_BuildsGradientActionButtonFromTheLiveAccent()
-    {
-        var app = RealApp();
-        app.SetTheme(Noctis.App.ThemeHazeDark);
-        app.SetAccent("#12C76F");
-        Assert.True(app.Resources.TryGetResource("AccentButtonBackground", app.RequestedThemeVariant, out var v));
-        var gradient = Assert.IsAssignableFrom<IGradientBrush>(v);
-        Assert.Equal(Color.Parse("#12C76F"), gradient.GradientStops[0].Color);
-        Assert.NotEqual(gradient.GradientStops[0].Color, gradient.GradientStops[^1].Color);
-
-        app.SetTheme(Noctis.App.ThemeGray);
-        app.SetAccent("#12C76F");
-        Assert.True(app.Resources.TryGetResource("AccentButtonBackground", app.RequestedThemeVariant, out var solid));
-        Assert.Equal(Color.Parse("#12C76F"), AccentTestHarness.ColorOf(solid as IBrush));
+        foreach (var theme in new[] { Noctis.App.ThemeInk, Noctis.App.ThemeSmoke, Noctis.App.ThemeGray })
+        {
+            app.SetTheme(theme);
+            app.SetAccent("#874CF2");
+            Assert.Equal(Color.Parse("#874CF2"), Resolve(app, "NowPlayingRowBrush"));
+        }
     }
 
     /// <summary>

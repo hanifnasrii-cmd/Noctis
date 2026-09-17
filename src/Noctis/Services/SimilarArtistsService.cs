@@ -53,7 +53,7 @@ public sealed class SimilarArtistsService
         try
         {
             var artists = await FetchAsync(artistName, ct).ConfigureAwait(false);
-            var entry = new SimilarArtistsCache { Artists = artists, FetchedAtUtc = DateTime.UtcNow };
+            var entry = new SimilarArtistsCache { Artists = artists, FetchedAtUtc = DateTime.UtcNow, Picker = PickerVersion };
             WriteCache(path, entry);
             return artists;
         }
@@ -68,8 +68,13 @@ public sealed class SimilarArtistsService
         }
     }
 
+    /// <summary>Bumped when the way the Deezer account is picked changes, so lists built
+    /// for the wrong same-name account are re-fetched. 1: names folded without diacritics.</summary>
+    internal const int PickerVersion = 1;
+
     private static bool IsStale(SimilarArtistsCache c)
-        => DateTime.UtcNow - c.FetchedAtUtc > (c.Artists.Count > 0 ? HitTtl : MissTtl);
+        => c.Picker != PickerVersion
+           || DateTime.UtcNow - c.FetchedAtUtc > (c.Artists.Count > 0 ? HitTtl : MissTtl);
 
     private static SimilarArtistsCache? ReadCache(string path)
     {
@@ -150,16 +155,17 @@ public sealed class SimilarArtistsService
     // ── Parsers (pure, internal for tests) ──
 
     /// <summary>The Deezer id of the artist: exact-name matches only (Deezer search is
-    /// fuzzy), the one with the most fans when same-name impostors exist; 0 when none.</summary>
+    /// fuzzy), compared without diacritics (the real "Arcángel" is "Arcangel" there, 09-17),
+    /// the one with the most fans when same-name impostors exist; 0 when none.</summary>
     internal static long PickBestMatch(JsonElement searchRoot, string artistName)
     {
         if (!searchRoot.TryGetProperty("data", out var data) || data.ValueKind != JsonValueKind.Array) return 0;
         long bestId = 0, bestFans = -1;
-        var query = artistName.Trim();
+        var query = ArtistImageService.FoldDiacritics(artistName.Trim());
         foreach (var item in data.EnumerateArray())
         {
             var name = item.TryGetProperty("name", out var n) ? n.GetString()?.Trim() : null;
-            if (!string.Equals(name, query, StringComparison.OrdinalIgnoreCase)) continue;
+            if (name == null || !string.Equals(ArtistImageService.FoldDiacritics(name), query, StringComparison.OrdinalIgnoreCase)) continue;
             var id = ReadLong(item, "id");
             var fans = ReadLong(item, "nb_fan");
             if (id > 0 && fans > bestFans) { bestId = id; bestFans = fans; }
@@ -209,4 +215,6 @@ public sealed class SimilarArtistsCache
 {
     public List<SimilarArtist> Artists { get; set; } = new();
     public DateTime FetchedAtUtc { get; set; }
+    /// <summary>Picker logic that chose the account (absent in older files = 0 = stale).</summary>
+    public int Picker { get; set; }
 }

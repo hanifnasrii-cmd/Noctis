@@ -22,9 +22,7 @@ public class ThemeKeyCoverageTests
 
     public static IEnumerable<object[]> Themes() => new[]
     {
-        new object[] { "HazeLight", true }, new object[] { "HazeDark", false },
-        new object[] { "EditorialLight", true }, new object[] { "EditorialDark", false },
-        new object[] { "GlassLight", true }, new object[] { "GlassDark", false },
+        new object[] { "Ink", false }, new object[] { "Smoke", false },
     };
 
     private static string FindRepoRoot()

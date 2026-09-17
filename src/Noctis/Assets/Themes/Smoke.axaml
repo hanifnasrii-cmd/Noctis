@@ -1,9 +1,9 @@
 <ResourceDictionary xmlns="https://github.com/avaloniaui"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <!--
-        Glass (dark) — smoky charcoal panels. Real blur rides Liquid Glass when it is on;
+        Smoke — smoky charcoal panels. Real blur rides Liquid Glass when it is on;
         the semi-opaque fills below are the always-available fallback.
-        Generated from one shared spec (all six new themes carry the same key set;
+        Generated from one shared spec (the Ink and Smoke overlays carry the same key set;
         ThemeOverlayParityTests pins that). Merged on top of the base Dark ThemeDictionary.
     -->
 

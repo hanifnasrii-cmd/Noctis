@@ -44,12 +44,33 @@ public sealed class SpectrumVisualizer : Control
     public static readonly StyledProperty<bool> UseArtworkColorProperty =
         AvaloniaProperty.Register<SpectrumVisualizer, bool>(nameof(UseArtworkColor));
 
+    /// <summary>Bar width as a fraction of the band slot (Bars / Mirror). NaN keeps the
+    /// legacy rule (slot minus a gap of up to 4px, 3px corners); a value gives thin bars
+    /// with fully round caps — the Visualizer page's minimal look (09-17).</summary>
+    public static readonly StyledProperty<double> BarWidthFractionProperty =
+        AvaloniaProperty.Register<SpectrumVisualizer, double>(nameof(BarWidthFraction), double.NaN);
+
     public bool IsActive { get => GetValue(IsActiveProperty); set => SetValue(IsActiveProperty, value); }
     public string? StyleName { get => GetValue(StyleNameProperty); set => SetValue(StyleNameProperty, value); }
     public IBrush? Fill { get => GetValue(FillProperty); set => SetValue(FillProperty, value); }
     public int BandCount { get => GetValue(BandCountProperty); set => SetValue(BandCountProperty, value); }
     public Color? ArtworkColor { get => GetValue(ArtworkColorProperty); set => SetValue(ArtworkColorProperty, value); }
     public bool UseArtworkColor { get => GetValue(UseArtworkColorProperty); set => SetValue(UseArtworkColorProperty, value); }
+    public double BarWidthFraction { get => GetValue(BarWidthFractionProperty); set => SetValue(BarWidthFractionProperty, value); }
+
+    /// <summary>Bar width, gap and corner radius for one band slot (see BarWidthFraction).</summary>
+    internal (double BarW, double Gap, double Radius) BarGeometry(double slot)
+    {
+        var fraction = BarWidthFraction;
+        if (double.IsNaN(fraction) || fraction <= 0 || fraction > 1)
+        {
+            var gap = Math.Min(4, slot * 0.28);
+            var barW = Math.Max(1, slot - gap);
+            return (barW, gap, Math.Min(barW / 2, 3));
+        }
+        var thin = Math.Max(1, slot * fraction);
+        return (thin, slot - thin, thin / 2);
+    }
 
     // Built once per artwork/style/toggle change, never per frame.
     private LinearGradientBrush? _artworkBrush;
@@ -204,9 +225,7 @@ public sealed class SpectrumVisualizer : Control
     {
         var n = _shown.Length;
         var slot = w / n;
-        var gap = Math.Min(4, slot * 0.28);
-        var barW = Math.Max(1, slot - gap);
-        var radius = Math.Min(barW / 2, 3);
+        var (barW, gap, radius) = BarGeometry(slot);
         var minH = radius * 2;
         for (var i = 0; i < n; i++)
         {
@@ -221,9 +240,7 @@ public sealed class SpectrumVisualizer : Control
     {
         var n = _shown.Length;
         var slot = w / n;
-        var gap = Math.Min(4, slot * 0.28);
-        var barW = Math.Max(1, slot - gap);
-        var radius = Math.Min(barW / 2, 3);
+        var (barW, gap, radius) = BarGeometry(slot);
         var mid = h / 2;
         var minH = radius * 2;
         for (var i = 0; i < n; i++)

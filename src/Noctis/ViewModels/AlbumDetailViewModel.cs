@@ -29,6 +29,7 @@ public partial class AlbumDetailViewModel : ViewModelBase, IDisposable
     private readonly EventHandler _libraryUpdatedHandler;
     private readonly EventHandler _favoritesChangedHandler;
     private readonly System.ComponentModel.PropertyChangedEventHandler? _settingsPropertyChangedHandler;
+    private readonly EventHandler<string>? _themeChangedHandler;
 
     /// <summary>Saved scroll offset for restoring position after navigation.</summary>
     public double SavedScrollOffset { get; set; }
@@ -220,6 +221,9 @@ public partial class AlbumDetailViewModel : ViewModelBase, IDisposable
                     Dispatcher.UIThread.Post(RebuildBackgroundBrush);
             };
             _settings.PropertyChanged += _settingsPropertyChangedHandler;
+            // A theme switch flips the untinted page text between the variants' colours.
+            _themeChangedHandler = (_, _) => Dispatcher.UIThread.Post(RebuildBackgroundBrush);
+            _settings.ThemeChanged += _themeChangedHandler;
         }
 
         // Build related-album sections from the local library.
@@ -379,6 +383,11 @@ public partial class AlbumDetailViewModel : ViewModelBase, IDisposable
 
     private int _tintGeneration;
 
+    /// <summary>True while the app runs a light-variant theme (Light); the page text is
+    /// dark on those surfaces whenever no cover tint overrides it.</summary>
+    private static bool IsLightThemeActive() =>
+        Avalonia.Application.Current?.ActualThemeVariant == Avalonia.Styling.ThemeVariant.Light;
+
     /// <summary>Luminance above which the page text goes dark (spec §2).</summary>
     public const double LightTintThreshold = 0.55;
 
@@ -386,19 +395,21 @@ public partial class AlbumDetailViewModel : ViewModelBase, IDisposable
     /// Public for tests; callers on the UI thread only.</summary>
     public void ApplyTint(Color? tint)
     {
+        bool light;
         if (tint is not { } color)
         {
+            // No tint: the page sits on the theme surface, so the text follows the theme
+            // variant (white text on the Light theme was invisible, 09-17).
             BackgroundBrush = null;
             IsLightTint = false;
-            PageForegroundBrush = Brushes.White;
-            PageSubtleForegroundBrush = new SolidColorBrush(Color.FromArgb(0xB0, 0xFF, 0xFF, 0xFF));
-            PageDividerBrush = new SolidColorBrush(Color.FromArgb(0x1F, 0xFF, 0xFF, 0xFF));
-            return;
+            light = IsLightThemeActive();
         }
-
-        BackgroundBrush = BuildTintBrush(color);
-        var light = DominantColorExtractor.GetRelativeLuminance(color) > LightTintThreshold;
-        IsLightTint = light;
+        else
+        {
+            BackgroundBrush = BuildTintBrush(color);
+            light = DominantColorExtractor.GetRelativeLuminance(color) > LightTintThreshold;
+            IsLightTint = light;
+        }
         PageForegroundBrush = light ? new SolidColorBrush(Color.FromRgb(0x11, 0x11, 0x11)) : Brushes.White;
         PageSubtleForegroundBrush = new SolidColorBrush(light
             ? Color.FromArgb(0x66, 0x00, 0x00, 0x00)
@@ -1006,6 +1017,8 @@ public partial class AlbumDetailViewModel : ViewModelBase, IDisposable
         _library.FavoritesChanged -= _favoritesChangedHandler;
         if (_settings != null && _settingsPropertyChangedHandler != null)
             _settings.PropertyChanged -= _settingsPropertyChangedHandler;
+        if (_settings != null && _themeChangedHandler != null)
+            _settings.ThemeChanged -= _themeChangedHandler;
         AlbumArt?.Dispose();
         AlbumArt = null;
     }

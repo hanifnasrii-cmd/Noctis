@@ -7,7 +7,7 @@ using Xunit;
 namespace Noctis.Tests;
 
 /// <summary>
-/// The Haze / Editorial / Glass overlays must define every key the base Dark dictionary in
+/// The Ink / Smoke overlays must define every key the base Dark dictionary in
 /// Assets/Styles.axaml defines (plus the Fluent foreground brushes and toggle fills they take
 /// over), so no DynamicResource consumer ever falls through to a base value tuned for Gray.
 /// </summary>
@@ -15,7 +15,7 @@ public class ThemeOverlayParityTests
 {
     public static readonly string[] NewThemes =
     {
-        "HazeLight", "HazeDark", "EditorialLight", "EditorialDark", "GlassLight", "GlassDark",
+        "Ink", "Smoke",
     };
 
     public static IEnumerable<object[]> NewThemeNames() => NewThemes.Select(n => new object[] { n });
@@ -72,15 +72,14 @@ public class ThemeOverlayParityTests
     [AvaloniaFact]
     public void Overlays_ShareOneKeySet_UpToTheirDeclaredExtras()
     {
-        // Haze adds AccentButtonGradientHueShift, Editorial adds NowPlayingRowFixedColor;
-        // everything else must be identical across the six files.
-        var optional = new HashSet<string> { "AccentButtonGradientHueShift", "NowPlayingRowFixedColor" };
+        // Every overlay carries the same key set.
+        var optional = new HashSet<string>();
         var sets = NewThemes.ToDictionary(n => n, n => LoadOverlay(n).Keys.OfType<string>().Where(k => !optional.Contains(k)).ToHashSet());
-        var reference = sets["HazeLight"];
+        var reference = sets["Ink"];
         foreach (var (name, keys) in sets)
         {
             Assert.True(keys.SetEquals(reference),
-                $"{name} differs from HazeLight: +[{string.Join(",", keys.Except(reference))}] -[{string.Join(",", reference.Except(keys))}]");
+                $"{name} differs from Ink: +[{string.Join(",", keys.Except(reference))}] -[{string.Join(",", reference.Except(keys))}]");
         }
     }
 }
