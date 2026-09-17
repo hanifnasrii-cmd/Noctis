@@ -31,6 +31,13 @@ public partial class LyricsStudioPageViewModel : ViewModelBase
     /// <summary>ELRC / LRC / plain / none counts over the local library (empty until the scan finishes).</summary>
     [ObservableProperty] private IReadOnlyList<LyricsStudioCount> _counts = Array.Empty<LyricsStudioCount>();
 
+    /// <summary>
+    /// Whether the two backdrop cards (lyrics background video, music videos) are folded out.
+    /// They are settings, not work, so the page opens straight onto the queue and review and
+    /// keeps them one click away behind the header's Backdrops pill.
+    /// </summary>
+    [ObservableProperty] private bool _showBackdrops;
+
     public bool ShowEmpty => !IsLoading && Studio is null;
     public bool HasCounts => Counts.Count > 0;
 

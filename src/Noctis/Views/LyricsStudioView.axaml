@@ -10,11 +10,46 @@
     <!-- Sidebar section: page header with the per-format counts, then the shared Studio
          surface (LyricsStudioPanel) over the songs that still lack the chosen format. -->
     <UserControl.Styles>
+        <!-- Workbench header: the four library counts as compact pills on the title row,
+             instead of the tall tiles that used to own a band of their own. They are a
+             readout, not a control, so they stay quiet — one weight for the number, one
+             dimmer for its format. -->
         <Style Selector="Border.studio-count">
-            <Setter Property="CornerRadius" Value="14"/>
-            <Setter Property="Padding" Value="14,10"/>
-            <Setter Property="Margin" Value="0,0,8,0"/>
+            <Setter Property="CornerRadius" Value="999"/>
+            <Setter Property="Padding" Value="11,4"/>
+            <Setter Property="Margin" Value="0,0,6,0"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
             <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
+        </Style>
+
+        <!-- Backdrops disclosure: same quiet chip as Add Rule, and it takes the accent only
+             while the section is open so the header shows what is folded out. -->
+        <Style Selector="ToggleButton.studio-disclosure">
+            <Setter Property="CornerRadius" Value="999"/>
+            <Setter Property="Padding" Value="14,5"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+        <!-- Fluent paints a ToggleButton's fill on its ContentPresenter, so a Background
+             setter on the control never shows — every state has to be stated on the part
+             or the chip comes up in Fluent's own light grey next to the dark count pills. -->
+        <Style Selector="ToggleButton.studio-disclosure /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource ChipBackground}"/>
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+            <Setter Property="CornerRadius" Value="999"/>
+        </Style>
+        <Style Selector="ToggleButton.studio-disclosure:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource ChipHoverBackground}"/>
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+        </Style>
+        <Style Selector="ToggleButton.studio-disclosure:checked /template/ ContentPresenter,
+                         ToggleButton.studio-disclosure:checked:pointerover /template/ ContentPresenter,
+                         ToggleButton.studio-disclosure:checked:pressed /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource AccentColorBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource AccentForegroundBrush}"/>
         </Style>
     </UserControl.Styles>
 
@@ -25,31 +60,44 @@
                 <TextBlock Text="{loc:T LyricsStudio.Title}" FontSize="26" FontWeight="Bold"/>
                 <TextBlock Text="{loc:T LyricsStudio.Subtitle}" FontSize="13" Opacity="0.6" TextWrapping="Wrap"/>
             </StackPanel>
-            <ItemsControl Grid.Column="1" ItemsSource="{Binding Counts}" IsVisible="{Binding HasCounts}" VerticalAlignment="Center">
-                <ItemsControl.ItemsPanel>
-                    <ItemsPanelTemplate><StackPanel Orientation="Horizontal"/></ItemsPanelTemplate>
-                </ItemsControl.ItemsPanel>
-                <ItemsControl.ItemTemplate>
-                    <DataTemplate x:DataType="vm:LyricsStudioCount">
-                        <Border Classes="studio-count" MinWidth="96">
-                            <StackPanel Spacing="1">
-                                <StackPanel Orientation="Horizontal" Spacing="5">
-                                    <TextBlock Text="{Binding Count}" FontSize="18" FontWeight="SemiBold"/>
-                                    <TextBlock Text="{Binding Tag}" FontSize="10.5" FontWeight="SemiBold" Opacity="0.4" VerticalAlignment="Bottom" Margin="0,0,0,3"
+            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                <ItemsControl ItemsSource="{Binding Counts}" IsVisible="{Binding HasCounts}" VerticalAlignment="Center">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate><StackPanel Orientation="Horizontal"/></ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:LyricsStudioCount">
+                            <Border Classes="studio-count">
+                                <StackPanel Orientation="Horizontal" Spacing="5" VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding Count}" FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                    <!-- ELRC / LRC carry a short tag; the other two only have a
+                                         label ("Plain only", "No lyrics"), so one or the other shows. -->
+                                    <TextBlock Text="{Binding Tag}" FontSize="10.5" FontWeight="SemiBold" Opacity="0.45" VerticalAlignment="Center"
                                                IsVisible="{Binding Tag, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+                                    <TextBlock Text="{Binding Label}" FontSize="10.5" FontWeight="SemiBold" Opacity="0.45" VerticalAlignment="Center"
+                                               IsVisible="{Binding Tag, Converter={x:Static StringConverters.IsNullOrEmpty}}"/>
                                 </StackPanel>
-                                <TextBlock Text="{Binding Label}" FontSize="11" Opacity="0.55"/>
-                            </StackPanel>
-                        </Border>
-                    </DataTemplate>
-                </ItemsControl.ItemTemplate>
-            </ItemsControl>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+                <ToggleButton Classes="studio-disclosure"
+                              Content="{loc:T LyricsStudio.Backdrops}"
+                              ToolTip.Tip="{loc:T LyricsStudio.BackdropsTip}"
+                              IsChecked="{Binding ShowBackdrops}"/>
+            </StackPanel>
         </Grid>
+
+        <!-- Backdrops, folded. Both cards are settings for the LYRICS PAGE, not studio work,
+             so the Workbench layout keeps them out of the way and gives the queue + review the
+             height instead. Glide is the Settings sub-block reveal (CollapsibleContent). -->
+        <controls:CollapsibleContent DockPanel.Dock="Top" IsOpen="{Binding ShowBackdrops}" Lift="10" Motion="Glide">
+        <StackPanel>
 
         <!-- Lyrics Background Video: the clip behind the lyrics page and its pause toggle.
              Moved here from Settings > Lyrics (user ask 09-08). Binds the app's SettingsViewModel
              through the window; the Modify button opens the same picker Settings used. -->
-        <Border DockPanel.Dock="Top" CornerRadius="16" Padding="18,12" Margin="0,0,0,12"
+        <Border CornerRadius="16" Padding="18,12" Margin="0,0,0,12"
                 Background="{DynamicResource SystemControlBackgroundListLowBrush}"
                 DataContext="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).Settings}"
                 x:DataType="vm:SettingsViewModel">
@@ -78,7 +126,7 @@
 
         <!-- Music videos (Discord, aaron 09-15): a clip named like the song, next to it or in a
              videos folder, replaces the cover on the lyrics page and follows playback. -->
-        <Border DockPanel.Dock="Top" CornerRadius="16" Padding="18,12" Margin="0,0,0,12"
+        <Border CornerRadius="16" Padding="18,12" Margin="0,0,0,12"
                 Background="{DynamicResource SystemControlBackgroundListLowBrush}"
                 DataContext="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).Settings}"
                 x:DataType="vm:SettingsViewModel">
@@ -95,6 +143,9 @@
                 <controls:LottieToggle Grid.Column="2" IsChecked="{Binding MusicVideosEnabled}" VerticalAlignment="Center"/>
             </Grid>
         </Border>
+
+        </StackPanel>
+        </controls:CollapsibleContent>
 
         <!-- Body -->
         <Border CornerRadius="20" ClipToBounds="True" Background="{DynamicResource SystemControlBackgroundListLowBrush}" Margin="0,0,0,20">
