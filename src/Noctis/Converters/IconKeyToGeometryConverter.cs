@@ -33,6 +33,8 @@ public class IconKeyToGeometryConverter : IValueConverter
             ["CdIcon"] = "avares://Noctis/Assets/Icons/Albums%20ICON.png",
             // The player island's lyrics bubble, reused by the Settings rail for the Lyrics page.
             ["LyricsBubbleIcon"] = "avares://Noctis/Assets/Icons/Lyrics%20ICON.png",
+            // Sidebar Lyrics Studio entry: lyric sheet + note, same stroke as the other rail masks.
+            ["LyricsStudioIcon"] = "avares://Noctis/Assets/Icons/Lyrics%20Panel%20ICON.png",
             // Fallback for smart playlist rows in sidebar.
             ["SmartPlaylistIcon"] = "avares://Noctis/Assets/Icons/Playlist%20icon.png"
         };

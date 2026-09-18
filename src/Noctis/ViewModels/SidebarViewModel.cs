@@ -48,7 +48,7 @@ public partial class SidebarViewModel : ViewModelBase
         new NavItem { Key = "folders", Label = Loc.T("Nav.Folders"), IconGlyph = "FoldersIcon" },
         new NavItem { Key = "playlists", Label = Loc.T("Nav.Playlists"), IconGlyph = "PlaylistsIcon" },
         new NavItem { Key = "visualizer", Label = Loc.T("Nav.Visualizer"), IconGlyph = "SidebarVisualizerIcon" },
-        new NavItem { Key = "lyricsstudio", Label = Loc.T("Nav.LyricsStudio"), IconGlyph = "SidebarLyricsStudioIcon" },
+        new NavItem { Key = "lyricsstudio", Label = Loc.T("Nav.LyricsStudio"), IconGlyph = "LyricsStudioIcon" },
         new NavItem { Key = "settings", Label = Loc.T("Nav.Settings"), IconGlyph = "SettingsIcon" },
     };
 

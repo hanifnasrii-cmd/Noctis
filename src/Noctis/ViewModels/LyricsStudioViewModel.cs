@@ -90,21 +90,23 @@ public partial class LyricsStudioViewModel : ViewModelBase
     public string ReviewSubtitle => Selected?.Subtitle ?? string.Empty;
     public string ReviewSourceText => Selected?.Result?.Source switch
     {
-        LyricsStudioSource.ExistingLyrics => "Timed from the song's own lyrics",
-        LyricsStudioSource.Lrclib => "Lyrics from LRCLIB, timed against the audio",
-        LyricsStudioSource.Transcription => "Transcribed — no lyrics were available, so check the words",
+        LyricsStudioSource.ExistingLyrics => "From the song's lyrics",
+        LyricsStudioSource.Lrclib => "From LRCLIB",
+        LyricsStudioSource.Transcription => "Transcribed · check the words",
         LyricsStudioSource.ExistingFile => Selected?.Existing is { } e
-            ? $"Loaded from {e.Origin} · {(e.Format == LyricsFormat.Elrc ? "word timings" : "line timings only")}"
+            ? $"From {e.Origin} · {(e.Format == LyricsFormat.Elrc ? "word timings" : "line timings")}"
             : "Loaded",
         _ => string.Empty,
     };
     public string ReviewConfidenceText => Selected?.Result is { } r
-        ? (r.Source == LyricsStudioSource.ExistingFile ? string.Empty : $"{Math.Round(r.Confidence * 100)}% of the words were heard · ")
-          + $"{r.Lines.Count} lines · saves as {(WordTimings ? "ELRC, a time for every word" : "LRC, one time per line")}"
+        ? (r.Source == LyricsStudioSource.ExistingFile ? string.Empty : $"{Math.Round(r.Confidence * 100)}% heard · ")
+          + $"{r.Lines.Count} lines · saves {(WordTimings ? "ELRC" : "LRC")}"
         : string.Empty;
     public bool ReviewIsTranscription => Selected?.Result?.Source == LyricsStudioSource.Transcription;
     public bool CanSave => Selected is { Status: StudioStatus.Ready or StudioStatus.Loaded } && ReviewLines.Count > 0;
     public string SummaryText => _savedCount == 0 ? string.Empty : $"{_savedCount} saved";
+    /// <summary>Lyrics written this session; the page rescans the library on its next visit when > 0.</summary>
+    public int SavedCount => _savedCount;
 
     public event EventHandler? Closed;
 
@@ -147,7 +149,7 @@ public partial class LyricsStudioViewModel : ViewModelBase
             {
                 item.Result = draft.ToResult(t);
                 item.Status = StudioStatus.Ready;
-                item.StatusText = "Restored from last time · review";
+                item.StatusText = "Restored · review";
                 restored++;
             }
             Queue.Add(item);
@@ -159,8 +161,8 @@ public partial class LyricsStudioViewModel : ViewModelBase
         RunStatusText = !HasFfmpeg
             ? "ffmpeg is needed to decode songs — set its path under Settings → Advanced → Helper programs."
             : Queue.Count == 0 ? "No local songs selected."
-            : restored == 0 ? $"{queued} song{(queued == 1 ? "" : "s")} queued."
-            : $"{restored} restored from last time · {queued} queued.";
+            : restored == 0 ? $"{queued} song{(queued == 1 ? "" : "s")} queued"
+            : $"{restored} restored · {queued} queued";
         if (restored > 0)
             Selected = Queue.First(i => i.Status == StudioStatus.Ready);
     }
@@ -244,8 +246,8 @@ public partial class LyricsStudioViewModel : ViewModelBase
         item.Result = new LyricsStudioResult(item.Track, existing.Lines, LyricsStudioSource.ExistingFile, 1, string.Empty, 0);
         item.Status = StudioStatus.Loaded;
         item.StatusText = existing.Format == LyricsFormat.Elrc
-            ? $"Word timings loaded from {existing.Origin}"
-            : $"Line timings loaded from {existing.Origin} · upgrade for word timings";
+            ? $"Word timings from {existing.Origin}"
+            : $"Line timings from {existing.Origin}";
         RaiseStartState();
     }
 
@@ -282,8 +284,8 @@ public partial class LyricsStudioViewModel : ViewModelBase
     {
         IsModelInstalled = _engine.Models.IsInstalled(SelectedModel.Size);
         ModelStatusText = IsModelInstalled
-            ? $"{SelectedModel.DisplayName} model installed · {SelectedModel.Description}"
-            : $"{SelectedModel.DisplayName} model not installed ({SelectedModel.SizeText}) · {SelectedModel.Description}";
+            ? $"{SelectedModel.DisplayName} installed"
+            : $"{SelectedModel.DisplayName} not installed · {SelectedModel.SizeText}";
     }
 
     [RelayCommand]
@@ -618,9 +620,10 @@ public partial class LyricsStudioViewModel : ViewModelBase
         if (_player is { State: PlaybackState.Playing }) _player.PlayPauseCommand.Execute(null);
     }
 
+    /// <summary>The time pill plays the line from its own timestamp, no pre-roll (user ask 09-17).</summary>
     [RelayCommand]
     private Task PlayFromLine(ReviewLine? line) =>
-        line is null ? Task.CompletedTask : PlayFromTime(line.Start - TimeSpan.FromSeconds(0.8));
+        line is null ? Task.CompletedTask : PlayFromTime(line.Start);
 
     private async Task PlayFromTime(TimeSpan target)
     {
@@ -629,12 +632,14 @@ public partial class LyricsStudioViewModel : ViewModelBase
         if (_player.CurrentTrack?.Id != track.Id)
         {
             _player.ReplaceQueueAndPlay(new[] { track }, 0);
-            await Task.Delay(500);
+            // Wait for the engine to report the real length rather than a fixed delay: seeking
+            // by a fraction of the tag's Duration against the engine's landed a little off.
+            for (var i = 0; i < 40 && _player.Duration <= TimeSpan.Zero; i++)
+                await Task.Delay(50);
         }
-        var duration = _player.Duration.TotalSeconds > 0 ? _player.Duration : track.Duration;
-        if (duration.TotalSeconds <= 0) return;
+        if (_player.Duration <= TimeSpan.Zero) return;
         if (target < TimeSpan.Zero) target = TimeSpan.Zero;
-        _player.SeekToPositionCommand.Execute(target.TotalSeconds / duration.TotalSeconds);
+        _player.SeekTo(target);
         if (_player.State != PlaybackState.Playing)
             _player.PlayPauseCommand.Execute(null);
     }

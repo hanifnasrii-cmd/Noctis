@@ -335,9 +335,11 @@ public partial class SettingsView : UserControl
             var library = App.Services?.GetService<ILibraryService>();
             if (library == null) return;
 
+            var ytDlp = App.Services?.GetService<Services.YouTube.YtDlpTool>();
+            var ffmpeg = App.Services?.GetService<IAudioConverterService>();
             var dialog = new LyricsBackgroundPickerDialog
             {
-                DataContext = new LyricsBackgroundPickerViewModel(vm, library)
+                DataContext = new LyricsBackgroundPickerViewModel(vm, library, ytDlp, () => ffmpeg?.GetFfmpegPath())
             };
             if (TopLevel.GetTopLevel(this) is Window owner)
             {

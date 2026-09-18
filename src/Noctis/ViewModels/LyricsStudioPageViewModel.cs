@@ -25,6 +25,12 @@ public partial class LyricsStudioPageViewModel : ViewModelBase
     private readonly Func<IReadOnlyList<Track>, LyricsStudioViewModel> _createStudio;
     private int _generation;
 
+    // The format scan reads every .lrc/.elrc in the library (thousands of files), so its result
+    // is kept across visits and only redone when the library changed or the Studio saved lyrics.
+    private List<Track>? _scannedLocal;
+    private IReadOnlyList<LyricsFormat>? _scannedFormats;
+    private bool _scanDirty = true;
+
     [ObservableProperty] private LyricsStudioViewModel? _studio;
     [ObservableProperty] private bool _isLoading;
     [ObservableProperty] private string _statusText = string.Empty;
@@ -47,6 +53,7 @@ public partial class LyricsStudioPageViewModel : ViewModelBase
         _library = library;
         _wordTimings = wordTimings;
         _createStudio = createStudio;
+        _library.LibraryUpdated += (_, _) => _scanDirty = true;
     }
 
     partial void OnIsLoadingChanged(bool value) => OnPropertyChanged(nameof(ShowEmpty));
@@ -60,15 +67,32 @@ public partial class LyricsStudioPageViewModel : ViewModelBase
     {
         if (IsBusy) return;
         var generation = ++_generation;
+        var wordTimings = _wordTimings();
+        if (Studio is { SavedCount: > 0 }) _scanDirty = true;
+
+        // Cached scan: re-pick without touching disk, and keep the open Studio when it already
+        // holds exactly that queue (selection and drafts survive the round trip).
+        if (!_scanDirty && _scannedLocal is { } cachedLocal && _scannedFormats is { } cachedFormats
+            && cachedLocal.Count == _library.Tracks.Count(t => t.SourceType == SourceType.Local))
+        {
+            var repick = PickMissing(cachedLocal, cachedFormats, wordTimings, MaxQueue);
+            if (!SameQueue(Studio, repick))
+                Studio = repick.Count > 0 ? _createStudio(repick) : null;
+            StatusText = repick.Count == 0 ? "Every local song already has the chosen format." : string.Empty;
+            return;
+        }
+
         IsLoading = true;
-        StatusText = "Counting lyrics across the library…";
+        StatusText = Localization.Loc.T("LyricsStudio.Loading");
         try
         {
-            var wordTimings = _wordTimings();
             var local = _library.Tracks.Where(t => t.SourceType == SourceType.Local).ToList();
             // Format detection reads disk per track — keep the library-wide pass off the UI thread.
             var formats = await Task.Run(() => ExistingLyricsLoader.DetectFormats(local));
             if (generation != _generation) return;
+            _scannedLocal = local;
+            _scannedFormats = formats;
+            _scanDirty = false;
 
             Counts = SettingsViewModel.BuildLyricsStudioCounts(formats);
             var picked = PickMissing(local, formats, wordTimings, MaxQueue);
@@ -87,6 +111,15 @@ public partial class LyricsStudioPageViewModel : ViewModelBase
         {
             if (generation == _generation) IsLoading = false;
         }
+    }
+
+    private static bool SameQueue(LyricsStudioViewModel? studio, List<Track> picked)
+    {
+        if (studio is null) return picked.Count == 0;
+        if (studio.Queue.Count != picked.Count) return false;
+        for (var i = 0; i < picked.Count; i++)
+            if (studio.Queue[i].Track.Id != picked[i].Id) return false;
+        return true;
     }
 
     /// <summary>The first <paramref name="max"/> tracks whose lyrics lack the chosen format.</summary>

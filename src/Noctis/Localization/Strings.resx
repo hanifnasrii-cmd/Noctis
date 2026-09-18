@@ -248,15 +248,15 @@
   <data name="Settings.SmoothFilledCurveTip" xml:space="preserve"><value>A smooth filled curve</value><comment>ToolTip.Tip in SettingsView.axaml</comment></data>
   <data name="Settings.Wave" xml:space="preserve"><value>Wave</value><comment>Text in SettingsView.axaml</comment></data>
   <data name="Settings.MusicVideos" xml:space="preserve"><value>Music videos</value><comment>Lyrics Studio card in LyricsStudioView.axaml</comment></data>
-  <data name="Settings.MusicVideosHint" xml:space="preserve"><value>Play a video named like the song (next to it, or in a videos folder) in place of the cover on the lyrics page. The song’s own audio plays.</value><comment>Lyrics Studio card hint</comment></data>
+  <data name="Settings.MusicVideosHint" xml:space="preserve"><value>A video named like the song, next to it or in a videos folder, replaces the cover on the lyrics page.</value><comment>Lyrics Studio card hint</comment></data>
   <data name="Settings.MusicVideoRounded" xml:space="preserve"><value>Rounded</value><comment>Lyrics Studio card toggle</comment></data>
   <data name="Settings.MusicVideoRoundedHint" xml:space="preserve"><value>Rounded corners like the cover, or a flat frame</value><comment>Lyrics Studio card toggle tooltip</comment></data>
   <data name="PlaybackBar.MusicVideo" xml:space="preserve"><value>Music video</value><comment>Options menu toggle in PlaybackBarView.axaml</comment></data>
   <data name="Settings.LyricsBackgroundVideo" xml:space="preserve"><value>Lyrics Background Video</value><comment>Text in SettingsView.axaml</comment></data>
-  <data name="Settings.LoopVideoGIFBehind" xml:space="preserve"><value>Loop a video or GIF behind the lyrics instead of the blurred cover.</value><comment>Text in SettingsView.axaml</comment></data>
+  <data name="Settings.LoopVideoGIFBehind" xml:space="preserve"><value>A looping video or GIF behind the lyrics.</value><comment>Text in SettingsView.axaml</comment></data>
   <data name="Settings.Choose" xml:space="preserve"><value>Choose</value><comment>Content in SettingsView.axaml</comment></data>
   <data name="LyricsBackground.Title" xml:space="preserve"><value>Lyrics Background Video</value><comment>Picker dialog title</comment></data>
-  <data name="LyricsBackground.Subtitle" xml:space="preserve"><value>Loop a video or GIF behind the lyrics. Search for songs and albums to give them their own.</value><comment>Picker dialog subtitle</comment></data>
+  <data name="LyricsBackground.Subtitle" xml:space="preserve"><value>One default clip, or a clip of their own for songs and albums.</value><comment>Picker dialog subtitle</comment></data>
   <data name="LyricsBackground.DefaultVideo" xml:space="preserve"><value>Default video</value><comment>Picker: the clip every song without its own uses</comment></data>
   <data name="LyricsBackground.NoDefaultVideo" xml:space="preserve"><value>None. Songs without their own video show the blurred cover.</value><comment>Picker: no default clip</comment></data>
   <data name="LyricsBackground.ChooseVideo" xml:space="preserve"><value>Choose video</value><comment>Picker: pick a file</comment></data>
@@ -269,6 +269,12 @@
   <data name="LyricsBackground.Song" xml:space="preserve"><value>SONG</value><comment>Picker row chip</comment></data>
   <data name="LyricsBackground.Album" xml:space="preserve"><value>ALBUM</value><comment>Picker row chip</comment></data>
   <data name="LyricsBackground.UsesDefault" xml:space="preserve"><value>Uses the default video</value><comment>Picker row status</comment></data>
+  <data name="LyricsBackground.FromYouTube" xml:space="preserve"><value>YouTube</value><comment>Button: download the backdrop from a YouTube link</comment></data>
+  <data name="LyricsBackground.YouTubeWatermark" xml:space="preserve"><value>Paste a YouTube link…</value><comment>Watermark</comment></data>
+  <data name="LyricsBackground.Download" xml:space="preserve"><value>Download</value><comment>Button</comment></data>
+  <data name="LyricsBackground.YouTubeClose" xml:space="preserve"><value>Cancel</value><comment>Button: fold the YouTube panel / stop the download</comment></data>
+  <data name="LyricsBackground.NeedsYtDlp" xml:space="preserve"><value>Downloading from YouTube needs yt-dlp.</value><comment>Shown when the tool is missing</comment></data>
+  <data name="LyricsBackground.InstallYtDlp" xml:space="preserve"><value>Install yt-dlp</value><comment>Button</comment></data>
   <data name="Settings.Modify" xml:space="preserve"><value>Modify</value><comment>Appearance: opens the lyrics background video picker</comment></data>
   <data name="Settings.SeeMoreReleases" xml:space="preserve"><value>See more releases</value><comment>Advanced: expands the release history</comment></data>
   <data name="Settings.Remove" xml:space="preserve"><value>Remove</value><comment>Content in SettingsView.axaml</comment></data>
@@ -1595,10 +1601,12 @@
   <data name="LyricsStudio.Stop" xml:space="preserve"><value>Stop</value><comment>Footer button</comment></data>
   <data name="LyricsStudio.NeedsFfmpeg" xml:space="preserve"><value>ffmpeg is needed to decode audio. Set its path in Settings › Advanced › Helper programs.</value><comment>Banner</comment></data>
   <data name="LyricsStudio.Backdrops" xml:space="preserve"><value>Backdrops</value><comment>Header disclosure in LyricsStudioView.axaml</comment></data>
+  <data name="LyricsStudio.Options" xml:space="preserve"><value>Options</value><comment>Footer dropdown holding the run options</comment></data>
+  <data name="LyricsStudio.Loading" xml:space="preserve"><value>Loading</value><comment>Page scan in progress</comment></data>
   <data name="LyricsStudio.BackdropsTip" xml:space="preserve"><value>The looping video behind the lyrics, and music videos in the cover slot</value><comment>Tooltip in LyricsStudioView.axaml</comment></data>
   <data name="LyricsStudio.Queue" xml:space="preserve"><value>SONGS</value><comment>Queue column header</comment></data>
   <data name="LyricsStudio.ReviewEmptyTitle" xml:space="preserve"><value>Nothing to review yet</value><comment>Review pane empty state</comment></data>
-  <data name="LyricsStudio.ReviewEmptyBody" xml:space="preserve"><value>Pick a song, press Start, then check the words and save.</value><comment>Review pane empty state</comment></data>
+  <data name="LyricsStudio.ReviewEmptyBody" xml:space="preserve"><value>Pick a song and press Start.</value><comment>Review pane empty state</comment></data>
   <data name="LyricsStudio.Upgrade" xml:space="preserve"><value>Time every word</value><comment>Review button, shown for line-level lyrics</comment></data>
   <data name="LyricsStudio.UpgradeTip" xml:space="preserve"><value>Times every word of these lines. The line-level file is kept.</value><comment>Review button tooltip</comment></data>
   <data name="LyricsStudio.ReviewHint" xml:space="preserve"><value>Click a time to hear that line. Edit text in place. Tinted lines need a second look.</value><comment>Review pane hint</comment></data>

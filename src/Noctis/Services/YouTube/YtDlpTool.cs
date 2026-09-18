@@ -155,6 +155,40 @@ public sealed class YtDlpTool
         }
     }
 
+    /// <summary>
+    /// Downloads the video stream (no audio) for a lyrics backdrop into a fresh temp folder under
+    /// <paramref name="targetDir"/>, capped at <paramref name="maxHeight"/> (0 = best), and returns the file.
+    /// </summary>
+    public async Task<string> DownloadVideoAsync(string url, string targetDir, string? ffmpegPath, int maxHeight, IProgress<double>? progress, CancellationToken ct)
+    {
+        var exe = Resolve() ?? throw new InvalidOperationException("yt-dlp is not installed.");
+        var scratch = Path.Combine(targetDir, ".noctis-download-" + Guid.NewGuid().ToString("N")[..8]);
+        Directory.CreateDirectory(scratch);
+        try
+        {
+            var template = Path.Combine(scratch, "%(id)s.%(ext)s");
+            var ffmpegDir = ffmpegPath is null ? null : Path.GetDirectoryName(ffmpegPath);
+            var (code, _, stderr) = await RunAsync(exe, YtDlpParsing.VideoDownloadArgs(url, template, ffmpegDir, maxHeight), line =>
+            {
+                if (YtDlpParsing.ParseProgressPercent(line) is { } pct) progress?.Report(pct / 100.0);
+            }, ct).ConfigureAwait(false);
+
+            var produced = Directory.EnumerateFiles(scratch)
+                .Where(f => !f.EndsWith(".part", StringComparison.OrdinalIgnoreCase) && !f.EndsWith(".ytdl", StringComparison.OrdinalIgnoreCase))
+                .OrderByDescending(f => new FileInfo(f).Length)
+                .FirstOrDefault();
+            if (produced is null || code != 0 && new FileInfo(produced).Length == 0)
+                throw new InvalidOperationException(Tail(stderr) ?? "Download produced no file.");
+            progress?.Report(1);
+            return produced;
+        }
+        catch
+        {
+            try { Directory.Delete(scratch, true); } catch { }
+            throw;
+        }
+    }
+
     /// <summary>Removes the temp folder a download left behind once its file has been moved out.</summary>
     public static void CleanupScratch(string producedFile)
     {

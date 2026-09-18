@@ -3,14 +3,23 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
+using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Noctis.Helpers;
 using Noctis.Models;
 using Noctis.Services;
+using Noctis.Services.YouTube;
 
 namespace Noctis.ViewModels;
+
+/// <summary>A resolution cap for the YouTube backdrop download (0 = best available).</summary>
+public sealed record BackdropQuality(string Label, int MaxHeight)
+{
+    public override string ToString() => Label;
+}
 
 /// <summary>One row of the lyrics background picker: a song or an album.</summary>
 public partial class LyricsBackgroundPickItem : ObservableObject
@@ -45,6 +54,18 @@ public partial class LyricsBackgroundPickerViewModel : ObservableObject
 
     private readonly SettingsViewModel _settings;
     private readonly ILibraryService _library;
+    private readonly YtDlpTool? _ytDlp;
+    private readonly Func<string?>? _ffmpegPath;
+    private CancellationTokenSource? _downloadCts;
+
+    public static readonly IReadOnlyList<BackdropQuality> Qualities = new[]
+    {
+        new BackdropQuality("Best available", 0),
+        new BackdropQuality("1080p", 1080),
+        new BackdropQuality("720p", 720),
+        new BackdropQuality("480p", 480),
+        new BackdropQuality("360p", 360),
+    };
 
     /// <summary>Opens the video file picker; set by the dialog so the picker parents to it.</summary>
     public Func<Task<string?>>? PickFile { get; set; }
@@ -68,10 +89,33 @@ public partial class LyricsBackgroundPickerViewModel : ObservableObject
     public bool ShowPrompt => !IsSearching && Results.Count == 0;
     public bool ShowNoResults => IsSearching && Results.Count == 0;
 
-    public LyricsBackgroundPickerViewModel(SettingsViewModel settings, ILibraryService library)
+    // ── From YouTube (user ask 09-17): paste a link, pick a resolution, the clip lands as
+    //    the default or as one song's/album's own backdrop. Video only — the backdrop is muted.
+    [ObservableProperty] private bool _showYouTube;
+    [ObservableProperty] private string _youTubeUrl = string.Empty;
+    [ObservableProperty] private BackdropQuality _selectedQuality = Qualities[0];
+    [ObservableProperty] private bool _isDownloading;
+    [ObservableProperty] private double _downloadProgress;
+    [ObservableProperty] private string _youTubeStatus = string.Empty;
+    [ObservableProperty] private bool _toolInstalled;
+    [ObservableProperty] private bool _isInstallingTool;
+    /// <summary>Row the download is for; null = the default video.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(YouTubeTargetLabel))]
+    private LyricsBackgroundPickItem? _youTubeTarget;
+
+    public IReadOnlyList<BackdropQuality> QualityOptions => Qualities;
+    public bool CanUseYouTube => _ytDlp is not null;
+    public string YouTubeTargetLabel => YouTubeTarget is { } t ? t.Title : Localization.Loc.T("LyricsBackground.DefaultVideo");
+
+    public LyricsBackgroundPickerViewModel(SettingsViewModel settings, ILibraryService library,
+        YtDlpTool? ytDlp = null, Func<string?>? ffmpegPath = null)
     {
         _settings = settings;
         _library = library;
+        _ytDlp = ytDlp;
+        _ffmpegPath = ffmpegPath;
+        ToolInstalled = ytDlp?.IsAvailable == true;
         DefaultVideoName = settings.HasLyricsBackgroundMedia ? settings.LyricsBackgroundMediaName : string.Empty;
         RefreshResults();
     }
@@ -202,7 +246,108 @@ public partial class LyricsBackgroundPickerViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void Close() => CloseRequested?.Invoke(this, EventArgs.Empty);
+    private void Close()
+    {
+        _downloadCts?.Cancel();
+        CloseRequested?.Invoke(this, EventArgs.Empty);
+    }
+
+    [RelayCommand]
+    private void YouTubeForDefault() => OpenYouTube(null);
+
+    [RelayCommand]
+    private void YouTubeForItem(LyricsBackgroundPickItem? item) => OpenYouTube(item);
+
+    private void OpenYouTube(LyricsBackgroundPickItem? target)
+    {
+        if (!CanUseYouTube) return;
+        // Same target again folds the panel; a different one retargets it.
+        if (ShowYouTube && ReferenceEquals(YouTubeTarget, target) && !IsDownloading) { ShowYouTube = false; return; }
+        YouTubeTarget = target;
+        YouTubeStatus = string.Empty;
+        ShowYouTube = true;
+    }
+
+    [RelayCommand]
+    private void CloseYouTube()
+    {
+        if (IsDownloading) { _downloadCts?.Cancel(); return; }
+        ShowYouTube = false;
+    }
+
+    [RelayCommand]
+    private async Task InstallToolAsync()
+    {
+        if (_ytDlp is null || IsInstallingTool) return;
+        IsInstallingTool = true;
+        DownloadProgress = 0;
+        YouTubeStatus = "Downloading yt-dlp…";
+        try
+        {
+            await _ytDlp.InstallAsync(new Progress<double>(p => Dispatcher.UIThread.Post(() => DownloadProgress = p)), CancellationToken.None);
+            ToolInstalled = true;
+            YouTubeStatus = string.Empty;
+        }
+        catch (Exception ex)
+        {
+            YouTubeStatus = $"Couldn't install yt-dlp — {ex.Message}";
+        }
+        finally { IsInstallingTool = false; }
+    }
+
+    [RelayCommand]
+    private async Task DownloadFromYouTubeAsync()
+    {
+        if (_ytDlp is null || IsDownloading) return;
+        var url = (YouTubeUrl ?? string.Empty).Trim();
+        if (!YtDlpParsing.LooksLikeYouTubeUrl(url)) { YouTubeStatus = "Paste a YouTube link first."; return; }
+        if (!ToolInstalled) { YouTubeStatus = "Install yt-dlp first."; return; }
+
+        var target = YouTubeTarget;
+        var cts = _downloadCts = new CancellationTokenSource();
+        IsDownloading = true;
+        DownloadProgress = 0;
+        YouTubeStatus = "Downloading…";
+        string? produced = null;
+        try
+        {
+            var scratchRoot = Path.Combine(Path.GetTempPath(), "noctis-backdrops");
+            Directory.CreateDirectory(scratchRoot);
+            string? ffmpeg = null;
+            try { ffmpeg = _ffmpegPath?.Invoke(); } catch { }
+            produced = await _ytDlp.DownloadVideoAsync(url, scratchRoot, ffmpeg, SelectedQuality.MaxHeight,
+                new Progress<double>(p => Dispatcher.UIThread.Post(() => DownloadProgress = p)), cts.Token);
+
+            if (target is null)
+            {
+                await _settings.SetLyricsBackgroundMediaAsync(produced);
+                DefaultVideoName = _settings.HasLyricsBackgroundMedia ? _settings.LyricsBackgroundMediaName : string.Empty;
+            }
+            else
+            {
+                await _settings.SetLyricsBackgroundOverrideAsync(target.Key, produced);
+                target.VideoName = VideoNameFor(target.Key);
+                RaiseStateProperties();
+            }
+            YouTubeStatus = string.Empty;
+            YouTubeUrl = string.Empty;
+            ShowYouTube = false;
+        }
+        catch (OperationCanceledException)
+        {
+            YouTubeStatus = "Cancelled.";
+        }
+        catch (Exception ex)
+        {
+            YouTubeStatus = $"Download failed — {ex.Message}";
+        }
+        finally
+        {
+            if (produced is not null) YtDlpTool.CleanupScratch(produced);
+            IsDownloading = false;
+            if (ReferenceEquals(_downloadCts, cts)) _downloadCts = null;
+        }
+    }
 
     private async Task<string?> PickAsync()
     {

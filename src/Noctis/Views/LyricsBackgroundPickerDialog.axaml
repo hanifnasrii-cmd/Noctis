@@ -44,6 +44,32 @@
             <Setter Property="Cursor" Value="Hand" />
             <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundListMediumBrush}" />
         </Style>
+        <Style Selector="ComboBox.pill">
+            <Setter Property="CornerRadius" Value="999" />
+            <Setter Property="Padding" Value="14,6" />
+            <Setter Property="MinHeight" Value="0" />
+            <Setter Property="BorderThickness" Value="1.5" />
+            <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseHighBrush}" />
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundChromeWhiteBrush}" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="UseLayoutRounding" Value="True" />
+        </Style>
+        <Style Selector="ComboBox.pill /template/ Border#Background">
+            <Setter Property="CornerRadius" Value="999" />
+        </Style>
+        <Style Selector="ComboBox.pill /template/ Border#HighlightBackground">
+            <Setter Property="CornerRadius" Value="999" />
+        </Style>
+        <Style Selector="ComboBoxItem">
+            <Setter Property="Margin" Value="4,1" />
+            <Setter Property="Padding" Value="12,6" />
+            <Setter Property="MinHeight" Value="30" />
+            <Setter Property="CornerRadius" Value="999" />
+        </Style>
+        <Style Selector="ComboBoxItem /template/ ContentPresenter">
+            <Setter Property="CornerRadius" Value="999" />
+        </Style>
         <Style Selector="Border.kind-chip">
             <Setter Property="Background" Value="#22FFFFFF" />
             <Setter Property="CornerRadius" Value="999" />
@@ -91,20 +117,21 @@
 
                 <!-- Header: title, default clip row, search -->
                 <StackPanel DockPanel.Dock="Top" Margin="24,20,24,8" Spacing="12">
-                    <Grid ColumnDefinitions="*,Auto">
-                        <StackPanel Grid.Column="0" Spacing="2" Margin="0,4,12,0">
+                    <!-- Title centred on the card (user ask 09-17); the X keeps its corner. -->
+                    <Panel>
+                        <StackPanel Spacing="2" Margin="40,4,40,0" HorizontalAlignment="Center">
                             <TextBlock Text="{loc:T LyricsBackground.Title}"
-                                       FontSize="20" FontWeight="Bold" />
+                                       FontSize="20" FontWeight="Bold" TextAlignment="Center" />
                             <TextBlock Text="{loc:T LyricsBackground.Subtitle}"
-                                       FontSize="12" Opacity="0.5" TextWrapping="Wrap" />
+                                       FontSize="12" Opacity="0.5" TextWrapping="Wrap" TextAlignment="Center" />
                         </StackPanel>
-                        <Button Grid.Column="1" Classes="dialog-close"
+                        <Button Classes="dialog-close"
                                 ToolTip.Tip="{loc:T Settings.CloseTip}"
                                 Command="{Binding CloseCommand}"
-                                VerticalAlignment="Top">
+                                HorizontalAlignment="Right" VerticalAlignment="Top">
                             <PathIcon Data="{StaticResource DismissIcon}" Width="12" Height="12" />
                         </Button>
-                    </Grid>
+                    </Panel>
 
                     <!-- Default clip: every song without its own video plays this one -->
                     <Border Background="#14FFFFFF" CornerRadius="14" Padding="14,10">
@@ -124,12 +151,62 @@
                                         Foreground="{DynamicResource AccentForegroundBrush}"
                                         Command="{Binding ChooseDefaultCommand}" />
                                 <Button Classes="row-action"
+                                        Content="{loc:T LyricsBackground.FromYouTube}"
+                                        Command="{Binding YouTubeForDefaultCommand}"
+                                        IsVisible="{Binding CanUseYouTube}" />
+                                <Button Classes="row-action"
                                         Content="{loc:T LyricsBackground.Remove}"
                                         Command="{Binding ClearDefaultCommand}"
                                         IsVisible="{Binding HasDefaultVideo}" />
                             </StackPanel>
                         </Grid>
                     </Border>
+
+                    <!-- From YouTube: link + resolution cap, downloaded video-only (the backdrop is
+                         muted) and stored like a picked file, for the default or for one row. -->
+                    <controls:CollapsibleContent IsOpen="{Binding ShowYouTube}" Lift="8" Motion="Glide">
+                        <Border Background="#14FFFFFF" CornerRadius="14" Padding="14,10">
+                            <StackPanel Spacing="8">
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <TextBlock Grid.Column="0" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center" TextTrimming="CharacterEllipsis">
+                                        <Run Text="{loc:T LyricsBackground.FromYouTube}" /><Run Text=" · " /><Run Text="{Binding YouTubeTargetLabel}" Foreground="{DynamicResource AccentTextBrush}" />
+                                    </TextBlock>
+                                    <Button Grid.Column="1" Classes="row-action" Content="{loc:T LyricsBackground.YouTubeClose}"
+                                            Command="{Binding CloseYouTubeCommand}" />
+                                </Grid>
+                                <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8" IsVisible="{Binding ToolInstalled}">
+                                    <TextBox Grid.Column="0" Text="{Binding YouTubeUrl}"
+                                             Watermark="{loc:T LyricsBackground.YouTubeWatermark}"
+                                             CornerRadius="999" Padding="14,6" BorderThickness="1.5" MinHeight="0"
+                                             IsEnabled="{Binding !IsDownloading}" />
+                                    <ComboBox Grid.Column="1" Classes="pill" MinWidth="130"
+                                              ItemsSource="{Binding QualityOptions}" SelectedItem="{Binding SelectedQuality}"
+                                              IsEnabled="{Binding !IsDownloading}" />
+                                    <Button Grid.Column="2" Classes="row-action accent-btn"
+                                            Content="{loc:T LyricsBackground.Download}"
+                                            Background="{DynamicResource AccentButtonBackground}"
+                                            Foreground="{DynamicResource AccentForegroundBrush}"
+                                            Command="{Binding DownloadFromYouTubeCommand}"
+                                            IsEnabled="{Binding !IsDownloading}" />
+                                </Grid>
+                                <Grid ColumnDefinitions="*,Auto" IsVisible="{Binding !ToolInstalled}">
+                                    <TextBlock Grid.Column="0" Text="{loc:T LyricsBackground.NeedsYtDlp}" FontSize="11" Opacity="0.6" VerticalAlignment="Center" TextWrapping="Wrap" />
+                                    <Button Grid.Column="1" Classes="row-action accent-btn"
+                                            Content="{loc:T LyricsBackground.InstallYtDlp}"
+                                            Background="{DynamicResource AccentButtonBackground}"
+                                            Foreground="{DynamicResource AccentForegroundBrush}"
+                                            Command="{Binding InstallToolCommand}"
+                                            IsEnabled="{Binding !IsInstallingTool}" />
+                                </Grid>
+                                <ProgressBar Value="{Binding DownloadProgress}" Minimum="0" Maximum="1" Height="3" CornerRadius="2"
+                                             IsVisible="{Binding IsDownloading}" />
+                                <ProgressBar Value="{Binding DownloadProgress}" Minimum="0" Maximum="1" Height="3" CornerRadius="2"
+                                             IsVisible="{Binding IsInstallingTool}" />
+                                <TextBlock Text="{Binding YouTubeStatus}" FontSize="11" Opacity="0.65" TextWrapping="Wrap"
+                                           IsVisible="{Binding YouTubeStatus, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                            </StackPanel>
+                        </Border>
+                    </controls:CollapsibleContent>
 
                     <!-- Same outline as the Settings path boxes (ffmpeg "(auto-detect)"). -->
                     <TextBox Text="{Binding SearchText}"
@@ -191,6 +268,11 @@
                                                         Foreground="{DynamicResource AccentForegroundBrush}"
                                                         Command="{Binding $parent[ItemsControl].((vm:LyricsBackgroundPickerViewModel)DataContext).ChooseForItemCommand}"
                                                         CommandParameter="{Binding}" />
+                                                <Button Classes="row-action"
+                                                        Content="{loc:T LyricsBackground.FromYouTube}"
+                                                        Command="{Binding $parent[ItemsControl].((vm:LyricsBackgroundPickerViewModel)DataContext).YouTubeForItemCommand}"
+                                                        CommandParameter="{Binding}"
+                                                        IsVisible="{Binding $parent[ItemsControl].((vm:LyricsBackgroundPickerViewModel)DataContext).CanUseYouTube}" />
                                                 <Button Classes="row-action"
                                                         Content="{loc:T LyricsBackground.UseDefault}"
                                                         Command="{Binding $parent[ItemsControl].((vm:LyricsBackgroundPickerViewModel)DataContext).ClearForItemCommand}"

@@ -100,6 +100,26 @@ public static partial class YtDlpParsing
         return args;
     }
 
+    /// <summary>
+    /// Lyrics-backdrop download: video only (the backdrop plays with :no-audio, so an audio
+    /// stream is dead weight), mp4 first, capped at <paramref name="maxHeight"/> (0 = best).
+    /// With ffmpeg a non-mp4 pick is remuxed so the file is always an .mp4.
+    /// </summary>
+    public static IReadOnlyList<string> VideoDownloadArgs(string url, string outputTemplate, string? ffmpegPath, int maxHeight)
+    {
+        var cap = maxHeight > 0 ? $"[height<={maxHeight}]" : string.Empty;
+        var args = new List<string>
+        {
+            "--no-playlist", "--no-warnings", "--newline", "--no-mtime", "--no-part",
+            "-f", $"bestvideo{cap}[ext=mp4]/bestvideo{cap}/best{cap}[ext=mp4]/best{cap}",
+            "-o", outputTemplate,
+        };
+        if (!string.IsNullOrWhiteSpace(ffmpegPath))
+            args.AddRange(new[] { "--ffmpeg-location", ffmpegPath, "--remux-video", "mp4" });
+        args.Add(url);
+        return args;
+    }
+
     // ── JSON ──────────────────────────────────────────────────────────────────
 
     /// <summary>Parses one <c>--dump-json</c> object; null when it is not a video entry.</summary>

@@ -27,9 +27,11 @@ public partial class LyricsStudioView : UserControl
             var library = App.Services?.GetService<ILibraryService>();
             if (library == null) return;
 
+            var ytDlp = App.Services?.GetService<Services.YouTube.YtDlpTool>();
+            var ffmpeg = App.Services?.GetService<IAudioConverterService>();
             var dialog = new LyricsBackgroundPickerDialog
             {
-                DataContext = new LyricsBackgroundPickerViewModel(main.Settings, library)
+                DataContext = new LyricsBackgroundPickerViewModel(main.Settings, library, ytDlp, () => ffmpeg?.GetFfmpegPath())
             };
             DialogHelper.SizeToOwner(dialog, owner);
             await dialog.ShowDialog(owner);

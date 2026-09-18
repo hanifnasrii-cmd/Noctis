@@ -528,6 +528,15 @@ public partial class PlayerViewModel : ViewModelBase
         SeekToPosition(target.Ticks / (double)Duration.Ticks);
     }
 
+    /// <summary>Absolute seek, clamped to the track; rides the fraction seek so its bookkeeping stays in one place.</summary>
+    internal void SeekTo(TimeSpan target)
+    {
+        if (CurrentTrack == null || Duration <= TimeSpan.Zero) return;
+        if (target < TimeSpan.Zero) target = TimeSpan.Zero;
+        if (target > Duration) target = Duration;
+        SeekToPosition(target.Ticks / (double)Duration.Ticks);
+    }
+
     [RelayCommand]
     private void SeekToPosition(double fraction)
     {
