@@ -38,6 +38,7 @@ public partial class CoverFlowView : UserControl
 
     private CoverFlowViewModel? _vm;
     private int _slideStep;
+    private double _slideSeconds = CoverFlowCarouselGeometry.SlideDuration.TotalSeconds;
     private long _slideStartTicks;
     private bool _frameQueued;
     private bool _backgroundOnA;
@@ -70,11 +71,8 @@ public partial class CoverFlowView : UserControl
 
     private void BuildCarousel()
     {
-        _slots[0] = SlotPrev2;
-        _slots[1] = SlotPrev1;
-        _slots[2] = CenterCard;
-        _slots[3] = SlotNext1;
-        _slots[4] = SlotNext2;
+        CoverFlowCard[] ordered = { SlotPrev2, SlotPrev1, CenterCard, SlotNext1, SlotNext2 };
+        Array.Copy(ordered, _slots, ordered.Length);
 
         for (var i = 0; i < _slots.Length; i++)
         {
@@ -87,7 +85,7 @@ public partial class CoverFlowView : UserControl
             group.Children.Add(scale);
             group.Children.Add(move);
             _slots[i].RenderTransform = group;
-            _slots[i].Tapped += OnCardTapped;
+            _slots[i].TitleClicked += OnCardTitleClicked;
             SetPose(i, SlotOf(i));
         }
 
@@ -177,6 +175,7 @@ public partial class CoverFlowView : UserControl
         scale.ScaleX = pose.Scale;
         scale.ScaleY = pose.Scale;
         move.X = pose.X;
+        move.Y = pose.Y;
         var card = _slots[index];
         card.Dim = pose.Dim;
         card.Opacity = pose.Opacity;
@@ -220,6 +219,7 @@ public partial class CoverFlowView : UserControl
         }
 
         _slideStep = step;
+        _slideSeconds = CoverFlowCarouselGeometry.SlideDurationFor(step).TotalSeconds;
         _slideStartTicks = Stopwatch.GetTimestamp();
         IsSliding = true;
         ApplySlideFrame(0);
@@ -239,7 +239,7 @@ public partial class CoverFlowView : UserControl
         _frameQueued = false;
         if (!IsSliding) return;
         var elapsed = (Stopwatch.GetTimestamp() - _slideStartTicks) / (double)Stopwatch.Frequency;
-        var t = elapsed / CoverFlowCarouselGeometry.SlideDuration.TotalSeconds;
+        var t = elapsed / _slideSeconds;
         if (t >= 1)
         {
             FinishSlide();
@@ -299,17 +299,13 @@ public partial class CoverFlowView : UserControl
         }
     }
 
-    /// <summary>Side card → play that track (the row slides it to the centre); centre card
-    /// → the album page. Clicks on the artist link inside the caption are the link's.</summary>
-    private void OnCardTapped(object? sender, TappedEventArgs e)
+    /// <summary>The caption's title link (09-17: the artwork itself no longer navigates).
+    /// Side card → play that track (the row slides it to the centre); centre card → the
+    /// album page.</summary>
+    private void OnCardTitleClicked(object? sender, EventArgs e)
     {
         if (_vm == null || sender is not CoverFlowCard card) return;
-        if (e.Source is Visual source && source.FindAncestorOfType<Button>(includeSelf: true) is { } link
-            && card.IsVisualAncestorOf(link))
-            return;
-
         var slot = SlotOf(Array.IndexOf(_slots, card));
-        e.Handled = true;
         if (slot == 0)
             _vm.GoToAlbumCommand.Execute(null);
         else

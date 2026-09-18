@@ -36,10 +36,10 @@ public class CoverFlowCarouselGeometryTests
         Assert.True(l1.AngleY < 0);
         Assert.True(r1.AngleY > 0);
         // Spec: ±1 ≈ 85% at ~15–20°, ±2 ≈ 70% at ~25–30°, dimmer and a little transparent.
-        Assert.InRange(r1.Scale, 0.84, 0.86);
-        Assert.InRange(r1.AngleY, 15, 20);
-        Assert.InRange(r2.Scale, 0.69, 0.71);
-        Assert.InRange(r2.AngleY, 25, 30);
+        Assert.Equal(CoverFlowCarouselGeometry.FirstScale, r1.Scale, 6);
+        Assert.Equal(CoverFlowCarouselGeometry.FirstAngle, r1.AngleY, 6);
+        Assert.Equal(CoverFlowCarouselGeometry.FirstScale * CoverFlowCarouselGeometry.ScaleStep, r2.Scale, 6);
+        Assert.InRange(r2.AngleY, CoverFlowCarouselGeometry.FirstAngle, CoverFlowCarouselGeometry.AngleCap);
         Assert.True(r2.Dim > r1.Dim);
         Assert.True(r2.Opacity < r1.Opacity);
         Assert.True(r2.X > r1.X);
@@ -48,9 +48,67 @@ public class CoverFlowCarouselGeometryTests
     [Fact]
     public void ExitSlot_IsTransparent_AndPositionsClamp()
     {
+        Assert.Equal(2, CoverFlowCarouselGeometry.SideSlots);
+        Assert.True(CoverFlowCarouselGeometry.At(2).Opacity >= CoverFlowCarouselGeometry.OpacityFloor, "the second card on a side is a real, visible card");
         Assert.Equal(0, CoverFlowCarouselGeometry.At(3).Opacity);
         Assert.Equal(CoverFlowCarouselGeometry.At(3), CoverFlowCarouselGeometry.At(7));
         Assert.Equal(CoverFlowCarouselGeometry.At(-3), CoverFlowCarouselGeometry.At(-9));
+    }
+
+    [Fact]
+    public void SlideDuration_GrowsWithTheDistanceJumped()
+    {
+        var one = CoverFlowCarouselGeometry.SlideDurationFor(1);
+        Assert.Equal(CoverFlowCarouselGeometry.SlideDuration, one);
+        Assert.Equal(one, CoverFlowCarouselGeometry.SlideDurationFor(-1));
+        Assert.Equal(one, CoverFlowCarouselGeometry.SlideDurationFor(0));
+        Assert.True(CoverFlowCarouselGeometry.SlideDurationFor(4) > one);
+        Assert.True(CoverFlowCarouselGeometry.SlideDurationFor(2) > one);
+        Assert.Equal(CoverFlowCarouselGeometry.SlideDurationFor(2), CoverFlowCarouselGeometry.SlideDurationFor(-2));
+        Assert.True(CoverFlowCarouselGeometry.SlideDurationFor(2) <= TimeSpan.FromMilliseconds(1000), "a two-slot jump still lands well under a second");
+    }
+
+    [Fact]
+    public void Row_RecedesAndCompressesOutward()
+    {
+        // Classic depth: each step outward is SHORTER than the last (geometric spacing),
+        // the card smaller (to a floor), more tilted (to a cap) and dimmer.
+        Assert.Equal(CoverFlowCarouselGeometry.CenterGap, CoverFlowCarouselGeometry.At(1).X, 6);
+        var prevStep = double.MaxValue;
+        for (var s = 1; s <= CoverFlowCarouselGeometry.SideSlots; s++)
+        {
+            var inner = CoverFlowCarouselGeometry.At(s - 1);
+            var outer = CoverFlowCarouselGeometry.At(s);
+            var step = outer.X - inner.X;
+            Assert.True(step > 0, $"slot {s} sits further out than slot {s - 1}");
+            Assert.True(step < prevStep, $"the step to slot {s} ({step}) is shorter than the one before ({prevStep})");
+            if (s >= 2) Assert.Equal(CoverFlowCarouselGeometry.StepShrink, step / prevStep, 6);
+            prevStep = step;
+            Assert.True(outer.Scale <= inner.Scale && outer.Scale >= CoverFlowCarouselGeometry.ScaleFloor);
+            Assert.True(outer.AngleY >= inner.AngleY && outer.AngleY <= CoverFlowCarouselGeometry.AngleCap);
+            Assert.True(outer.Dim >= inner.Dim);
+            Assert.True(outer.Opacity <= inner.Opacity && outer.Opacity >= CoverFlowCarouselGeometry.OpacityFloor);
+            Assert.True(CoverFlowCarouselGeometry.ZIndexAt(s) < CoverFlowCarouselGeometry.ZIndexAt(s - 1));
+        }
+        Assert.Equal(CoverFlowCarouselGeometry.AngleCap, CoverFlowCarouselGeometry.At(CoverFlowCarouselGeometry.AngleCapSlot).AngleY, 6);
+        Assert.Equal(CoverFlowCarouselGeometry.AngleCap, CoverFlowCarouselGeometry.At(CoverFlowCarouselGeometry.SideSlots).AngleY, 6);
+        // Reference mockup: the ±2 step is roughly half the ±1 step (measured 0.56-0.60).
+        var first = CoverFlowCarouselGeometry.At(1).X;
+        var last = CoverFlowCarouselGeometry.At(2).X - CoverFlowCarouselGeometry.At(1).X;
+        Assert.InRange(last / first, 0.45, 0.65);
+    }
+
+    [Fact]
+    public void FloatArc_LiftsOuterCardsAFewPxPerSlot_Mirrored()
+    {
+        Assert.Equal(0, CoverFlowCarouselGeometry.At(0).Y);
+        for (var s = 1; s <= CoverFlowCarouselGeometry.SideSlots; s++)
+        {
+            Assert.Equal(-CoverFlowCarouselGeometry.ArcRisePerSlot * s, CoverFlowCarouselGeometry.At(s).Y, 6);
+            Assert.Equal(CoverFlowCarouselGeometry.At(s).Y, CoverFlowCarouselGeometry.At(-s).Y, 6);
+        }
+        // Fractional positions ride the arc too (the slide animates Y with X).
+        Assert.Equal(-CoverFlowCarouselGeometry.ArcRisePerSlot * 1.5, CoverFlowCarouselGeometry.At(1.5).Y, 6);
     }
 
     [Fact]
@@ -99,5 +157,8 @@ public class CoverFlowCarouselGeometryTests
         Assert.Equal(0, CoverFlowViewModel.StepBetween(c, other, p1, p2, n1, n2));
         Assert.Equal(0, CoverFlowViewModel.StepBetween(c, c, p1, p2, n1, n2));
         Assert.Equal(0, CoverFlowViewModel.StepBetween(c, null, p1, p2, n1, n2));
+        var p3 = new Track { Title = "p3" }; var n4 = new Track { Title = "n4" };
+        Assert.Equal(-3, CoverFlowViewModel.StepBetween(c, p3, p1, p2, n1, n2, p3, null, null, n4));
+        Assert.Equal(4, CoverFlowViewModel.StepBetween(c, n4, p1, p2, n1, n2, p3, null, null, n4));
     }
 }

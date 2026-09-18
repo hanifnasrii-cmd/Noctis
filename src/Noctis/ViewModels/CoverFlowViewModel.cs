@@ -157,13 +157,18 @@ public partial class CoverFlowViewModel : ViewModelBase, IDisposable
     /// centre is looked up among the old neighbours. Reference identity — the queue and
     /// history hold the very same Track instances.</summary>
     internal static int StepBetween(Track? oldCenter, Track? newCenter,
-        Track? oldPrev1, Track? oldPrev2, Track? oldNext1, Track? oldNext2)
+        Track? oldPrev1, Track? oldPrev2, Track? oldNext1, Track? oldNext2,
+        Track? oldPrev3 = null, Track? oldPrev4 = null, Track? oldNext3 = null, Track? oldNext4 = null)
     {
         if (newCenter == null || ReferenceEquals(oldCenter, newCenter)) return 0;
         if (ReferenceEquals(newCenter, oldNext1)) return 1;
         if (ReferenceEquals(newCenter, oldNext2)) return 2;
+        if (ReferenceEquals(newCenter, oldNext3)) return 3;
+        if (ReferenceEquals(newCenter, oldNext4)) return 4;
         if (ReferenceEquals(newCenter, oldPrev1)) return -1;
         if (ReferenceEquals(newCenter, oldPrev2)) return -2;
+        if (ReferenceEquals(newCenter, oldPrev3)) return -3;
+        if (ReferenceEquals(newCenter, oldPrev4)) return -4;
         return 0;
     }
 
@@ -241,7 +246,8 @@ public partial class CoverFlowViewModel : ViewModelBase, IDisposable
 
         // Judge the slide BEFORE the slots move: the old neighbours are still in place.
         var centerChanged = !ReferenceEquals(CenterTrack, current);
-        var step = StepBetween(CenterTrack, current, PreviousTrack, FarPreviousTrack, NextTrack, FarNextTrack);
+        var step = StepBetween(CenterTrack, current, PreviousTrack, FarPreviousTrack, NextTrack, FarNextTrack,
+            EdgePreviousTrack, OffPreviousTrack, EdgeNextTrack, OffNextTrack);
 
         // Track center track property changes (e.g. IsFavorite toggle)
         if (_subscribedCenterTrack != current)

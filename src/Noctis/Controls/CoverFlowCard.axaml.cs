@@ -1,4 +1,6 @@
+using System;
 using System.Windows.Input;
+using Avalonia.Interactivity;
 using Avalonia;
 using Avalonia.Controls;
 
@@ -53,6 +55,13 @@ public partial class CoverFlowCard : UserControl
     /// <summary>When set the artist caption becomes a link that runs this command.</summary>
     public static readonly StyledProperty<ICommand?> ArtistCommandProperty =
         AvaloniaProperty.Register<CoverFlowCard, ICommand?>(nameof(ArtistCommand));
+
+    public static readonly StyledProperty<string?> TitleToolTipProperty =
+        AvaloniaProperty.Register<CoverFlowCard, string?>(nameof(TitleToolTip));
+
+    /// <summary>The title link was clicked. The host decides what that means (the carousel
+    /// opens the album for the centre card and plays the track for a side card).</summary>
+    public event EventHandler? TitleClicked;
 
     /// <summary>Caption text width cap: the artwork width minus caption padding and badge room.</summary>
     public static readonly DirectProperty<CoverFlowCard, double> TitleMaxWidthProperty =
@@ -150,6 +159,13 @@ public partial class CoverFlowCard : UserControl
     public double CardBlurRadius { get => GetValue(CardBlurRadiusProperty); set => SetValue(CardBlurRadiusProperty, value); }
     public object? Overlay { get => GetValue(OverlayProperty); set => SetValue(OverlayProperty, value); }
     public ICommand? ArtistCommand { get => GetValue(ArtistCommandProperty); set => SetValue(ArtistCommandProperty, value); }
+    public string? TitleToolTip { get => GetValue(TitleToolTipProperty); set => SetValue(TitleToolTipProperty, value); }
+
+    private void OnTitleClick(object? sender, RoutedEventArgs e)
+    {
+        e.Handled = true;
+        TitleClicked?.Invoke(this, EventArgs.Empty);
+    }
 
     public double TitleMaxWidth
     {

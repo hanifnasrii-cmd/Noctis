@@ -42,9 +42,6 @@
             <Setter Property="HorizontalAlignment" Value="Center"/>
             <Setter Property="VerticalAlignment" Value="Center"/>
         </Style>
-        <Style Selector="ctrl|CoverFlowCard.flow-card.side">
-            <Setter Property="Cursor" Value="Hand"/>
-        </Style>
 
         <!-- Tilted cards in the now-playing pile. Rotation is per-card (RenderTransform
              on the element); this holds the shared shape. No hover/transition on purpose. -->
@@ -465,29 +462,39 @@
             <!-- ═══ CAROUSEL: five glass cards (queue-driven; hidden in collage mode) ═══
                  Centre = the playing track, −1/−2 = history to its left, +1/+2 = up next
                  to its right. Every slot is a CoverFlowCard (light frosted slab, cover
-                 inset on top, title/artist caption inside), all 360px so the caption type
+                 inset on top, title/artist caption inside), all 300px so the caption type
                  matches. The slot GEOMETRY lives in CoverFlowCarouselGeometry and is applied
                  by the code-behind (SetPose): a 3D tilt toward the centre
                  (Rotate3DTransform + perspective Depth), a scale-down, a slide out, a dim
                  and an opacity per slot, each side card tucked BEHIND its inner neighbour
                  (ZIndex falls with distance). On a skip the content swaps one slot over
                  by binding and the code-behind slides every card from its previous slot's
-                 pose to its own (ease-out cubic, ~360ms). Wheel / ← → / clicking a side
-                 card move the carousel by really changing the track; the centre card opens
-                 the album. Only these five controls exist — nothing further out is realised. -->
+                 pose to its own (ease-out cubic, ~360ms). Wheel / ← → move the carousel by
+                 really changing the track. The artwork is NOT a button (09-17): the caption's
+                 title link plays a side card's track / opens the centre card's album, and
+                 the artist link opens the artist. Only these five controls exist — nothing
+                 further out is realised. The host cancels the page inset (24 top / 12
+                 bottom) with negative margins so the midline is the true page centre. -->
             <Grid x:Name="CarouselHost"
                   HorizontalAlignment="Stretch"
                   VerticalAlignment="Center"
-                  Height="490"
+                  Height="420"
+                  Margin="0,-24,0,-12"
                   Background="Transparent"
                   IsVisible="{Binding ShowCarousel}">
                 <Grid HorizontalAlignment="Center" VerticalAlignment="Center"
                       ClipToBounds="False">
 
+
+
+
+
+
+
                     <!-- −2 (history) -->
                     <ctrl:CoverFlowCard x:Name="SlotPrev2"
                                         Classes="flow-card side"
-                                        ArtworkSize="360"
+                                        ArtworkSize="300"
                                         ArtworkPath="{Binding FarPreviousArtworkPath}"
                                         Title="{Binding FarPreviousTrack.Title, FallbackValue=''}"
                                         Artist="{Binding FarPreviousTrack.Artist, FallbackValue=''}"
@@ -497,7 +504,7 @@
                     <!-- −1 (history) -->
                     <ctrl:CoverFlowCard x:Name="SlotPrev1"
                                         Classes="flow-card side"
-                                        ArtworkSize="360"
+                                        ArtworkSize="300"
                                         ArtworkPath="{Binding PreviousArtworkPath}"
                                         Title="{Binding PreviousTrack.Title, FallbackValue=''}"
                                         Artist="{Binding PreviousTrack.Artist, FallbackValue=''}"
@@ -507,12 +514,13 @@
                     <!-- 0 (playing) -->
                     <ctrl:CoverFlowCard x:Name="CenterCard"
                                         Classes="flow-card centre"
-                                        ArtworkSize="360"
+                                        ArtworkSize="300"
                                         DecodeWidth="768"
                                         ArtworkPath="{Binding CenterArtworkPath}"
                                         Title="{Binding CenterTitle}"
                                         Artist="{Binding CenterArtist}"
                                         IsExplicit="{Binding CenterIsExplicit}"
+                                        TitleToolTip="{loc:T PlaybackBar.ViewAlbumTip}"
                                         ArtistCommand="{Binding GoToArtistCommand}">
                         <ctrl:CoverFlowCard.Overlay>
                             <Panel>
@@ -530,7 +538,7 @@
                     <!-- +1 (up next) -->
                     <ctrl:CoverFlowCard x:Name="SlotNext1"
                                         Classes="flow-card side"
-                                        ArtworkSize="360"
+                                        ArtworkSize="300"
                                         ArtworkPath="{Binding NextArtworkPath}"
                                         Title="{Binding NextTrack.Title, FallbackValue=''}"
                                         Artist="{Binding NextTrack.Artist, FallbackValue=''}"
@@ -540,12 +548,18 @@
                     <!-- +2 (up next) -->
                     <ctrl:CoverFlowCard x:Name="SlotNext2"
                                         Classes="flow-card side"
-                                        ArtworkSize="360"
+                                        ArtworkSize="300"
                                         ArtworkPath="{Binding FarNextArtworkPath}"
                                         Title="{Binding FarNextTrack.Title, FallbackValue=''}"
                                         Artist="{Binding FarNextTrack.Artist, FallbackValue=''}"
                                         IsExplicit="{Binding FarNextTrack.IsExplicit, FallbackValue=False}"
                                         IsVisible="{Binding FarNextTrack, Converter={x:Static ObjectConverters.IsNotNull}}" />
+
+
+
+
+
+
                 </Grid>
             </Grid>
 

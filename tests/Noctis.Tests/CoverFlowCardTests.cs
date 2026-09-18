@@ -160,7 +160,7 @@ public class CoverFlowCardTests
         Assert.Equal(5, cards.Count);
         var centre = view.FindControl<CoverFlowCard>("CenterCard")!;
         Assert.Contains(centre, cards);
-        Assert.All(cards, c => Assert.Equal(360, c.ArtworkSize));
+        Assert.All(cards, c => Assert.Equal(300, c.ArtworkSize));
         Assert.All(cards, c => Assert.Equal(18, c.CardBlurRadius));
 
         // Centre: faces the viewer, unwashed, on top.
@@ -171,14 +171,17 @@ public class CoverFlowCardTests
         Assert.Equal(0, centre.Dim);
         Assert.Equal(1, centre.Opacity);
 
-        var left = new[] { view.FindControl<CoverFlowCard>("SlotPrev1")!, view.FindControl<CoverFlowCard>("SlotPrev2")! };
-        var right = new[] { view.FindControl<CoverFlowCard>("SlotNext1")!, view.FindControl<CoverFlowCard>("SlotNext2")! };
+        var left = Enumerable.Range(1, 2).Select(n => view.FindControl<CoverFlowCard>($"SlotPrev{n}")!).ToArray();
+        var right = Enumerable.Range(1, 2).Select(n => view.FindControl<CoverFlowCard>($"SlotNext{n}")!).ToArray();
         for (var i = 0; i < 2; i++)
         {
             var l = left[i].RenderTransform!.Value;
             var r = right[i].RenderTransform!.Value;
             Assert.True(l.M31 < 0 && r.M31 > 0);
             Assert.Equal(-l.M31, r.M31, 0.01);
+            // Float arc: both sides lifted by the same few px per slot (M32 = Y translate).
+            Assert.Equal(l.M32, r.M32, 0.01);
+            Assert.Equal(-Noctis.Helpers.CoverFlowCarouselGeometry.ArcRisePerSlot * (i + 1), l.M32, 0.01);
             Assert.Equal(left[i].Dim, right[i].Dim);
             Assert.Equal(left[i].ZIndex, right[i].ZIndex);
             Assert.True(left[i].ZIndex < centre.ZIndex, "the centre card draws on top");
@@ -186,7 +189,7 @@ public class CoverFlowCardTests
             {
                 Assert.True(left[i].Dim > left[i - 1].Dim, "outer cards are dimmer");
                 Assert.True(left[i].ZIndex < left[i - 1].ZIndex, "each card tucks behind its inner neighbour");
-                Assert.True(left[i].Opacity < left[i - 1].Opacity, "outer cards fade a little");
+                Assert.True(left[i].Opacity <= left[i - 1].Opacity, "outer cards fade (to a floor)");
             }
         }
 
@@ -224,6 +227,7 @@ public class CoverFlowCardTests
         view.ApplySlideFrame(0);
         Assert.Equal(1, view.PositionOf(0), 2);
         Assert.Equal(0, view.PositionOf(-1), 2);
+        Assert.Equal(3, view.PositionOf(2), 2);
         Assert.Equal(3, view.PositionOf(2), 2);
         Assert.Equal(0, view.FindControl<CoverFlowCard>("SlotNext2")!.Opacity);
 
