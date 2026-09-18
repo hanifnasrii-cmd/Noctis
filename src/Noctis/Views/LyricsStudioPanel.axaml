@@ -86,13 +86,22 @@
         <!-- Pill outline shared with Settings (SettingsView "(not set)" box): 1.5px translucent
              mid-grey, layout-rounded. The Fluent templates restyle the border on hover/focus/press,
              so the template parts are pinned too. Neutral buttons opt in via .pill-outline. -->
-        <!-- Model / Language pills: the Settings "System language" pill — a stock Fluent
-             ComboBox (its own grey rim and fill) rounded full, with pill dropdown items. -->
+        <!-- Model / Language pills: the Settings "System language" pill — the same 1.5px
+             translucent mid-grey rim SettingsView pins on every ComboBox (#99A0A0A8, hover
+             included, accent while open), rounded full, with pill dropdown items. -->
         <Style Selector="ComboBox.pill">
             <Setter Property="CornerRadius" Value="999" />
             <Setter Property="Padding" Value="14,8" />
             <Setter Property="MinHeight" Value="0" />
+            <Setter Property="BorderBrush" Value="#99A0A0A8" />
+            <Setter Property="BorderThickness" Value="1.5" />
             <Setter Property="UseLayoutRounding" Value="True" />
+        </Style>
+        <Style Selector="ComboBox.pill:pointerover /template/ Border#Background">
+            <Setter Property="BorderBrush" Value="#99A0A0A8" />
+        </Style>
+        <Style Selector="ComboBox.pill:focus /template/ Border#Background, ComboBox.pill:dropdownopen /template/ Border#Background">
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentColorBrush}" />
         </Style>
         <!-- Options dropdown: same rim and fill as the two pills beside it. Fluent paints a
              Button's chrome on the presenter, so hover/press are pinned there; the press
@@ -101,15 +110,15 @@
             <Setter Property="CornerRadius" Value="999" />
             <Setter Property="Padding" Value="14,8" />
             <Setter Property="MinHeight" Value="0" />
-            <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="BorderBrush" Value="{DynamicResource ComboBoxBorderBrush}" />
+            <Setter Property="BorderThickness" Value="1.5" />
+            <Setter Property="BorderBrush" Value="#99A0A0A8" />
             <Setter Property="Background" Value="{DynamicResource ComboBoxBackground}" />
             <Setter Property="Cursor" Value="Hand" />
             <Setter Property="UseLayoutRounding" Value="True" />
         </Style>
         <Style Selector="Button.studio-options:pointerover /template/ ContentPresenter#PART_ContentPresenter,
                          Button.studio-options:pressed /template/ ContentPresenter#PART_ContentPresenter">
-            <Setter Property="BorderBrush" Value="{DynamicResource ComboBoxBorderBrush}" />
+            <Setter Property="BorderBrush" Value="#99A0A0A8" />
             <Setter Property="Background" Value="{DynamicResource ComboBoxBackgroundPointerOver}" />
         </Style>
         <Style Selector="Button.studio-options:pressed">
@@ -125,6 +134,9 @@
         </Style>
         <Style Selector="ComboBox.pill /template/ Border#Background">
             <Setter Property="CornerRadius" Value="999" />
+            <Setter Property="BorderBrush" Value="#99A0A0A8" />
+            <Setter Property="BorderThickness" Value="1.5" />
+            <Setter Property="UseLayoutRounding" Value="True" />
         </Style>
         <Style Selector="ComboBox.pill /template/ Border#HighlightBackground">
             <Setter Property="CornerRadius" Value="999" />
@@ -201,7 +213,16 @@
                 <!-- One row: pickers, options dropdown, status, actions -->
                 <Grid ColumnDefinitions="Auto,Auto,Auto,*,Auto,Auto,Auto" ColumnSpacing="14">
                     <StackPanel Grid.Column="0" Spacing="3">
-                        <TextBlock Text="{loc:T LyricsStudio.Model}" FontSize="10.5" Opacity="0.5" />
+                        <!-- Model status ("Medium installed", download progress) sits on the
+                             label (09-17) instead of a text block beside the pills. -->
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <TextBlock Text="{loc:T LyricsStudio.Model}" FontSize="10.5" Opacity="0.5" />
+                            <TextBlock Text="·" FontSize="10.5" Opacity="0.5" />
+                            <TextBlock Text="{Binding ModelStatusText}" FontSize="10.5" Opacity="0.5"
+                                       TextTrimming="CharacterEllipsis" MaxWidth="240" ToolTip.Tip="{Binding ModelStatusText}" />
+                            <ProgressBar Value="{Binding ModelProgress}" Minimum="0" Maximum="1" Width="56" Height="3" CornerRadius="2"
+                                         VerticalAlignment="Center" IsVisible="{Binding IsDownloadingModel}" />
+                        </StackPanel>
                         <ComboBox Classes="pill" MinWidth="150" ItemsSource="{Binding ModelOptions}" SelectedItem="{Binding SelectedModel}">
                             <ComboBox.SelectionBoxItemTemplate>
                                 <DataTemplate x:DataType="studio:WhisperModelInfo">
@@ -246,11 +267,6 @@
                             </Flyout>
                         </Button.Flyout>
                     </Button>
-                    <StackPanel Grid.Column="3" Spacing="4" VerticalAlignment="Bottom" Margin="6,0,0,4">
-                        <TextBlock Text="{Binding ModelStatusText}" FontSize="11" Opacity="0.65" TextWrapping="Wrap" />
-                        <ProgressBar Value="{Binding ModelProgress}" Minimum="0" Maximum="1" Height="3" CornerRadius="2" IsVisible="{Binding IsDownloadingModel}" />
-                        <TextBlock Text="{Binding RunStatusText}" FontSize="11" Opacity="0.8" TextWrapping="Wrap" />
-                    </StackPanel>
                     <!-- Model management moved here from Settings: download when missing, delete when idle. -->
                     <Button Grid.Column="4" Command="{Binding DownloadModelCommand}" IsVisible="{Binding ShowModelDownload}"
                             Classes="pill-outline" Padding="14,8" CornerRadius="999" Cursor="Hand" VerticalAlignment="Bottom">
@@ -281,7 +297,13 @@
             <!-- Queue -->
             <Border Grid.Column="0" CornerRadius="14" ClipToBounds="True" Background="#0CFFFFFF" Padding="8,8,0,8">
                 <DockPanel>
-                    <TextBlock DockPanel.Dock="Top" Text="{loc:T LyricsStudio.Queue}" FontSize="11" Opacity="0.5" Margin="8,4,8,8" />
+                    <!-- Queue header carries the run status ("2 restored · 38 queued") since 09-17. -->
+                    <Grid DockPanel.Dock="Top" ColumnDefinitions="Auto,*" Margin="8,4,16,8">
+                        <TextBlock Grid.Column="0" Text="{loc:T LyricsStudio.Queue}" FontSize="11" Opacity="0.5" />
+                        <TextBlock Grid.Column="1" Text="{Binding RunStatusText}" FontSize="11" Opacity="0.5"
+                                   HorizontalAlignment="Right" TextTrimming="CharacterEllipsis" Margin="12,0,0,0"
+                                   ToolTip.Tip="{Binding RunStatusText}" />
+                    </Grid>
                     <!-- Padding on the list (its ItemsPresenter margin) keeps the rows inset while the
                          scrollbar sits on the box's right edge instead of inside the padding. -->
                     <ListBox Classes="queue" ItemsSource="{Binding Queue}" SelectedItem="{Binding Selected}" Background="Transparent" Padding="0,0,8,0">
