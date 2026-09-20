@@ -479,6 +479,7 @@ public partial class MainWindow : Window
                         {
                             if (mainVm2.IsLyricsPanelOpen)
                             {
+                                EnsureLyricsPanelLoaded(mainVm2);
                                 _lyricsPanelWrapper.IsVisible = true;
                                 _lyricsPanelWrapper.Width = 356;
                             }
@@ -645,6 +646,21 @@ public partial class MainWindow : Window
     /// the launch path, paid on every start whether or not the user opens Settings.
     /// Idempotent; cheap enough to call on every open.
     /// </summary>
+    /// <summary>
+    /// Builds the lyrics side panel the first time it opens. Same reasoning as
+    /// <see cref="EnsureSettingsViewLoaded"/>: the view was instantiated inline in
+    /// MainWindow.axaml, so its whole karaoke layout was templated inside
+    /// InitializeComponent on every launch although the panel starts closed.
+    /// Idempotent.
+    /// </summary>
+    internal void EnsureLyricsPanelLoaded(MainWindowViewModel vm)
+    {
+        var host = this.FindControl<ContentControl>("LyricsPanelHost");
+        if (host is null || host.Content is not null) return;
+
+        host.Content = new LyricsPanelView { DataContext = vm.Lyrics };
+    }
+
     private void EnsureSettingsViewLoaded()
     {
         var host = this.FindControl<ContentControl>("SettingsViewHost");

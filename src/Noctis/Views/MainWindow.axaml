@@ -697,7 +697,10 @@
                         <!-- Opaque dark base so the panel never bleeds through; the view
                              itself paints the page-matched background (artwork/solid/gradient). -->
                         <Border Background="{DynamicResource AppSidebarBackground}" CornerRadius="16"/>
-                        <views:LyricsPanelView DataContext="{Binding Lyrics}"/>
+                        <!-- The panel view is built on first open (EnsureLyricsPanelLoaded):
+                             its karaoke layout is a large slice of MainWindow's
+                             InitializeComponent and the panel starts closed. -->
+                        <ContentControl x:Name="LyricsPanelHost"/>
                     </Grid>
                 </Border>
 

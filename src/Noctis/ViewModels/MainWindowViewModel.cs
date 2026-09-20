@@ -317,8 +317,19 @@ public partial class MainWindowViewModel : ViewModelBase
         Plugins = new PluginHost(Player, persistence.DataDirectory, () => Settings.GetSettings(),
             () => _ = Settings.SaveAsync(), UpdateService.CurrentVersionDisplay);
         Settings.Plugins = Plugins;
-        if (Settings.IsSettingsLoaded) Plugins.LoadAll();
-        else Settings.SettingsLoaded += (_, _) => Plugins.LoadAll();
+        // LoadAll walks the plugins folder, loads assemblies and reflects over their
+        // types on the UI thread. Settings finish loading right after the window
+        // shows, so running it inline there held the first frame hostage to however
+        // many plugins are installed. Background priority lets the first page paint
+        // and settle first; VisualLayersChanged re-syncs any view that cares.
+        void LoadPluginsWhenIdle() =>
+            Dispatcher.UIThread.Post(() =>
+            {
+                Plugins.LoadAll();
+                Services.StartupTrace.Mark("plugins-loaded");
+            }, DispatcherPriority.Background);
+        if (Settings.IsSettingsLoaded) LoadPluginsWhenIdle();
+        else Settings.SettingsLoaded += (_, _) => LoadPluginsWhenIdle();
         Loc.Instance.CultureChanged += (_, _) =>
         {
             TopBar.RefreshLocalizedTitles();

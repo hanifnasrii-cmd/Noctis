@@ -27,6 +27,13 @@
     <!-- Avalonia requires this for XAML compilation -->
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
 
+    <!-- Startup: precompile IL to native code at publish time (ReadyToRun). A cold
+         launch otherwise JITs Avalonia, Skia bindings, System.Text.Json and the
+         large view models from tier-0 IL before the first frame. Publish-only;
+         plain builds and tests are unaffected. Every CI leg publishes with a RID
+         and self-contained, which is what crossgen2 needs. -->
+    <PublishReadyToRun>true</PublishReadyToRun>
+
     <!-- Suppress build warnings.
          CS8625 was dropped: it was a project-wide nullability switch kept on for exactly
          two warnings at one interop call, which now carries a scoped #pragma instead

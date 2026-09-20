@@ -82,14 +82,24 @@ public sealed class AudioCdService : IAudioCdService
     private IReadOnlyList<Track> _tracks = Array.Empty<Track>();
     private bool _isReading;
 
-    public AudioCdService(IAudioCdDriveProbe probe, IAudioCdReader reader, bool? isWindows = null, bool? isSupported = null)
+    /// <param name="probeOnConstruct">
+    /// Enumerate drives inside the constructor. The app passes false: the service is
+    /// built on the UI thread as part of the main view-model graph, and
+    /// DriveInfo.GetDrives() blocks on unreachable network/mapped drives, so the first
+    /// probe moves to the first watch tick instead (which then fires immediately).
+    /// </param>
+    public AudioCdService(IAudioCdDriveProbe probe, IAudioCdReader reader, bool? isWindows = null, bool? isSupported = null,
+        bool probeOnConstruct = true)
     {
         _probe = probe;
         _reader = reader;
         _isWindows = isWindows ?? OperatingSystem.IsWindows();
         IsSupported = isSupported ?? (OperatingSystem.IsWindows() || OperatingSystem.IsLinux());
-        if (IsSupported) RefreshDrives();
+        _probedOnConstruct = probeOnConstruct;
+        if (IsSupported && probeOnConstruct) RefreshDrives();
     }
+
+    private readonly bool _probedOnConstruct;
 
     public bool IsSupported { get; }
     public bool HasDrive => _drives.Count > 0;
@@ -104,7 +114,10 @@ public sealed class AudioCdService : IAudioCdService
     public void StartWatching()
     {
         if (!IsSupported || _poll != null || _disposed) return;
-        _poll = new Timer(_ => Poll(), null, PollIntervalMs, PollIntervalMs);
+        // Skipped the constructor probe: poll right away (on the timer thread) so the
+        // sidebar entry appears as soon as the drive list is known.
+        var dueTime = _probedOnConstruct ? PollIntervalMs : 0;
+        _poll = new Timer(_ => Poll(), null, dueTime, PollIntervalMs);
     }
 
     /// <summary>One poll tick: drives, then (Windows) the cheap ready flag → read/eject transitions.</summary>

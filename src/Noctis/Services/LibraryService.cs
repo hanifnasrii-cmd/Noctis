@@ -1271,17 +1271,24 @@ public class LibraryService : ILibraryService
 
     public async Task LoadAsync()
     {
-        var tracks = await _persistence.LoadLibraryAsync();
+        // Startup calls this from the UI thread. The persistence layer awaits without
+        // ConfigureAwait(false), so a plain await here resumed the streaming JSON
+        // deserialize on the dispatcher after every 64 KB read: a 10 MB library.json
+        // parsed ~7,000 tracks on the UI thread before the first page could paint.
+        // Task.Run drops the synchronization context for the whole load, so the file
+        // read, parse, journal overlay and index-cache parse all run on the pool and
+        // only the LibraryUpdated fan-out below returns to the UI thread.
+        var tracks = await Task.Run(() => _persistence.LoadLibraryAsync());
         if (tracks != null && tracks.Count > 0)
         {
             _tracks = tracks;
 
             // Overlay journaled user state (ratings, favorites, play counts, ...)
             // on top of the JSON values before anything publishes or saves them.
-            await OverlayUserStateFromJournalAsync();
+            await Task.Run(OverlayUserStateFromJournalAsync);
 
             // Fast path: try restoring pre-computed indexes from cache
-            var restored = await TryRestoreFromCacheAsync();
+            var restored = await Task.Run(TryRestoreFromCacheAsync);
             if (!restored)
             {
                 // Cache miss — full rebuild (LINQ grouping, File.Exists, sorting)
