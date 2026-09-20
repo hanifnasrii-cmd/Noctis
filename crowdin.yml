@@ -1,3 +1,5 @@
+# Keep the src/... path on Crowdin; without this the CLI uploads a flat Strings.resx at the branch root.
+preserve_hierarchy: true
 files:
   - source: /src/Noctis/Localization/Strings.resx
     translation: /src/Noctis/Localization/Strings.%locale%.resx
