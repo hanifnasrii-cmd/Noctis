@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!--
     English UI strings — the fallback every other language falls back to.
@@ -48,6 +48,10 @@
     <value>비주얼라이저</value>
     <comment>Sidebar</comment>
   </data>
+  <data name="Nav.LyricsStudio" xml:space="preserve">
+    <value>가사 스튜디오</value>
+    <comment>Sidebar</comment>
+  </data>
   <data name="Nav.Settings" xml:space="preserve">
     <value>설정</value>
     <comment>Sidebar</comment>
@@ -69,15 +73,11 @@
     <value>언어</value>
   </data>
   <data name="Settings.Language.Description" xml:space="preserve">
-    <value>앱 메뉴와 레이블의 언어입니다. 번역은 커뮤니티가 만들며, 아래 링크에서 참여할 수 있습니다.</value>
+    <value>메뉴와 라벨. 번역은 커뮤니티가 만듭니다.</value>
   </data>
   <data name="Settings.Language.System" xml:space="preserve">
     <value>시스템 언어</value>
     <comment>Picker entry: follow the OS language</comment>
-  </data>
-  <data name="Settings.Language.Help" xml:space="preserve">
-    <value>Noctis 번역에 참여하기</value>
-    <comment>Button</comment>
   </data>
   <!-- Visualizer page -->
   <data name="Visualizer.Title" xml:space="preserve">
@@ -85,6 +85,10 @@
   </data>
   <data name="Visualizer.Empty" xml:space="preserve">
     <value>무언가를 재생하면 움직이는 모습을 볼 수 있습니다.</value>
+  </data>
+  <data name="Visualizer.NowPlaying" xml:space="preserve">
+    <value>지금 재생 중</value>
+    <comment>Text in VisualizerView.axaml</comment>
   </data>
   <data name="Visualizer.Style.Bars" xml:space="preserve">
     <value>막대</value>
@@ -100,7 +104,7 @@
     <value>재생목록 가져오기</value>
   </data>
   <data name="Import.Subtitle" xml:space="preserve">
-    <value>Import an M3U playlist, Exportify CSV or TuneMyMusic JSON export, or paste a Deezer or TIDAL playlist link, and match it against your library.</value>
+    <value>파일이나 Deezer/TIDAL 링크에서 재생목록을 가져옵니다.</value>
   </data>
   <data name="Import.ChooseFile" xml:space="preserve">
     <value>파일 선택…</value>
@@ -109,7 +113,7 @@
     <value>또는 .csv / .json / .m3u 파일을 이 창 아무 곳에나 끌어다 놓으세요</value>
   </data>
   <data name="Import.LinkLabel" xml:space="preserve">
-    <value>Or paste a playlist link (Deezer and TIDAL import directly)</value>
+    <value>또는 재생목록 링크를 붙여넣으세요 (Deezer와 TIDAL은 바로 가져옵니다)</value>
   </data>
   <data name="Import.LinkButton" xml:space="preserve">
     <value>링크 가져오기</value>
@@ -169,7 +173,7 @@
     <comment>ToolTip.Tip in SettingsView.axaml</comment>
   </data>
   <data name="Settings.Name" xml:space="preserve">
-    <value>이름</value>
+    <value>사용자 이름</value>
     <comment>Watermark in SettingsView.axaml</comment>
   </data>
   <data name="Settings.ClickEditNameTip" xml:space="preserve">
@@ -185,7 +189,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.AddNoctisWindowsOpen" xml:space="preserve">
-    <value>MP3, FLAC, M4A, OGG, WAV 등 재생 가능한 형식에 대해 Noctis를 Windows의 '연결 프로그램' 목록과 기본 앱에 추가합니다. 그러면 Windows에서 기본 앱으로 선택할 수 있습니다.</value>
+    <value>Noctis가 재생하는 형식에 대해 Windows의 연결 프로그램 목록과 기본 앱에 Noctis를 추가합니다.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.Register" xml:space="preserve">
@@ -201,7 +205,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.ControlHowNoctisStarts" xml:space="preserve">
-    <value>Noctis의 시작 방식과 최소화·닫기 버튼의 동작을 설정합니다.</value>
+    <value>Noctis의 시작 방식과 최소화·닫기 동작.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.OpenNoctisWhenComputer" xml:space="preserve">
@@ -225,7 +229,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.ReopenLastTrackPlaybar" xml:space="preserve">
-    <value>마지막 트랙을 재생 바에 멈췄던 위치 그대로 일시정지된 상태로 다시 엽니다.</value>
+    <value>마지막 곡을 불러온 채 일시정지 상태로 다시 엽니다.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.TextAnimation" xml:space="preserve">
@@ -233,7 +237,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.ControlHowLongText" xml:space="preserve">
-    <value>재생 바, 다음 곡, 메뉴에서 긴 텍스트가 흐르는 방식을 설정합니다.</value>
+    <value>들어가지 않는 긴 제목을 스크롤합니다.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.PLAYERBAR" xml:space="preserve">
@@ -293,7 +297,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.ShowOneTilePer" xml:space="preserve">
-    <value>발매작당 타일 하나만 표시하고, 다른 에디션은 앨범 페이지의 "다른 버전"에 표시합니다.</value>
+    <value>One tile per release. Other editions appear under &quot;Other Versions&quot;.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.MergeFeaturedArtistsFrom" xml:space="preserve">
@@ -301,7 +305,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.TurnFeatXTrack" xml:space="preserve">
-    <value>트랙 제목의 "(feat. X)"를 아티스트 크레딧으로 변환합니다.</value>
+    <value>제목의 "(feat. X)"를 아티스트 크레딧으로 바꿉니다.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.GroupArtistsBy" xml:space="preserve">
@@ -309,7 +313,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.WhichTagArtistsSection" xml:space="preserve">
-    <value>아티스트 섹션에서 노래를 분류할 때 사용할 태그입니다. '앨범 아티스트'는 컴필레이션을 하나로 묶고 트랙별 피처링을 무시합니다.</value>
+    <value>앨범 아티스트는 컴필레이션을 하나로 묶고 곡별 피처링은 무시합니다.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.FirstCreditedArtistEachTip" xml:space="preserve">
@@ -341,7 +345,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.TextSplitsOneArtist" xml:space="preserve">
-    <value>하나의 아티스트 태그를 여러 아티스트로 나누는 텍스트입니다. "Simon &amp; Garfunkel" 같은 이름을 그대로 유지하려면 해당 구분자를 제거하세요.</value>
+    <value>하나의 아티스트 태그를 여러 개로 나누는 문자열. "Simon &amp; Garfunkel" 같은 이름을 그대로 두려면 해당 항목을 제거하세요.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.Reset" xml:space="preserve">
@@ -388,6 +392,34 @@
     <value>취소</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
+  <data name="Settings.ShowRecentReleasesOnly" xml:space="preserve">
+    <value>최근 릴리스 보기</value>
+    <comment>Advanced: collapses the release history</comment>
+  </data>
+  <data name="Settings.LyricsBackgroundPerSongHint" xml:space="preserve">
+    <value>곡이나 앨범을 마우스 오른쪽 버튼으로 클릭해 전용 영상을 지정하세요.</value>
+    <comment>Appearance: under Lyrics Background Video</comment>
+  </data>
+  <data name="Settings.PauseVideoWithPlayback" xml:space="preserve">
+    <value>재생과 함께 영상 일시정지</value>
+    <comment>Appearance toggle title</comment>
+  </data>
+  <data name="Settings.PauseVideoWithPlaybackDesc" xml:space="preserve">
+    <value>곡이 일시정지된 동안 배경 영상을 멈춥니다.</value>
+    <comment>Appearance toggle description</comment>
+  </data>
+  <data name="AlbumDetail.LyricsBackgroundVideo" xml:space="preserve">
+    <value>가사 배경 영상</value>
+    <comment>Album page menu</comment>
+  </data>
+  <data name="AlbumDetail.ChooseAlbumVideo" xml:space="preserve">
+    <value>이 앨범의 영상 선택…</value>
+    <comment>Album page menu</comment>
+  </data>
+  <data name="AlbumDetail.UseDefaultVideo" xml:space="preserve">
+    <value>기본 영상 사용</value>
+    <comment>Album page menu</comment>
+  </data>
   <data name="Settings.StarGitHub" xml:space="preserve">
     <value>GitHub에 별표 주기</value>
     <comment>Text in SettingsView.axaml</comment>
@@ -400,12 +432,24 @@
     <value>공식 웹사이트</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
+  <data name="Settings.About.GitHubCaption" xml:space="preserve">
+    <value>저장소에 별표 주기</value>
+    <comment>About tile caption in SettingsView.axaml</comment>
+  </data>
+  <data name="Settings.About.DiscordCaption" xml:space="preserve">
+    <value>Get help &amp; updates</value>
+    <comment>About tile caption in SettingsView.axaml</comment>
+  </data>
+  <data name="Settings.About.WebsiteCaption" xml:space="preserve">
+    <value>문서 및 다운로드</value>
+    <comment>About tile caption in SettingsView.axaml</comment>
+  </data>
   <data name="Settings.IncludePreReleaseUpdates" xml:space="preserve">
     <value>프리릴리스 업데이트 포함</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.OfferBetaBuildsUpdater" xml:space="preserve">
-    <value>업데이터에 베타 빌드를 표시합니다. 끄면 정식 버전만 표시됩니다.</value>
+    <value>업데이터에서 베타 빌드를 제안합니다.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.YoursTrulyHeartached" xml:space="preserve">
@@ -421,7 +465,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.DownloadInstallAnyRelease" xml:space="preserve">
-    <value>GitHub에서 원하는 버전을 다운로드하여 설치합니다. 설치 시 앱이 종료됩니다.</value>
+    <value>GitHub에서 원하는 릴리스를 설치합니다. 설치하면 앱이 닫힙니다.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.NoReleasesFound" xml:space="preserve">
@@ -440,8 +484,12 @@
     <value>설치됨</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
+  <data name="Settings.ComingSoon" xml:space="preserve">
+    <value>곧 제공</value>
+    <comment>Badge on parked Account &amp; Sync cards in SettingsView.axaml</comment>
+  </data>
   <data name="Settings.SessionLogTroubleshootingShare" xml:space="preserve">
-    <value>문제 해결을 위한 세션 로그입니다. 버그를 신고할 때 함께 공유해 주세요.</value>
+    <value>버그 신고용 세션 로그.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.CopyLogs" xml:space="preserve">
@@ -484,6 +532,14 @@
     <value>라이트</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
+  <data name="Settings.Ink" xml:space="preserve">
+    <value>잉크</value>
+    <comment>Text in SettingsView.axaml</comment>
+  </data>
+  <data name="Settings.Smoke" xml:space="preserve">
+    <value>스모크</value>
+    <comment>Text in SettingsView.axaml</comment>
+  </data>
   <data name="Settings.Edit" xml:space="preserve">
     <value>수정</value>
     <comment>Header in SettingsView.axaml</comment>
@@ -499,6 +555,14 @@
   <data name="Settings.Custom" xml:space="preserve">
     <value>사용자 지정</value>
     <comment>Text in SettingsView.axaml</comment>
+  </data>
+  <data name="Settings.AccentFollowsArtwork" xml:space="preserve">
+    <value>강조색을 앨범 아트에 맞춤</value>
+    <comment>Appearance toggle in SettingsView.axaml</comment>
+  </data>
+  <data name="Settings.AccentFollowsArtworkHint" xml:space="preserve">
+    <value>재생 중인 커버에서 강조색을 가져옵니다. 재생 중인 곡이 없으면 선택한 강조색으로 돌아갑니다.</value>
+    <comment>Appearance toggle hint in SettingsView.axaml</comment>
   </data>
   <data name="Settings.AccentColor" xml:space="preserve">
     <value>강조 색상</value>
@@ -521,7 +585,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.FrostWindowTranslucentBlurred" xml:space="preserve">
-    <value>창을 반투명하게 흐린 유리 표면으로 덮습니다.</value>
+    <value>창, 사이드바, 설정, 재생 바를 반투명 흐림 유리 표면으로 꾸밉니다.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.AnimatedArtwork" xml:space="preserve">
@@ -537,7 +601,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.TintEachAlbumS" xml:space="preserve">
-    <value>Apple Music처럼 각 앨범 페이지를 커버 색상으로 물들입니다. 끄면 테마 기본 배경을 유지합니다.</value>
+    <value>각 앨범 페이지를 커버 색으로 물들입니다.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.NowPlayingArtwork" xml:space="preserve">
@@ -545,7 +609,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.HowCoverAppearsLyrics" xml:space="preserve">
-    <value>가사 페이지에서 커버가 표시되는 방식입니다. 음악이 재생되는 동안 디스크가 회전합니다.</value>
+    <value>가사 페이지에서 커버가 표시되는 방식. 디스크는 재생 중 회전합니다.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.AlbumCoverAsTip" xml:space="preserve">
@@ -613,7 +677,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.HowMiniPlayerLooks" xml:space="preserve">
-    <value>미니 플레이어의 모습입니다. 클래식은 크기에 따라 형태가 바뀌고, 필과 슬리브는 고정된 디자인입니다.</value>
+    <value>클래식은 크기에 따라 바뀝니다. 필과 슬리브는 고정 디자인입니다.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.ResizableGlassCardIconTip" xml:space="preserve">
@@ -645,7 +709,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.AddExtraControlsPlayer" xml:space="preserve">
-    <value>플레이어 아일랜드에 추가 컨트롤을 더합니다: 몇 초 건너뛰기, 재생 속도 변경, 취침 타이머, 셔플.</value>
+    <value>플레이어 아일랜드의 추가 버튼.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.SkipBackForward" xml:space="preserve">
@@ -673,7 +737,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.1ButtonOpensSpeed" xml:space="preserve">
-    <value>0.75×부터 2×까지의 속도 메뉴를 여는 1× 버튼입니다. 속도는 다음 실행 시 기본값으로 돌아갑니다.</value>
+    <value>0.75×부터 2×까지의 속도 메뉴. 다음 실행 시 초기화됩니다.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.SleepTimer" xml:space="preserve">
@@ -681,7 +745,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.SleepTimerOneClick" xml:space="preserve">
-    <value>취침 타이머를 옵션 메뉴 안이 아니라 한 번의 클릭으로 사용할 수 있게 합니다.</value>
+    <value>클릭 한 번으로 취침 타이머.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.Shuffle" xml:space="preserve">
@@ -689,7 +753,31 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.ShuffleButtonAfterRepeat" xml:space="preserve">
-    <value>반복 버튼 뒤에 셔플 버튼을 추가합니다. 셔플은 대기열 패널에도 그대로 남습니다.</value>
+    <value>반복 옆의 셔플 버튼.</value>
+    <comment>Text in SettingsView.axaml</comment>
+  </data>
+  <data name="Settings.TrackBoxOpacity" xml:space="preserve">
+    <value>트랙 상자 불투명도</value>
+    <comment>Text in SettingsView.axaml</comment>
+  </data>
+  <data name="Settings.HowSolidTrackBox" xml:space="preserve">
+    <value>재생 바에서 곡 정보를 감싸는 상자의 진하기. 0%는 숨깁니다.</value>
+    <comment>Text in SettingsView.axaml</comment>
+  </data>
+  <data name="Settings.RepeatButton" xml:space="preserve">
+    <value>반복</value>
+    <comment>Text in SettingsView.axaml</comment>
+  </data>
+  <data name="Settings.RepeatButtonNextToForward" xml:space="preserve">
+    <value>다음 버튼 뒤의 반복 버튼: 끔 → 전체 → 한 곡 순으로 전환합니다.</value>
+    <comment>Text in SettingsView.axaml</comment>
+  </data>
+  <data name="Settings.FavoriteButton" xml:space="preserve">
+    <value>즐겨찾기</value>
+    <comment>Text in SettingsView.axaml</comment>
+  </data>
+  <data name="Settings.FavoriteButtonHeart" xml:space="preserve">
+    <value>클릭 한 번으로 재생 중인 곡을 즐겨찾기에 넣는 오른쪽의 하트.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.PlayerIslandWidth" xml:space="preserve">
@@ -697,7 +785,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.HowWidePlayerIsland" xml:space="preserve">
-    <value>하단 플레이어 아일랜드의 너비입니다. 넓을수록 탐색 바 공간이 늘어나 정밀하게 이동할 수 있습니다. 아일랜드의 둥근 가장자리를 드래그할 수도 있습니다. 슬라이더 손잡이를 더블 클릭하면 기본값으로 돌아갑니다.</value>
+    <value>넓을수록 탐색 바 공간이 커집니다. 아일랜드 가장자리를 드래그할 수도 있습니다. 손잡이를 더블클릭하면 초기화됩니다.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.Narrower" xml:space="preserve">
@@ -713,7 +801,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.ShowHowFarAlong" xml:space="preserve">
-    <value>작업 표시줄의 Noctis 버튼에 현재 노래의 진행률을 진행 막대로 표시합니다. 일시정지 중에는 주황색으로 바뀝니다.</value>
+    <value>작업 표시줄 버튼에 곡 진행률을 표시합니다. 일시정지 중에는 주황색입니다.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.AutomaticAlbumCoverSize" xml:space="preserve">
@@ -737,7 +825,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.BlurredAlbumArtworkDrifts" xml:space="preserve">
-    <value>Off keeps the still blurred cover. Drift lets it wander and pulse with the beat on the lyrics page, the lyrics panel and the mini player. Kawarp melts the cover into a slow liquid flow on the lyrics page, with or without the beat. Plugin styles (Settings → Plugins) appear here too. Artwork background only.</value>
+    <value>드리프트는 커버를 움직이며 비트에 맞춰 맥동합니다. Kawarp는 커버를 느린 액체 흐름으로 녹입니다. 플러그인 스타일도 여기에 표시됩니다.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.AudioVisualizer" xml:space="preserve">
@@ -745,7 +833,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.DrawLiveSpectrumMusic" xml:space="preserve">
-    <value>가사 페이지 하단에 음악의 실시간 스펙트럼을 그립니다. 들리는 소리를 그대로 따라가며, 일시정지 중에는 평평하게 유지됩니다.</value>
+    <value>가사 페이지 하단의 실시간 스펙트럼.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.ArtworkColour" xml:space="preserve">
@@ -753,7 +841,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.TintBarsCurrentCover" xml:space="preserve">
-    <value>비주얼라이저 페이지와 가사 페이지에서 막대를 현재 커버 색상으로 물들입니다. 끄면 흰색으로 표시됩니다.</value>
+    <value>막대를 커버 색으로 물들입니다. 끄면 흰색으로 그립니다.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.FrequencyBarsRisingFromTip" xml:space="preserve">
@@ -780,17 +868,117 @@
     <value>웨이브</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
+  <data name="Settings.MusicVideos" xml:space="preserve">
+    <value>뮤직비디오</value>
+    <comment>Lyrics Studio card in LyricsStudioView.axaml</comment>
+  </data>
+  <data name="Settings.MusicVideosHint" xml:space="preserve">
+    <value>곡과 같은 이름의 영상이 곡 옆이나 videos 폴더에 있으면 가사 페이지의 커버를 대체합니다.</value>
+    <comment>Lyrics Studio card hint</comment>
+  </data>
+  <data name="Settings.MusicVideoRounded" xml:space="preserve">
+    <value>둥근 모서리</value>
+    <comment>Lyrics Studio card toggle</comment>
+  </data>
+  <data name="Settings.MusicVideoRoundedHint" xml:space="preserve">
+    <value>커버처럼 둥근 모서리 또는 평평한 프레임</value>
+    <comment>Lyrics Studio card toggle tooltip</comment>
+  </data>
+  <data name="PlaybackBar.MusicVideo" xml:space="preserve">
+    <value>뮤직비디오</value>
+    <comment>Options menu toggle in PlaybackBarView.axaml</comment>
+  </data>
   <data name="Settings.LyricsBackgroundVideo" xml:space="preserve">
     <value>가사 배경 동영상</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.LoopVideoGIFBehind" xml:space="preserve">
-    <value>가사 페이지에서 흐려진 커버 대신 동영상이나 GIF를 가사 뒤에서 반복 재생합니다. 가사 페이지가 열려 있는 동안에만 재생됩니다.</value>
+    <value>가사 뒤에서 반복되는 영상 또는 GIF.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.Choose" xml:space="preserve">
     <value>선택</value>
     <comment>Content in SettingsView.axaml</comment>
+  </data>
+  <data name="LyricsBackground.Title" xml:space="preserve">
+    <value>가사 배경 영상</value>
+    <comment>Picker dialog title</comment>
+  </data>
+  <data name="LyricsBackground.Subtitle" xml:space="preserve">
+    <value>기본 클립 하나, 또는 곡과 앨범마다 전용 클립.</value>
+    <comment>Picker dialog subtitle</comment>
+  </data>
+  <data name="LyricsBackground.DefaultVideo" xml:space="preserve">
+    <value>기본 영상</value>
+    <comment>Picker: the clip every song without its own uses</comment>
+  </data>
+  <data name="LyricsBackground.NoDefaultVideo" xml:space="preserve">
+    <value>없음. 전용 영상이 없는 곡은 흐린 커버를 표시합니다.</value>
+    <comment>Picker: no default clip</comment>
+  </data>
+  <data name="LyricsBackground.ChooseVideo" xml:space="preserve">
+    <value>영상 선택</value>
+    <comment>Picker: pick a file</comment>
+  </data>
+  <data name="LyricsBackground.Remove" xml:space="preserve">
+    <value>제거</value>
+    <comment>Picker: drop the default clip</comment>
+  </data>
+  <data name="LyricsBackground.SearchWatermark" xml:space="preserve">
+    <value>Search songs and albums…</value>
+    <comment>Picker search box</comment>
+  </data>
+  <data name="LyricsBackground.WithOwnVideo" xml:space="preserve">
+    <value>전용 영상이 있는 항목</value>
+    <comment>Picker: header over the list when not searching</comment>
+  </data>
+  <data name="LyricsBackground.PromptTitle" xml:space="preserve">
+    <value>아직 전용 영상이 있는 곡이나 앨범이 없습니다</value>
+    <comment>Picker: empty state</comment>
+  </data>
+  <data name="LyricsBackground.PromptBody" xml:space="preserve">
+    <value>위에서 검색해 곡이나 앨범에 영상을 지정하세요. 나머지는 기본 영상을 재생합니다.</value>
+    <comment>Picker: empty state body</comment>
+  </data>
+  <data name="LyricsBackground.UsesDefault" xml:space="preserve">
+    <value>기본 영상 사용</value>
+    <comment>Picker row status</comment>
+  </data>
+  <data name="LyricsBackground.OwnVideo" xml:space="preserve">
+    <value>전용 영상 있음</value>
+    <comment>Picker row status</comment>
+  </data>
+  <data name="LyricsBackground.FromYouTube" xml:space="preserve">
+    <value>YouTube</value>
+    <comment>Button: download the backdrop from a YouTube link</comment>
+  </data>
+  <data name="LyricsBackground.YouTubeWatermark" xml:space="preserve">
+    <value>YouTube 링크 붙여넣기</value>
+    <comment>Watermark</comment>
+  </data>
+  <data name="LyricsBackground.Download" xml:space="preserve">
+    <value>다운로드</value>
+    <comment>Button</comment>
+  </data>
+  <data name="LyricsBackground.YouTubeClose" xml:space="preserve">
+    <value>취소</value>
+    <comment>Button: fold the YouTube panel / stop the download</comment>
+  </data>
+  <data name="LyricsBackground.NeedsYtDlp" xml:space="preserve">
+    <value>YouTube에서 다운로드하려면 yt-dlp가 필요합니다.</value>
+    <comment>Shown when the tool is missing</comment>
+  </data>
+  <data name="LyricsBackground.InstallYtDlp" xml:space="preserve">
+    <value>yt-dlp 설치</value>
+    <comment>Button</comment>
+  </data>
+  <data name="Settings.Modify" xml:space="preserve">
+    <value>수정</value>
+    <comment>Appearance: opens the lyrics background video picker</comment>
+  </data>
+  <data name="Settings.SeeMoreReleases" xml:space="preserve">
+    <value>릴리스 더 보기</value>
+    <comment>Advanced: expands the release history</comment>
   </data>
   <data name="Settings.Remove" xml:space="preserve">
     <value>제거</value>
@@ -801,7 +989,15 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.DimAllButCurrent" xml:space="preserve">
-    <value>전체 화면에서 현재 줄과 그 주변을 제외한 나머지를 어둡게 합니다.</value>
+    <value>현재 줄과 인접한 줄을 제외한 모든 줄을 어둡게 합니다.</value>
+    <comment>Text in SettingsView.axaml</comment>
+  </data>
+  <data name="Settings.LyricsMinLineOpacity" xml:space="preserve">
+    <value>최소 줄 불투명도</value>
+    <comment>Text in SettingsView.axaml</comment>
+  </data>
+  <data name="Settings.LyricsMinLineOpacityHint" xml:space="preserve">
+    <value>모든 가사 줄을 희미하게 보이게 해 아무 줄이나 클릭해 이동할 수 있게 합니다. 0%는 현재 줄에서 먼 줄을 숨깁니다.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.JoinSplitWords" xml:space="preserve">
@@ -825,7 +1021,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.HowMuchDesktopShows" xml:space="preserve">
-    <value>미니 플레이어의 유리 너머로 바탕 화면이 얼마나 비칠지 설정합니다.</value>
+    <value>유리 너머로 바탕 화면이 비치는 정도.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.PLAYBACK" xml:space="preserve">
@@ -837,7 +1033,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.SongsBlendSmoothlyInto" xml:space="preserve">
-    <value>노래가 서로 부드럽게 이어집니다. 앨범은 전환 없이 그대로 재생됩니다.</value>
+    <value>곡이 서로 자연스럽게 이어집니다. 앨범은 전환 없이 재생됩니다.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.UnavailableWhileExclusiveMode" xml:space="preserve">
@@ -893,7 +1089,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.WhenQueueEndsKeep" xml:space="preserve">
-    <value>대기열이 끝나면 라이브러리에서 비슷한 노래를 이어서 재생합니다.</value>
+    <value>대기열이 끝나면 비슷한 곡을 계속 재생합니다.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.ExplicitContent" xml:space="preserve">
@@ -901,7 +1097,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.AllowExplicitSongsWhen" xml:space="preserve">
-    <value>노골적인 노래를 허용합니다. 끄면 직접 재생하지 않는 한 건너뜁니다.</value>
+    <value>끄면 직접 재생하지 않는 한 노골적 표현 곡을 건너뜁니다.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.ExclusiveMode" xml:space="preserve">
@@ -909,7 +1105,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.BitPerfectOutputBypasses" xml:space="preserve">
-    <value>Windows 믹서를 거치지 않는 비트 퍼펙트 출력입니다. 활성화된 동안 다른 앱은 소리가 나지 않고 곡 전환이 꺼집니다.</value>
+    <value>Windows 믹서를 거치지 않는 비트 퍼펙트 출력. 다른 앱은 소리가 나지 않고 전환 효과가 꺼집니다.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.AnalyzeTempoKey" xml:space="preserve">
@@ -925,7 +1121,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.WriteBPMKeyInto" xml:space="preserve">
-    <value>새로 분석한 트랙의 BPM/키를 파일 태그에 기록합니다. 파일이 수정됩니다.</value>
+    <value>BPM과 키를 파일 태그에 기록합니다. 파일이 수정됩니다.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.Equalizer" xml:space="preserve">
@@ -933,7 +1129,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.ParametricEQTuneEach" xml:space="preserve">
-    <value>파라메트릭 EQ — 각 밴드의 주파수, 게인, 폭(Q)을 조정하세요.</value>
+    <value>각 밴드의 주파수, 게인, 폭을 조정합니다.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.Preamp" xml:space="preserve">
@@ -977,7 +1173,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.UsedByAudioConverter" xml:space="preserve">
-    <value>오디오 변환기에서 사용합니다. 비워 두면 자동으로 감지합니다.</value>
+    <value>변환기, 스펙트로그램, 가사 스튜디오에서 사용합니다. 비워 두면 자동 감지합니다.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.AutoDetect" xml:space="preserve">
@@ -993,7 +1189,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.RightClickSongOpen" xml:space="preserve">
-    <value>노래를 마우스 오른쪽 버튼으로 클릭 → 오디오 파일을 이 프로그램(예: 편집기나 분석기)으로 엽니다. 비워 두면 매번 프로그램을 선택합니다 (Windows).</value>
+    <value>곡을 마우스 오른쪽 버튼으로 클릭해 이 프로그램으로 파일을 엽니다. 비워 두면 매번 묻습니다.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.NotSet" xml:space="preserve">
@@ -1005,7 +1201,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.AdjustVolumeUsingReplayGain" xml:space="preserve">
-    <value>ReplayGain 태그로 음량을 조정합니다. 트랙에서 마우스 오른쪽 버튼 클릭 → ReplayGain 스캔으로 스캔하세요.</value>
+    <value>ReplayGain 태그로 음량을 조정합니다. 마우스 오른쪽 버튼 메뉴에서 트랙을 스캔하세요.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.Mode" xml:space="preserve">
@@ -1025,7 +1221,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.ControlPlaybackFromPhone" xml:space="preserve">
-    <value>로컬 네트워크에서 휴대폰으로 재생을 제어하세요. 트래픽이 암호화되지 않으므로 신뢰할 수 없는 Wi-Fi는 피하세요.</value>
+    <value>같은 네트워크의 휴대폰에서 재생을 제어합니다. 암호화되지 않으므로 신뢰할 수 없는 Wi-Fi는 피하세요.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.TapEnlargeTip" xml:space="preserve">
@@ -1033,7 +1229,7 @@
     <comment>ToolTip.Tip in SettingsView.axaml</comment>
   </data>
   <data name="Settings.IfPhoneBlocksLink" xml:space="preserve">
-    <value>휴대폰이 링크를 안전하지 않다고 차단하면 '계속'을 선택하세요. 리모컨은 로컬 네트워크에서 일반 HTTP를 사용합니다.</value>
+    <value>휴대폰이 링크를 안전하지 않다고 표시하면 계속을 선택하세요. 리모컨은 일반 HTTP를 사용합니다.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.OPENPHONE" xml:space="preserve">
@@ -1073,7 +1269,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.AddAlbumNameUnder" xml:space="preserve">
-    <value>Discord 카드에서 아티스트 아래에 앨범 이름을 추가합니다. 끄면 제목과 아티스트만 표시됩니다.</value>
+    <value>Discord 카드에서 아티스트 아래에 앨범 이름을 표시합니다.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.LastFmScrobbling" xml:space="preserve">
@@ -1121,7 +1317,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.StreamLibraryFromJellyfin" xml:space="preserve">
-    <value>Jellyfin, Navidrome, Airsonic, Gonic 등 Subsonic 호환 서버에서 라이브러리를 스트리밍하세요.</value>
+    <value>Jellyfin, Navidrome, Airsonic, Gonic 또는 모든 Subsonic 서버에서 스트리밍합니다.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.TYPE" xml:space="preserve">
@@ -1148,7 +1344,7 @@
     <value>사용자 이름</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
-  <data name="Settings.Username" xml:space="preserve">
+  <data name="Settings.UsernameWatermark" xml:space="preserve">
     <value>사용자 이름</value>
     <comment>Watermark in SettingsView.axaml</comment>
   </data>
@@ -1156,7 +1352,7 @@
     <value>비밀번호</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
-  <data name="Settings.Password" xml:space="preserve">
+  <data name="Settings.PasswordWatermark" xml:space="preserve">
     <value>비밀번호</value>
     <comment>Watermark in SettingsView.axaml</comment>
   </data>
@@ -1245,7 +1441,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.RenameMoveFilesInto" xml:space="preserve">
-    <value>태그 기반 폴더 구조로 파일 이름을 바꾸고 이동합니다. 먼저 미리보기를 확인할 수 있습니다.</value>
+    <value>태그별로 파일을 폴더에 정리합니다.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.Organize" xml:space="preserve">
@@ -1257,7 +1453,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.FindDuplicateTracksRemove" xml:space="preserve">
-    <value>중복된 트랙을 찾아 원하지 않는 복사본을 제거합니다.</value>
+    <value>중복된 곡을 찾아 제거합니다.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.Find" xml:space="preserve">
@@ -1269,7 +1465,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.IdentifyPoorlyTaggedTracks" xml:space="preserve">
-    <value>태그가 부실한 트랙을 식별하고 제안된 태그를 적용 전에 검토합니다.</value>
+    <value>누락되거나 잘못된 태그를 고칩니다.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.ImportPlaylist" xml:space="preserve">
@@ -1277,7 +1473,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.ImportM3UExportifyCSV" xml:space="preserve">
-    <value>M3U, Exportify CSV, TuneMyMusic JSON 내보내기 파일이나 Deezer 재생목록 링크를 가져와 트랙을 라이브러리와 맞춰 봅니다.</value>
+    <value>파일 또는 Deezer/TIDAL 링크에서.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.Import" xml:space="preserve">
@@ -1329,7 +1525,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.RemovedFromLibraryTheir" xml:space="preserve">
-    <value>라이브러리에서 제거되었지만 파일은 디스크에 남아 있습니다. 복원하면 다시 추가됩니다.</value>
+    <value>라이브러리에서 제거되었으며 파일은 디스크에 남아 있습니다. 복원하면 다시 추가됩니다.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.NoRemovedTracks" xml:space="preserve">
@@ -1421,7 +1617,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.ClickKeyChangePress" xml:space="preserve">
-    <value>키를 클릭하여 변경하세요. 녹화 중에 Esc를 누르면 취소, Backspace를 누르면 할당 해제됩니다. 키보드의 미디어 키는 항상 작동하며 여기에 표시되지 않습니다.</value>
+    <value>키를 클릭해 변경하세요. Esc는 취소, Backspace는 해제합니다. 미디어 키는 항상 작동합니다.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.ResetAll" xml:space="preserve">
@@ -1480,10 +1676,6 @@
     <value>감상</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
-  <data name="Settings.Listening" xml:space="preserve">
-    <value>내 감상 기록</value>
-    <comment>Text in SettingsView.axaml</comment>
-  </data>
   <data name="Settings.TotalPlays" xml:space="preserve">
     <value>총 재생 횟수</value>
     <comment>Text in SettingsView.axaml</comment>
@@ -1521,7 +1713,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.ViewAllStats" xml:space="preserve">
-    <value>전체 통계 보기  →</value>
+    <value>전체 통계 보기</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <!-- AddSongsDialog.axaml (auto-migrated) -->
@@ -1709,7 +1901,7 @@
     <comment>Header in AlbumDetailView.axaml</comment>
   </data>
   <data name="AlbumDetail.EditDescription" xml:space="preserve">
-    <value>설명 수정</value>
+    <value>설명 업데이트</value>
     <comment>Header in AlbumDetailView.axaml</comment>
   </data>
   <data name="AlbumDetail.ConvertAlbum" xml:space="preserve">
@@ -1805,14 +1997,6 @@
     <value>노골적 콘텐츠</value>
     <comment>ToolTip.Tip in ArtistDetailView.axaml</comment>
   </data>
-  <data name="ArtistDetail.ListenCountTip" xml:space="preserve">
-    <value>감상 횟수</value>
-    <comment>ToolTip.Tip in ArtistDetailView.axaml</comment>
-  </data>
-  <data name="ArtistDetail.Plays" xml:space="preserve">
-    <value>회 재생</value>
-    <comment>Text in ArtistDetailView.axaml</comment>
-  </data>
   <data name="ArtistDetail.PlayEverythingByArtistTip" xml:space="preserve">
     <value>이 아티스트의 모든 곡 재생</value>
     <comment>ToolTip.Tip in ArtistDetailView.axaml</comment>
@@ -1865,14 +2049,6 @@
     <value>인기곡</value>
     <comment>Text in ArtistDetailView.axaml</comment>
   </data>
-  <data name="ArtistDetail.Releases" xml:space="preserve">
-    <value>발매작</value>
-    <comment>Text in ArtistDetailView.axaml</comment>
-  </data>
-  <data name="ArtistDetail.All" xml:space="preserve">
-    <value>전체</value>
-    <comment>Content in ArtistDetailView.axaml</comment>
-  </data>
   <data name="ArtistDetail.Albums" xml:space="preserve">
     <value>앨범</value>
     <comment>Content in ArtistDetailView.axaml</comment>
@@ -1889,56 +2065,84 @@
     <value>참여 앨범</value>
     <comment>Text in ArtistDetailView.axaml</comment>
   </data>
-  <data name="ArtistDetail.About" xml:space="preserve">
-    <value>소개: </value>
+  <data name="ArtistDetail.Overview" xml:space="preserve">
+    <value>개요</value>
+    <comment>Tab in ArtistDetailView.axaml</comment>
+  </data>
+  <data name="ArtistDetail.Songs" xml:space="preserve">
+    <value>곡</value>
+    <comment>Tab in ArtistDetailView.axaml</comment>
+  </data>
+  <data name="ArtistDetail.SimilarArtists" xml:space="preserve">
+    <value>비슷한 아티스트</value>
+    <comment>Tab in ArtistDetailView.axaml</comment>
+  </data>
+  <data name="ArtistDetail.SeeAll" xml:space="preserve">
+    <value>모두 보기</value>
+    <comment>Content in ArtistDetailView.axaml</comment>
+  </data>
+  <data name="ArtistDetail.NoSongsMatch" xml:space="preserve">
+    <value>일치하는 곡이 없습니다.</value>
     <comment>Text in ArtistDetailView.axaml</comment>
   </data>
-  <data name="ArtistDetail.NoBiographyFoundArtist" xml:space="preserve">
-    <value>이 아티스트의 소개를 아직 찾지 못했습니다.</value>
+  <data name="ArtistDetail.AboutTitle" xml:space="preserve">
+    <value>소개:</value>
+    <comment>Text in ArtistDetailView.axaml</comment>
+  </data>
+  <data name="ArtistDetail.Links" xml:space="preserve">
+    <value>링크</value>
     <comment>Text in ArtistDetailView.axaml</comment>
   </data>
   <data name="ArtistDetail.FROM" xml:space="preserve">
     <value>출신</value>
     <comment>Text in ArtistDetailView.axaml</comment>
   </data>
-  <data name="ArtistDetail.ACTIVE" xml:space="preserve">
-    <value>활동 기간</value>
-    <comment>Text in ArtistDetailView.axaml</comment>
-  </data>
-  <data name="ArtistDetail.GENRES" xml:space="preserve">
+  <data name="ArtistDetail.GENRE" xml:space="preserve">
     <value>장르</value>
     <comment>Text in ArtistDetailView.axaml</comment>
   </data>
-  <data name="ArtistDetail.LIBRARY" xml:space="preserve">
-    <value>내 라이브러리</value>
+  <data name="ArtistDetail.ReleasesTile" xml:space="preserve">
+    <value>릴리스</value>
     <comment>Text in ArtistDetailView.axaml</comment>
   </data>
-  <data name="ArtistDetail.RELEASES" xml:space="preserve">
-    <value>발매작</value>
-    <comment>Text in ArtistDetailView.axaml</comment>
-  </data>
-  <data name="ArtistDetail.SONGS" xml:space="preserve">
+  <data name="ArtistDetail.SongsTile" xml:space="preserve">
     <value>곡</value>
     <comment>Text in ArtistDetailView.axaml</comment>
   </data>
-  <data name="ArtistDetail.TOTALLENGTH" xml:space="preserve">
+  <data name="ArtistDetail.TotalLengthTile" xml:space="preserve">
     <value>총 길이</value>
     <comment>Text in ArtistDetailView.axaml</comment>
   </data>
-  <data name="ArtistDetail.MOSTPLAYED" xml:space="preserve">
-    <value>최다 재생</value>
+  <data name="ArtistDetail.MostPlayedTile" xml:space="preserve">
+    <value>가장 많이 재생</value>
     <comment>Text in ArtistDetailView.axaml</comment>
   </data>
-  <data name="ArtistDetail.FAVORITED" xml:space="preserve">
-    <value>즐겨찾기</value>
+  <data name="ArtistDetail.SinceTile" xml:space="preserve">
+    <value>라이브러리 추가일</value>
     <comment>Text in ArtistDetailView.axaml</comment>
   </data>
-  <data name="ArtistDetail.Songs" xml:space="preserve">
-    <value> 곡</value>
+  <data name="ArtistDetail.NotInLibrary" xml:space="preserve">
+    <value>라이브러리에 없음</value>
     <comment>Text in ArtistDetailView.axaml</comment>
   </data>
-  <data name="ArtistDetail.SINCE" xml:space="preserve">
-    <value>시작일</value>
+  <data name="ArtistDetail.FansCount" xml:space="preserve">
+    <value>팬 {0}명</value>
+    <comment>Hero line under the artist name; {0} = Deezer fan count</comment>
+  </data>
+  <data name="ArtistDetail.FindingSimilar" xml:space="preserve">
+    <value>비슷한 아티스트 찾는 중…</value>
+    <comment>Text in ArtistDetailView.axaml</comment>
+  </data>
+  <data name="ArtistDetail.NoSimilar" xml:space="preserve">
+    <value>비슷한 아티스트를 찾지 못했습니다.</value>
+    <comment>Text in ArtistDetailView.axaml</comment>
+  </data>
+  <data name="ArtistDetail.LookingUp" xml:space="preserve">
+    <value>아티스트 조회 중…</value>
+    <comment>Text in ArtistDetailView.axaml</comment>
+  </data>
+  <data name="ArtistDetail.NoBiographyFoundArtist" xml:space="preserve">
+    <value>이 아티스트의 소개를 아직 찾지 못했습니다.</value>
     <comment>Text in ArtistDetailView.axaml</comment>
   </data>
   <!-- AudioCdView.axaml (auto-migrated) -->
@@ -2137,7 +2341,7 @@
     <comment>Text in CreateSmartPlaylistDialog.axaml</comment>
   </data>
   <data name="CreateSmartPlaylist.Value" xml:space="preserve">
-    <value>값...</value>
+    <value>값</value>
     <comment>Watermark in CreateSmartPlaylistDialog.axaml</comment>
   </data>
   <data name="CreateSmartPlaylist.To" xml:space="preserve">
@@ -2162,7 +2366,7 @@
     <comment>Title in DuplicateFinderDialog.axaml</comment>
   </data>
   <data name="DuplicateFinder.GroupedByArtistTitle" xml:space="preserve">
-    <value>아티스트 + 제목이 같고 길이가 일치하는 트랙끼리 묶었습니다. 기본적으로 가장 좋은 복사본을 유지합니다. 삭제하기 전에 검토하세요.</value>
+    <value>같은 곡이 여러 개 있습니다. 가장 좋은 사본을 남기세요.</value>
     <comment>Text in DuplicateFinderDialog.axaml</comment>
   </data>
   <data name="DuplicateFinder.Rescan" xml:space="preserve">
@@ -2324,9 +2528,13 @@
     <value>이 섹션 숨기기 또는 표시</value>
     <comment>ToolTip.Tip in HomeView.axaml</comment>
   </data>
-  <data name="Home.MostListened" xml:space="preserve">
-    <value>가장 많이 들은 항목</value>
-    <comment>Text in HomeView.axaml</comment>
+  <data name="Home.MostPlayed" xml:space="preserve">
+    <value>가장 많이 재생</value>
+    <comment>Home chart header</comment>
+  </data>
+  <data name="Home.LastPlayed" xml:space="preserve">
+    <value>최근 재생</value>
+    <comment>Home chart header</comment>
   </data>
   <data name="Home.Text" xml:space="preserve">
     <value>♪</value>
@@ -2348,9 +2556,9 @@
     <value>인기 아티스트</value>
     <comment>Text in HomeView.axaml</comment>
   </data>
-  <data name="Home.RecentlyPlayed" xml:space="preserve">
-    <value>최근 재생</value>
-    <comment>Text in HomeView.axaml</comment>
+  <data name="Home.Albums" xml:space="preserve">
+    <value>앨범</value>
+    <comment>Home right-hand rail header (last played album)</comment>
   </data>
   <data name="Home.PlayTip" xml:space="preserve">
     <value>재생</value>
@@ -2371,6 +2579,34 @@
   <data name="Home.BackEarsAfterLong" xml:space="preserve">
     <value>오랜만에 다시 듣는 항목</value>
     <comment>Text in HomeView.axaml</comment>
+  </data>
+  <data name="Home.Songs" xml:space="preserve">
+    <value>곡</value>
+    <comment>Recently Played rail card: "2017 | 9 songs"</comment>
+  </data>
+  <data name="Home.OptionsTip" xml:space="preserve">
+    <value>옵션</value>
+    <comment>Most Listened To row dots button</comment>
+  </data>
+  <data name="Home.ContinueListening" xml:space="preserve">
+    <value>이어서 듣기</value>
+    <comment>Home hero kicker above the last played track</comment>
+  </data>
+  <data name="Home.Resume" xml:space="preserve">
+    <value>이어서 재생</value>
+    <comment>Home hero primary button</comment>
+  </data>
+  <data name="Home.Pause" xml:space="preserve">
+    <value>일시정지</value>
+    <comment>Home hero primary button while its track is playing</comment>
+  </data>
+  <data name="Home.PlayAlbum" xml:space="preserve">
+    <value>앨범 재생</value>
+    <comment>Home hero secondary button</comment>
+  </data>
+  <data name="Home.TimeLeft" xml:space="preserve">
+    <value>{0} 남음</value>
+    <comment>Home hero: remaining time of the last played track, e.g. "1:06 left"</comment>
   </data>
   <!-- LibraryAlbumsView.axaml (auto-migrated) -->
   <data name="LibraryAlbums.Text" xml:space="preserve">
@@ -2589,6 +2825,10 @@
     <value>즐겨찾기</value>
     <comment>ToolTip.Tip in LibrarySongsView.axaml</comment>
   </data>
+  <data name="LibrarySongs.PlayFromHereTip" xml:space="preserve">
+    <value>여기부터 재생</value>
+    <comment>ToolTip.Tip in LibrarySongsView.axaml</comment>
+  </data>
   <data name="LibrarySongs.OptionsTip" xml:space="preserve">
     <value>옵션</value>
     <comment>ToolTip.Tip in LibrarySongsView.axaml</comment>
@@ -2746,6 +2986,14 @@
   <data name="LyricShare.SaveCard" xml:space="preserve">
     <value>카드 저장</value>
     <comment>Content in LyricShareDialog.axaml</comment>
+  </data>
+  <data name="LyricShare.Copy" xml:space="preserve">
+    <value>복사</value>
+    <comment>Content in LyricShareDialog.axaml</comment>
+  </data>
+  <data name="LyricShare.CopyImageTip" xml:space="preserve">
+    <value>카드 이미지를 클립보드에 복사</value>
+    <comment>ToolTip in LyricShareDialog.axaml</comment>
   </data>
   <!-- LyricsPanelView.axaml (auto-migrated) -->
   <data name="LyricsPanel.NoLyricsTrack" xml:space="preserve">
@@ -3003,7 +3251,7 @@
     <comment>Text in MainWindow.axaml</comment>
   </data>
   <data name="Main.ImportPlaylist" xml:space="preserve">
-    <value>재생목록 가져오기…</value>
+    <value>재생목록 가져오기</value>
     <comment>Text in MainWindow.axaml</comment>
   </data>
   <data name="Main.FromM3uM3u8File" xml:space="preserve">
@@ -3062,6 +3310,22 @@
     <value>커버 플로우 레이아웃</value>
     <comment>ToolTip.Tip in MainWindow.axaml</comment>
   </data>
+  <data name="Main.FilterTip" xml:space="preserve">
+    <value>필터</value>
+    <comment>Top-right corner filter icon tooltip prefix</comment>
+  </data>
+  <data name="Main.SwitchToCoverFlow" xml:space="preserve">
+    <value>커버 플로우로 전환</value>
+    <comment>Top-right view-mode icon tooltip</comment>
+  </data>
+  <data name="Main.SwitchToLibrary" xml:space="preserve">
+    <value>라이브러리로 전환</value>
+    <comment>Top-right view-mode icon tooltip</comment>
+  </data>
+  <data name="Main.Layout" xml:space="preserve">
+    <value>레이아웃:</value>
+    <comment>Cover Flow layout icon tooltip prefix</comment>
+  </data>
   <data name="Main.Carousel" xml:space="preserve">
     <value>캐러셀</value>
     <comment>Header in MainWindow.axaml</comment>
@@ -3104,7 +3368,7 @@
     <comment>Title in MetadataFinderDialog.axaml</comment>
   </data>
   <data name="MetadataFinder.IdentifyPoorlyTaggedTracks" xml:space="preserve">
-    <value>태그가 부실한 트랙을 식별하고 제안된 태그를 적용 전에 검토합니다.</value>
+    <value>누락되거나 잘못된 태그를 고칩니다. 적용 전에 검토하세요.</value>
     <comment>Text in MetadataFinderDialog.axaml</comment>
   </data>
   <data name="MetadataFinder.IdentifyAll" xml:space="preserve">
@@ -3143,6 +3407,114 @@
   <data name="Metadata.FavoritedTip" xml:space="preserve">
     <value>즐겨찾기됨</value>
     <comment>ToolTip.Tip in MetadataWindow.axaml</comment>
+  </data>
+  <data name="Metadata.GroupInfo" xml:space="preserve">
+    <value>정보</value>
+    <comment>Rail group label in MetadataWindow.axaml</comment>
+  </data>
+  <data name="Metadata.GroupLyrics" xml:space="preserve">
+    <value>가사</value>
+    <comment>Rail group label in MetadataWindow.axaml</comment>
+  </data>
+  <data name="Metadata.GroupPlayback" xml:space="preserve">
+    <value>재생</value>
+    <comment>Rail group label in MetadataWindow.axaml</comment>
+  </data>
+  <data name="Metadata.GroupFile" xml:space="preserve">
+    <value>파일</value>
+    <comment>Rail group label in MetadataWindow.axaml</comment>
+  </data>
+  <data name="Metadata.NoChangesYet" xml:space="preserve">
+    <value>아직 변경 사항 없음</value>
+    <comment>Footer status in MetadataWindow.axaml</comment>
+  </data>
+  <data name="Metadata.ChangesOne" xml:space="preserve">
+    <value>변경 1개</value>
+    <comment>Footer status in MetadataWindow.axaml</comment>
+  </data>
+  <data name="Metadata.ChangesMany" xml:space="preserve">
+    <value>변경 {0}개</value>
+    <comment>Footer status in MetadataWindow.axaml</comment>
+  </data>
+  <data name="Metadata.AppliesToFiles" xml:space="preserve">
+    <value>파일 {0}개에 적용</value>
+    <comment>Footer status in MetadataWindow.axaml</comment>
+  </data>
+  <data name="Metadata.MixedHint" xml:space="preserve">
+    <value>{0}개 트랙에서 서로 다른 값은 혼합으로 표시됩니다</value>
+    <comment>Details tab hint in MetadataWindow.axaml</comment>
+  </data>
+  <data name="Metadata.SecSorting" xml:space="preserve">
+    <value>정렬</value>
+    <comment>Text in MetadataWindow.axaml</comment>
+  </data>
+  <data name="Metadata.SecPeople" xml:space="preserve">
+    <value>참여자 및 크레딧</value>
+    <comment>Text in MetadataWindow.axaml</comment>
+  </data>
+  <data name="Metadata.SecIdentification" xml:space="preserve">
+    <value>식별</value>
+    <comment>Text in MetadataWindow.axaml</comment>
+  </data>
+  <data name="Metadata.SecContent" xml:space="preserve">
+    <value>콘텐츠</value>
+    <comment>Text in MetadataWindow.axaml</comment>
+  </data>
+  <data name="Metadata.SecTechnical" xml:space="preserve">
+    <value>기술 정보</value>
+    <comment>Text in MetadataWindow.axaml</comment>
+  </data>
+  <data name="Metadata.SecCustomTags" xml:space="preserve">
+    <value>사용자 지정 태그</value>
+    <comment>Text in MetadataWindow.axaml</comment>
+  </data>
+  <data name="Metadata.SecKind" xml:space="preserve">
+    <value>종류</value>
+    <comment>Text in MetadataWindow.axaml</comment>
+  </data>
+  <data name="Metadata.SecPlayRange" xml:space="preserve">
+    <value>재생 구간</value>
+    <comment>Text in MetadataWindow.axaml</comment>
+  </data>
+  <data name="Metadata.SecBehaviour" xml:space="preserve">
+    <value>동작</value>
+    <comment>Text in MetadataWindow.axaml</comment>
+  </data>
+  <data name="Metadata.SecSound" xml:space="preserve">
+    <value>사운드</value>
+    <comment>Text in MetadataWindow.axaml</comment>
+  </data>
+  <data name="Metadata.SecAudio" xml:space="preserve">
+    <value>오디오</value>
+    <comment>Text in MetadataWindow.axaml</comment>
+  </data>
+  <data name="Metadata.SecDates" xml:space="preserve">
+    <value>날짜</value>
+    <comment>Text in MetadataWindow.axaml</comment>
+  </data>
+  <data name="Metadata.SecLocation" xml:space="preserve">
+    <value>위치</value>
+    <comment>Text in MetadataWindow.axaml</comment>
+  </data>
+  <data name="Metadata.ShowInFolder" xml:space="preserve">
+    <value>폴더에서 보기</value>
+    <comment>Text in MetadataWindow.axaml</comment>
+  </data>
+  <data name="Metadata.CopyPath" xml:space="preserve">
+    <value>경로 복사</value>
+    <comment>Text in MetadataWindow.axaml</comment>
+  </data>
+  <data name="Metadata.DoubleClickToReset" xml:space="preserve">
+    <value>슬라이더를 더블클릭하면 초기화됩니다</value>
+    <comment>Text in MetadataWindow.axaml</comment>
+  </data>
+  <data name="Metadata.ArtworkSharedByAlbum" xml:space="preserve">
+    <value>앨범 전체가 공유</value>
+    <comment>Text in MetadataWindow.axaml</comment>
+  </data>
+  <data name="Metadata.AnimatedArtworkHint" xml:space="preserve">
+    <value>앨범별 · 앨범 페이지와 지금 재생 중에서 재생됨</value>
+    <comment>Text in MetadataWindow.axaml</comment>
   </data>
   <data name="Metadata.Cancel" xml:space="preserve">
     <value>취소</value>
@@ -3844,7 +4216,7 @@
     <comment>Title in OrganizeFilesDialog.axaml</comment>
   </data>
   <data name="OrganizeFiles.RenameMoveFilesInto" xml:space="preserve">
-    <value>태그 기반 폴더 구조로 파일 이름을 바꾸고 이동합니다. 적용하기 전에 모든 이동을 검토하세요.</value>
+    <value>태그별로 파일을 폴더에 정리합니다. 먼저 미리 보세요.</value>
     <comment>Text in OrganizeFilesDialog.axaml</comment>
   </data>
   <data name="OrganizeFiles.UndoLast" xml:space="preserve">
@@ -4225,6 +4597,10 @@
   <data name="Playlist.Text4" xml:space="preserve">
     <value></value>
     <comment>Text in PlaylistView.axaml</comment>
+  </data>
+  <data name="Playlist.Kicker" xml:space="preserve">
+    <value>재생목록</value>
+    <comment>Hero kicker in PlaylistView.axaml</comment>
   </data>
   <data name="Playlist.PlayFromHereTip" xml:space="preserve">
     <value>여기부터 재생</value>
@@ -4702,6 +5078,18 @@
     <value>형식별 분포</value>
     <comment>Text in StatisticsView.axaml</comment>
   </data>
+  <data name="Statistics.Library" xml:space="preserve">
+    <value>라이브러리</value>
+    <comment>Overview section title in StatisticsView.axaml</comment>
+  </data>
+  <data name="Statistics.Liked" xml:space="preserve">
+    <value>좋아요</value>
+    <comment>Library footer fact, lowercase</comment>
+  </data>
+  <data name="Statistics.AvgLength" xml:space="preserve">
+    <value>평균 길이</value>
+    <comment>Library footer fact, lowercase</comment>
+  </data>
   <data name="Statistics.NoTracksLibrary" xml:space="preserve">
     <value>라이브러리에 트랙이 없습니다</value>
     <comment>Text in StatisticsView.axaml</comment>
@@ -4947,10 +5335,10 @@
     <value>플러그인</value>
   </data>
   <data name="Plugins.Description" xml:space="preserve">
-    <value>커뮤니티 플러그인으로 Noctis를 확장하세요. 플러그인 폴더를 플러그인 디렉터리에 넣고 새로고침하세요. 삭제하지 않고도 여기에서 플러그인을 끌 수 있습니다.</value>
+    <value>plugins 디렉터리에 플러그인 폴더를 넣고 다시 불러오세요. 여기서 플러그인을 삭제하지 않고 끌 수 있습니다.</value>
   </data>
   <data name="Plugins.Warning" xml:space="preserve">
-    <value>플러그인은 Noctis와 동일한 권한으로 실행됩니다. 신뢰할 수 있는 사람의 플러그인만 설치하세요.</value>
+    <value>플러그인은 Noctis와 같은 권한으로 실행됩니다. 신뢰하는 플러그인만 설치하세요.</value>
   </data>
   <data name="Plugins.OpenFolder" xml:space="preserve">
     <value>플러그인 폴더 열기</value>
@@ -4966,7 +5354,7 @@
     <value>Noctis 서버</value>
   </data>
   <data name="Server.Description" xml:space="preserve">
-    <value>휴대폰과 다른 기기에서 이 라이브러리를 탐색하고 재생할 수 있게 합니다. 모든 Subsonic 앱(Symfonium, Tempo, DSub…)과 Noctis 모바일 앱에서 작동합니다. 이 컴퓨터의 자체 인증서를 사용한 HTTPS이며, 계정은 아래에서 관리합니다.</value>
+    <value>휴대폰과 다른 기기에서 이 라이브러리를 둘러보고 재생할 수 있게 합니다. HTTPS를 통해 모든 Subsonic 앱과 Noctis 모바일 앱에서 작동합니다.</value>
   </data>
   <data name="Server.Port" xml:space="preserve">
     <value>포트</value>
@@ -5005,7 +5393,7 @@
     <value>API 키 대상</value>
   </data>
   <data name="Server.ApiKeyOnce" xml:space="preserve">
-    <value>지금 복사하세요. 한 번만 표시됩니다. 새 키를 생성하면 이 키는 대체됩니다.</value>
+    <value>지금 복사하세요. 한 번만 표시되며 새 키가 이를 대체합니다.</value>
   </data>
   <data name="Server.Done" xml:space="preserve">
     <value>완료</value>
@@ -5024,19 +5412,19 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.TidalDescription" xml:space="preserve">
-    <value>Sign in to import your TIDAL playlists by link. Noctis only asks to read playlists.</value>
+    <value>로그인하면 링크로 TIDAL 재생목록을 가져올 수 있습니다.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.TidalConnected" xml:space="preserve">
-    <value>Signed in — tidal.com links import directly.</value>
+    <value>로그인됨 — tidal.com 링크를 바로 가져옵니다.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.FlowingOff" xml:space="preserve">
-    <value>Off</value>
+    <value>끔</value>
     <comment>Flowing-background picker row</comment>
   </data>
   <data name="Settings.FlowingDrift" xml:space="preserve">
-    <value>Drift</value>
+    <value>드리프트</value>
     <comment>Flowing-background picker row (built-in style)</comment>
   </data>
   <data name="Settings.FlowingKawarp" xml:space="preserve">
@@ -5044,11 +5432,11 @@
     <comment>Flowing-background picker row (liquid warp, beat-reactive)</comment>
   </data>
   <data name="Settings.FlowingKawarpCalm" xml:space="preserve">
-    <value>Kawarp (no beat)</value>
+    <value>Kawarp (비트 없음)</value>
     <comment>Flowing-background picker row</comment>
   </data>
   <data name="Settings.KawarpWarp" xml:space="preserve">
-    <value>Warp strength</value>
+    <value>왜곡 강도</value>
     <comment>Kawarp slider label</comment>
   </data>
   <data name="Settings.KawarpBlur" xml:space="preserve">
@@ -5057,143 +5445,143 @@
   </data>
   <!-- 2026-09 feature batch: pitch, click-to-rate, Send to Folder, bulk lyrics, YouTube, Account & Sync, Lyrics Studio, upmix -->
   <data name="PlaybackBar.Pitch" xml:space="preserve">
-    <value>Pitch</value>
+    <value>피치</value>
     <comment>Speed menu → pitch submenu header (island)</comment>
   </data>
   <data name="PlaybackBar.PitchNormal" xml:space="preserve">
-    <value>Normal</value>
+    <value>보통</value>
     <comment>Pitch submenu: reset to ±0 semitones</comment>
   </data>
   <data name="LibrarySongs.RateTip" xml:space="preserve">
-    <value>Rate (click a star; click the same star again to clear)</value>
+    <value>평가 (별을 클릭하세요. 같은 별을 다시 클릭하면 지워집니다)</value>
     <comment>ToolTip on the Songs row stars</comment>
   </data>
   <data name="SendTo.Title" xml:space="preserve">
-    <value>Send to Folder</value>
+    <value>폴더로 보내기</value>
     <comment>Dialog title</comment>
   </data>
   <data name="SendTo.Destination" xml:space="preserve">
-    <value>Destination</value>
+    <value>대상</value>
     <comment>Send to Folder dialog</comment>
   </data>
   <data name="SendTo.DestinationHint" xml:space="preserve">
-    <value>A USB drive, phone or any folder</value>
+    <value>USB 드라이브, 휴대폰 또는 아무 폴더</value>
     <comment>Destination watermark</comment>
   </data>
   <data name="SendTo.Browse" xml:space="preserve">
-    <value>Browse…</value>
+    <value>찾아보기…</value>
     <comment>Folder picker button</comment>
   </data>
   <data name="SendTo.Organize" xml:space="preserve">
-    <value>Organize into folders</value>
+    <value>폴더로 정리</value>
     <comment>Toggle label</comment>
   </data>
   <data name="SendTo.OrganizeHint" xml:space="preserve">
-    <value>Artist and album folders using your file pattern:</value>
+    <value>파일 패턴에 따른 아티스트 및 앨범 폴더:</value>
     <comment>Toggle help, followed by the pattern</comment>
   </data>
   <data name="SendTo.IncludeLyrics" xml:space="preserve">
-    <value>Include lyrics files</value>
+    <value>가사 파일 포함</value>
     <comment>Toggle label</comment>
   </data>
   <data name="SendTo.IncludeLyricsHint" xml:space="preserve">
-    <value>Copies each song's .lrc alongside it when there is one.</value>
+    <value>각 곡의 .lrc 파일이 있으면 함께 복사합니다.</value>
     <comment>Toggle help</comment>
   </data>
   <data name="SendTo.LyricsIncluded" xml:space="preserve">
-    <value>Lyrics file included</value>
+    <value>가사 파일 포함됨</value>
     <comment>Row tooltip</comment>
   </data>
   <data name="SendTo.Copy" xml:space="preserve">
-    <value>Copy</value>
+    <value>복사</value>
     <comment>Primary button</comment>
   </data>
   <data name="SendTo.Close" xml:space="preserve">
-    <value>Close</value>
+    <value>닫기</value>
     <comment>Secondary button</comment>
   </data>
   <data name="BulkLyrics.Title" xml:space="preserve">
-    <value>Lyrics</value>
+    <value>가사</value>
     <comment>Dialog title (window)</comment>
   </data>
   <data name="BulkLyrics.Close" xml:space="preserve">
-    <value>Close</value>
+    <value>닫기</value>
     <comment>Secondary button</comment>
   </data>
   <data name="Main.AddFromYouTube" xml:space="preserve">
-    <value>Add from YouTube</value>
+    <value>YouTube에서 추가</value>
     <comment>New/Add menu item</comment>
   </data>
   <data name="Main.AddFromYouTubeHint" xml:space="preserve">
-    <value>Search or paste a link — downloads into your library</value>
+    <value>검색하거나 링크를 붙여넣으세요 — 라이브러리로 다운로드됩니다</value>
     <comment>New/Add menu item subtitle</comment>
   </data>
   <data name="YouTube.Title" xml:space="preserve">
-    <value>Add from YouTube</value>
+    <value>YouTube에서 추가</value>
     <comment>Dialog title</comment>
   </data>
   <data name="YouTube.Subtitle" xml:space="preserve">
-    <value>Search or paste a link. The song is downloaded, tagged with cover art and added to your library folder.</value>
+    <value>검색하거나 링크를 붙여넣으세요. 커버 아트와 함께 라이브러리에 저장됩니다.</value>
     <comment>Dialog subtitle</comment>
   </data>
   <data name="YouTube.SearchHint" xml:space="preserve">
-    <value>Search YouTube or paste a link…</value>
+    <value>YouTube 검색 또는 링크 붙여넣기…</value>
     <comment>Search box watermark</comment>
   </data>
   <data name="YouTube.Search" xml:space="preserve">
-    <value>Search</value>
+    <value>검색</value>
     <comment>Search button</comment>
   </data>
   <data name="YouTube.SetupTitle" xml:space="preserve">
-    <value>One-time setup</value>
+    <value>최초 설정</value>
     <comment>First-run card title</comment>
   </data>
   <data name="YouTube.SetupBody" xml:space="preserve">
-    <value>Noctis uses yt-dlp (free, open source) to talk to YouTube. It is downloaded once into Noctis's own folder and updated from here.</value>
+    <value>Noctis는 YouTube와 통신하기 위해 yt-dlp(무료, 오픈 소스)를 사용합니다. Noctis 전용 폴더에 한 번 다운로드되며 여기서 업데이트됩니다.</value>
     <comment>First-run card body</comment>
   </data>
   <data name="YouTube.Install" xml:space="preserve">
-    <value>Install yt-dlp</value>
+    <value>yt-dlp 설치</value>
     <comment>First-run card button</comment>
   </data>
   <data name="YouTube.Download" xml:space="preserve">
-    <value>Download</value>
+    <value>다운로드</value>
     <comment>Per-result button</comment>
   </data>
   <data name="YouTube.SavesTo" xml:space="preserve">
-    <value>Saves to</value>
+    <value>저장 위치</value>
     <comment>Footer label before the folder</comment>
   </data>
   <data name="YouTube.EmptyHint" xml:space="preserve">
-    <value>Results appear here. Downloads land in your library folder, tagged and with cover art.</value>
+    <value>결과가 여기에 표시됩니다. 다운로드는 태그와 커버 아트가 붙은 채 라이브러리 폴더에 저장됩니다.</value>
     <comment>Empty state</comment>
   </data>
   <data name="YouTube.Close" xml:space="preserve">
-    <value>Close</value>
+    <value>닫기</value>
     <comment>Secondary button</comment>
   </data>
   <data name="YouTubeSettings.Section" xml:space="preserve">
-    <value>YOUTUBE DOWNLOADS</value>
+    <value>YOUTUBE 다운로드</value>
     <comment>Library tab section title</comment>
   </data>
   <data name="YouTubeSettings.Title" xml:space="preserve">
-    <value>Add songs from YouTube</value>
+    <value>YouTube에서 곡 추가</value>
     <comment>Card title</comment>
   </data>
   <data name="YouTubeSettings.Description" xml:space="preserve">
-    <value>Search or paste a link; the song is downloaded into the folder below, tagged with cover art and added to your library. There is no YouTube section in Noctis — this only feeds your own library.</value>
+    <value>검색하거나 링크를 붙여넣어 다운로드합니다.</value>
     <comment>Card description</comment>
   </data>
   <data name="YouTubeSettings.Open" xml:space="preserve">
-    <value>Open downloader</value>
+    <value>다운로더 열기</value>
     <comment>Card button</comment>
   </data>
   <data name="YouTubeSettings.Folder" xml:space="preserve">
-    <value>Download folder</value>
+    <value>다운로드 폴더</value>
     <comment>Row label</comment>
   </data>
   <data name="YouTubeSettings.FolderHint" xml:space="preserve">
-    <value>Leave empty to use a "YouTube" folder inside your first music folder.</value>
+    <value>비워 두면 첫 번째 음악 폴더 안의 "YouTube" 폴더를 사용합니다.</value>
     <comment>Row help</comment>
   </data>
   <data name="YouTubeSettings.Tool" xml:space="preserve">
@@ -5201,115 +5589,115 @@
     <comment>Row label</comment>
   </data>
   <data name="YouTubeSettings.InstallUpdate" xml:space="preserve">
-    <value>Install / update</value>
+    <value>설치 / 업데이트</value>
     <comment>Row button</comment>
   </data>
   <data name="YouTubeSettings.ToolPathHint" xml:space="preserve">
-    <value>Custom path to yt-dlp (optional)</value>
+    <value>yt-dlp 사용자 지정 경로 (선택 사항)</value>
     <comment>Path watermark</comment>
   </data>
   <data name="Upmix.Title" xml:space="preserve">
-    <value>Multi-channel upmix</value>
+    <value>다채널 업믹스</value>
     <comment>Audio card title</comment>
   </data>
   <data name="Upmix.Description" xml:space="preserve">
-    <value>Play stereo music through every speaker of a 5.1 or 7.1 system.</value>
+    <value>스테레오를 5.1 또는 7.1 시스템의 모든 스피커로 재생합니다.</value>
     <comment>Audio card description</comment>
   </data>
   <data name="Upmix.Off" xml:space="preserve">
-    <value>Off</value>
+    <value>끔</value>
     <comment>Upmix mode</comment>
   </data>
   <data name="Upmix.OffHint" xml:space="preserve">
-    <value>Stereo only</value>
+    <value>스테레오만</value>
     <comment>Upmix mode hint</comment>
   </data>
   <data name="Upmix.Duplicate" xml:space="preserve">
-    <value>Stereo everywhere</value>
+    <value>모든 채널에 스테레오</value>
     <comment>Upmix mode</comment>
   </data>
   <data name="Upmix.DuplicateHint" xml:space="preserve">
-    <value>Same music on every pair, centre and bass filled in</value>
+    <value>모든 쌍에 같은 음악, 센터와 저음 채워짐</value>
     <comment>Upmix mode hint</comment>
   </data>
   <data name="Upmix.Surround" xml:space="preserve">
-    <value>Surround</value>
+    <value>서라운드</value>
     <comment>Upmix mode</comment>
   </data>
   <data name="Upmix.SurroundHint" xml:space="preserve">
-    <value>Ambience to the rears, wide stage in front</value>
+    <value>후방에는 앰비언스, 전방에는 넓은 무대</value>
     <comment>Upmix mode hint</comment>
   </data>
   <data name="Upmix.Note" xml:space="preserve">
-    <value>Applies to the built-in output engine. Exclusive Mode keeps the file's own channel layout.</value>
+    <value>내장 출력 엔진에서만 작동합니다. 독점 모드는 파일 고유의 채널 배치를 유지합니다.</value>
     <comment>Upmix footnote</comment>
   </data>
   <data name="Server.AccountsMoved" xml:space="preserve">
-    <value>Accounts and device sync are managed in Account &amp; Sync.</value>
+    <value>계정과 기기 동기화는 계정 및 동기화에서 관리합니다.</value>
     <comment>Integrations → Noctis Server card footer</comment>
   </data>
   <data name="Server.OpenAccountSync" xml:space="preserve">
-    <value>Open Account &amp; Sync</value>
+    <value>계정 및 동기화 열기</value>
     <comment>Integrations → Noctis Server card button</comment>
   </data>
   <data name="AccountSync.YourAccount" xml:space="preserve">
-    <value>YOUR ACCOUNT</value>
+    <value>내 계정</value>
     <comment>Account &amp; Sync section title</comment>
   </data>
   <data name="AccountSync.CreateTitle" xml:space="preserve">
-    <value>Create your account</value>
+    <value>계정 만들기</value>
     <comment>No-account state title</comment>
   </data>
   <data name="AccountSync.CreateHelp" xml:space="preserve">
-    <value>Your phone and other devices sign in with this to browse, play and sync this library. The password is stored hashed and never leaves this computer.</value>
+    <value>기기들이 이 계정으로 로그인해 둘러보고, 재생하고, 동기화합니다. 비밀번호는 해시로 저장되며 이 컴퓨터를 벗어나지 않습니다.</value>
     <comment>No-account state help</comment>
   </data>
   <data name="AccountSync.Name" xml:space="preserve">
-    <value>Name</value>
+    <value>이름</value>
     <comment>Create form watermark</comment>
   </data>
   <data name="AccountSync.Password" xml:space="preserve">
-    <value>Password (8+ characters)</value>
+    <value>비밀번호 (8자 이상)</value>
     <comment>Create form watermark</comment>
   </data>
   <data name="AccountSync.Create" xml:space="preserve">
-    <value>Create</value>
+    <value>만들기</value>
     <comment>Create form button</comment>
   </data>
   <data name="AccountSync.PairDevice" xml:space="preserve">
-    <value>Pair a device</value>
+    <value>기기 연결</value>
     <comment>Account card button</comment>
   </data>
   <data name="AccountSync.NewApiKey" xml:space="preserve">
-    <value>New API key</value>
+    <value>새 API 키</value>
     <comment>Account card button</comment>
   </data>
   <data name="AccountSync.ChangePassword" xml:space="preserve">
-    <value>Change password</value>
+    <value>비밀번호 변경</value>
     <comment>Account card button</comment>
   </data>
   <data name="AccountSync.NewPassword" xml:space="preserve">
-    <value>New password (8+ characters)</value>
+    <value>새 비밀번호 (8자 이상)</value>
     <comment>Change password watermark</comment>
   </data>
   <data name="AccountSync.Save" xml:space="preserve">
-    <value>Save</value>
+    <value>저장</value>
     <comment>Change password button</comment>
   </data>
   <data name="AccountSync.Remove" xml:space="preserve">
-    <value>Remove</value>
+    <value>제거</value>
     <comment>Account card button</comment>
   </data>
   <data name="AccountSync.PairHelp" xml:space="preserve">
-    <value>On your phone, open the Noctis app (or any Subsonic app), scan the code or type the address, and sign in with your account.</value>
+    <value>휴대폰에서 Noctis나 아무 Subsonic 앱을 열고 코드를 스캔하거나 주소를 입력한 뒤 로그인하세요.</value>
     <comment>Pairing block help</comment>
   </data>
   <data name="AccountSync.ServerOffHelp" xml:space="preserve">
-    <value>Devices connect through Noctis Server on this computer. It is off right now.</value>
+    <value>기기는 이 컴퓨터의 Noctis Server를 통해 연결됩니다. 현재 꺼져 있습니다.</value>
     <comment>Pairing block when the server is off</comment>
   </data>
   <data name="AccountSync.TurnOnServer" xml:space="preserve">
-    <value>Turn on Noctis Server</value>
+    <value>Noctis Server 켜기</value>
     <comment>Pairing block button</comment>
   </data>
   <data name="AccountSync.SyncSection" xml:space="preserve">
@@ -5317,231 +5705,667 @@
     <comment>Account &amp; Sync section title</comment>
   </data>
   <data name="AccountSync.OtherAccounts" xml:space="preserve">
-    <value>OTHER ACCOUNTS</value>
+    <value>다른 계정</value>
     <comment>Account &amp; Sync section title</comment>
   </data>
   <data name="AccountSync.OtherTitle" xml:space="preserve">
-    <value>Family and guests</value>
+    <value>가족 및 게스트</value>
     <comment>Other accounts card title</comment>
   </data>
   <data name="AccountSync.OtherHelp" xml:space="preserve">
-    <value>Extra accounts that can sign in to this library from their own devices.</value>
+    <value>각자의 기기에서 로그인할 수 있는 추가 계정.</value>
     <comment>Other accounts card help</comment>
   </data>
   <data name="Sync.Title" xml:space="preserve">
-    <value>Sync between your devices</value>
+    <value>기기 간 동기화</value>
     <comment>Sync card title</comment>
   </data>
   <data name="Sync.Description" xml:space="preserve">
-    <value>Favourites, ratings, play counts and playlists stay the same on every device signed in to your account. Changes meet here; the newest one wins.</value>
+    <value>즐겨찾기, 평가, 재생 횟수, 재생목록이 로그인한 모든 기기에서 동일하게 유지됩니다. 가장 최근 변경이 우선합니다.</value>
     <comment>Sync card description</comment>
   </data>
   <data name="Sync.DeviceName" xml:space="preserve">
-    <value>This device</value>
+    <value>이 기기</value>
     <comment>Sync card row label</comment>
   </data>
   <data name="Sync.WhatSyncs" xml:space="preserve">
-    <value>Music files stay where they are — only what you do with them syncs. Requires Noctis Server (Integrations).</value>
+    <value>음악 파일은 그대로 있습니다. Noctis Server가 켜져 있어야 합니다.</value>
     <comment>Sync card footnote</comment>
   </data>
   <data name="LyricsStudioSettings.ModelSection" xml:space="preserve">
-    <value>SPEECH MODEL</value>
+    <value>음성 모델</value>
     <comment>Lyrics Studio tab section title</comment>
   </data>
   <data name="LyricsStudioSettings.Title" xml:space="preserve">
-    <value>Lyrics Studio</value>
+    <value>가사 스튜디오</value>
     <comment>Card title</comment>
   </data>
   <data name="LyricsStudioSettings.Description" xml:space="preserve">
-    <value>Listens to a song and times its lyrics word by word — or writes them down when there are none. Everything runs on this computer; you review each song before anything is saved.</value>
+    <value>이 컴퓨터에서 가사를 단어 단위로 타이밍합니다. 저장 전에 검토합니다.</value>
     <comment>Card description</comment>
   </data>
   <data name="LyricsStudioSettings.Model" xml:space="preserve">
-    <value>Model</value>
+    <value>모델</value>
     <comment>Row label</comment>
   </data>
   <data name="LyricsStudioSettings.Language" xml:space="preserve">
-    <value>Language</value>
+    <value>언어</value>
     <comment>Row label</comment>
   </data>
   <data name="LyricsStudioSettings.Download" xml:space="preserve">
-    <value>Download</value>
+    <value>다운로드</value>
     <comment>Model button</comment>
   </data>
   <data name="LyricsStudioSettings.Delete" xml:space="preserve">
-    <value>Delete</value>
+    <value>삭제</value>
     <comment>Model button</comment>
   </data>
   <data name="LyricsStudioSettings.OutputSection" xml:space="preserve">
-    <value>OUTPUT</value>
+    <value>출력</value>
     <comment>Section title</comment>
   </data>
   <data name="LyricsStudioSettings.WordTimings" xml:space="preserve">
-    <value>Word-by-word timings</value>
+    <value>단어별 타이밍</value>
     <comment>Toggle title</comment>
   </data>
   <data name="LyricsStudioSettings.WordTimingsHint" xml:space="preserve">
-    <value>Save enhanced LRC with a time for every word (karaoke sweep). Off saves one time per line.</value>
+    <value>모든 단어에 시간을 지정합니다. 끄면 줄마다 하나씩 저장합니다.</value>
     <comment>Toggle help</comment>
   </data>
   <data name="LyricsStudioSettings.EmbedTags" xml:space="preserve">
-    <value>Also write lyrics into the file's tags</value>
+    <value>파일 태그에도 가사 기록</value>
     <comment>Toggle title</comment>
   </data>
   <data name="LyricsStudioSettings.EmbedTagsHint" xml:space="preserve">
-    <value>The .lrc file next to the song is always written; this additionally stores the plain lyrics inside the audio file.</value>
+    <value>일반 가사를 오디오 파일 안에도 저장합니다.</value>
     <comment>Toggle help</comment>
   </data>
   <data name="LyricsStudioSettings.RunSection" xml:space="preserve">
-    <value>RUN</value>
+    <value>실행</value>
     <comment>Section title</comment>
   </data>
   <data name="LyricsStudioSettings.OpenTitle" xml:space="preserve">
-    <value>Songs missing the chosen format</value>
+    <value>선택한 형식이 없는 곡</value>
     <comment>Run card title</comment>
   </data>
   <data name="LyricsStudioSettings.OpenHelp" xml:space="preserve">
-    <value>Opens Lyrics Studio with up to 40 songs that lack the format above: with word-by-word timings on, songs with only line-timed LRC are included; songs that already have ELRC are not. You can also right-click any songs → Lyrics → Open in Lyrics Studio.</value>
+    <value>위 형식이 없는 곡 최대 40개.</value>
     <comment>Run card help</comment>
   </data>
   <data name="LyricsStudioSettings.Open" xml:space="preserve">
-    <value>Open Lyrics Studio</value>
+    <value>가사 스튜디오 열기</value>
     <comment>Run card button</comment>
   </data>
+  <data name="LyricsStudioSettings.CountWord" xml:space="preserve">
+    <value>단어 타이밍</value>
+    <comment>Library count tile</comment>
+  </data>
+  <data name="LyricsStudioSettings.CountLine" xml:space="preserve">
+    <value>줄 타이밍</value>
+    <comment>Library count tile</comment>
+  </data>
+  <data name="LyricsStudioSettings.CountPlain" xml:space="preserve">
+    <value>일반 가사만</value>
+    <comment>Library count tile</comment>
+  </data>
+  <data name="LyricsStudioSettings.CountNone" xml:space="preserve">
+    <value>가사 없음</value>
+    <comment>Library count tile</comment>
+  </data>
+  <data name="LyricsStudioSettings.Installed" xml:space="preserve">
+    <value>설치됨</value>
+    <comment>Model state chip</comment>
+  </data>
+  <data name="LyricsStudioSettings.NotInstalled" xml:space="preserve">
+    <value>설치되지 않음</value>
+    <comment>Model state chip</comment>
+  </data>
   <data name="LyricsStudio.Title" xml:space="preserve">
-    <value>Lyrics Studio</value>
+    <value>가사 스튜디오</value>
     <comment>Dialog title</comment>
   </data>
   <data name="LyricsStudio.Subtitle" xml:space="preserve">
-    <value>Times your lyrics against the recording, or transcribes when there are none. Review each song, fix any word, then save.</value>
+    <value>녹음에 맞춰 가사를 타이밍하거나, 가사가 없으면 받아 적습니다.</value>
     <comment>Dialog subtitle</comment>
   </data>
-  <data name="LyricsStudio.Close" xml:space="preserve">
-    <value>Close</value>
-    <comment>Dialog button</comment>
-  </data>
   <data name="LyricsStudio.Model" xml:space="preserve">
-    <value>Model</value>
+    <value>모델</value>
     <comment>Footer label</comment>
   </data>
   <data name="LyricsStudio.Language" xml:space="preserve">
-    <value>Language</value>
+    <value>언어</value>
     <comment>Footer label</comment>
   </data>
   <data name="LyricsStudio.WordTimings" xml:space="preserve">
-    <value>Word timings (ELRC)</value>
+    <value>단어 타이밍</value>
     <comment>Footer checkbox</comment>
   </data>
   <data name="LyricsStudio.SkipAlreadyTimed" xml:space="preserve">
-    <value>Skip songs that already have this format</value>
+    <value>이미 이 형식인 곡 건너뛰기</value>
     <comment>Footer checkbox</comment>
   </data>
   <data name="LyricsStudio.SkipAlreadyTimedTip" xml:space="preserve">
-    <value>ELRC (a time for every word) and LRC (one time per line) are different formats. With word timings on, songs that only have line-timed LRC are still processed; songs that already have ELRC are left alone.</value>
+    <value>단어 타이밍(ELRC)과 줄 타이밍(LRC)은 다른 형식입니다. 줄 타이밍만 있는 곡은 계속 처리됩니다.</value>
     <comment>Footer checkbox tooltip</comment>
   </data>
   <data name="LyricsStudio.TranscribeOnly" xml:space="preserve">
-    <value>Ignore existing lyrics, transcribe</value>
+    <value>듣고 받아 적기 (기존 가사 무시)</value>
     <comment>Footer checkbox</comment>
   </data>
+  <data name="LyricsStudio.TranscribeOnlyTip" xml:space="preserve">
+    <value>곡에 이미 가사가 있어도 음성 모델이 곡을 듣고 직접 가사를 씁니다. 가사가 없는 곡은 항상 받아 적습니다.</value>
+    <comment>Footer checkbox tooltip</comment>
+  </data>
+  <data name="LyricsStudio.OnlineLyrics" xml:space="preserve">
+    <value>가사가 없는 곡은 온라인에서 찾기</value>
+    <comment>Footer checkbox</comment>
+  </data>
+  <data name="LyricsStudio.OnlineLyricsTip" xml:space="preserve">
+    <value>먼저 LRCLIB에서 일반 가사를 가져와 모델은 타이밍만 맞춥니다. 끄면 모델이 듣고 가사를 씁니다.</value>
+    <comment>Footer checkbox tooltip</comment>
+  </data>
   <data name="LyricsStudio.DownloadModel" xml:space="preserve">
-    <value>Download model</value>
+    <value>모델 다운로드</value>
     <comment>Footer button</comment>
   </data>
   <data name="LyricsStudio.Start" xml:space="preserve">
-    <value>Start</value>
+    <value>시작</value>
     <comment>Footer button</comment>
   </data>
   <data name="LyricsStudio.Stop" xml:space="preserve">
-    <value>Stop</value>
+    <value>중지</value>
     <comment>Footer button</comment>
   </data>
   <data name="LyricsStudio.NeedsFfmpeg" xml:space="preserve">
-    <value>ffmpeg is needed to decode songs. Set its path under Settings → Audio → Audio tools, then reopen Lyrics Studio.</value>
+    <value>오디오 디코딩에 ffmpeg가 필요합니다. 설정 › 고급 › 보조 프로그램에서 경로를 지정하세요.</value>
     <comment>Banner</comment>
+  </data>
+  <data name="LyricsStudio.Backdrops" xml:space="preserve">
+    <value>배경</value>
+    <comment>Header disclosure in LyricsStudioView.axaml</comment>
+  </data>
+  <data name="LyricsStudio.Options" xml:space="preserve">
+    <value>옵션</value>
+    <comment>Footer dropdown holding the run options</comment>
+  </data>
+  <data name="LyricsStudio.Loading" xml:space="preserve">
+    <value>불러오는 중</value>
+    <comment>Page scan in progress</comment>
+  </data>
+  <data name="LyricsStudio.BackdropsTip" xml:space="preserve">
+    <value>가사 뒤에서 반복되는 영상과 커버 자리의 뮤직비디오</value>
+    <comment>Tooltip in LyricsStudioView.axaml</comment>
+  </data>
+  <data name="LyricsStudio.ChooseSongs" xml:space="preserve">
+    <value>곡 선택</value>
+    <comment>Header chip in LyricsStudioView.axaml: opens the song/album picker</comment>
+  </data>
+  <data name="LyricsStudio.ChooseSongsTip" xml:space="preserve">
+    <value>스튜디오에서 처리할 곡이나 앨범 전체, 그리고 단어 또는 줄 타이밍 중 무엇을 기록할지 선택합니다</value>
+    <comment>Tooltip in LyricsStudioView.axaml</comment>
+  </data>
+  <data name="LyricsStudioPicker.Title" xml:space="preserve">
+    <value>곡 및 앨범 선택</value>
+    <comment>Picker dialog title</comment>
+  </data>
+  <data name="LyricsStudioPicker.Subtitle" xml:space="preserve">
+    <value>스튜디오가 다음에 타이밍할 대상과 기록할 형식.</value>
+    <comment>Picker dialog subtitle</comment>
+  </data>
+  <data name="LyricsStudioPicker.Format" xml:space="preserve">
+    <value>형식</value>
+    <comment>Picker: format card title</comment>
+  </data>
+  <data name="LyricsStudioPicker.FormatHint" xml:space="preserve">
+    <value>단어 타이밍은 단어 단위로(ELRC), 줄 타이밍은 줄 단위로(LRC) 이동합니다.</value>
+    <comment>Picker: format card hint</comment>
+  </data>
+  <data name="LyricsStudioPicker.WordTimings" xml:space="preserve">
+    <value>단어 타이밍 · ELRC</value>
+    <comment>Picker: format chip</comment>
+  </data>
+  <data name="LyricsStudioPicker.LineTimings" xml:space="preserve">
+    <value>줄 타이밍 · LRC</value>
+    <comment>Picker: format chip</comment>
+  </data>
+  <data name="LyricsStudioPicker.Search" xml:space="preserve">
+    <value>Search songs and albums…</value>
+    <comment>Picker search box</comment>
+  </data>
+  <data name="LyricsStudioPicker.PromptTitle" xml:space="preserve">
+    <value>곡이나 앨범 검색</value>
+    <comment>Picker empty state</comment>
+  </data>
+  <data name="LyricsStudioPicker.PromptBody" xml:space="preserve">
+    <value>모든 로컬 곡이 이미 이 형식을 갖고 있습니다. 앨범을 추가하면 그 안의 모든 곡이 추가되며, 곡의 알약 표시는 현재 형식을 보여 줍니다.</value>
+    <comment>Picker empty state (also shown when nothing is missing)</comment>
+  </data>
+  <data name="LyricsStudioPicker.Add" xml:space="preserve">
+    <value>스튜디오에 추가</value>
+    <comment>Picker confirm button</comment>
+  </data>
+  <data name="LyricsStudioPicker.MissingWord" xml:space="preserve">
+    <value>단어 타이밍 없음</value>
+    <comment>Picker: header over the suggestions when word timings is chosen</comment>
+  </data>
+  <data name="LyricsStudioPicker.MissingLine" xml:space="preserve">
+    <value>타이밍 없음</value>
+    <comment>Picker: header over the suggestions when line timings is chosen</comment>
+  </data>
+  <data name="LyricsStudioPicker.Scanning" xml:space="preserve">
+    <value>라이브러리 살펴보는 중…</value>
+    <comment>Picker: while the suggestions load</comment>
+  </data>
+  <data name="LyricsStudioPicker.SelectAll" xml:space="preserve">
+    <value>모두 선택</value>
+    <comment>Picker footer</comment>
+  </data>
+  <data name="LyricsStudioPicker.DeselectAll" xml:space="preserve">
+    <value>모두 선택 해제</value>
+    <comment>Picker footer</comment>
   </data>
   <data name="LyricsStudio.Queue" xml:space="preserve">
     <value>SONGS</value>
     <comment>Queue column header</comment>
   </data>
   <data name="LyricsStudio.ReviewEmptyTitle" xml:space="preserve">
-    <value>Nothing to review yet</value>
+    <value>아직 검토할 항목이 없습니다</value>
     <comment>Review pane empty state</comment>
   </data>
   <data name="LyricsStudio.ReviewEmptyBody" xml:space="preserve">
-    <value>Pick a song. Songs that already have synced lyrics open here right away; press Start for the rest. Check the words, nudge the timing and save.</value>
+    <value>곡을 고르고 시작을 누르세요.</value>
     <comment>Review pane empty state</comment>
   </data>
   <data name="LyricsStudio.Upgrade" xml:space="preserve">
-    <value>Upgrade to word timings</value>
+    <value>모든 단어 타이밍</value>
     <comment>Review button, shown for line-level lyrics</comment>
   </data>
   <data name="LyricsStudio.UpgradeTip" xml:space="preserve">
-    <value>Runs the speech model over this song and times every word of the loaded lines (ELRC). The line-level LRC is kept alongside.</value>
+    <value>이 줄들의 모든 단어에 시간을 지정합니다. 줄 단위 파일은 유지됩니다.</value>
     <comment>Review button tooltip</comment>
   </data>
   <data name="LyricsStudio.ReviewHint" xml:space="preserve">
-    <value>Click a time to hear that line. Edit any text in place. Tinted lines were not heard clearly — check them first.</value>
+    <value>시간을 클릭하면 해당 줄을 들을 수 있습니다. 텍스트는 바로 수정하세요. 색이 칠해진 줄은 다시 확인이 필요합니다.</value>
     <comment>Review pane hint</comment>
   </data>
   <data name="LyricsStudio.NudgeEarlier" xml:space="preserve">
-    <value>All lines 0.1 s earlier</value>
+    <value>모든 줄 0.1초 앞으로</value>
     <comment>Tooltip</comment>
   </data>
   <data name="LyricsStudio.NudgeLater" xml:space="preserve">
-    <value>All lines 0.1 s later</value>
+    <value>모든 줄 0.1초 뒤로</value>
     <comment>Tooltip</comment>
   </data>
   <data name="LyricsStudio.Redo" xml:space="preserve">
-    <value>Transcribe instead</value>
+    <value>대신 받아 적기</value>
     <comment>Review button</comment>
   </data>
   <data name="LyricsStudio.RedoTip" xml:space="preserve">
-    <value>Ignore the found lyrics and write down what is actually sung</value>
+    <value>이 가사를 무시하고 실제로 불리는 내용을 받아 적습니다</value>
     <comment>Tooltip</comment>
   </data>
   <data name="LyricsStudio.Skip" xml:space="preserve">
-    <value>Skip</value>
+    <value>건너뛰기</value>
     <comment>Review button</comment>
   </data>
   <data name="LyricsStudio.Save" xml:space="preserve">
-    <value>Save lyrics</value>
+    <value>가사 저장</value>
     <comment>Review button</comment>
   </data>
   <data name="LyricsStudio.Words" xml:space="preserve">
-    <value>Words</value>
+    <value>단어</value>
     <comment>Per-line toggle that opens the word strip</comment>
   </data>
   <data name="LyricsStudio.WordsTip" xml:space="preserve">
-    <value>Show each word with its time. Click a word to hear it; nudge or tap to retime it.</value>
+    <value>각 단어와 시간을 표시합니다. 클릭하면 들을 수 있습니다.</value>
     <comment>Word toggle tooltip</comment>
   </data>
   <data name="LyricsStudio.WordEarlier" xml:space="preserve">
-    <value>Selected word 50 ms earlier (its neighbours stay put)</value>
+    <value>선택한 단어 50ms 앞으로 (이웃 단어는 그대로)</value>
     <comment>Word nudge tooltip</comment>
   </data>
   <data name="LyricsStudio.WordLater" xml:space="preserve">
-    <value>Selected word 50 ms later (its neighbours stay put)</value>
+    <value>선택한 단어 50ms 뒤로 (이웃 단어는 그대로)</value>
     <comment>Word nudge tooltip</comment>
   </data>
   <data name="LyricsStudio.TapWords" xml:space="preserve">
-    <value>Tap words</value>
+    <value>단어 탭하기</value>
     <comment>Starts tap-to-time for one line</comment>
   </data>
   <data name="LyricsStudio.TapTip" xml:space="preserve">
-    <value>Plays the line; press Space (or Tap) as each word is sung. One more tap after the last word marks the line end.</value>
+    <value>줄을 재생합니다. 각 단어마다 Space나 탭을 누르고, 한 번 더 탭하면 줄이 끝납니다.</value>
     <comment>Tap button tooltip</comment>
   </data>
   <data name="LyricsStudio.Tap" xml:space="preserve">
-    <value>Tap</value>
+    <value>탭</value>
     <comment>Tap bar button</comment>
   </data>
   <data name="LyricsStudio.TapCancel" xml:space="preserve">
-    <value>Done</value>
+    <value>완료</value>
     <comment>Tap bar leave button</comment>
   </data>
   <data name="LyricsStudio.PlayFromHere" xml:space="preserve">
-    <value>Play from here</value>
+    <value>여기부터 재생</value>
     <comment>Time pill tooltip</comment>
+  </data>
+  <data name="Settings.Desc.General" xml:space="preserve">
+    <value>언어, 시작, 창과 사이드바 동작.</value>
+    <comment>Settings page description</comment>
+  </data>
+  <data name="Settings.Desc.Appearance" xml:space="preserve">
+    <value>테마, 강조색, 유리 효과, 텍스트 애니메이션, 아트워크.</value>
+    <comment>Settings page description</comment>
+  </data>
+  <data name="Settings.Desc.Player" xml:space="preserve">
+    <value>플레이어 아일랜드, 미니 플레이어, 커버 플로우, 지금 재생 중 아트워크.</value>
+    <comment>Settings page description</comment>
+  </data>
+  <data name="Settings.Desc.Lyrics" xml:space="preserve">
+    <value>가사 페이지, 온라인 가사 소스, 가사 스튜디오.</value>
+    <comment>Settings page description</comment>
+  </data>
+  <data name="Settings.Desc.Shortcuts" xml:space="preserve">
+    <value>키를 클릭해 변경하세요. Esc는 취소, Backspace는 해제합니다.</value>
+    <comment>Settings page description</comment>
+  </data>
+  <data name="Settings.Desc.Audio" xml:space="preserve">
+    <value>재생, 출력, 분석, 이퀄라이저.</value>
+    <comment>Settings page description</comment>
+  </data>
+  <data name="Settings.Desc.Library" xml:space="preserve">
+    <value>미디어 폴더, 스캔, 아티스트와 앨범 정리 방식, 라이브러리 도구.</value>
+    <comment>Settings page description</comment>
+  </data>
+  <data name="Settings.Desc.Advanced" xml:space="preserve">
+    <value>저장 공간, 보조 프로그램, 업데이트, 초기화.</value>
+    <comment>Settings page description</comment>
+  </data>
+  <data name="Settings.Desc.AccountDevices" xml:space="preserve">
+    <value>계정, 기기 간 동기화, 웹 리모컨.</value>
+    <comment>Settings page description</comment>
+  </data>
+  <data name="Settings.Desc.Integrations" xml:space="preserve">
+    <value>Discord, 스크로블링, TIDAL, 음악 서버.</value>
+    <comment>Settings page description</comment>
+  </data>
+  <data name="Settings.Desc.Plugins" xml:space="preserve">
+    <value>설치된 플러그인.</value>
+    <comment>Settings page description</comment>
+  </data>
+  <data name="Settings.Desc.Statistics" xml:space="preserve">
+    <value>라이브러리와 감상 기록을 한눈에.</value>
+    <comment>Settings page description</comment>
+  </data>
+  <data name="Settings.Desc.About" xml:space="preserve">
+    <value>버전, 업데이트, 링크.</value>
+    <comment>Settings page description</comment>
+  </data>
+  <data name="Settings.Section.Language" xml:space="preserve">
+    <value>언어</value>
+    <comment>Settings section label</comment>
+  </data>
+  <data name="Settings.Section.StartupWindow" xml:space="preserve">
+    <value>시작 및 창</value>
+    <comment>Settings section label</comment>
+  </data>
+  <data name="Settings.Section.Sidebar" xml:space="preserve">
+    <value>Sidebar</value>
+    <comment>Settings section label</comment>
+  </data>
+  <data name="Settings.Section.Files" xml:space="preserve">
+    <value>파일</value>
+    <comment>Settings section label</comment>
+  </data>
+  <data name="Settings.Section.Theme" xml:space="preserve">
+    <value>테마</value>
+    <comment>Settings section label</comment>
+  </data>
+  <data name="Settings.Section.TextAnimation" xml:space="preserve">
+    <value>텍스트 애니메이션</value>
+    <comment>Settings section label</comment>
+  </data>
+  <data name="Settings.Section.Home" xml:space="preserve">
+    <value>홈</value>
+    <comment>Settings section label</comment>
+  </data>
+  <data name="Settings.Section.Artwork" xml:space="preserve">
+    <value>아트워크</value>
+    <comment>Settings section label</comment>
+  </data>
+  <data name="Settings.HomeHeavyRotation" xml:space="preserve">
+    <value>자주 듣는 곡</value>
+    <comment>Appearance › Home toggle</comment>
+  </data>
+  <data name="Settings.HomeHeavyRotationDesc" xml:space="preserve">
+    <value>홈 페이지에 "지난 2주간 반복 재생" 행을 표시합니다.</value>
+    <comment>Appearance › Home toggle description</comment>
+  </data>
+  <data name="Settings.Section.Taskbar" xml:space="preserve">
+    <value>작업 표시줄</value>
+    <comment>Settings section label</comment>
+  </data>
+  <data name="Settings.Section.PlayerIsland" xml:space="preserve">
+    <value>플레이어 아일랜드</value>
+    <comment>Settings section label</comment>
+  </data>
+  <data name="Settings.Section.MiniPlayer" xml:space="preserve">
+    <value>미니 플레이어</value>
+    <comment>Settings section label</comment>
+  </data>
+  <data name="Settings.Section.NowPlayingArtwork" xml:space="preserve">
+    <value>지금 재생 중 아트워크</value>
+    <comment>Settings section label</comment>
+  </data>
+  <data name="Settings.Section.CoverFlow" xml:space="preserve">
+    <value>커버 플로우</value>
+    <comment>Settings section label</comment>
+  </data>
+  <data name="Settings.Section.LyricsPage" xml:space="preserve">
+    <value>가사 페이지</value>
+    <comment>Settings section label</comment>
+  </data>
+  <data name="Settings.Section.OnlineLyrics" xml:space="preserve">
+    <value>온라인 가사</value>
+    <comment>Settings section label</comment>
+  </data>
+  <data name="Settings.Section.LyricsStudio" xml:space="preserve">
+    <value>가사 스튜디오</value>
+    <comment>Settings section label</comment>
+  </data>
+  <data name="Settings.Section.Playback" xml:space="preserve">
+    <value>재생</value>
+    <comment>Settings section label</comment>
+  </data>
+  <data name="Settings.Section.Output" xml:space="preserve">
+    <value>출력</value>
+    <comment>Settings section label</comment>
+  </data>
+  <data name="Settings.Section.Analysis" xml:space="preserve">
+    <value>분석</value>
+    <comment>Settings section label</comment>
+  </data>
+  <data name="Settings.Section.Equalizer" xml:space="preserve">
+    <value>이퀄라이저</value>
+    <comment>Settings section label</comment>
+  </data>
+  <data name="Settings.Section.Folders" xml:space="preserve">
+    <value>폴더 및 스캔</value>
+    <comment>Settings section label</comment>
+  </data>
+  <data name="Settings.Section.Organisation" xml:space="preserve">
+    <value>Organisation</value>
+    <comment>Settings section label</comment>
+  </data>
+  <data name="Settings.Section.Metadata" xml:space="preserve">
+    <value>메타데이터 소스</value>
+    <comment>Settings section label</comment>
+  </data>
+  <data name="Settings.Section.Tools" xml:space="preserve">
+    <value>도구</value>
+    <comment>Settings section label</comment>
+  </data>
+  <data name="Settings.Section.HiddenTracks" xml:space="preserve">
+    <value>숨긴 트랙</value>
+    <comment>Settings section label</comment>
+  </data>
+  <data name="Settings.Section.Storage" xml:space="preserve">
+    <value>저장 공간</value>
+    <comment>Settings section label</comment>
+  </data>
+  <data name="Settings.Section.AudioTools" xml:space="preserve">
+    <value>보조 프로그램</value>
+    <comment>Settings section label</comment>
+  </data>
+  <data name="Settings.Section.Updates" xml:space="preserve">
+    <value>업데이트 및 개발자</value>
+    <comment>Settings section label</comment>
+  </data>
+  <data name="Settings.Section.Reset" xml:space="preserve">
+    <value>Reset</value>
+    <comment>Settings section label</comment>
+  </data>
+  <data name="Settings.Section.YourAccount" xml:space="preserve">
+    <value>내 계정</value>
+    <comment>Settings section label</comment>
+  </data>
+  <data name="Settings.Section.Sync" xml:space="preserve">
+    <value>동기화</value>
+    <comment>Settings section label</comment>
+  </data>
+  <data name="Settings.Section.OtherAccounts" xml:space="preserve">
+    <value>다른 계정</value>
+    <comment>Settings section label</comment>
+  </data>
+  <data name="Settings.Section.NoctisServer" xml:space="preserve">
+    <value>Noctis Server</value>
+    <comment>Settings section label</comment>
+  </data>
+  <data name="Settings.Section.WebRemote" xml:space="preserve">
+    <value>웹 리모컨</value>
+    <comment>Settings section label</comment>
+  </data>
+  <data name="Settings.Section.Discord" xml:space="preserve">
+    <value>Discord</value>
+    <comment>Settings section label</comment>
+  </data>
+  <data name="Settings.Section.Scrobbling" xml:space="preserve">
+    <value>Scrobbling</value>
+    <comment>Settings section label</comment>
+  </data>
+  <data name="Settings.Section.TIDAL" xml:space="preserve">
+    <value>TIDAL</value>
+    <comment>Settings section label</comment>
+  </data>
+  <data name="Settings.Section.MediaServer" xml:space="preserve">
+    <value>미디어 서버</value>
+    <comment>Settings section label</comment>
+  </data>
+  <data name="Settings.Section.LibraryOverview" xml:space="preserve">
+    <value>라이브러리 개요</value>
+    <comment>Settings section label</comment>
+  </data>
+  <data name="Settings.Section.Listening" xml:space="preserve">
+    <value>감상</value>
+    <comment>Settings section label</comment>
+  </data>
+  <data name="Settings.Section.TopPlayed" xml:space="preserve">
+    <value>가장 많이 재생</value>
+    <comment>Settings section label</comment>
+  </data>
+  <data name="Settings.CloseTip" xml:space="preserve">
+    <value>설정 닫기</value>
+    <comment>Tooltip on the X in the settings header</comment>
+  </data>
+  <data name="AccountSync.EmailWatermark" xml:space="preserve">
+    <value>이메일 주소</value>
+    <comment>Create form watermark</comment>
+  </data>
+  <data name="AccountSync.PasswordWatermark" xml:space="preserve">
+    <value>비밀번호</value>
+    <comment>Create form watermark</comment>
+  </data>
+  <data name="Settings.YourListening" xml:space="preserve">
+    <value>감상</value>
+    <comment>Statistics card label</comment>
+  </data>
+  <data name="Settings.RemovePictureTip" xml:space="preserve">
+    <value>사진 제거</value>
+    <comment>Profile avatar X tooltip</comment>
+  </data>
+  <data name="ThemeEditor.Subtitle" xml:space="preserve">
+    <value>색 세 가지를 고르세요. 미리보기가 실시간으로 바뀝니다.</value>
+    <comment>Dialog subtitle</comment>
+  </data>
+  <data name="Settings.Tab.General" xml:space="preserve">
+    <value>일반</value>
+    <comment>Settings rail</comment>
+  </data>
+  <data name="Settings.Tab.Appearance" xml:space="preserve">
+    <value>모양</value>
+    <comment>Settings rail</comment>
+  </data>
+  <data name="Settings.Tab.Player" xml:space="preserve">
+    <value>플레이어</value>
+    <comment>Settings rail</comment>
+  </data>
+  <data name="Settings.Tab.Lyrics" xml:space="preserve">
+    <value>가사</value>
+    <comment>Settings rail</comment>
+  </data>
+  <data name="Settings.Tab.Shortcuts" xml:space="preserve">
+    <value>단축키</value>
+    <comment>Settings rail</comment>
+  </data>
+  <data name="Settings.Tab.Audio" xml:space="preserve">
+    <value>오디오</value>
+    <comment>Settings rail</comment>
+  </data>
+  <data name="Settings.Tab.Library" xml:space="preserve">
+    <value>라이브러리</value>
+    <comment>Settings rail</comment>
+  </data>
+  <data name="Settings.Tab.Advanced" xml:space="preserve">
+    <value>고급</value>
+    <comment>Settings rail</comment>
+  </data>
+  <data name="Settings.Tab.AccountDevices" xml:space="preserve">
+    <value>계정 및 기기</value>
+    <comment>Settings rail</comment>
+  </data>
+  <data name="Settings.Tab.Integrations" xml:space="preserve">
+    <value>연동</value>
+    <comment>Settings rail</comment>
+  </data>
+  <data name="Settings.Tab.Plugins" xml:space="preserve">
+    <value>플러그인</value>
+    <comment>Settings rail</comment>
+  </data>
+  <data name="Settings.Tab.Statistics" xml:space="preserve">
+    <value>통계</value>
+    <comment>Settings rail</comment>
+  </data>
+  <data name="Settings.Tab.About" xml:space="preserve">
+    <value>정보</value>
+    <comment>Settings rail</comment>
+  </data>
+  <data name="Settings.Group.App" xml:space="preserve">
+    <value>앱</value>
+    <comment>Settings rail</comment>
+  </data>
+  <data name="Settings.Group.Playback" xml:space="preserve">
+    <value>재생</value>
+    <comment>Settings rail</comment>
+  </data>
+  <data name="Settings.Group.Library" xml:space="preserve">
+    <value>라이브러리</value>
+    <comment>Settings rail</comment>
+  </data>
+  <data name="Settings.Group.Connect" xml:space="preserve">
+    <value>연결</value>
+    <comment>Settings rail</comment>
+  </data>
+  <data name="Settings.Group.More" xml:space="preserve">
+    <value>더 보기</value>
+    <comment>Settings rail</comment>
   </data>
 </root>
