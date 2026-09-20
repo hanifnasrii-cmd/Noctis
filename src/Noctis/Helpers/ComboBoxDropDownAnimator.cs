@@ -52,6 +52,9 @@ public static class ComboBoxDropDownAnimator
     private static readonly TransformOperations Start = TransformOperations.Parse("scale(0.94) translateY(-4px)");
     private static readonly TransformOperations Rest = TransformOperations.Parse("scale(1) translateY(0px)");
     private static readonly TransformOperations End = TransformOperations.Parse("scale(0.97) translateY(-2px)");
+    // A list placed above its box (ComboBox.open-up) grows out of the box's top edge instead.
+    private static readonly TransformOperations StartAbove = TransformOperations.Parse("scale(0.94) translateY(4px)");
+    private static readonly TransformOperations EndAbove = TransformOperations.Parse("scale(0.97) translateY(2px)");
     private static readonly ConditionalWeakTable<ComboBox, State> States = new();
     private static bool _installed;
 
@@ -85,7 +88,7 @@ public static class ComboBoxDropDownAnimator
                 if (state.ClosingHeld) return;
                 if (FindPopup(box) is not { Child: Control body } popup) return;
                 InstallDismiss(box, state, popup);
-                AnimateIn(body);
+                AnimateIn(body, OpensAbove(popup));
                 return;
             }
 
@@ -115,7 +118,7 @@ public static class ComboBoxDropDownAnimator
             state.ClosingHeld = true;
             box.SetCurrentValue(ComboBox.IsDropDownOpenProperty, true);
             WatchFadeOut(box, state, fadeBody);
-            AnimateOut(fadeBody);
+            AnimateOut(fadeBody, OpensAbove(fadePopup));
         });
     }
 
@@ -201,6 +204,13 @@ public static class ComboBoxDropDownAnimator
     private static Popup? FindPopup(ComboBox box) =>
         box.GetVisualDescendants().OfType<Popup>().FirstOrDefault(p => p.Name == "PART_Popup");
 
+    private static bool OpensAbove(Popup popup) => popup.Placement is
+        PlacementMode.Top or PlacementMode.TopEdgeAlignedLeft or PlacementMode.TopEdgeAlignedRight;
+
+    /// <summary>The same curves for a Flyout that should read as a drop-down (<see cref="DropDownFlyoutMotion"/>).</summary>
+    internal static Transitions BuildOpen() => Build(OpenDuration, OpenEase);
+    internal static Transitions BuildClose() => Build(CloseDuration, CloseEase);
+
     /// <summary>Open and close get their own curves, so the transition set is rebuilt per
     /// phase. The fade lands a touch before the transform so the sheet never shows a hard
     /// edge while it is still moving.</summary>
@@ -210,12 +220,12 @@ public static class ComboBoxDropDownAnimator
         new TransformOperationsTransition { Property = Visual.RenderTransformProperty, Duration = duration, Easing = ease },
     };
 
-    private static void AnimateIn(Control body)
+    private static void AnimateIn(Control body, bool above)
     {
         body.Transitions = null;
-        body.RenderTransformOrigin = new RelativePoint(0.5, 0, RelativeUnit.Relative);
+        body.RenderTransformOrigin = new RelativePoint(0.5, above ? 1 : 0, RelativeUnit.Relative);
         body.Opacity = 0;
-        body.RenderTransform = Start;
+        body.RenderTransform = above ? StartAbove : Start;
         body.Transitions = Build(OpenDuration, OpenEase);
 
         Dispatcher.UIThread.Post(() =>
@@ -225,13 +235,13 @@ public static class ComboBoxDropDownAnimator
         }, DispatcherPriority.Render);
     }
 
-    private static void AnimateOut(Control body)
+    private static void AnimateOut(Control body, bool above)
     {
         body.Transitions = Build(CloseDuration, CloseEase);
         Dispatcher.UIThread.Post(() =>
         {
             body.Opacity = 0;
-            body.RenderTransform = End;
+            body.RenderTransform = above ? EndAbove : End;
         }, DispatcherPriority.Render);
     }
 }

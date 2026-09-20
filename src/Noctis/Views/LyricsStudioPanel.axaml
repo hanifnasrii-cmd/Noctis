@@ -1,5 +1,6 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:helpers="using:Noctis.Helpers"
              xmlns:loc="using:Noctis.Localization"
              xmlns:vm="using:Noctis.ViewModels"
              xmlns:views="using:Noctis.Views"
@@ -131,6 +132,11 @@
             <Setter Property="BorderThickness" Value="0" />
             <Setter Property="Padding" Value="12" />
         </Style>
+        <!-- The Model list opens above its pill like the Language list does (user ask 09-19).
+             Fluent's template leaves Popup.Placement at its default, so the part takes a style. -->
+        <Style Selector="ComboBox.open-up /template/ Popup#PART_Popup">
+            <Setter Property="Placement" Value="TopEdgeAlignedLeft" />
+        </Style>
         <Style Selector="ComboBox.pill /template/ Border#Background">
             <Setter Property="CornerRadius" Value="999" />
             <Setter Property="BorderBrush" Value="#99A0A0A8" />
@@ -228,7 +234,7 @@
                             <ProgressBar Value="{Binding ModelProgress}" Minimum="0" Maximum="1" Width="56" Height="3" CornerRadius="2"
                                          VerticalAlignment="Center" IsVisible="{Binding IsDownloadingModel}" />
                         </StackPanel>
-                        <ComboBox Classes="pill" MinWidth="150" ItemsSource="{Binding ModelOptions}" SelectedItem="{Binding SelectedModel}">
+                        <ComboBox Classes="pill open-up" MinWidth="150" ItemsSource="{Binding ModelOptions}" SelectedItem="{Binding SelectedModel}">
                             <ComboBox.SelectionBoxItemTemplate>
                                 <DataTemplate x:DataType="studio:WhisperModelInfo">
                                     <TextBlock Text="{Binding DisplayName}" />
@@ -255,12 +261,13 @@
                             <PathIcon Data="{StaticResource ChevronDownThinIcon}" Width="10" Height="10" Opacity="0.7" VerticalAlignment="Center" />
                         </StackPanel>
                         <Button.Flyout>
-                            <Flyout Placement="Top" ShowMode="Standard" FlyoutPresenterClasses="studio-options-pop">
-                                <!-- Theme card surface (the Home tiles' brush, derived per theme), not the
-                                     sidebar's: that one is near-black on the grey theme (user, 09-19). -->
+                            <!-- Reads as the third drop-down of the row: the combo popup's own brushes
+                                 and the combo's open/close motion (user ask 09-19). -->
+                            <Flyout Placement="Top" ShowMode="Standard" FlyoutPresenterClasses="studio-options-pop"
+                                    helpers:DropDownFlyoutMotion.Enable="True">
                                 <Border CornerRadius="16" Padding="18,14"
-                                        Background="{DynamicResource HomeCardBackground}"
-                                        BorderBrush="#22FFFFFF" BorderThickness="1"
+                                        Background="{DynamicResource ComboBoxDropDownBackground}"
+                                        BorderBrush="{DynamicResource ComboBoxDropDownBorderBrush}" BorderThickness="1"
                                         BoxShadow="0 10 30 0 #90000000">
                                     <StackPanel Spacing="10">
                                         <CheckBox Classes="metadata-pill-checkbox studio-option" IsChecked="{Binding WordTimings}" Content="{loc:T LyricsStudio.WordTimings}" />
