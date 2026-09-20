@@ -75,10 +75,6 @@
     <value>システムの言語</value>
     <comment>Picker entry: follow the OS language</comment>
   </data>
-  <data name="Settings.Language.Help" xml:space="preserve">
-    <value>Noctis の翻訳に協力する</value>
-    <comment>Button</comment>
-  </data>
   <!-- Visualizer page -->
   <data name="Visualizer.Title" xml:space="preserve">
     <value>ビジュアライザー</value>
@@ -1148,17 +1144,9 @@
     <value>ユーザー名</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
-  <data name="Settings.Username" xml:space="preserve">
-    <value>ユーザー名</value>
-    <comment>Watermark in SettingsView.axaml</comment>
-  </data>
   <data name="Settings.PASSWORD" xml:space="preserve">
     <value>パスワード</value>
     <comment>Text in SettingsView.axaml</comment>
-  </data>
-  <data name="Settings.Password" xml:space="preserve">
-    <value>パスワード</value>
-    <comment>Watermark in SettingsView.axaml</comment>
   </data>
   <data name="Settings.Connecting" xml:space="preserve">
     <value>接続中…</value>
@@ -1478,10 +1466,6 @@
   </data>
   <data name="Settings.LISTENING" xml:space="preserve">
     <value>リスニング</value>
-    <comment>Text in SettingsView.axaml</comment>
-  </data>
-  <data name="Settings.Listening" xml:space="preserve">
-    <value>あなたのリスニング</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.TotalPlays" xml:space="preserve">
@@ -1805,14 +1789,6 @@
     <value>エクスプリシット</value>
     <comment>ToolTip.Tip in ArtistDetailView.axaml</comment>
   </data>
-  <data name="ArtistDetail.ListenCountTip" xml:space="preserve">
-    <value>再生回数</value>
-    <comment>ToolTip.Tip in ArtistDetailView.axaml</comment>
-  </data>
-  <data name="ArtistDetail.Plays" xml:space="preserve">
-    <value>回再生</value>
-    <comment>Text in ArtistDetailView.axaml</comment>
-  </data>
   <data name="ArtistDetail.PlayEverythingByArtistTip" xml:space="preserve">
     <value>このアーティストのすべてを再生</value>
     <comment>ToolTip.Tip in ArtistDetailView.axaml</comment>
@@ -1865,14 +1841,6 @@
     <value>人気曲</value>
     <comment>Text in ArtistDetailView.axaml</comment>
   </data>
-  <data name="ArtistDetail.Releases" xml:space="preserve">
-    <value>リリース</value>
-    <comment>Text in ArtistDetailView.axaml</comment>
-  </data>
-  <data name="ArtistDetail.All" xml:space="preserve">
-    <value>すべて</value>
-    <comment>Content in ArtistDetailView.axaml</comment>
-  </data>
   <data name="ArtistDetail.Albums" xml:space="preserve">
     <value>アルバム</value>
     <comment>Content in ArtistDetailView.axaml</comment>
@@ -1889,10 +1857,6 @@
     <value>参加作品</value>
     <comment>Text in ArtistDetailView.axaml</comment>
   </data>
-  <data name="ArtistDetail.About" xml:space="preserve">
-    <value>紹介: </value>
-    <comment>Text in ArtistDetailView.axaml</comment>
-  </data>
   <data name="ArtistDetail.NoBiographyFoundArtist" xml:space="preserve">
     <value>このアーティストの経歴はまだ見つかっていません。</value>
     <comment>Text in ArtistDetailView.axaml</comment>
@@ -1901,44 +1865,8 @@
     <value>出身</value>
     <comment>Text in ArtistDetailView.axaml</comment>
   </data>
-  <data name="ArtistDetail.ACTIVE" xml:space="preserve">
-    <value>活動期間</value>
-    <comment>Text in ArtistDetailView.axaml</comment>
-  </data>
-  <data name="ArtistDetail.GENRES" xml:space="preserve">
-    <value>ジャンル</value>
-    <comment>Text in ArtistDetailView.axaml</comment>
-  </data>
-  <data name="ArtistDetail.LIBRARY" xml:space="preserve">
-    <value>あなたのライブラリ</value>
-    <comment>Text in ArtistDetailView.axaml</comment>
-  </data>
-  <data name="ArtistDetail.RELEASES" xml:space="preserve">
-    <value>リリース</value>
-    <comment>Text in ArtistDetailView.axaml</comment>
-  </data>
-  <data name="ArtistDetail.SONGS" xml:space="preserve">
-    <value>曲</value>
-    <comment>Text in ArtistDetailView.axaml</comment>
-  </data>
-  <data name="ArtistDetail.TOTALLENGTH" xml:space="preserve">
-    <value>合計時間</value>
-    <comment>Text in ArtistDetailView.axaml</comment>
-  </data>
-  <data name="ArtistDetail.MOSTPLAYED" xml:space="preserve">
-    <value>最多再生</value>
-    <comment>Text in ArtistDetailView.axaml</comment>
-  </data>
-  <data name="ArtistDetail.FAVORITED" xml:space="preserve">
-    <value>お気に入り</value>
-    <comment>Text in ArtistDetailView.axaml</comment>
-  </data>
   <data name="ArtistDetail.Songs" xml:space="preserve">
     <value> 曲</value>
-    <comment>Text in ArtistDetailView.axaml</comment>
-  </data>
-  <data name="ArtistDetail.SINCE" xml:space="preserve">
-    <value>開始</value>
     <comment>Text in ArtistDetailView.axaml</comment>
   </data>
   <!-- AudioCdView.axaml (auto-migrated) -->
@@ -2324,10 +2252,6 @@
     <value>このセクションを隠す/表示する</value>
     <comment>ToolTip.Tip in HomeView.axaml</comment>
   </data>
-  <data name="Home.MostListened" xml:space="preserve">
-    <value>よく聴く曲</value>
-    <comment>Text in HomeView.axaml</comment>
-  </data>
   <data name="Home.Text" xml:space="preserve">
     <value>♪</value>
     <comment>Text in HomeView.axaml</comment>
@@ -2346,10 +2270,6 @@
   </data>
   <data name="Home.TopArtists" xml:space="preserve">
     <value>トップアーティスト</value>
-    <comment>Text in HomeView.axaml</comment>
-  </data>
-  <data name="Home.RecentlyPlayed" xml:space="preserve">
-    <value>最近再生した項目</value>
     <comment>Text in HomeView.axaml</comment>
   </data>
   <data name="Home.PlayTip" xml:space="preserve">
@@ -5415,10 +5335,6 @@
   <data name="LyricsStudio.Subtitle" xml:space="preserve">
     <value>Times your lyrics against the recording, or transcribes when there are none. Review each song, fix any word, then save.</value>
     <comment>Dialog subtitle</comment>
-  </data>
-  <data name="LyricsStudio.Close" xml:space="preserve">
-    <value>Close</value>
-    <comment>Dialog button</comment>
   </data>
   <data name="LyricsStudio.Model" xml:space="preserve">
     <value>Model</value>

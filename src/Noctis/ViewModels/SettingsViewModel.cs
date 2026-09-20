@@ -529,28 +529,64 @@ public partial class SettingsViewModel : ViewModelBase
         public override string ToString() => Display;
     }
 
-    /// <summary>System language first, then every shipped translation by its native name.</summary>
-    public IReadOnlyList<LanguageOption> LanguageOptions { get; } = BuildLanguageOptions();
+    /// <summary>
+    /// System language first, then every shipped translation as "native name (English name)",
+    /// e.g. "한국어 (Korean)". Rebuilt on a culture change so the "System language" entry follows.
+    /// </summary>
+    public IReadOnlyList<LanguageOption> LanguageOptions
+    {
+        get => _languageOptions;
+        private set => SetProperty(ref _languageOptions, value);
+    }
+    private IReadOnlyList<LanguageOption> _languageOptions = BuildLanguageOptions();
 
     private static IReadOnlyList<LanguageOption> BuildLanguageOptions()
     {
         var list = new List<LanguageOption> { new(Loc.SystemLanguage, Loc.T("Settings.Language.System")) };
         foreach (var code in Loc.Supported)
-        {
-            var native = System.Globalization.CultureInfo.GetCultureInfo(code).NativeName;
-            list.Add(new(code, char.ToUpperInvariant(native[0]) + native[1..]));
-        }
+            list.Add(new(code, DescribeCulture(code)));
         return list;
     }
 
+    /// <summary>"Español (Spanish)", "中文（简体） (Chinese, Simplified)"; just "English" when both names agree.</summary>
+    internal static string DescribeCulture(string code)
+    {
+        var culture = System.Globalization.CultureInfo.GetCultureInfo(code);
+        var native = char.ToUpperInvariant(culture.NativeName[0]) + culture.NativeName[1..];
+        var english = culture.EnglishName.Replace(" (", ", ").TrimEnd(')');
+        return string.Equals(native, english, StringComparison.OrdinalIgnoreCase) ? native : $"{native} ({english})";
+    }
+
     [ObservableProperty] private LanguageOption? _languageChoice;
+    private bool _relabelingLanguages;
 
     partial void OnLanguageChoiceChanged(LanguageOption? value)
     {
-        if (value is null) return;
+        if (value is null || _relabelingLanguages) return;
         _settings.Language = value.Code;
+        var before = Loc.Instance.Culture.Name;
         Loc.Instance.SetCulture(value.Code);
+        if (Loc.Instance.Culture.Name != before) RelabelCachedStrings(value.Code);
         if (_settingsLoaded) _ = SaveAsync();
+    }
+
+    /// <summary>
+    /// Strings this view-model caches (page description, picker entries, labels built with
+    /// Loc.T) re-read after a language switch; {loc:T} bindings in the view refresh on their
+    /// own. Called from the picker only, so it runs on the UI thread with this view-model live.
+    /// </summary>
+    private void RelabelCachedStrings(string code)
+    {
+        _relabelingLanguages = true;
+        try
+        {
+            LanguageOptions = BuildLanguageOptions();
+            LanguageChoice = LanguageOptions.FirstOrDefault(o => o.Code == code) ?? LanguageOptions[0];
+        }
+        finally { _relabelingLanguages = false; }
+        OnPropertyChanged(nameof(SelectedTabDescription));
+        OnPropertyChanged(nameof(ShowOlderVersionsLabel));
+        RefreshFlowingStyleOptions();
     }
 
     public VisualizerStyle LyricsVisualizerStyleMode => VisualizerStyles.Parse(LyricsVisualizerStyle);

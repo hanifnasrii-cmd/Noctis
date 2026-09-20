@@ -95,7 +95,9 @@ public sealed class Loc : INotifyPropertyChanged
 
         if (culture.Name == _culture.Name) return;
         _culture = culture;
-        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("Item[]"));
+        // "Item" is the CLR name of the indexer; Avalonia's indexer node re-reads only on that
+        // (or an empty name), not on the WPF-style "Item[]".
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("Item"));
         CultureChanged?.Invoke(this, EventArgs.Empty);
     }
 
@@ -107,8 +109,15 @@ public sealed class Loc : INotifyPropertyChanged
     public static string Resolve(string? setting)
     {
         var name = string.IsNullOrWhiteSpace(setting) ? CultureInfo.InstalledUICulture.Name : setting.Trim();
-        return Supported.FirstOrDefault(s => name.Equals(s, StringComparison.OrdinalIgnoreCase))
-            ?? Supported.FirstOrDefault(s => name.StartsWith(s + "-", StringComparison.OrdinalIgnoreCase))
-            ?? Supported[0];
+        CultureInfo culture;
+        try { culture = CultureInfo.GetCultureInfo(name); }
+        catch (CultureNotFoundException) { return Supported[0]; }
+        // Walk the parent chain the way ResourceManager does: zh-CN → zh-Hans → zh, es-MX → es.
+        for (var c = culture; !c.Equals(CultureInfo.InvariantCulture); c = c.Parent)
+        {
+            var match = Supported.FirstOrDefault(s => c.Name.Equals(s, StringComparison.OrdinalIgnoreCase));
+            if (match is not null) return match;
+        }
+        return Supported[0];
     }
 }

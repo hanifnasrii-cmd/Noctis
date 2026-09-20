@@ -75,10 +75,6 @@
     <value>系統語言</value>
     <comment>Picker entry: follow the OS language</comment>
   </data>
-  <data name="Settings.Language.Help" xml:space="preserve">
-    <value>協助翻譯 Noctis</value>
-    <comment>Button</comment>
-  </data>
   <!-- Visualizer page -->
   <data name="Visualizer.Title" xml:space="preserve">
     <value>視覺化</value>
@@ -1148,17 +1144,9 @@
     <value>使用者名稱</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
-  <data name="Settings.Username" xml:space="preserve">
-    <value>使用者名稱</value>
-    <comment>Watermark in SettingsView.axaml</comment>
-  </data>
   <data name="Settings.PASSWORD" xml:space="preserve">
     <value>密碼</value>
     <comment>Text in SettingsView.axaml</comment>
-  </data>
-  <data name="Settings.Password" xml:space="preserve">
-    <value>密碼</value>
-    <comment>Watermark in SettingsView.axaml</comment>
   </data>
   <data name="Settings.Connecting" xml:space="preserve">
     <value>連線中…</value>
@@ -1478,10 +1466,6 @@
   </data>
   <data name="Settings.LISTENING" xml:space="preserve">
     <value>聆聽</value>
-    <comment>Text in SettingsView.axaml</comment>
-  </data>
-  <data name="Settings.Listening" xml:space="preserve">
-    <value>你的聆聽</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.TotalPlays" xml:space="preserve">
@@ -1805,14 +1789,6 @@
     <value>兒童不宜</value>
     <comment>ToolTip.Tip in ArtistDetailView.axaml</comment>
   </data>
-  <data name="ArtistDetail.ListenCountTip" xml:space="preserve">
-    <value>聆聽次數</value>
-    <comment>ToolTip.Tip in ArtistDetailView.axaml</comment>
-  </data>
-  <data name="ArtistDetail.Plays" xml:space="preserve">
-    <value>次播放</value>
-    <comment>Text in ArtistDetailView.axaml</comment>
-  </data>
   <data name="ArtistDetail.PlayEverythingByArtistTip" xml:space="preserve">
     <value>播放這位藝人的所有作品</value>
     <comment>ToolTip.Tip in ArtistDetailView.axaml</comment>
@@ -1865,14 +1841,6 @@
     <value>熱門</value>
     <comment>Text in ArtistDetailView.axaml</comment>
   </data>
-  <data name="ArtistDetail.Releases" xml:space="preserve">
-    <value>發行作品</value>
-    <comment>Text in ArtistDetailView.axaml</comment>
-  </data>
-  <data name="ArtistDetail.All" xml:space="preserve">
-    <value>全部</value>
-    <comment>Content in ArtistDetailView.axaml</comment>
-  </data>
   <data name="ArtistDetail.Albums" xml:space="preserve">
     <value>專輯</value>
     <comment>Content in ArtistDetailView.axaml</comment>
@@ -1889,10 +1857,6 @@
     <value>參與作品</value>
     <comment>Text in ArtistDetailView.axaml</comment>
   </data>
-  <data name="ArtistDetail.About" xml:space="preserve">
-    <value>關於 </value>
-    <comment>Text in ArtistDetailView.axaml</comment>
-  </data>
   <data name="ArtistDetail.NoBiographyFoundArtist" xml:space="preserve">
     <value>還沒有找到這位藝人的介紹。</value>
     <comment>Text in ArtistDetailView.axaml</comment>
@@ -1901,44 +1865,8 @@
     <value>來自</value>
     <comment>Text in ArtistDetailView.axaml</comment>
   </data>
-  <data name="ArtistDetail.ACTIVE" xml:space="preserve">
-    <value>活躍時期</value>
-    <comment>Text in ArtistDetailView.axaml</comment>
-  </data>
-  <data name="ArtistDetail.GENRES" xml:space="preserve">
-    <value>曲風</value>
-    <comment>Text in ArtistDetailView.axaml</comment>
-  </data>
-  <data name="ArtistDetail.LIBRARY" xml:space="preserve">
-    <value>在你的資料庫中</value>
-    <comment>Text in ArtistDetailView.axaml</comment>
-  </data>
-  <data name="ArtistDetail.RELEASES" xml:space="preserve">
-    <value>發行作品</value>
-    <comment>Text in ArtistDetailView.axaml</comment>
-  </data>
-  <data name="ArtistDetail.SONGS" xml:space="preserve">
-    <value>歌曲</value>
-    <comment>Text in ArtistDetailView.axaml</comment>
-  </data>
-  <data name="ArtistDetail.TOTALLENGTH" xml:space="preserve">
-    <value>總長度</value>
-    <comment>Text in ArtistDetailView.axaml</comment>
-  </data>
-  <data name="ArtistDetail.MOSTPLAYED" xml:space="preserve">
-    <value>播放最多</value>
-    <comment>Text in ArtistDetailView.axaml</comment>
-  </data>
-  <data name="ArtistDetail.FAVORITED" xml:space="preserve">
-    <value>已收藏</value>
-    <comment>Text in ArtistDetailView.axaml</comment>
-  </data>
   <data name="ArtistDetail.Songs" xml:space="preserve">
     <value> 首歌曲</value>
-    <comment>Text in ArtistDetailView.axaml</comment>
-  </data>
-  <data name="ArtistDetail.SINCE" xml:space="preserve">
-    <value>始於</value>
     <comment>Text in ArtistDetailView.axaml</comment>
   </data>
   <!-- AudioCdView.axaml (auto-migrated) -->
@@ -2324,10 +2252,6 @@
     <value>隱藏或顯示此區塊</value>
     <comment>ToolTip.Tip in HomeView.axaml</comment>
   </data>
-  <data name="Home.MostListened" xml:space="preserve">
-    <value>最常聆聽</value>
-    <comment>Text in HomeView.axaml</comment>
-  </data>
   <data name="Home.Text" xml:space="preserve">
     <value>♪</value>
     <comment>Text in HomeView.axaml</comment>
@@ -2346,10 +2270,6 @@
   </data>
   <data name="Home.TopArtists" xml:space="preserve">
     <value>熱門藝人</value>
-    <comment>Text in HomeView.axaml</comment>
-  </data>
-  <data name="Home.RecentlyPlayed" xml:space="preserve">
-    <value>最近播放</value>
     <comment>Text in HomeView.axaml</comment>
   </data>
   <data name="Home.PlayTip" xml:space="preserve">
@@ -5415,10 +5335,6 @@
   <data name="LyricsStudio.Subtitle" xml:space="preserve">
     <value>Times your lyrics against the recording, or transcribes when there are none. Review each song, fix any word, then save.</value>
     <comment>Dialog subtitle</comment>
-  </data>
-  <data name="LyricsStudio.Close" xml:space="preserve">
-    <value>Close</value>
-    <comment>Dialog button</comment>
   </data>
   <data name="LyricsStudio.Model" xml:space="preserve">
     <value>Model</value>

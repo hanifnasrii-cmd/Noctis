@@ -75,10 +75,6 @@
     <value>Idioma del sistema</value>
     <comment>Picker entry: follow the OS language</comment>
   </data>
-  <data name="Settings.Language.Help" xml:space="preserve">
-    <value>Ayuda a traducir Noctis</value>
-    <comment>Button</comment>
-  </data>
   <!-- Visualizer page -->
   <data name="Visualizer.Title" xml:space="preserve">
     <value>Visualizador</value>
@@ -1148,17 +1144,9 @@
     <value>NOMBRE DE USUARIO</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
-  <data name="Settings.Username" xml:space="preserve">
-    <value>Nombre de usuario</value>
-    <comment>Watermark in SettingsView.axaml</comment>
-  </data>
   <data name="Settings.PASSWORD" xml:space="preserve">
     <value>CONTRASEÑA</value>
     <comment>Text in SettingsView.axaml</comment>
-  </data>
-  <data name="Settings.Password" xml:space="preserve">
-    <value>Contraseña</value>
-    <comment>Watermark in SettingsView.axaml</comment>
   </data>
   <data name="Settings.Connecting" xml:space="preserve">
     <value>Conectando…</value>
@@ -1478,10 +1466,6 @@
   </data>
   <data name="Settings.LISTENING" xml:space="preserve">
     <value>ESCUCHA</value>
-    <comment>Text in SettingsView.axaml</comment>
-  </data>
-  <data name="Settings.Listening" xml:space="preserve">
-    <value>Tu escucha</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.TotalPlays" xml:space="preserve">
@@ -1805,14 +1789,6 @@
     <value>Explícito</value>
     <comment>ToolTip.Tip in ArtistDetailView.axaml</comment>
   </data>
-  <data name="ArtistDetail.ListenCountTip" xml:space="preserve">
-    <value>Número de escuchas</value>
-    <comment>ToolTip.Tip in ArtistDetailView.axaml</comment>
-  </data>
-  <data name="ArtistDetail.Plays" xml:space="preserve">
-    <value>reproducciones</value>
-    <comment>Text in ArtistDetailView.axaml</comment>
-  </data>
   <data name="ArtistDetail.PlayEverythingByArtistTip" xml:space="preserve">
     <value>Reproducir todo de este artista</value>
     <comment>ToolTip.Tip in ArtistDetailView.axaml</comment>
@@ -1865,14 +1841,6 @@
     <value>Populares</value>
     <comment>Text in ArtistDetailView.axaml</comment>
   </data>
-  <data name="ArtistDetail.Releases" xml:space="preserve">
-    <value>Lanzamientos</value>
-    <comment>Text in ArtistDetailView.axaml</comment>
-  </data>
-  <data name="ArtistDetail.All" xml:space="preserve">
-    <value>Todos</value>
-    <comment>Content in ArtistDetailView.axaml</comment>
-  </data>
   <data name="ArtistDetail.Albums" xml:space="preserve">
     <value>Álbumes</value>
     <comment>Content in ArtistDetailView.axaml</comment>
@@ -1889,10 +1857,6 @@
     <value>Aparece en</value>
     <comment>Text in ArtistDetailView.axaml</comment>
   </data>
-  <data name="ArtistDetail.About" xml:space="preserve">
-    <value>Acerca de </value>
-    <comment>Text in ArtistDetailView.axaml</comment>
-  </data>
   <data name="ArtistDetail.NoBiographyFoundArtist" xml:space="preserve">
     <value>Aún no se ha encontrado biografía para este artista.</value>
     <comment>Text in ArtistDetailView.axaml</comment>
@@ -1901,44 +1865,8 @@
     <value>ORIGEN</value>
     <comment>Text in ArtistDetailView.axaml</comment>
   </data>
-  <data name="ArtistDetail.ACTIVE" xml:space="preserve">
-    <value>EN ACTIVO</value>
-    <comment>Text in ArtistDetailView.axaml</comment>
-  </data>
-  <data name="ArtistDetail.GENRES" xml:space="preserve">
-    <value>GÉNEROS</value>
-    <comment>Text in ArtistDetailView.axaml</comment>
-  </data>
-  <data name="ArtistDetail.LIBRARY" xml:space="preserve">
-    <value>EN TU BIBLIOTECA</value>
-    <comment>Text in ArtistDetailView.axaml</comment>
-  </data>
-  <data name="ArtistDetail.RELEASES" xml:space="preserve">
-    <value>LANZAMIENTOS</value>
-    <comment>Text in ArtistDetailView.axaml</comment>
-  </data>
-  <data name="ArtistDetail.SONGS" xml:space="preserve">
-    <value>CANCIONES</value>
-    <comment>Text in ArtistDetailView.axaml</comment>
-  </data>
-  <data name="ArtistDetail.TOTALLENGTH" xml:space="preserve">
-    <value>DURACIÓN TOTAL</value>
-    <comment>Text in ArtistDetailView.axaml</comment>
-  </data>
-  <data name="ArtistDetail.MOSTPLAYED" xml:space="preserve">
-    <value>MÁS REPRODUCIDA</value>
-    <comment>Text in ArtistDetailView.axaml</comment>
-  </data>
-  <data name="ArtistDetail.FAVORITED" xml:space="preserve">
-    <value>FAVORITAS</value>
-    <comment>Text in ArtistDetailView.axaml</comment>
-  </data>
   <data name="ArtistDetail.Songs" xml:space="preserve">
     <value> canciones</value>
-    <comment>Text in ArtistDetailView.axaml</comment>
-  </data>
-  <data name="ArtistDetail.SINCE" xml:space="preserve">
-    <value>DESDE</value>
     <comment>Text in ArtistDetailView.axaml</comment>
   </data>
   <!-- AudioCdView.axaml (auto-migrated) -->
@@ -2324,10 +2252,6 @@
     <value>Ocultar o mostrar esta sección</value>
     <comment>ToolTip.Tip in HomeView.axaml</comment>
   </data>
-  <data name="Home.MostListened" xml:space="preserve">
-    <value>Lo más escuchado</value>
-    <comment>Text in HomeView.axaml</comment>
-  </data>
   <data name="Home.Text" xml:space="preserve">
     <value>♪</value>
     <comment>Text in HomeView.axaml</comment>
@@ -2346,10 +2270,6 @@
   </data>
   <data name="Home.TopArtists" xml:space="preserve">
     <value>Artistas más escuchados</value>
-    <comment>Text in HomeView.axaml</comment>
-  </data>
-  <data name="Home.RecentlyPlayed" xml:space="preserve">
-    <value>Reproducido recientemente</value>
     <comment>Text in HomeView.axaml</comment>
   </data>
   <data name="Home.PlayTip" xml:space="preserve">
@@ -5415,10 +5335,6 @@
   <data name="LyricsStudio.Subtitle" xml:space="preserve">
     <value>Times your lyrics against the recording, or transcribes when there are none. Review each song, fix any word, then save.</value>
     <comment>Dialog subtitle</comment>
-  </data>
-  <data name="LyricsStudio.Close" xml:space="preserve">
-    <value>Close</value>
-    <comment>Dialog button</comment>
   </data>
   <data name="LyricsStudio.Model" xml:space="preserve">
     <value>Model</value>

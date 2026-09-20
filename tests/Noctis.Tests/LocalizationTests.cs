@@ -38,7 +38,7 @@ public class LocalizationTests : IDisposable
 
         Loc.Instance.SetCulture("es");
         Assert.Equal("Inicio", Loc.T("Nav.Home"));
-        Assert.Contains("Item[]", raised);
+        Assert.Contains("Item", raised); // the CLR indexer name: what Avalonia's indexer binding listens for
         Assert.Equal(1, cultureEvents);
 
         // Same culture again is a no-op.
@@ -62,7 +62,9 @@ public class LocalizationTests : IDisposable
     [InlineData("es", "es")]
     [InlineData("es-MX", "es")]
     [InlineData("en-GB", "en")]
-    [InlineData("fr", "en")] // no French yet → English
+    [InlineData("fr", "fr")]
+    [InlineData("zh-CN", "zh-Hans")]
+    [InlineData("pt-BR", "en")] // no Portuguese → English
     public void Resolve_MapsASettingToAShippedTranslation(string setting, string expected)
         => Assert.Equal(expected, Loc.Resolve(setting));
 

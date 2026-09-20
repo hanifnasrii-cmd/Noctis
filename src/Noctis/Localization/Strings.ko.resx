@@ -75,10 +75,6 @@
     <value>시스템 언어</value>
     <comment>Picker entry: follow the OS language</comment>
   </data>
-  <data name="Settings.Language.Help" xml:space="preserve">
-    <value>Noctis 번역에 참여하기</value>
-    <comment>Button</comment>
-  </data>
   <!-- Visualizer page -->
   <data name="Visualizer.Title" xml:space="preserve">
     <value>비주얼라이저</value>
@@ -1148,17 +1144,9 @@
     <value>사용자 이름</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
-  <data name="Settings.Username" xml:space="preserve">
-    <value>사용자 이름</value>
-    <comment>Watermark in SettingsView.axaml</comment>
-  </data>
   <data name="Settings.PASSWORD" xml:space="preserve">
     <value>비밀번호</value>
     <comment>Text in SettingsView.axaml</comment>
-  </data>
-  <data name="Settings.Password" xml:space="preserve">
-    <value>비밀번호</value>
-    <comment>Watermark in SettingsView.axaml</comment>
   </data>
   <data name="Settings.Connecting" xml:space="preserve">
     <value>연결 중…</value>
@@ -1478,10 +1466,6 @@
   </data>
   <data name="Settings.LISTENING" xml:space="preserve">
     <value>감상</value>
-    <comment>Text in SettingsView.axaml</comment>
-  </data>
-  <data name="Settings.Listening" xml:space="preserve">
-    <value>내 감상 기록</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.TotalPlays" xml:space="preserve">
@@ -1805,14 +1789,6 @@
     <value>노골적 콘텐츠</value>
     <comment>ToolTip.Tip in ArtistDetailView.axaml</comment>
   </data>
-  <data name="ArtistDetail.ListenCountTip" xml:space="preserve">
-    <value>감상 횟수</value>
-    <comment>ToolTip.Tip in ArtistDetailView.axaml</comment>
-  </data>
-  <data name="ArtistDetail.Plays" xml:space="preserve">
-    <value>회 재생</value>
-    <comment>Text in ArtistDetailView.axaml</comment>
-  </data>
   <data name="ArtistDetail.PlayEverythingByArtistTip" xml:space="preserve">
     <value>이 아티스트의 모든 곡 재생</value>
     <comment>ToolTip.Tip in ArtistDetailView.axaml</comment>
@@ -1865,14 +1841,6 @@
     <value>인기곡</value>
     <comment>Text in ArtistDetailView.axaml</comment>
   </data>
-  <data name="ArtistDetail.Releases" xml:space="preserve">
-    <value>발매작</value>
-    <comment>Text in ArtistDetailView.axaml</comment>
-  </data>
-  <data name="ArtistDetail.All" xml:space="preserve">
-    <value>전체</value>
-    <comment>Content in ArtistDetailView.axaml</comment>
-  </data>
   <data name="ArtistDetail.Albums" xml:space="preserve">
     <value>앨범</value>
     <comment>Content in ArtistDetailView.axaml</comment>
@@ -1889,10 +1857,6 @@
     <value>참여 앨범</value>
     <comment>Text in ArtistDetailView.axaml</comment>
   </data>
-  <data name="ArtistDetail.About" xml:space="preserve">
-    <value>소개: </value>
-    <comment>Text in ArtistDetailView.axaml</comment>
-  </data>
   <data name="ArtistDetail.NoBiographyFoundArtist" xml:space="preserve">
     <value>이 아티스트의 소개를 아직 찾지 못했습니다.</value>
     <comment>Text in ArtistDetailView.axaml</comment>
@@ -1901,44 +1865,8 @@
     <value>출신</value>
     <comment>Text in ArtistDetailView.axaml</comment>
   </data>
-  <data name="ArtistDetail.ACTIVE" xml:space="preserve">
-    <value>활동 기간</value>
-    <comment>Text in ArtistDetailView.axaml</comment>
-  </data>
-  <data name="ArtistDetail.GENRES" xml:space="preserve">
-    <value>장르</value>
-    <comment>Text in ArtistDetailView.axaml</comment>
-  </data>
-  <data name="ArtistDetail.LIBRARY" xml:space="preserve">
-    <value>내 라이브러리</value>
-    <comment>Text in ArtistDetailView.axaml</comment>
-  </data>
-  <data name="ArtistDetail.RELEASES" xml:space="preserve">
-    <value>발매작</value>
-    <comment>Text in ArtistDetailView.axaml</comment>
-  </data>
-  <data name="ArtistDetail.SONGS" xml:space="preserve">
-    <value>곡</value>
-    <comment>Text in ArtistDetailView.axaml</comment>
-  </data>
-  <data name="ArtistDetail.TOTALLENGTH" xml:space="preserve">
-    <value>총 길이</value>
-    <comment>Text in ArtistDetailView.axaml</comment>
-  </data>
-  <data name="ArtistDetail.MOSTPLAYED" xml:space="preserve">
-    <value>최다 재생</value>
-    <comment>Text in ArtistDetailView.axaml</comment>
-  </data>
-  <data name="ArtistDetail.FAVORITED" xml:space="preserve">
-    <value>즐겨찾기</value>
-    <comment>Text in ArtistDetailView.axaml</comment>
-  </data>
   <data name="ArtistDetail.Songs" xml:space="preserve">
     <value> 곡</value>
-    <comment>Text in ArtistDetailView.axaml</comment>
-  </data>
-  <data name="ArtistDetail.SINCE" xml:space="preserve">
-    <value>시작일</value>
     <comment>Text in ArtistDetailView.axaml</comment>
   </data>
   <!-- AudioCdView.axaml (auto-migrated) -->
@@ -2324,10 +2252,6 @@
     <value>이 섹션 숨기기 또는 표시</value>
     <comment>ToolTip.Tip in HomeView.axaml</comment>
   </data>
-  <data name="Home.MostListened" xml:space="preserve">
-    <value>가장 많이 들은 항목</value>
-    <comment>Text in HomeView.axaml</comment>
-  </data>
   <data name="Home.Text" xml:space="preserve">
     <value>♪</value>
     <comment>Text in HomeView.axaml</comment>
@@ -2346,10 +2270,6 @@
   </data>
   <data name="Home.TopArtists" xml:space="preserve">
     <value>인기 아티스트</value>
-    <comment>Text in HomeView.axaml</comment>
-  </data>
-  <data name="Home.RecentlyPlayed" xml:space="preserve">
-    <value>최근 재생</value>
     <comment>Text in HomeView.axaml</comment>
   </data>
   <data name="Home.PlayTip" xml:space="preserve">
@@ -5415,10 +5335,6 @@
   <data name="LyricsStudio.Subtitle" xml:space="preserve">
     <value>Times your lyrics against the recording, or transcribes when there are none. Review each song, fix any word, then save.</value>
     <comment>Dialog subtitle</comment>
-  </data>
-  <data name="LyricsStudio.Close" xml:space="preserve">
-    <value>Close</value>
-    <comment>Dialog button</comment>
   </data>
   <data name="LyricsStudio.Model" xml:space="preserve">
     <value>Model</value>
