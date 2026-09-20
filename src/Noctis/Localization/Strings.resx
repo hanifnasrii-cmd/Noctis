@@ -278,6 +278,8 @@
   <data name="Settings.Remove" xml:space="preserve"><value>Remove</value><comment>Content in SettingsView.axaml</comment></data>
   <data name="Settings.FullscreenLyricsFocus" xml:space="preserve"><value>Fullscreen Lyrics Focus</value><comment>Text in SettingsView.axaml</comment></data>
   <data name="Settings.DimAllButCurrent" xml:space="preserve"><value>Dim every line except the current one and its neighbours.</value><comment>Text in SettingsView.axaml</comment></data>
+  <data name="Settings.LyricsMinLineOpacity" xml:space="preserve"><value>Minimum Line Opacity</value><comment>Text in SettingsView.axaml</comment></data>
+  <data name="Settings.LyricsMinLineOpacityHint" xml:space="preserve"><value>Keep every lyric line faintly visible so you can click any line to jump there. 0% hides lines far from the current one.</value><comment>Text in SettingsView.axaml</comment></data>
   <data name="Settings.JoinSplitWords" xml:space="preserve"><value>Join Split Words</value><comment>Text in SettingsView.axaml</comment></data>
   <data name="Settings.KeepWordsWholeWhen" xml:space="preserve"><value>Keep words whole when TTML lyrics split them into syllables.</value><comment>Text in SettingsView.axaml</comment></data>
   <data name="Settings.PlayerBarOpacity" xml:space="preserve"><value>Player Bar Opacity</value><comment>Text in SettingsView.axaml</comment></data>

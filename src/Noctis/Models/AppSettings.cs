@@ -585,6 +585,16 @@ public class AppSettings
     /// closest neighbors while the lyrics page is fullscreen.</summary>
     public bool LyricsFullScreenFocusEnabled { get; set; }
 
+    /// <summary>Fresh-install value of <see cref="LyricsMinLineOpacity"/>; double-tapping the
+    /// slider thumb in Settings snaps back to it.</summary>
+    public const int LyricsMinLineOpacityDefault = 15;
+
+    /// <summary>Floor for the dimmed lyric lines, in percent (0–60). At 0 the ramp runs as
+    /// designed: lines far from the current one fade out completely and stop taking clicks.
+    /// Anything above keeps every line faintly visible and clickable, so a listener can
+    /// jump to any part of the song from its lyrics.</summary>
+    public int LyricsMinLineOpacity { get; set; } = LyricsMinLineOpacityDefault;
+
     /// <summary>Whether a word split across several timed TTML spans renders as one
     /// unbroken word ("compromise", not "com pro mise" — issue #32). The sweep still
     /// follows each syllable's own timing. Ships off, keeping the authored spacing.</summary>

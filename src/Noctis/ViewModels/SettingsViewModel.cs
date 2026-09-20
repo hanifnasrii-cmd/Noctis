@@ -591,6 +591,8 @@ public partial class SettingsViewModel : ViewModelBase
     [RelayCommand]
     private void ToggleMusicVideos() => MusicVideosEnabled = !MusicVideosEnabled;
     [ObservableProperty] private bool _lyricsFullScreenFocusEnabled;
+    /// <summary>Percent floor (0–60) under the dimmed lyric lines; 0 = default ramp.</summary>
+    [ObservableProperty] private int _lyricsMinLineOpacity;
     [ObservableProperty] private bool _lyricsJoinSplitWords;
 
     /// <summary>Minimize hides the main window to the system tray.</summary>
@@ -1608,6 +1610,13 @@ public partial class SettingsViewModel : ViewModelBase
         // tracks. It now says so directly: this used to hang off LibraryUpdated and do a
         // full LoadSettingsAsync (file read + JSON parse + DPAPI unprotect) just to compare
         // the folder set — on every scan, drop-import, removal and metadata write.
+        // A scan that finds a configured folder missing (drive offline, letter changed
+        // after a partition change, share down) keeps the old library on purpose — but
+        // it used to finish with "N tracks found." as if nothing were wrong, so a user
+        // pressing Refresh to fix silent playback learned nothing. Remember the roots;
+        // RunScanCoreAsync turns them into the status line once ScanAsync returns.
+        _library.ScanAborted += (_, roots) => _scanAbortedRoots = roots;
+
         _library.MusicFoldersChanged += (_, folders) =>
         {
             Dispatcher.UIThread.Post(() =>
@@ -1862,6 +1871,7 @@ public partial class SettingsViewModel : ViewModelBase
             MusicVideosEnabled = _settings.MusicVideosEnabled;
             MusicVideoRoundedCorners = _settings.MusicVideoRoundedCorners;
             LyricsFullScreenFocusEnabled = _settings.LyricsFullScreenFocusEnabled;
+            LyricsMinLineOpacity = Math.Clamp(_settings.LyricsMinLineOpacity, 0, 60);
             LyricsJoinSplitWords = _settings.LyricsJoinSplitWords;
             MinimizeToTray = _settings.MinimizeToTray;
             CloseToTray = _settings.CloseToTray;
@@ -2256,6 +2266,7 @@ public partial class SettingsViewModel : ViewModelBase
         _settings.MusicVideosEnabled = MusicVideosEnabled;
         _settings.MusicVideoRoundedCorners = MusicVideoRoundedCorners;
         _settings.LyricsFullScreenFocusEnabled = LyricsFullScreenFocusEnabled;
+        _settings.LyricsMinLineOpacity = LyricsMinLineOpacity;
         _settings.LyricsJoinSplitWords = LyricsJoinSplitWords;
         _settings.MinimizeToTray = MinimizeToTray;
         _settings.CloseToTray = CloseToTray;
@@ -2510,6 +2521,7 @@ public partial class SettingsViewModel : ViewModelBase
         _player.MusicVideosEnabled = MusicVideosEnabled;
         _player.MusicVideoCornerRadius = MusicVideoRoundedCorners ? 18 : 0;
         _player.LyricsFullScreenFocusEnabled = LyricsFullScreenFocusEnabled;
+        _player.LyricsMinLineOpacity = LyricsMinLineOpacity;
         _player.LyricsJoinSplitWords = LyricsJoinSplitWords;
         Controls.MarqueeTextBlock.GlobalCoverFlowScrollEnabled = CoverFlowMarqueeEnabled;
         Controls.MarqueeTextBlock.GlobalCoverFlowArtistScrollEnabled = CoverFlowArtistMarqueeEnabled;
@@ -3661,6 +3673,12 @@ public partial class SettingsViewModel : ViewModelBase
     }
 
     partial void OnLyricsFullScreenFocusEnabledChanged(bool value)
+    {
+        ApplyPlayerSettings();
+        if (_settingsLoaded) _ = SaveAsync();
+    }
+
+    partial void OnLyricsMinLineOpacityChanged(int value)
     {
         ApplyPlayerSettings();
         if (_settingsLoaded) _ = SaveAsync();
@@ -4937,6 +4955,13 @@ public partial class SettingsViewModel : ViewModelBase
         return task;
     }
 
+    /// <summary>Roots the library reported unreachable during the scan in flight (see ctor).</summary>
+    private string[]? _scanAbortedRoots;
+
+    /// <summary>Status line for a scan the library abandoned because these folders were unreachable.</summary>
+    internal static string ScanAbortedStatus(IReadOnlyList<string> roots) =>
+        $"Can't reach {string.Join(", ", roots)} — library kept unchanged. Check the drive, then refresh.";
+
     private async Task RunScanCoreAsync(Task prior, CancellationTokenSource cts)
     {
         // Wait for the superseded scan to finish unwinding before mutating the
@@ -4951,8 +4976,17 @@ public partial class SettingsViewModel : ViewModelBase
 
         try
         {
+            _scanAbortedRoots = null;
             await _library.ScanAsync(MusicFolders, cts.Token);
             if (cts.IsCancellationRequested) return;
+
+            if (_scanAbortedRoots is { Length: > 0 } unreachable)
+            {
+                // Stays up (no autoClear): this is the one thing the user must read.
+                SetScanStatus(ScanAbortedStatus(unreachable));
+                RefreshLibraryStats();
+                return;
+            }
 
             SetScanStatus(_library.Tracks.Count == 0
                 ? "No tracks found."
@@ -5272,6 +5306,7 @@ public partial class SettingsViewModel : ViewModelBase
             LanguageChoice = LanguageOptions[0];
             LyricsBackgroundMediaPath = defaultSettings.LyricsBackgroundMediaPath;
             LyricsFullScreenFocusEnabled = defaultSettings.LyricsFullScreenFocusEnabled;
+            LyricsMinLineOpacity = defaultSettings.LyricsMinLineOpacity;
             LyricsJoinSplitWords = defaultSettings.LyricsJoinSplitWords;
             FfmpegPath = defaultSettings.FfmpegPath;
             ExternalOpenAppPath = defaultSettings.ExternalOpenAppPath;

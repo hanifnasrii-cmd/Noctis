@@ -140,6 +140,61 @@ public class LyricsSettingsToggleTests
         Assert.Equal(0.18, vm.LyricLines[active + 3].LineOpacity, 3);
     }
 
+    // ── Minimum Line Opacity (Discord, Mistery 09-20: "jump to a part of the song
+    //    from its lyrics is basically impossible" — lines past ±9 sat at opacity 0 and
+    //    IsClickable=false, so most of the song could not be clicked) ──
+
+    [AvaloniaFact]
+    public async Task MinLineOpacity_KeepsEveryLineVisibleAndClickable()
+    {
+        var (vm, player) = await MountSyncedLyrics(new Track
+        {
+            Title = "Floor", Artist = "Test",
+            FilePath = Path.Combine(Path.GetTempPath(), "noctis-floor-no-such-file.mp3"),
+            SyncedLyrics = MakeLrc(),
+        });
+
+        player.Position = TimeSpan.FromSeconds(30);   // line 10 active
+        var active = vm.ActiveLineIndex;
+        Assert.Equal(10, active);
+
+        // Default: far lines are gone and can't be clicked — the reported problem.
+        Assert.Equal(0.0, vm.LyricLines[active + 12].LineOpacity, 3);
+        Assert.False(vm.LyricLines[active + 12].IsClickable);
+        Assert.False(vm.LyricLines[0].IsClickable);
+
+        player.LyricsMinLineOpacity = 25;
+
+        // Every non-active line is at least the floor and takes clicks again …
+        for (var i = 0; i < vm.LyricLines.Count; i++)
+        {
+            if (i == active) continue;
+            Assert.True(vm.LyricLines[i].LineOpacity >= 0.25 - 1e-9, $"line {i} = {vm.LyricLines[i].LineOpacity}");
+            Assert.True(vm.LyricLines[i].IsClickable, $"line {i} should be clickable");
+        }
+        // … the near ramp above the floor is untouched, and the active line stays crisp.
+        Assert.Equal(1.0, vm.LyricLines[active].LineOpacity, 3);
+        Assert.Equal(0.55, vm.LyricLines[active + 1].LineOpacity, 3);
+        Assert.Equal(0.32, vm.LyricLines[active + 2].LineOpacity, 3);
+        Assert.Equal(0.25, vm.LyricLines[active + 3].LineOpacity, 3);   // 0.18 floored
+        Assert.Equal(0.25, vm.LyricLines[active + 12].LineOpacity, 3);
+
+        // Fullscreen focus honours the floor too: it is a minimum, not a mode.
+        vm.IsFullScreenPageActive = true;
+        player.LyricsFullScreenFocusEnabled = true;
+        Assert.Equal(0.5, vm.LyricLines[active + 1].LineOpacity, 3);
+        Assert.Equal(0.25, vm.LyricLines[active + 3].LineOpacity, 3);
+        Assert.True(vm.LyricLines[active + 3].IsClickable);
+        player.LyricsFullScreenFocusEnabled = false;
+        vm.IsFullScreenPageActive = false;
+
+        // Back to 0: the original ramp returns, far lines hidden and unclickable again.
+        player.LyricsMinLineOpacity = 0;
+        Assert.Equal(0.18, vm.LyricLines[active + 3].LineOpacity, 3);
+        Assert.Equal(0.0, vm.LyricLines[active + 12].LineOpacity, 3);
+        Assert.False(vm.LyricLines[active + 12].IsClickable);
+    }
+
     // ── Flowing Lyrics Background ──
 
     [AvaloniaFact]

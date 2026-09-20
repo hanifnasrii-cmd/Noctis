@@ -81,7 +81,16 @@ internal sealed class FakeLibraryService : ILibraryService
     public event EventHandler<List<string>>? MusicFoldersChanged;
     public event EventHandler<string[]>? ScanAborted;
 
-    public Task ScanAsync(IEnumerable<string> folders, CancellationToken ct = default) => Task.CompletedTask;
+    /// <summary>When set, ScanAsync behaves like the real service meeting an offline
+    /// root: it raises ScanAborted with these roots and leaves the library untouched.</summary>
+    public string[]? AbortScanWithRoots { get; set; }
+
+    public Task ScanAsync(IEnumerable<string> folders, CancellationToken ct = default)
+    {
+        if (AbortScanWithRoots is { } roots)
+            ScanAborted?.Invoke(this, roots);
+        return Task.CompletedTask;
+    }
     public Task PauseActiveScanForShutdownAsync(TimeSpan timeout) => Task.CompletedTask;
     public Task ImportFilesAsync(IEnumerable<string> filePaths, CancellationToken ct = default, IProgress<int>? progress = null) => Task.CompletedTask;
     public Track? GetTrackById(Guid id) => TrackList.FirstOrDefault(t => t.Id == id);

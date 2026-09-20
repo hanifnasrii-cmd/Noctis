@@ -391,6 +391,17 @@ public partial class SettingsView : UserControl
         }
     }
 
+    // Double-tapping the lyrics minimum-line-opacity slider restores the fresh-install
+    // value (same affordance as the pre-amp and crossfade sliders).
+    private void OnLyricsMinLineOpacitySliderDoubleTapped(object? sender, TappedEventArgs e)
+    {
+        if (DataContext is SettingsViewModel vm)
+        {
+            vm.LyricsMinLineOpacity = Models.AppSettings.LyricsMinLineOpacityDefault;
+            e.Handled = true;
+        }
+    }
+
     private void OnPreampSliderPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
     {
         if (e.Property == Slider.ValueProperty ||

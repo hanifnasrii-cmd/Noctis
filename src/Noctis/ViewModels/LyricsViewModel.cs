@@ -1896,6 +1896,11 @@ public partial class LyricsViewModel : ViewModelBase, IDisposable
             OnPropertyChanged(nameof(IsLyricsFocusActive));
             RefreshFocusDimming();
         }
+        // Minimum line opacity moved: re-floor the ramp in place.
+        else if (e.PropertyName == nameof(PlayerViewModel.LyricsMinLineOpacity))
+        {
+            RefreshFocusDimming();
+        }
         // Word-joining flipped: it changes how the sidecar is parsed, not how it is
         // drawn, so the current track has to go back through the load path.
         else if (e.PropertyName == nameof(PlayerViewModel.LyricsJoinSplitWords))
@@ -3128,6 +3133,10 @@ public partial class LyricsViewModel : ViewModelBase, IDisposable
         // lines but can never be open with the page up, so the tight ramp never leaks
         // into it.
         var focus = IsLyricsFocusActive;
+        // Settings floor (percent): lines the ramp would hide stay at least this
+        // visible, and therefore clickable, so any part of the song can be reached
+        // from its lyrics. 0 keeps the ramp as designed.
+        var floor = Math.Clamp(_player.LyricsMinLineOpacity, 0, 100) / 100.0;
 
         for (int i = 0; i < LyricLines.Count; i++)
         {
@@ -3155,6 +3164,8 @@ public partial class LyricsViewModel : ViewModelBase, IDisposable
                      9 => 0.02,
                      _ => 0.0
                 };
+            if (absDist != 0 && opacity < floor)
+                opacity = floor;
             // Apple Music–style depth: active crisp, neighbours softly blurred.
             var blur = absDist switch
             {

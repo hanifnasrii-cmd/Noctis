@@ -253,6 +253,9 @@ public partial class PlayerViewModel : ViewModelBase
     /// <summary>Opt-in fullscreen lyrics focus — dims all but the active line and its
     /// closest neighbors while the lyrics page is fullscreen. Driven by Settings.</summary>
     [ObservableProperty] private bool _lyricsFullScreenFocusEnabled;
+    /// <summary>Percent floor (0–60) under the dimmed lyric lines; above 0 every line
+    /// stays faintly visible and clickable. Driven by Settings.</summary>
+    [ObservableProperty] private int _lyricsMinLineOpacity;
     /// <summary>Whether TTML words split across several timed spans render unbroken
     /// (issue #32). Driven by Settings; the lyrics VM re-parses when it flips.</summary>
     [ObservableProperty] private bool _lyricsJoinSplitWords;
@@ -2779,6 +2782,11 @@ public partial class PlayerViewModel : ViewModelBase
                     $"{_consecutivePlaybackErrors} consecutive playback errors — stopping instead of skipping");
                 DebugLog.Write("Audio",
                     $"{_consecutivePlaybackErrors} consecutive playback errors — stopping playback");
+                // A whole queue of dead paths almost always means the volume itself is
+                // gone (drive offline, letter changed, partition remounted), not five
+                // deleted files. Say so once per cascade so the log tells the story.
+                if (UnreachableRootHint(CurrentTrack?.FilePath, Directory.Exists) is { } hint)
+                    DebugLog.Write("Audio", hint);
                 _consecutivePlaybackErrors = 0;
                 StopAndClear();
                 return;
@@ -2790,6 +2798,29 @@ public partial class PlayerViewModel : ViewModelBase
             else
                 StopAndClear();
         });
+    }
+
+    /// <summary>
+    /// When a local track's drive/share root cannot be reached at all, a one-line
+    /// explanation for the session log; null when the root is there (so the files
+    /// themselves are missing) or the path has no file-system root.
+    /// </summary>
+    /// <remarks>Internal for tests (InternalsVisibleTo Noctis.Tests).</remarks>
+    internal static string? UnreachableRootHint(string? filePath, Func<string, bool> rootExists)
+    {
+        if (string.IsNullOrWhiteSpace(filePath) || VlcAudioPlayer.IsPathlessMedia(filePath))
+            return null;
+        string? root;
+        try { root = Path.GetPathRoot(filePath); }
+        catch { return null; }
+        if (string.IsNullOrEmpty(root)) return null;
+        bool exists;
+        try { exists = rootExists(root); }
+        catch { exists = false; }
+        return exists
+            ? null
+            : $"{root} is not reachable right now — every track stored there will fail until the drive is back " +
+              "(or the music folder is re-added under its new drive letter).";
     }
 
     private void OnLibraryUpdated(object? sender, EventArgs e)

@@ -2507,6 +2507,22 @@
                                           VerticalAlignment="Center"/>
                 </Grid>
             </Border>
+            <!-- Minimum line opacity: floors the lyrics page's distance ramp so every line
+                 stays visible and clickable (jump anywhere in the song from its lyrics). -->
+            <Border Classes="setting-row">
+                <Grid ColumnDefinitions="*,200,Auto">
+                    <StackPanel Grid.Column="0" Spacing="2">
+                        <TextBlock Text="{loc:T Settings.LyricsMinLineOpacity}" FontSize="15" FontWeight="SemiBold"/>
+                        <TextBlock Text="{loc:T Settings.LyricsMinLineOpacityHint}"
+                                   FontSize="12" Opacity="0.5" TextWrapping="Wrap"/>
+                    </StackPanel>
+                    <Slider x:Name="LyricsMinLineOpacitySlider" Grid.Column="1" Classes="accent-slider" Minimum="0" Maximum="60" TickFrequency="1" IsSnapToTickEnabled="True"
+                            Value="{Binding LyricsMinLineOpacity, Mode=TwoWay}" VerticalAlignment="Center" Margin="16,0,0,0"
+                            DoubleTapped="OnLyricsMinLineOpacitySliderDoubleTapped"/>
+                    <TextBlock Grid.Column="2" Text="{Binding LyricsMinLineOpacity, StringFormat='{}{0}%'}" FontSize="12" Opacity="0.7"
+                               VerticalAlignment="Center" Margin="12,0,0,0" MinWidth="36" TextAlignment="Right"/>
+                </Grid>
+            </Border>
             <Border Classes="setting-row">
                 <Grid ColumnDefinitions="*,Auto">
                     <StackPanel Grid.Column="0" Spacing="2">
