@@ -37,6 +37,13 @@
             <Setter Property="FontFamily" Value="Consolas,Menlo,monospace" />
             <Setter Property="Cursor" Value="Hand" />
         </Style>
+        <!-- Review rows: every time pill the same width, text centred, so the lyric column
+             starts at one x whatever the digits (an Auto column sized each pill to its own
+             text and rows read as staggered, user 09-20). -->
+        <Style Selector="Button.time-pill.line-time">
+            <Setter Property="MinWidth" Value="68" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+        </Style>
         <Style Selector="TextBox.line-edit">
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="BorderThickness" Value="0" />
@@ -451,7 +458,7 @@
                                         <Border Classes="review-line" Classes.low="{Binding IsLow}">
                                             <StackPanel Spacing="4">
                                                 <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
-                                                    <Button Grid.Column="0" Classes="time-pill" VerticalAlignment="Center"
+                                                    <Button Grid.Column="0" Classes="time-pill line-time" VerticalAlignment="Center"
                                                             Command="{Binding $parent[views:LyricsStudioPanel].((vm:LyricsStudioViewModel)DataContext).PlayFromLineCommand}"
                                                             CommandParameter="{Binding}"
                                                             ToolTip.Tip="{loc:T LyricsStudio.PlayFromHere}">
