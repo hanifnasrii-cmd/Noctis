@@ -67,6 +67,55 @@ public class LyricsStudioPickerViewModelTests
         Assert.Equal(new[] { a.Id, b.Id }, vm.PickedTracks.Select(t => t.Id));
     }
 
+    /// <summary>Nothing typed: the songs missing the chosen format are listed, Select all
+    /// ticks them, and flipping the format chip asks for the other set.</summary>
+    [AvaloniaFact]
+    public void NothingTyped_ListsTheSongsMissingTheFormat_WithSelectAll()
+    {
+        var (lib, _, a, b, solo) = Library();
+        var asked = new List<bool>();
+        var vm = new LyricsStudioPickerViewModel(lib, wordTimings: true,
+            detectFormats: t => t.Select(_ => LyricsFormat.Lrc).ToList(),
+            suggest: wt =>
+            {
+                asked.Add(wt);
+                IReadOnlyList<Track> list = wt ? new[] { a, b, solo } : new[] { solo };
+                return System.Threading.Tasks.Task.FromResult(list);
+            });
+        vm.SuggestionsLoad.Wait(TimeSpan.FromSeconds(5));
+        Dispatcher.UIThread.RunJobs();
+
+        Assert.Equal(new[] { true }, asked);
+        Assert.True(vm.IsSuggesting);
+        Assert.False(vm.ShowPrompt);
+        Assert.Equal(3, vm.Results.Count);
+        Assert.All(vm.Results, r => Assert.False(r.IsAlbum));
+        Assert.True(vm.HasSelectableResults);
+        Assert.False(vm.AreAllResultsSelected);
+
+        vm.ToggleSelectAllCommand.Execute(null);
+        Assert.True(vm.AreAllResultsSelected);
+        Assert.Equal(3, vm.SelectedCount);
+        Assert.Equal(new[] { a.Id, b.Id, solo.Id }, vm.PickedTracks.Select(t => t.Id));
+        vm.ToggleSelectAllCommand.Execute(null);
+        Assert.Equal(0, vm.SelectedCount);
+
+        // Line timings: only songs with no timings at all are missing.
+        vm.LineTimings = true;
+        vm.SuggestionsLoad.Wait(TimeSpan.FromSeconds(5));
+        Dispatcher.UIThread.RunJobs();
+        Assert.Equal(new[] { true, false }, asked);
+        Assert.Equal(new[] { solo.Id }, vm.Results.Select(r => r.Tracks[0].Id));
+
+        // Typing searches instead; clearing the box brings the suggestions back.
+        vm.SearchText = "fantas";
+        Assert.False(vm.IsSuggesting);
+        Assert.Contains(vm.Results, r => r.IsAlbum);
+        vm.SearchText = "";
+        Assert.True(vm.IsSuggesting);
+        Assert.Equal(new[] { solo.Id }, vm.Results.Select(r => r.Tracks[0].Id));
+    }
+
     [Fact]
     public void Confirm_HandsBackPickOrderAndFormat_LineTimingsIsTheInverseChip()
     {

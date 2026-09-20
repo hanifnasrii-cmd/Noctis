@@ -33,8 +33,9 @@ public sealed partial class LyricsStudioPickRow : ObservableObject
 /// <summary>
 /// Lyrics Studio › Choose songs (user ask 09-19): search the library for songs and albums,
 /// tick the ones to time, and pick the format (word timings = ELRC, line timings = LRC).
-/// The page then runs the Studio over exactly those songs instead of its own "first 40
-/// that lack the format" pick.
+/// With nothing typed it lists the songs that lack the chosen format (the page's own cached
+/// scan), so the usual case is tick, or Select all, and go. The page then runs the Studio
+/// over exactly those songs instead of its own "first 40 that lack the format" pick.
 /// </summary>
 public partial class LyricsStudioPickerViewModel : ObservableObject
 {
@@ -43,15 +44,19 @@ public partial class LyricsStudioPickerViewModel : ObservableObject
 
     private readonly ILibraryService _library;
     private readonly Func<IReadOnlyList<Track>, IReadOnlyList<LyricsFormat>> _detectFormats;
+    private readonly Func<bool, Task<IReadOnlyList<Track>>>? _suggest;
     private readonly HashSet<Guid> _selectedIds = new();
     private readonly List<Track> _picked = new();
+    private IReadOnlyList<Track> _suggestions = Array.Empty<Track>();
     private int _scanGeneration;
+    private int _suggestGeneration;
 
     public ObservableCollection<LyricsStudioPickRow> Results { get; } = new();
 
     [ObservableProperty] private string _searchText = string.Empty;
     [ObservableProperty] private bool _wordTimings;
     [ObservableProperty] private int _selectedCount;
+    [ObservableProperty] private bool _isLoadingSuggestions;
 
     public bool LineTimings
     {
@@ -59,30 +64,53 @@ public partial class LyricsStudioPickerViewModel : ObservableObject
         set => WordTimings = !value;
     }
 
-    public bool ShowPrompt => string.IsNullOrWhiteSpace(SearchText);
-    public bool ShowNoResults => !string.IsNullOrWhiteSpace(SearchText) && Results.Count == 0;
+    private bool QueryEmpty => string.IsNullOrWhiteSpace(SearchText);
+    /// <summary>Nothing typed and the library's missing-format songs are on show.</summary>
+    public bool IsSuggesting => QueryEmpty && _suggestions.Count > 0;
+    public string SuggestionsHeader => Localization.Loc.T(WordTimings ? "LyricsStudioPicker.MissingWord" : "LyricsStudioPicker.MissingLine");
+    public bool ShowPrompt => QueryEmpty && _suggestions.Count == 0 && !IsLoadingSuggestions;
+    public bool ShowNoResults => !QueryEmpty && Results.Count == 0;
     public bool HasSelection => SelectedCount > 0;
     public string SelectionText => SelectedCount == 1 ? "1 song selected" : $"{SelectedCount} songs selected";
     public string AddButtonText => SelectedCount == 0
         ? Localization.Loc.T("LyricsStudioPicker.Add")
         : $"{Localization.Loc.T("LyricsStudioPicker.Add")} ({SelectedCount})";
 
+    /// <summary>Select all covers the song rows on show (album rows are shortcuts for their songs).</summary>
+    public bool HasSelectableResults => Results.Any(r => !r.IsAlbum);
+    public bool AreAllResultsSelected => HasSelectableResults && Results.Where(r => !r.IsAlbum).All(r => r.IsSelected);
+    public string SelectAllText => Localization.Loc.T(AreAllResultsSelected ? "LyricsStudioPicker.DeselectAll" : "LyricsStudioPicker.SelectAll");
+
     /// <summary>The last format scan kicked off by a search (tests await it).</summary>
     internal Task FormatScan { get; private set; } = Task.CompletedTask;
+    /// <summary>The last suggestions load (tests await it).</summary>
+    internal Task SuggestionsLoad { get; private set; } = Task.CompletedTask;
 
     public event EventHandler<LyricsStudioPick>? Confirmed;
     public event EventHandler? CloseRequested;
 
+    /// <param name="suggest">Songs that lack the format (word timings = true) to show before any search; null = search only.</param>
     public LyricsStudioPickerViewModel(ILibraryService library, bool wordTimings,
-        Func<IReadOnlyList<Track>, IReadOnlyList<LyricsFormat>>? detectFormats = null)
+        Func<IReadOnlyList<Track>, IReadOnlyList<LyricsFormat>>? detectFormats = null,
+        Func<bool, Task<IReadOnlyList<Track>>>? suggest = null)
     {
         _library = library;
         _wordTimings = wordTimings;
         _detectFormats = detectFormats ?? (tracks => ExistingLyricsLoader.DetectFormats(tracks));
+        _suggest = suggest;
+        SuggestionsLoad = LoadSuggestionsAsync();
     }
 
     partial void OnSearchTextChanged(string value) => RefreshResults();
-    partial void OnWordTimingsChanged(bool value) => OnPropertyChanged(nameof(LineTimings));
+
+    partial void OnWordTimingsChanged(bool value)
+    {
+        OnPropertyChanged(nameof(LineTimings));
+        OnPropertyChanged(nameof(SuggestionsHeader));
+        // The format decides which songs count as missing.
+        SuggestionsLoad = LoadSuggestionsAsync();
+    }
+
     partial void OnSelectedCountChanged(int value)
     {
         OnPropertyChanged(nameof(HasSelection));
@@ -90,11 +118,33 @@ public partial class LyricsStudioPickerViewModel : ObservableObject
         OnPropertyChanged(nameof(AddButtonText));
     }
 
+    partial void OnIsLoadingSuggestionsChanged(bool value) => OnPropertyChanged(nameof(ShowPrompt));
+
+    private async Task LoadSuggestionsAsync()
+    {
+        if (_suggest is null) return;
+        var generation = ++_suggestGeneration;
+        IsLoadingSuggestions = true;
+        IReadOnlyList<Track> list;
+        try { list = await _suggest(WordTimings); }
+        catch { list = Array.Empty<Track>(); }
+        if (generation != _suggestGeneration) return;
+        _suggestions = list;
+        IsLoadingSuggestions = false;
+        if (QueryEmpty) RefreshResults();
+    }
+
     private void RefreshResults()
     {
         Results.Clear();
         var query = (SearchText ?? string.Empty).Trim();
-        if (query.Length > 0)
+        if (query.Length == 0)
+        {
+            foreach (var track in _suggestions.Take(MaxTrackRows))
+                Results.Add(RowForTrack(track));
+            ScanFormats();
+        }
+        else
         {
             foreach (var album in _library.Albums
                          .Where(a => Noctis.Helpers.SearchText.Matches(a.Name, query) || Noctis.Helpers.SearchText.Matches(a.Artist, query))
@@ -116,21 +166,35 @@ public partial class LyricsStudioPickerViewModel : ObservableObject
             foreach (var track in _library.Tracks
                          .Where(t => t.SourceType == SourceType.Local && PlaylistViewModel.MatchesSearch(t, query))
                          .Take(MaxTrackRows))
-            {
-                Results.Add(new LyricsStudioPickRow
-                {
-                    IsAlbum = false,
-                    Title = track.TitleDisplay,
-                    Subtitle = string.IsNullOrEmpty(track.Album) ? track.ArtistDisplay : $"{track.ArtistDisplay} · {track.Album}",
-                    ArtworkPath = track.AlbumArtworkPath,
-                    Tracks = new[] { track },
-                    IsSelected = _selectedIds.Contains(track.Id),
-                });
-            }
+                Results.Add(RowForTrack(track));
             ScanFormats();
         }
+        RaiseListState();
+    }
+
+    private LyricsStudioPickRow RowForTrack(Track track) => new()
+    {
+        IsAlbum = false,
+        Title = track.TitleDisplay,
+        Subtitle = string.IsNullOrEmpty(track.Album) ? track.ArtistDisplay : $"{track.ArtistDisplay} · {track.Album}",
+        ArtworkPath = track.AlbumArtworkPath,
+        Tracks = new[] { track },
+        IsSelected = _selectedIds.Contains(track.Id),
+    };
+
+    private void RaiseListState()
+    {
+        OnPropertyChanged(nameof(IsSuggesting));
         OnPropertyChanged(nameof(ShowPrompt));
         OnPropertyChanged(nameof(ShowNoResults));
+        RaiseSelectAllState();
+    }
+
+    private void RaiseSelectAllState()
+    {
+        OnPropertyChanged(nameof(HasSelectableResults));
+        OnPropertyChanged(nameof(AreAllResultsSelected));
+        OnPropertyChanged(nameof(SelectAllText));
     }
 
     /// <summary>Format detection reads sidecars from disk, so it runs off the UI thread and
@@ -169,19 +233,38 @@ public partial class LyricsStudioPickerViewModel : ObservableObject
     {
         if (row is null) return;
         var allIn = row.Tracks.All(t => _selectedIds.Contains(t.Id));
-        if (allIn)
-        {
-            foreach (var t in row.Tracks) _selectedIds.Remove(t.Id);
-            _picked.RemoveAll(t => row.Tracks.Any(r => r.Id == t.Id));
-        }
-        else
-        {
-            foreach (var t in row.Tracks)
-                if (_selectedIds.Add(t.Id)) _picked.Add(t);
-        }
+        if (allIn) Remove(row.Tracks); else Add(row.Tracks);
+        SyncSelection();
+    }
+
+    [RelayCommand]
+    private void ToggleSelectAll()
+    {
+        var songs = Results.Where(r => !r.IsAlbum).SelectMany(r => r.Tracks).ToList();
+        if (songs.Count == 0) return;
+        if (songs.All(t => _selectedIds.Contains(t.Id))) Remove(songs); else Add(songs);
+        SyncSelection();
+    }
+
+    private void Add(IEnumerable<Track> tracks)
+    {
+        foreach (var t in tracks)
+            if (_selectedIds.Add(t.Id)) _picked.Add(t);
+    }
+
+    private void Remove(IEnumerable<Track> tracks)
+    {
+        var ids = tracks.Select(t => t.Id).ToHashSet();
+        _selectedIds.ExceptWith(ids);
+        _picked.RemoveAll(t => ids.Contains(t.Id));
+    }
+
+    private void SyncSelection()
+    {
         foreach (var r in Results)
             r.IsSelected = r.Tracks.All(t => _selectedIds.Contains(t.Id));
         SelectedCount = _selectedIds.Count;
+        RaiseSelectAllState();
     }
 
     /// <summary>The songs ticked so far, in the order they were ticked.</summary>

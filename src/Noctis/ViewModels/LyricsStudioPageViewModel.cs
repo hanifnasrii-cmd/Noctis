@@ -91,6 +91,25 @@ public partial class LyricsStudioPageViewModel : ViewModelBase
         StatusText = string.Empty;
     }
 
+    /// <summary>
+    /// Choose songs, nothing typed: the songs that lack the chosen format, from the page's
+    /// cached format scan (a cold or stale cache is scanned first, off the UI thread, and
+    /// the counts refreshed with it).
+    /// </summary>
+    public async Task<IReadOnlyList<Track>> SuggestMissingAsync(bool wordTimings, int max)
+    {
+        var local = _library.Tracks.Where(t => t.SourceType == SourceType.Local).ToList();
+        if (_scanDirty || _scannedLocal is null || _scannedFormats is null || _scannedLocal.Count != local.Count)
+        {
+            var formats = await Task.Run(() => ExistingLyricsLoader.DetectFormats(local));
+            _scannedLocal = local;
+            _scannedFormats = formats;
+            _scanDirty = false;
+            Counts = SettingsViewModel.BuildLyricsStudioCounts(formats);
+        }
+        return PickMissing(_scannedLocal, _scannedFormats, wordTimings, max);
+    }
+
     private bool KeepsCustomQueue()
     {
         if (!_customQueue) return false;

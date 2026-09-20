@@ -11,6 +11,9 @@ namespace Noctis.Views;
 /// <summary>Sidebar Lyrics Studio page; the surface itself is <see cref="LyricsStudioPanel"/>.</summary>
 public partial class LyricsStudioView : UserControl
 {
+    /// <summary>How many missing-format songs the picker lists before any search.</summary>
+    private const int LyricsStudioPickerSuggestionCap = 80;
+
     public LyricsStudioView()
     {
         InitializeComponent();
@@ -29,7 +32,8 @@ public partial class LyricsStudioView : UserControl
             var library = App.Services?.GetService<ILibraryService>();
             if (library == null) return;
 
-            var vm = new LyricsStudioPickerViewModel(library, main.Settings.GetSettings().LyricsStudioWordTimings);
+            var vm = new LyricsStudioPickerViewModel(library, main.Settings.GetSettings().LyricsStudioWordTimings,
+                suggest: wordTimings => page.SuggestMissingAsync(wordTimings, LyricsStudioPickerSuggestionCap));
             vm.Confirmed += (_, pick) => page.UsePicked(pick.Tracks, pick.WordTimings);
             var dialog = new LyricsStudioPickerDialog { DataContext = vm };
             DialogHelper.SizeToOwner(dialog, owner);

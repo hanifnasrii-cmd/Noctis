@@ -1615,8 +1615,13 @@
   <data name="LyricsStudioPicker.LineTimings" xml:space="preserve"><value>Line timings · LRC</value><comment>Picker: format chip</comment></data>
   <data name="LyricsStudioPicker.Search" xml:space="preserve"><value>Search songs and albums…</value><comment>Picker search box</comment></data>
   <data name="LyricsStudioPicker.PromptTitle" xml:space="preserve"><value>Search for a song or an album</value><comment>Picker empty state</comment></data>
-  <data name="LyricsStudioPicker.PromptBody" xml:space="preserve"><value>An album adds every song in it. The pill on a song shows what it has now.</value><comment>Picker empty state</comment></data>
+  <data name="LyricsStudioPicker.PromptBody" xml:space="preserve"><value>Every local song already has this format. An album adds every song in it; the pill on a song shows what it has now.</value><comment>Picker empty state (also shown when nothing is missing)</comment></data>
   <data name="LyricsStudioPicker.Add" xml:space="preserve"><value>Add to Studio</value><comment>Picker confirm button</comment></data>
+  <data name="LyricsStudioPicker.MissingWord" xml:space="preserve"><value>WITHOUT WORD TIMINGS</value><comment>Picker: header over the suggestions when word timings is chosen</comment></data>
+  <data name="LyricsStudioPicker.MissingLine" xml:space="preserve"><value>WITHOUT TIMINGS</value><comment>Picker: header over the suggestions when line timings is chosen</comment></data>
+  <data name="LyricsStudioPicker.Scanning" xml:space="preserve"><value>Looking through the library…</value><comment>Picker: while the suggestions load</comment></data>
+  <data name="LyricsStudioPicker.SelectAll" xml:space="preserve"><value>Select all</value><comment>Picker footer</comment></data>
+  <data name="LyricsStudioPicker.DeselectAll" xml:space="preserve"><value>Deselect all</value><comment>Picker footer</comment></data>
   <data name="LyricsStudio.Queue" xml:space="preserve"><value>SONGS</value><comment>Queue column header</comment></data>
   <data name="LyricsStudio.ReviewEmptyTitle" xml:space="preserve"><value>Nothing to review yet</value><comment>Review pane empty state</comment></data>
   <data name="LyricsStudio.ReviewEmptyBody" xml:space="preserve"><value>Pick a song and press Start.</value><comment>Review pane empty state</comment></data>

@@ -159,16 +159,44 @@
                              BorderThickness="1.5"
                              MinHeight="0"
                              x:Name="SearchBox" />
+
+                    <!-- Nothing typed: the songs that lack the chosen format are listed ready to tick. -->
+                    <TextBlock Text="{Binding SuggestionsHeader}"
+                               IsVisible="{Binding IsSuggesting}"
+                               FontSize="11"
+                               FontWeight="Bold"
+                               Opacity="0.55"
+                               LetterSpacing="0.5" />
+                    <StackPanel Orientation="Horizontal" Spacing="8" IsVisible="{Binding IsLoadingSuggestions}">
+                        <TextBlock Text="{loc:T LyricsStudioPicker.Scanning}" FontSize="11" Opacity="0.55" VerticalAlignment="Center" />
+                    </StackPanel>
                 </StackPanel>
 
-                <!-- Footer: count / Cancel / Add -->
+                <!-- Footer: Select all / count / Cancel / Add -->
                 <Border DockPanel.Dock="Bottom" Padding="24,12,24,16">
-                    <Grid ColumnDefinitions="*,Auto,Auto">
-                        <TextBlock Grid.Column="0" Text="{Binding SelectionText}"
+                    <Grid ColumnDefinitions="Auto,*,Auto,Auto">
+                        <Button Grid.Column="0"
+                                HorizontalAlignment="Left"
+                                IsVisible="{Binding HasSelectableResults}"
+                                Background="Transparent"
+                                BorderThickness="0"
+                                CornerRadius="999"
+                                Padding="10,6"
+                                Margin="-10,0,8,0"
+                                MinHeight="0"
+                                Cursor="Hand"
+                                Command="{Binding ToggleSelectAllCommand}">
+                            <TextBlock Text="{Binding SelectAllText}"
+                                       FontSize="12"
+                                       FontWeight="SemiBold"
+                                       Opacity="0.6"
+                                       VerticalAlignment="Center" />
+                        </Button>
+                        <TextBlock Grid.Column="1" Text="{Binding SelectionText}"
                                    FontSize="12" FontWeight="SemiBold" Opacity="0.6"
                                    VerticalAlignment="Center"
                                    IsVisible="{Binding HasSelection}" />
-                        <Button Grid.Column="1"
+                        <Button Grid.Column="2"
                                 Content="{loc:T AddSongs.Cancel}"
                                 Command="{Binding CancelCommand}"
                                 Width="100" Padding="0,8"
@@ -177,7 +205,7 @@
                                 CornerRadius="999"
                                 Margin="0,0,8,0"
                                 Cursor="Hand" />
-                        <Button Grid.Column="2"
+                        <Button Grid.Column="3"
                                 Content="{Binding AddButtonText}"
                                 Command="{Binding ConfirmCommand}"
                                 IsEnabled="{Binding HasSelection}"
