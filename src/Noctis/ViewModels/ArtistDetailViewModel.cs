@@ -517,7 +517,7 @@ public partial class ArtistDetailViewModel : ViewModelBase, ISearchable, IDispos
         ReplaceAlbums(AppearsOn, _allAppearsOn.Where(a => AlbumMatches(a, q)).ToList());
 
         if (IsTabSongs) FillAllSongs();
-        else { _allSongsRanking = null; AllSongs.ReplaceAll(Array.Empty<TopSongRow>()); OnPropertyChanged(nameof(HasAllSongs)); }
+        else { _allSongsRanking = null; ++_songsGeneration; AllSongs.ReplaceAll(Array.Empty<TopSongRow>()); OnPropertyChanged(nameof(HasAllSongs)); }
 
         OnPropertyChanged(nameof(HasPopular));
         OnPropertyChanged(nameof(HasFavorites));

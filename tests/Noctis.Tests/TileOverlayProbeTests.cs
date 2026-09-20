@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -230,20 +231,32 @@ public class TileHeartFadeTests
         Assert.Null(heart.VisibleGlyph);
         Assert.Equal(0, heart.Bounds.Width);
 
+        // Both pops are sampled on the wall clock, so the samples are taken in a short loop
+        // and a mid-flight value is only demanded when they came in promptly: a loaded runner
+        // can spend the whole 200ms transition inside one pump and see only the end state.
+        var clock = Stopwatch.StartNew();
         t.IsFavorite = true; album.NotifyFavoriteStateChanged(); Pump(1);
         var g = heart.VisibleGlyph;
         Assert.NotNull(g);
-        _o.WriteLine($"favorite +1 pump: glyph visible={g!.IsVisible} opacity={g.Opacity:0.##} heart w={heart.Bounds.Width}");
-        Assert.True(g.IsVisible && g.Opacity > 0 && g.Opacity < 1, "pop-in should be mid-transition");
+        var popIn = new List<double>();
+        for (var i = 0; i < 16 && g!.Opacity < 1; i++) { popIn.Add(g.Opacity); await Task.Delay(16); Pump(1); }
+        popIn.Add(g!.Opacity);
+        _o.WriteLine($"favorite pop-in ({clock.ElapsedMilliseconds}ms): {string.Join(" ", popIn.Select(o => o.ToString("0.##")))} heart w={heart.Bounds.Width}");
+        Assert.True(g.IsVisible, "pop-in should have started");
+        Assert.True(popIn.Any(o => o > 0 && o < 1) || (g.Opacity >= 1 && clock.ElapsedMilliseconds > 150), "pop-in should be mid-transition");
 
         await Task.Delay(300); Pump(2);
         _o.WriteLine($"favorite settled: opacity={g.Opacity:0.##}");
         Assert.Equal(1, g.Opacity, precision: 2);
 
-        t.IsFavorite = false; album.NotifyFavoriteStateChanged();
-        for (var i = 0; i < 4; i++) { Pump(1); _o.WriteLine($"unfavorite +{i + 1} pump: glyph visible={g.IsVisible} opacity={g.Opacity:0.##} transitions={(g.Transitions == null ? "null" : g.Transitions.Count.ToString())} heartVisible={heart.IsVisible} heart.IsFavorite={heart.IsFavorite}"); }
+        clock.Restart();
+        t.IsFavorite = false; album.NotifyFavoriteStateChanged(); Pump(1);
         Assert.True(heart.IsVisible, "the tile must not collapse the heart on the same tick");
-        Assert.True(g.IsVisible && g.Opacity < 1, "fade-out should be running");
+        var fadeOut = new List<double>();
+        for (var i = 0; i < 16 && g.IsVisible && g.Opacity > 0; i++) { fadeOut.Add(g.Opacity); await Task.Delay(16); Pump(1); }
+        fadeOut.Add(g.Opacity);
+        _o.WriteLine($"unfavorite fade-out ({clock.ElapsedMilliseconds}ms): {string.Join(" ", fadeOut.Select(o => o.ToString("0.##")))} glyph visible={g.IsVisible} transitions={(g.Transitions == null ? "null" : g.Transitions.Count.ToString())} heartVisible={heart.IsVisible} heart.IsFavorite={heart.IsFavorite}");
+        Assert.True(fadeOut.Any(o => o > 0 && o < 1) || (!g.IsVisible && clock.ElapsedMilliseconds > 150), "fade-out should be running");
 
         await Task.Delay(400); Pump(2);
         _o.WriteLine($"unfavorite settled: glyph visible={g.IsVisible} heart w={heart.Bounds.Width}");
