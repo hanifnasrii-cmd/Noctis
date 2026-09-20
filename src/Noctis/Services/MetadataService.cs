@@ -105,7 +105,10 @@ public class MetadataService : IMetadataService
 
         try
         {
-            using var file = TagLib.File.Create(filePath);
+            // PictureLazy: pictures load only when SelectBestEmbeddedPicture reads
+            // their bytes below, so a file whose art is not wanted (embedded artwork
+            // off) never materialises it.
+            using var file = TagLib.File.Create(filePath, TagLib.ReadStyle.Average | TagLib.ReadStyle.PictureLazy);
 
             var tag = file.Tag;
             var props = file.Properties;
@@ -601,7 +604,8 @@ public class MetadataService : IMetadataService
     {
         try
         {
-            using var file = TagLib.File.Create(filePath);
+            // Properties only: never load the embedded pictures.
+            using var file = TagLib.File.Create(filePath, TagLib.ReadStyle.Average | TagLib.ReadStyle.PictureLazy);
             var props = file.Properties;
             var fileInfo = new FileInfo(filePath);
             var ext = Path.GetExtension(filePath).ToLowerInvariant();

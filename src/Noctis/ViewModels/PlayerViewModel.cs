@@ -60,6 +60,18 @@ public partial class PlayerViewModel : ViewModelBase
     [ObservableProperty] private int _volume = 75;
     [ObservableProperty] private bool _isMuted;
     [ObservableProperty] private Bitmap? _albumArt;
+
+    /// <summary>
+    /// The cover is a shared <see cref="ArtworkCache"/> bitmap. Registering this
+    /// holder is what keeps the cache from disposing it under the lyrics backdrops
+    /// while it is the current track, and releasing the old one lets an evicted
+    /// cover actually go away on the next track change.
+    /// </summary>
+    partial void OnAlbumArtChanged(Bitmap? oldValue, Bitmap? newValue)
+    {
+        ArtworkCache.Acquire(newValue);
+        ArtworkCache.Release(oldValue);
+    }
     [ObservableProperty] private string? _currentAnimatedCoverPath;
 
     // ── Music video (Discord, aaron 09-15): a clip next to the song replaces the cover
@@ -2178,7 +2190,7 @@ public partial class PlayerViewModel : ViewModelBase
     /// decoding the same cover at a player-only size. Mismatched sizes caused
     /// visible cache-miss decodes — the artwork "flicker" on track switch.
     /// </summary>
-    private const int PlayerArtDecodeWidth = 768;
+    private const int PlayerArtDecodeWidth = 512;
 
     /// <summary>Bumped on every <see cref="LoadAlbumArt"/> call so a slow background
     /// decode that finishes after the track changed again is discarded.</summary>

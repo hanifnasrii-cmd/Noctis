@@ -594,6 +594,9 @@ public class LibraryService : ILibraryService
         }, ct);
 
         LibraryUpdated?.Invoke(this, EventArgs.Empty);
+        // Tag reads and artwork extraction above leave large dead arrays behind;
+        // every caller (startup, Settings rescan, folder watcher) gets the trim.
+        MemoryTrim.RequestAfterIdle("scan");
     }
 
     /// <summary>
@@ -1322,6 +1325,12 @@ public class LibraryService : ILibraryService
                 catch (Exception ex)
                 {
                     System.Diagnostics.Debug.WriteLine($"[LibraryService] Background init failed: {ex.Message}");
+                }
+                finally
+                {
+                    // The backfill reads whole embedded covers (tens of MB each) that die
+                    // as soon as it moves on; hand that garbage back once it is over.
+                    MemoryTrim.RequestAfterIdle("library background init");
                 }
             });
         }

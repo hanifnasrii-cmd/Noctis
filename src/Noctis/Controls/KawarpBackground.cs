@@ -135,7 +135,9 @@ public sealed class KawarpBackground : Control
         {
             try
             {
-                using var decoded = SKBitmap.Decode(path);
+                // The store keeps originals (5000px covers are common); the shader
+                // works from ArtSize, so decode subsampled instead of at native size.
+                using var decoded = Helpers.SkiaArtworkDecoder.DecodeSubsampled(path, ArtSize * 4);
                 if (decoded is null) return;
                 using var prepared = KawarpShader.PrepareArtwork(decoded, ArtSize, passes);
                 var image = new SharedImage(SKImage.FromBitmap(prepared));

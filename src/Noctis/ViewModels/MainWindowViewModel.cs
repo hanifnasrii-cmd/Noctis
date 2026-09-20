@@ -623,6 +623,7 @@ public partial class MainWindowViewModel : ViewModelBase
                 try
                 {
                     await _library.ScanAsync(Settings.GetSettings().MusicFolders);
+                    Services.MemoryTrim.RequestAfterIdle("startup scan");
                 }
                 catch (Exception ex)
                 {
@@ -706,6 +707,10 @@ public partial class MainWindowViewModel : ViewModelBase
             // that first click as instant as the cached reuse on later clicks.
             Dispatcher.UIThread.Post(() => App.CachedLocator?.Build(_lyricsVm), DispatcherPriority.Background);
         });
+
+        // The load/scan/backfill burst above leaves a lot of dead large arrays behind;
+        // hand them back once everything has gone quiet (see MemoryTrim).
+        Services.MemoryTrim.RequestAfterIdle("startup");
 
         // Refresh non-visible content VMs so their data is ready when navigated to.
         // These are data-only refreshes (no visual tree work), so they're cheap.

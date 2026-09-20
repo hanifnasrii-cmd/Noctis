@@ -155,9 +155,12 @@ internal class Program
             // The default (~64 MB) is small for an image-heavy music library —
             // when album-art textures exceed it during scroll, the GPU evicts
             // older textures and we re-upload them on the next frame, which is
-            // what causes scroll stutter on the album grid. 256 MB comfortably
-            // holds the visible+nearby cover textures for a 10K-track library.
-            .With(new SkiaOptions { MaxGpuResourceSizeBytes = 256L * 1024 * 1024 })
+            // what causes scroll stutter on the album grid. Covers are now decoded
+            // at the size they draw at (a 2x album tile is ~0.6 MB, not 2.4 MB), so
+            // 128 MB holds the visible+nearby textures for a 10K-track library with
+            // room to spare; on integrated GPUs and the software path this cache is
+            // host RAM, which is why it is not larger.
+            .With(new SkiaOptions { MaxGpuResourceSizeBytes = 128L * 1024 * 1024 })
             .LogToTrace();
 
         // LogToTrace installed its sink; wrap it so Avalonia's own warnings and

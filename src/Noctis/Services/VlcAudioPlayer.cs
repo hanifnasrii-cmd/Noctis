@@ -2047,7 +2047,10 @@ public class VlcAudioPlayer : IAudioPlayer
     {
         try
         {
-            using var file = TagLib.File.Create(filePath);
+            // PictureLazy: this runs on every track start and only wants two text
+            // frames. The default read style materialises every embedded picture
+            // (a 16 MB cover PNG became a 16 MB dead array per track change).
+            using var file = TagLib.File.Create(filePath, TagLib.ReadStyle.Average | TagLib.ReadStyle.PictureLazy);
             double? track = null, album = null;
 
             if (file.GetTag(TagLib.TagTypes.Id3v2, false) is TagLib.Id3v2.Tag id3)
