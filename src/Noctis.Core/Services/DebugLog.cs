@@ -130,16 +130,27 @@ public static class DebugLog
         Changed?.Invoke();
     }
 
+    /// <summary>
+    /// Produces the header lines that open every log (product, version, install
+    /// source). The desktop app installs its own (UpdateService knows the release
+    /// channel and installer); the default names the entry assembly, which is what a
+    /// headless host wants. Must be set before the first write.
+    /// </summary>
+    public static Func<string> DescribeBuild { get; set; } = () =>
+    {
+        var asm = System.Reflection.Assembly.GetEntryAssembly();
+        var name = asm?.GetName();
+        return $"{name?.Name ?? "Noctis"} {name?.Version?.ToString(3) ?? "?"}";
+    };
+
     private static void SeedLocked()
     {
         if (_seeded) return;
         _seeded = true;
 
-        var v = UpdateService.CurrentVersion;
-        Lines.Add($"Noctis {v.Major}.{v.Minor}.{v.Build}" +
-                  (UpdateService.IsPrereleaseBuild ? " (pre-release)" : ""));
+        foreach (var line in DescribeBuild().Split('\n', StringSplitOptions.RemoveEmptyEntries))
+            Lines.Add(line);
         Lines.Add($"{RuntimeInformation.OSDescription} ({RuntimeInformation.OSArchitecture})");
-        Lines.Add($"Install source: {UpdateService.Source}");
         // An AppImage's BaseDirectory is its throwaway /tmp squashfs mount, so
         // prefer $APPIMAGE (the real on-disk file) when set.
         var appImage = Environment.GetEnvironmentVariable("APPIMAGE");

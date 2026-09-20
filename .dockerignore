@@ -1,0 +1,15 @@
+**/bin/
+**/obj/
+**/publish/
+**/.vs/
+**/artifacts*/
+.git/
+.github/
+.claude/
+tests/
+samples/
+plugins/
+release-v*/
+src/Noctis/
+docs/
+*.md

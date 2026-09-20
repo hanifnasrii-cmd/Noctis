@@ -1,12 +1,16 @@
-using Avalonia.Threading;
 using Noctis.Models;
 
 namespace Noctis.Services.Server;
 
 /// <summary>
-/// <see cref="IServerLibrary"/> over the live app services. Reads copy the collections on the
-/// UI thread (they are mutated there by scans and edits); writes go through the same paths
-/// the desktop UI uses so favourites, play counts and playlists stay in one place.
+/// The <see cref="IServerLibrary"/> the OpenSubsonic server talks to: reads and mutates
+/// the live <see cref="ILibraryService"/> and the playlist store on behalf of remote
+/// clients, and lands sync winners.
+///
+/// Library mutations go through <c>marshal</c>, the host's choice of thread: the
+/// desktop app passes a lambda that hops onto the Avalonia dispatcher (the library's
+/// collections are bound to views), the headless host passes one that serialises
+/// through a lock. Requests arrive on Kestrel threads either way.
 /// </summary>
 public sealed class LibraryServerAdapter : IServerLibrary
 {
@@ -14,23 +18,47 @@ public sealed class LibraryServerAdapter : IServerLibrary
     private readonly IPersistenceService _persistence;
     private readonly IPlayHistoryService _playHistory;
     private readonly Func<Task>? _playlistsChanged;
+    private readonly Func<Func<Task>, Task> _marshal;
 
-    /// <param name="playlistsChanged">Invoked on the UI thread after a playlist write so the sidebar reloads.</param>
-    public LibraryServerAdapter(ILibraryService library, IPersistenceService persistence, IPlayHistoryService playHistory, Func<Task>? playlistsChanged = null)
+    /// <param name="marshal">
+    /// Runs a library mutation on the thread that owns the library. Null serialises
+    /// mutations through a lock, which is right for a host with no UI thread.
+    /// </param>
+    public LibraryServerAdapter(ILibraryService library, IPersistenceService persistence, IPlayHistoryService playHistory,
+        Func<Task>? playlistsChanged = null, Func<Func<Task>, Task>? marshal = null)
     {
         _library = library;
         _persistence = persistence;
         _playHistory = playHistory;
         _playlistsChanged = playlistsChanged;
+        _marshal = marshal ?? SerialisingMarshaller();
     }
 
-    private static Task<T> Ui<T>(Func<T> f) => Dispatcher.UIThread.CheckAccess() ? Task.FromResult(f()) : Dispatcher.UIThread.InvokeAsync(f).GetTask();
-    private static Task Ui(Func<Task> f) => Dispatcher.UIThread.CheckAccess() ? f() : Dispatcher.UIThread.InvokeAsync(f);
+    /// <summary>One mutation at a time, on whatever thread called; for hosts without a UI thread.</summary>
+    public static Func<Func<Task>, Task> SerialisingMarshaller()
+    {
+        var gate = new SemaphoreSlim(1, 1);
+        return async work =>
+        {
+            await gate.WaitAsync().ConfigureAwait(false);
+            try { await work().ConfigureAwait(false); }
+            finally { gate.Release(); }
+        };
+    }
+
+    private Task Run(Func<Task> work) => _marshal(work);
+
+    private async Task<T> Run<T>(Func<T> read)
+    {
+        T result = default!;
+        await _marshal(() => { result = read(); return Task.CompletedTask; }).ConfigureAwait(false);
+        return result;
+    }
 
     public async Task<LibrarySnapshot> SnapshotAsync()
     {
         var playlists = await _persistence.LoadPlaylistsAsync().ConfigureAwait(false);
-        return await Ui(() => new LibrarySnapshot(
+        return await Run(() => new LibrarySnapshot(
             _library.Tracks.ToList(),
             _library.Albums.ToList(),
             _library.Artists.ToList(),
@@ -44,7 +72,7 @@ public sealed class LibraryServerAdapter : IServerLibrary
     }
 
     public Task SetStarredAsync(IReadOnlyList<Guid> trackIds, IReadOnlyList<Guid> albumIds, IReadOnlyList<Guid> artistIds, bool starred)
-        => Ui(async () =>
+        => Run(async () =>
         {
             var ids = new HashSet<Guid>(trackIds);
             var albumSet = new HashSet<Guid>(albumIds);
@@ -65,7 +93,7 @@ public sealed class LibraryServerAdapter : IServerLibrary
         });
 
     public Task ScrobbleAsync(Guid trackId)
-        => Ui(async () =>
+        => Run(async () =>
         {
             // Same bookkeeping as PlayerViewModel when a track starts on the desktop.
             var track = _library.GetTrackById(trackId);
@@ -111,12 +139,12 @@ public sealed class LibraryServerAdapter : IServerLibrary
         return true;
     }
 
-    private Task NotifyPlaylists() => _playlistsChanged is null ? Task.CompletedTask : Ui(_playlistsChanged);
+    private Task NotifyPlaylists() => _playlistsChanged is null ? Task.CompletedTask : Run(_playlistsChanged);
 
     // ── Sync (Account & Sync): remote state that won last-writer-wins lands here ──
 
     public Task ApplyTrackStateAsync(Guid trackId, Sync.TrackSyncState state)
-        => Ui(async () =>
+        => Run(async () =>
         {
             var track = _library.GetTrackById(trackId);
             if (track is null) return;

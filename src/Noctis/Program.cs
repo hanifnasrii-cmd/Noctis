@@ -19,6 +19,8 @@ internal class Program
     public static void Main(string[] args)
     {
         Services.StartupTrace.Begin();
+        // The core's log header must name this app, not the core assembly.
+        Services.DebugLog.DescribeBuild = Services.UpdateService.DescribeBuild;
         try
         {
             // Explicit STA setup required for Windows OLE drag-and-drop from external apps

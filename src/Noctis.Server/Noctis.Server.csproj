@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- Headless Noctis: the OpenSubsonic server, library scanner and device sync
+         from Noctis.Core, hosted as a console app for a NAS, a VPS or Docker. No
+         Avalonia, no LibVLC, no Whisper: any Subsonic client (Symfonium, substreamer,
+         Feishin, Amperfy, ...) browses, searches, streams, stars and scrobbles. -->
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>Noctis.Server</RootNamespace>
+    <AssemblyName>noctis-server</AssemblyName>
+    <Version>1.4.7</Version>
+    <InvariantGlobalization>false</InvariantGlobalization>
+    <RuntimeIdentifiers>linux-x64;linux-arm64;win-x64;osx-arm64;osx-x64</RuntimeIdentifiers>
+    <PublishReadyToRun>true</PublishReadyToRun>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Noctis.Core\Noctis.Core.csproj" />
+  </ItemGroup>
+
+</Project>

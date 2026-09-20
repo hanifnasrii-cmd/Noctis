@@ -808,8 +808,11 @@ public partial class SettingsViewModel : ViewModelBase
             RefreshServerUsers();
             if (_noctisServer is null)
             {
+                // The library's collections are bound to views: mutations from Kestrel
+                // threads hop onto the dispatcher (the headless host serialises instead).
                 var adapter = new LibraryServerAdapter(_library, _persistence, _playHistory,
-                    () => App.Services?.GetService<MainWindowViewModel>()?.Sidebar.LoadPlaylistsAsync() ?? Task.CompletedTask);
+                    () => App.Services?.GetService<MainWindowViewModel>()?.Sidebar.LoadPlaylistsAsync() ?? Task.CompletedTask,
+                    marshal: work => Dispatcher.UIThread.CheckAccess() ? work() : Dispatcher.UIThread.InvokeAsync(work));
                 _noctisServer = new NoctisServer(adapter, ServerUsers, UpdateService.CurrentVersionDisplay, Sync);
                 _noctisServer.ClientAuthenticated += (_, user) => Dispatcher.UIThread.Post(() => OnNoctisServerClient(user));
             }

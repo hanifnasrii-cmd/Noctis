@@ -50,14 +50,14 @@ public class MemoryTrimTests
         Assert.Contains("MemoryTrim.RequestAfterIdle(\"startup scan\")", vm);
         // The artwork backfill is a fire-and-forget task started by the library load,
         // outside both of the above; it produces most of the dead cover arrays.
-        var lib = File.ReadAllText(Path.Combine(FindRepoRoot(), "src", "Noctis", "Services", "LibraryService.cs"));
+        var lib = File.ReadAllText(Path.Combine(FindRepoRoot(), "src", "Noctis.Core", "Services", "LibraryService.cs"));
         Assert.Contains("MemoryTrim.RequestAfterIdle(\"library background init\")", lib);
     }
 
     [Theory]
     [InlineData("Services/VlcAudioPlayer.cs", "ReadReplayGainTags(")]
-    [InlineData("Services/MetadataService.cs", "ReadFileInfo(")]
-    [InlineData("Services/MetadataService.cs", "ReadTrackMetadata(string filePath, out byte[]? embeddedArt)")]
+    [InlineData("../Noctis.Core/Services/MetadataService.cs", "ReadFileInfo(")]
+    [InlineData("../Noctis.Core/Services/MetadataService.cs", "ReadTrackMetadata(string filePath, out byte[]? embeddedArt)")]
     public void TagReadsThatDoNotNeedPictures_OpenFilesWithPictureLazy(string relPath, string method)
     {
         var src = File.ReadAllText(Path.Combine(FindRepoRoot(), "src", "Noctis", relPath.Replace('/', Path.DirectorySeparatorChar)));

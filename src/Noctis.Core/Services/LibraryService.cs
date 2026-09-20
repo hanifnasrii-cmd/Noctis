@@ -748,7 +748,7 @@ public class LibraryService : ILibraryService
         }
 
         _persistence.SaveArtwork(albumId, freshBytes);
-        ArtworkCache.Invalidate(artPath);
+        ArtworkFileReplaced?.Invoke(artPath);
         return true;
     }
 
@@ -1271,6 +1271,14 @@ public class LibraryService : ILibraryService
         if (removedFolders > 0)
             MusicFoldersChanged?.Invoke(this, settings.MusicFolders.ToList());
     }
+
+    /// <summary>
+    /// Raised with the artwork file path after a cached cover is rewritten on disk.
+    /// The desktop app drops its decoded bitmaps for that path (ArtworkCache); a
+    /// headless host has nothing to drop. Static so the core stays free of the UI's
+    /// bitmap cache and the app can subscribe once at startup.
+    /// </summary>
+    public static event Action<string>? ArtworkFileReplaced;
 
     public async Task LoadAsync()
     {

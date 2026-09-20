@@ -24,7 +24,7 @@ internal class TestPersistenceService : IPersistenceService, IDisposable
     public Task<List<Track>?> LoadLibraryAsync() => Task.FromResult<List<Track>?>(new List<Track>());
     public Task SaveLibraryAsync(List<Track> tracks) => Task.CompletedTask;
     public virtual Task<List<Playlist>> LoadPlaylistsAsync() => Task.FromResult(new List<Playlist>());
-    public Task SavePlaylistsAsync(List<Playlist> playlists) => Task.CompletedTask;
+    public virtual Task SavePlaylistsAsync(List<Playlist> playlists) => Task.CompletedTask;
     public Task<QueueState?> LoadQueueStateAsync() => Task.FromResult<QueueState?>(null);
     public Task SaveQueueStateAsync(QueueState state) => Task.CompletedTask;
     public Task<LibraryIndexCache?> LoadIndexCacheAsync() => Task.FromResult<LibraryIndexCache?>(null);
