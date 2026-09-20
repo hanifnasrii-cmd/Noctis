@@ -152,6 +152,7 @@
   <data name="Settings.PreRelease2" xml:space="preserve"><value>Pre-release</value><comment>Text in SettingsView.axaml</comment></data>
   <data name="Settings.Latest" xml:space="preserve"><value>Latest</value><comment>Text in SettingsView.axaml</comment></data>
   <data name="Settings.Installed" xml:space="preserve"><value>Installed</value><comment>Text in SettingsView.axaml</comment></data>
+  <data name="Settings.ComingSoon" xml:space="preserve"><value>Coming soon</value><comment>Badge on parked Account &amp; Sync cards in SettingsView.axaml</comment></data>
   <data name="Settings.SessionLogTroubleshootingShare" xml:space="preserve"><value>Session log for bug reports.</value><comment>Text in SettingsView.axaml</comment></data>
   <data name="Settings.CopyLogs" xml:space="preserve"><value>Copy Logs</value><comment>Text in SettingsView.axaml</comment></data>
   <data name="Settings.Clear" xml:space="preserve"><value>Clear</value><comment>Text in SettingsView.axaml</comment></data>

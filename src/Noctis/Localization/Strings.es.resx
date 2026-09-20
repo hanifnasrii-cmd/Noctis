@@ -72,4 +72,5 @@
   <data name="Settings.LyricsMinLineOpacity" xml:space="preserve"><value>Opacidad mínima de las líneas</value></data>
   <data name="Settings.LyricsMinLineOpacityHint" xml:space="preserve"><value>Mantiene todas las líneas de la letra ligeramente visibles para que puedas hacer clic en cualquiera y saltar ahí. 0% oculta las líneas lejanas a la actual.</value></data>
   <data name="Settings.BlurredAlbumArtworkDrifts" xml:space="preserve"><value>Desactivado mantiene la portada difuminada quieta. Deriva la hace flotar y latir con el ritmo en la página de letras, el panel de letras y el minirreproductor. Kawarp funde la portada en un flujo líquido lento en la página de letras, con o sin ritmo. Los estilos de plugins (Ajustes → Plugins) también aparecen aquí. Solo con fondo de portada.</value></data>
+  <data name="Settings.ComingSoon" xml:space="preserve"><value>Próximamente</value><comment>Badge on parked Account &amp; Sync cards in SettingsView.axaml</comment></data>
 </root>
