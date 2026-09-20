@@ -131,10 +131,18 @@ public static class SmoothScrollBehavior
         if (state == null || scrollViewer == null || scrollViewer.Extent.Height <= scrollViewer.Viewport.Height)
             return;
 
-        // Wheel over a nested scrollable region: leave the event alone so the inner
-        // ScrollViewer scrolls instead of the page.
         if (e.Source is Visual source)
         {
+            // Wheel over a popup (a ComboBox drop-down, a flyout): its events bubble through
+            // the owner into this page, but the pointer is over the popup, not the page.
+            // Scrolling the page here moved the Settings content out from under an open
+            // Language list while the popup stayed put (09-19 report).
+            if (!ReferenceEquals(source.GetVisualRoot(), element.GetVisualRoot())
+                || source.FindAncestorOfType<OverlayPopupHost>() != null)
+                return;
+
+            // Wheel over a nested scrollable region: leave the event alone so the inner
+            // ScrollViewer scrolls instead of the page.
             var inner = source as ScrollViewer ?? source.FindAncestorOfType<ScrollViewer>();
             if (inner != null && inner != scrollViewer && inner.Extent.Height > inner.Viewport.Height)
                 return;
