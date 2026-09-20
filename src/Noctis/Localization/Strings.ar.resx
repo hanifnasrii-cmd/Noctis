@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!--
     English UI strings — the fallback every other language falls back to.
@@ -48,6 +48,10 @@
     <value>المؤثرات البصرية</value>
     <comment>Sidebar</comment>
   </data>
+  <data name="Nav.LyricsStudio" xml:space="preserve">
+    <value>استوديو الكلمات</value>
+    <comment>Sidebar</comment>
+  </data>
   <data name="Nav.Settings" xml:space="preserve">
     <value>الإعدادات</value>
     <comment>Sidebar</comment>
@@ -69,15 +73,11 @@
     <value>اللغة</value>
   </data>
   <data name="Settings.Language.Description" xml:space="preserve">
-    <value>لغة قوائم التطبيق وعناوينه. الترجمات من إنجاز المجتمع؛ يمكنك المساعدة عبر الرابط أدناه.</value>
+    <value>القوائم والعلامات. يتم ترجمة من قبل المجتمع.</value>
   </data>
   <data name="Settings.Language.System" xml:space="preserve">
     <value>لغة النظام</value>
     <comment>Picker entry: follow the OS language</comment>
-  </data>
-  <data name="Settings.Language.Help" xml:space="preserve">
-    <value>ساعد في ترجمة Noctis</value>
-    <comment>Button</comment>
   </data>
   <!-- Visualizer page -->
   <data name="Visualizer.Title" xml:space="preserve">
@@ -85,6 +85,10 @@
   </data>
   <data name="Visualizer.Empty" xml:space="preserve">
     <value>شغّل شيئًا لتراه يتحرك.</value>
+  </data>
+  <data name="Visualizer.NowPlaying" xml:space="preserve">
+    <value>اللعب الآن</value>
+    <comment>Text in VisualizerView.axaml</comment>
   </data>
   <data name="Visualizer.Style.Bars" xml:space="preserve">
     <value>أعمدة</value>
@@ -100,7 +104,7 @@
     <value>استيراد قائمة تشغيل</value>
   </data>
   <data name="Import.Subtitle" xml:space="preserve">
-    <value>Import an M3U playlist, Exportify CSV or TuneMyMusic JSON export, or paste a Deezer or TIDAL playlist link, and match it against your library.</value>
+    <value>احضر قائمة تشغيل من ملف أو رابط Deezer/TIDAL.</value>
   </data>
   <data name="Import.ChooseFile" xml:space="preserve">
     <value>اختيار ملف…</value>
@@ -109,7 +113,7 @@
     <value>أو أفلت ملف .csv / .json / .m3u في أي مكان من هذه النافذة</value>
   </data>
   <data name="Import.LinkLabel" xml:space="preserve">
-    <value>Or paste a playlist link (Deezer and TIDAL import directly)</value>
+    <value>أو لصق رابط قائمة التشغيل (استيراد Deezer and TIDAL مباشرة)</value>
   </data>
   <data name="Import.LinkButton" xml:space="preserve">
     <value>استيراد الرابط</value>
@@ -169,7 +173,7 @@
     <comment>ToolTip.Tip in SettingsView.axaml</comment>
   </data>
   <data name="Settings.Name" xml:space="preserve">
-    <value>اسمك</value>
+    <value>اسم المستخدم</value>
     <comment>Watermark in SettingsView.axaml</comment>
   </data>
   <data name="Settings.ClickEditNameTip" xml:space="preserve">
@@ -185,7 +189,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.AddNoctisWindowsOpen" xml:space="preserve">
-    <value>أضف Noctis إلى قائمة "فتح باستخدام" والتطبيقات الافتراضية في Windows لصيغ MP3 وFLAC وM4A وOGG وWAV وغيرها من الصيغ التي يشغّلها. بعد ذلك يتيح لك Windows اختياره تطبيقًا افتراضيًا.</value>
+    <value>إضافة نوكتيب إلى قائمة ويندوز مفتوحة مع التطبيقات الافتراضية للصيغ التي تشغلها.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.Register" xml:space="preserve">
@@ -201,7 +205,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.ControlHowNoctisStarts" xml:space="preserve">
-    <value>تحكّم في طريقة بدء Noctis وفيما يفعله زرا التصغير والإغلاق.</value>
+    <value>كيف تبدأ كرة القدم وما الذي يقلل ويغلق.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.OpenNoctisWhenComputer" xml:space="preserve">
@@ -225,7 +229,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.ReopenLastTrackPlaybar" xml:space="preserve">
-    <value>يُعاد الفتح وآخر مقطع في شريط التشغيل، متوقفًا مؤقتًا حيث توقفت.</value>
+    <value>أعد الفتح مع آخر مسار تم تحميله وإيقافه.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.TextAnimation" xml:space="preserve">
@@ -233,7 +237,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.ControlHowLongText" xml:space="preserve">
-    <value>تحكّم في طريقة تمرير النصوص الطويلة في شريط التشغيل و"التالي" والقوائم.</value>
+    <value>مرر عناوين طويلة غير مناسبة.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.PLAYERBAR" xml:space="preserve">
@@ -293,7 +297,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.ShowOneTilePer" xml:space="preserve">
-    <value>يعرض بطاقة واحدة لكل إصدار؛ وتظهر الإصدارات الأخرى ضمن "إصدارات أخرى" في صفحة الألبوم.</value>
+    <value>مربع واحد لكل إصدار. إصدارات أخرى تظهر تحت &quot;إصدارات أخرى&quot;.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.MergeFeaturedArtistsFrom" xml:space="preserve">
@@ -301,7 +305,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.TurnFeatXTrack" xml:space="preserve">
-    <value>يحوّل "(feat. X)" في عناوين المقاطع إلى أسماء فنانين مشاركين.</value>
+    <value>تحويل &quot;(الميزة X)&quot; في العناوين إلى رصيد الفنانين.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.GroupArtistsBy" xml:space="preserve">
@@ -309,7 +313,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.WhichTagArtistsSection" xml:space="preserve">
-    <value>الوسم الذي يعتمده قسم الفنانين لتصنيف الأغاني. خيار "فنان الألبوم" يُبقي المجمّعات معًا ويتجاهل المشاركات الخاصة بكل مقطع.</value>
+    <value>يبقي فنان الألبوم التجميع معًا ويتجاهل ميزات المسار الواحد.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.FirstCreditedArtistEachTip" xml:space="preserve">
@@ -341,7 +345,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.TextSplitsOneArtist" xml:space="preserve">
-    <value>نص يقسّم وسم فنان واحد إلى عدة فنانين مشاركين. احذف فاصلًا لإبقاء أسماء مثل "Simon &amp; Garfunkel" كاملة.</value>
+    <value>النص الذي يقسم علامة فنان واحد إلى عدة. قم بإزالة واحدة للإبقاء على أسماء مثل &quot;Simon &amp; Garfunkel&quot; كلها.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.Reset" xml:space="preserve">
@@ -388,6 +392,34 @@
     <value>إلغاء</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
+  <data name="Settings.ShowRecentReleasesOnly" xml:space="preserve">
+    <value>مشاهدة الإصدارات الأخيرة</value>
+    <comment>Advanced: collapses the release history</comment>
+  </data>
+  <data name="Settings.LyricsBackgroundPerSongHint" xml:space="preserve">
+    <value>انقر بالزر الأيمن على أغنية أو ألبوم لإعطائها الفيديو الخاص بها.</value>
+    <comment>Appearance: under Lyrics Background Video</comment>
+  </data>
+  <data name="Settings.PauseVideoWithPlayback" xml:space="preserve">
+    <value>إيقاف الفيديو مؤقتًا مع التشغيل</value>
+    <comment>Appearance toggle title</comment>
+  </data>
+  <data name="Settings.PauseVideoWithPlaybackDesc" xml:space="preserve">
+    <value>قم بتجميد فيديو الخلفية أثناء الإيقاف المؤقت للأغنية.</value>
+    <comment>Appearance toggle description</comment>
+  </data>
+  <data name="AlbumDetail.LyricsBackgroundVideo" xml:space="preserve">
+    <value>فيديو خلفية كلمات الأغاني</value>
+    <comment>Album page menu</comment>
+  </data>
+  <data name="AlbumDetail.ChooseAlbumVideo" xml:space="preserve">
+    <value>اختر فيديو لهذا الألبوم…</value>
+    <comment>Album page menu</comment>
+  </data>
+  <data name="AlbumDetail.UseDefaultVideo" xml:space="preserve">
+    <value>استخدام الفيديو الافتراضي</value>
+    <comment>Album page menu</comment>
+  </data>
   <data name="Settings.StarGitHub" xml:space="preserve">
     <value>أضف نجمة على GitHub</value>
     <comment>Text in SettingsView.axaml</comment>
@@ -400,12 +432,24 @@
     <value>الموقع الرسمي</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
+  <data name="Settings.About.GitHubCaption" xml:space="preserve">
+    <value>نجم المستودع</value>
+    <comment>About tile caption in SettingsView.axaml</comment>
+  </data>
+  <data name="Settings.About.DiscordCaption" xml:space="preserve">
+    <value>Get help &amp; updates</value>
+    <comment>About tile caption in SettingsView.axaml</comment>
+  </data>
+  <data name="Settings.About.WebsiteCaption" xml:space="preserve">
+    <value>المستندات والتحميلات</value>
+    <comment>About tile caption in SettingsView.axaml</comment>
+  </data>
   <data name="Settings.IncludePreReleaseUpdates" xml:space="preserve">
     <value>تضمين تحديثات الإصدارات المسبقة</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.OfferBetaBuildsUpdater" xml:space="preserve">
-    <value>يعرض إصدارات تجريبية في أداة التحديث. عند الإيقاف تظهر الإصدارات المستقرة فقط.</value>
+    <value>عرض نسخة تجريبية في التحديث.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.YoursTrulyHeartached" xml:space="preserve">
@@ -421,7 +465,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.DownloadInstallAnyRelease" xml:space="preserve">
-    <value>نزّل وثبّت أي إصدار من GitHub. يُغلق التطبيق أثناء التثبيت.</value>
+    <value>تثبيت أي إصدار من GitHub. يتم إغلاق التطبيق.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.NoReleasesFound" xml:space="preserve">
@@ -440,8 +484,12 @@
     <value>مثبّت</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
+  <data name="Settings.ComingSoon" xml:space="preserve">
+    <value>قريباً</value>
+    <comment>Badge on parked Account &amp; Sync cards in SettingsView.axaml</comment>
+  </data>
   <data name="Settings.SessionLogTroubleshootingShare" xml:space="preserve">
-    <value>سجل الجلسة لاستكشاف الأخطاء. شاركه عند الإبلاغ عن مشكلة.</value>
+    <value>سجل الجلسة لتقارير الأخطاء.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.CopyLogs" xml:space="preserve">
@@ -484,6 +532,14 @@
     <value>فاتح</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
+  <data name="Settings.Ink" xml:space="preserve">
+    <value>حبر</value>
+    <comment>Text in SettingsView.axaml</comment>
+  </data>
+  <data name="Settings.Smoke" xml:space="preserve">
+    <value>دخان</value>
+    <comment>Text in SettingsView.axaml</comment>
+  </data>
   <data name="Settings.Edit" xml:space="preserve">
     <value>تعديل</value>
     <comment>Header in SettingsView.axaml</comment>
@@ -499,6 +555,14 @@
   <data name="Settings.Custom" xml:space="preserve">
     <value>مخصص</value>
     <comment>Text in SettingsView.axaml</comment>
+  </data>
+  <data name="Settings.AccentFollowsArtwork" xml:space="preserve">
+    <value>اللكنة تتبع صورة الألبوم</value>
+    <comment>Appearance toggle in SettingsView.axaml</comment>
+  </data>
+  <data name="Settings.AccentFollowsArtworkHint" xml:space="preserve">
+    <value>استعيد اللهجة من غلاف اللعب. اللهجة التي اخترتها تعود عندما لا يلعب أي شيء.</value>
+    <comment>Appearance toggle hint in SettingsView.axaml</comment>
   </data>
   <data name="Settings.AccentColor" xml:space="preserve">
     <value>لون التمييز</value>
@@ -521,7 +585,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.FrostWindowTranslucentBlurred" xml:space="preserve">
-    <value>يكسو النافذة بأسطح زجاجية شفافة ضبابية.</value>
+    <value>قم بتدوين النافذة، الشريط الجانبي، الإعدادات وشريط التشغيل مع أسطح زجاجية شفافة وضبابية.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.AnimatedArtwork" xml:space="preserve">
@@ -537,7 +601,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.TintEachAlbumS" xml:space="preserve">
-    <value>يصبغ صفحة كل ألبوم بلون غلافه، كما في Apple Music. عند الإيقاف تبقى خلفية السمة كما هي.</value>
+    <value>تلميح كل صفحة ألبوم بلون الغلاف الخاص بها.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.NowPlayingArtwork" xml:space="preserve">
@@ -545,7 +609,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.HowCoverAppearsLyrics" xml:space="preserve">
-    <value>كيفية ظهور الغلاف في صفحة الكلمات. تدور الأسطوانات أثناء تشغيل الموسيقى.</value>
+    <value>كيف يظهر الغلاف على صفحة كلمات. تدور الأقراص أثناء اللعب.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.AlbumCoverAsTip" xml:space="preserve">
@@ -613,7 +677,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.HowMiniPlayerLooks" xml:space="preserve">
-    <value>مظهر المشغّل المصغّر. "الكلاسيكي" يتغير شكله مع حجمه؛ أما "الكبسولة" و"الغلاف" فتصميمان ثابتان.</value>
+    <value>يتابع كلاسيك حجمه. المصنع و الشظايا تصاميم ثابتة.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.ResizableGlassCardIconTip" xml:space="preserve">
@@ -645,7 +709,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.AddExtraControlsPlayer" xml:space="preserve">
-    <value>أضف عناصر تحكم إضافية إلى جزيرة التشغيل: تخطي بضع ثوانٍ، تغيير سرعة التشغيل، ضبط مؤقت النوم، التشغيل العشوائي.</value>
+    <value>أزرار إضافية في جزيرة اللاعب.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.SkipBackForward" xml:space="preserve">
@@ -673,7 +737,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.1ButtonOpensSpeed" xml:space="preserve">
-    <value>زر 1× يفتح قائمة سرعات من 0.75× إلى 2×. تعود السرعة إلى طبيعتها عند التشغيل التالي.</value>
+    <value>قائمة السرعة من 0.75× إلى 2×. إعادة تعيينها على الإطلاق التالي.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.SleepTimer" xml:space="preserve">
@@ -681,7 +745,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.SleepTimerOneClick" xml:space="preserve">
-    <value>يجعل مؤقت النوم على بعد نقرة واحدة بدلًا من قائمة الخيارات.</value>
+    <value>مؤقت النوم بنقرة واحدة بعيدة.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.Shuffle" xml:space="preserve">
@@ -689,7 +753,31 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.ShuffleButtonAfterRepeat" xml:space="preserve">
-    <value>زر تشغيل عشوائي بعد زر التكرار. يبقى التشغيل العشوائي أيضًا في لوحة قائمة الانتظار.</value>
+    <value>زر خلط بجانب التكرار.</value>
+    <comment>Text in SettingsView.axaml</comment>
+  </data>
+  <data name="Settings.TrackBoxOpacity" xml:space="preserve">
+    <value>شفافية صندوق المسار</value>
+    <comment>Text in SettingsView.axaml</comment>
+  </data>
+  <data name="Settings.HowSolidTrackBox" xml:space="preserve">
+    <value>كم صلابة الصندوق حول معلومات الأغنية في شريط اللاعب هو 0% يخبئها.</value>
+    <comment>Text in SettingsView.axaml</comment>
+  </data>
+  <data name="Settings.RepeatButton" xml:space="preserve">
+    <value>كرر</value>
+    <comment>Text in SettingsView.axaml</comment>
+  </data>
+  <data name="Settings.RepeatButtonNextToForward" xml:space="preserve">
+    <value>زر التكرار بعد التالي: إيقاف الدورات → الكل → واحد.</value>
+    <comment>Text in SettingsView.axaml</comment>
+  </data>
+  <data name="Settings.FavoriteButton" xml:space="preserve">
+    <value>المفضلة</value>
+    <comment>Text in SettingsView.axaml</comment>
+  </data>
+  <data name="Settings.FavoriteButtonHeart" xml:space="preserve">
+    <value>قلب على اليمين لتفضيل أغنية اللعب بنقرة واحدة.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.PlayerIslandWidth" xml:space="preserve">
@@ -697,7 +785,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.HowWidePlayerIsland" xml:space="preserve">
-    <value>عرض جزيرة التشغيل في الأسفل. كلما زاد العرض زادت مساحة شريط التقدم لتحريك أدق. يمكنك أيضًا سحب حواف الجزيرة المستديرة. انقر نقرًا مزدوجًا على مقبض المنزلق للعودة إلى الوضع الافتراضي.</value>
+    <value>أوسع يعطي شريط البحث غرفة أكثر. يمكنك أيضًا سحب حواف الجزيرة. انقر نقرًا مزدوجًا لإعادة الضبط.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.Narrower" xml:space="preserve">
@@ -713,7 +801,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.ShowHowFarAlong" xml:space="preserve">
-    <value>يعرض مدى تقدم الأغنية الحالية كشريط تقدم على زر Noctis في شريط المهام. يتحول إلى الكهرماني أثناء الإيقاف المؤقت.</value>
+    <value>إظهار تقدم الأغنية على زر شريط المهام. أيضًا أثناء الإيقاف مؤقتاً.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.AutomaticAlbumCoverSize" xml:space="preserve">
@@ -737,7 +825,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.BlurredAlbumArtworkDrifts" xml:space="preserve">
-    <value>Off keeps the still blurred cover. Drift lets it wander and pulse with the beat on the lyrics page, the lyrics panel and the mini player. Kawarp melts the cover into a slow liquid flow on the lyrics page, with or without the beat. Plugin styles (Settings → Plugins) appear here too. Artwork background only.</value>
+    <value>يعمل الانجراف على تحريك الغطاء و النبضات مع النبضة. يقوم كاوارب بزرعها في تدفق سائل بطيء. تظهر أنماط الاضافات هنا أيضا.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.AudioVisualizer" xml:space="preserve">
@@ -745,7 +833,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.DrawLiveSpectrumMusic" xml:space="preserve">
-    <value>يرسم طيفًا حيًا للموسيقى على امتداد أسفل صفحة الكلمات. يتبع الصوت كما يُسمع، ويستوي أثناء الإيقاف المؤقت.</value>
+    <value>طيف حي على طول الجزء السفلي من صفحة الكلمات.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.ArtworkColour" xml:space="preserve">
@@ -753,7 +841,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.TintBarsCurrentCover" xml:space="preserve">
-    <value>يصبغ الأعمدة بلون الغلاف الحالي في صفحة المؤثرات البصرية وصفحة الكلمات. عند الإيقاف تكون بيضاء.</value>
+    <value>تلميح الحانات بلون الغلاف. قم بطلائها بالبيض.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.FrequencyBarsRisingFromTip" xml:space="preserve">
@@ -780,17 +868,117 @@
     <value>موجة</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
+  <data name="Settings.MusicVideos" xml:space="preserve">
+    <value>مقاطع فيديو موسيقية</value>
+    <comment>Lyrics Studio card in LyricsStudioView.axaml</comment>
+  </data>
+  <data name="Settings.MusicVideosHint" xml:space="preserve">
+    <value>الفيديو المسمى مثل الأغنية، بجانبها أو في مجلد فيديو، يحل محل الغلاف في صفحة كلمات.</value>
+    <comment>Lyrics Studio card hint</comment>
+  </data>
+  <data name="Settings.MusicVideoRounded" xml:space="preserve">
+    <value>دوار</value>
+    <comment>Lyrics Studio card toggle</comment>
+  </data>
+  <data name="Settings.MusicVideoRoundedHint" xml:space="preserve">
+    <value>زوايا مدورة مثل الغلاف، أو إطار مسطح</value>
+    <comment>Lyrics Studio card toggle tooltip</comment>
+  </data>
+  <data name="PlaybackBar.MusicVideo" xml:space="preserve">
+    <value>فيديو موسيقي</value>
+    <comment>Options menu toggle in PlaybackBarView.axaml</comment>
+  </data>
   <data name="Settings.LyricsBackgroundVideo" xml:space="preserve">
     <value>فيديو خلفية الكلمات</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.LoopVideoGIFBehind" xml:space="preserve">
-    <value>يكرر فيديو أو صورة GIF خلف الكلمات في صفحة الكلمات بدل الغلاف الضبابي. يعمل فقط أثناء فتح صفحة الكلمات.</value>
+    <value>فيديو دائري أو GIF خلف كلمات الأغنية.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.Choose" xml:space="preserve">
     <value>اختيار</value>
     <comment>Content in SettingsView.axaml</comment>
+  </data>
+  <data name="LyricsBackground.Title" xml:space="preserve">
+    <value>فيديو خلفية كلمات الأغاني</value>
+    <comment>Picker dialog title</comment>
+  </data>
+  <data name="LyricsBackground.Subtitle" xml:space="preserve">
+    <value>مقطع افتراضي واحد، أو مقطع فيديو خاص بهم من أجل الأغاني والألبومات.</value>
+    <comment>Picker dialog subtitle</comment>
+  </data>
+  <data name="LyricsBackground.DefaultVideo" xml:space="preserve">
+    <value>الفيديو الافتراضي</value>
+    <comment>Picker: the clip every song without its own uses</comment>
+  </data>
+  <data name="LyricsBackground.NoDefaultVideo" xml:space="preserve">
+    <value>لا شيء. أغاني بدون الفيديو الخاص بها تعرض غلاف غير واضح.</value>
+    <comment>Picker: no default clip</comment>
+  </data>
+  <data name="LyricsBackground.ChooseVideo" xml:space="preserve">
+    <value>اختيار فيديو</value>
+    <comment>Picker: pick a file</comment>
+  </data>
+  <data name="LyricsBackground.Remove" xml:space="preserve">
+    <value>إزالة</value>
+    <comment>Picker: drop the default clip</comment>
+  </data>
+  <data name="LyricsBackground.SearchWatermark" xml:space="preserve">
+    <value>البحث عن الأغاني والبومات…</value>
+    <comment>Picker search box</comment>
+  </data>
+  <data name="LyricsBackground.WithOwnVideo" xml:space="preserve">
+    <value>مع الفيديو الخاص به</value>
+    <comment>Picker: header over the list when not searching</comment>
+  </data>
+  <data name="LyricsBackground.PromptTitle" xml:space="preserve">
+    <value>لا توجد أغنية أو ألبوم لديها فيديو خاص بها حتى الآن</value>
+    <comment>Picker: empty state</comment>
+  </data>
+  <data name="LyricsBackground.PromptBody" xml:space="preserve">
+    <value>البحث أعلاه واختيار فيديو لأي أغنية أو ألبوم. كل شيء آخر يشغل الافتراضي.</value>
+    <comment>Picker: empty state body</comment>
+  </data>
+  <data name="LyricsBackground.UsesDefault" xml:space="preserve">
+    <value>يستخدم الفيديو الافتراضي</value>
+    <comment>Picker row status</comment>
+  </data>
+  <data name="LyricsBackground.OwnVideo" xml:space="preserve">
+    <value>لديه فيديو خاص به</value>
+    <comment>Picker row status</comment>
+  </data>
+  <data name="LyricsBackground.FromYouTube" xml:space="preserve">
+    <value>يوتيوب</value>
+    <comment>Button: download the backdrop from a YouTube link</comment>
+  </data>
+  <data name="LyricsBackground.YouTubeWatermark" xml:space="preserve">
+    <value>لصق رابط يوتيوب</value>
+    <comment>Watermark</comment>
+  </data>
+  <data name="LyricsBackground.Download" xml:space="preserve">
+    <value>تنزيل</value>
+    <comment>Button</comment>
+  </data>
+  <data name="LyricsBackground.YouTubeClose" xml:space="preserve">
+    <value>إلغاء</value>
+    <comment>Button: fold the YouTube panel / stop the download</comment>
+  </data>
+  <data name="LyricsBackground.NeedsYtDlp" xml:space="preserve">
+    <value>التنزيل من يوتيوب يحتاج yt-dlp.</value>
+    <comment>Shown when the tool is missing</comment>
+  </data>
+  <data name="LyricsBackground.InstallYtDlp" xml:space="preserve">
+    <value>تثبيت yt-dlp</value>
+    <comment>Button</comment>
+  </data>
+  <data name="Settings.Modify" xml:space="preserve">
+    <value>تعديل</value>
+    <comment>Appearance: opens the lyrics background video picker</comment>
+  </data>
+  <data name="Settings.SeeMoreReleases" xml:space="preserve">
+    <value>عرض المزيد من الإصدارات</value>
+    <comment>Advanced: expands the release history</comment>
   </data>
   <data name="Settings.Remove" xml:space="preserve">
     <value>إزالة</value>
@@ -801,7 +989,15 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.DimAllButCurrent" xml:space="preserve">
-    <value>يعتم كل الأسطر عدا السطر الحالي وما يجاوره في وضع ملء الشاشة.</value>
+    <value>تغمر كل خط باستثناء الخط الحالي وجيرانه.</value>
+    <comment>Text in SettingsView.axaml</comment>
+  </data>
+  <data name="Settings.LyricsMinLineOpacity" xml:space="preserve">
+    <value>الحد الأدنى لشفافية الخط</value>
+    <comment>Text in SettingsView.axaml</comment>
+  </data>
+  <data name="Settings.LyricsMinLineOpacityHint" xml:space="preserve">
+    <value>ابق كل خط لغوي مرئي بشكل معجول حتى يمكنك النقر على أي خط للقفز هناك. 0٪ يخفي خطوطا بعيدة عن الخط الحالي.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.JoinSplitWords" xml:space="preserve">
@@ -825,7 +1021,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.HowMuchDesktopShows" xml:space="preserve">
-    <value>مقدار ظهور سطح المكتب عبر زجاج المشغّل المصغّر.</value>
+    <value>كم من حواسيب المكتب تظهر عبر الزجاج.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.PLAYBACK" xml:space="preserve">
@@ -837,7 +1033,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.SongsBlendSmoothlyInto" xml:space="preserve">
-    <value>تمتزج الأغاني بسلاسة ببعضها. تُشغَّل الألبومات كما هي دون انتقالات.</value>
+    <value>تمزج الأغاني مع بعضها البعض. تلعب الألبومات بدون انتقال.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.UnavailableWhileExclusiveMode" xml:space="preserve">
@@ -893,7 +1089,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.WhenQueueEndsKeep" xml:space="preserve">
-    <value>عند انتهاء قائمة الانتظار، يستمر بتشغيل أغانٍ مشابهة من مكتبتك.</value>
+    <value>عند انتهاء قائمة الانتظار، استمر في تشغيل أغاني مماثلة.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.ExplicitContent" xml:space="preserve">
@@ -901,7 +1097,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.AllowExplicitSongsWhen" xml:space="preserve">
-    <value>يسمح بالأغاني الصريحة. عند الإيقاف تُتخطى ما لم تشغّلها مباشرة.</value>
+    <value>خارج تخطي الأغاني الصريحة ما لم تقم بتشغيلها مباشرة.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.ExclusiveMode" xml:space="preserve">
@@ -909,7 +1105,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.BitPerfectOutputBypasses" xml:space="preserve">
-    <value>إخراج دقيق البتات يتجاوز مازج Windows. تصمت التطبيقات الأخرى وتتوقف الانتقالات بين الأغاني أثناء تفعيله.</value>
+    <value>الإخراج المثالي الذي يتجاوز خليط ويندوز. تطبيقات أخرى صامتة والانتقال متوقف.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.AnalyzeTempoKey" xml:space="preserve">
@@ -925,7 +1121,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.WriteBPMKeyInto" xml:space="preserve">
-    <value>يكتب BPM والمقام في وسوم الملف للمقاطع المحللة حديثًا. هذا يعدّل ملفاتك.</value>
+    <value>كتابة BPM والمفتاح في وسوم الملف. هذا يعدل ملفاتك.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.Equalizer" xml:space="preserve">
@@ -933,7 +1129,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.ParametricEQTuneEach" xml:space="preserve">
-    <value>معادل صوت بارامتري — اضبط تردد كل نطاق وكسبه وعرضه (Q).</value>
+    <value>ضبط تردد كل نطاق، وكسب وعرض.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.Preamp" xml:space="preserve">
@@ -977,7 +1173,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.UsedByAudioConverter" xml:space="preserve">
-    <value>يستخدمه محوّل الصوت. اتركه فارغًا للاكتشاف التلقائي.</value>
+    <value>يستخدم من قبل المحول و الطيف و استوديو كلمات الاغنية. الكشف التلقائي فارغ.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.AutoDetect" xml:space="preserve">
@@ -993,7 +1189,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.RightClickSongOpen" xml:space="preserve">
-    <value>انقر بزر الفأرة الأيمن على أغنية ← افتح ملفها الصوتي في هذا البرنامج، كمحرر أو أداة تحليل مثلًا. اتركه فارغًا لاختيار برنامج في كل مرة (Windows).</value>
+    <value>انقر بالزر الأيمن على أغنية لفتح ملفها في هذا البرنامج. تساؤلات فارغة في كل مرة.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.NotSet" xml:space="preserve">
@@ -1005,7 +1201,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.AdjustVolumeUsingReplayGain" xml:space="preserve">
-    <value>يضبط مستوى الصوت باستخدام وسوم ReplayGain. امسح المقاطع عبر النقر بزر الفأرة الأيمن ← مسح ReplayGain.</value>
+    <value>ضبط مستوى الصوت من علامات ReplayGain. مسح المسارات عن طريق النقر على اليمين.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.Mode" xml:space="preserve">
@@ -1025,7 +1221,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.ControlPlaybackFromPhone" xml:space="preserve">
-    <value>تحكّم في التشغيل من هاتفك عبر شبكتك المحلية. الاتصال غير مشفّر، فتجنّب شبكات Wi-Fi غير الموثوقة.</value>
+    <value>التحكم في التشغيل من هاتفك على الشبكة المحلية. غير مشفرة، لذلك تجنب Wi-Fi.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.TapEnlargeTip" xml:space="preserve">
@@ -1033,7 +1229,7 @@
     <comment>ToolTip.Tip in SettingsView.axaml</comment>
   </data>
   <data name="Settings.IfPhoneBlocksLink" xml:space="preserve">
-    <value>إذا حظر هاتفك الرابط باعتباره غير آمن فاختر "متابعة". يستخدم جهاز التحكم بروتوكول HTTP عاديًا على شبكتك المحلية.</value>
+    <value>إذا كان هاتفك يعرف الرابط بأنه غير آمن، اختر المتابعة. يستخدم جهاز التحكم عن بعد HTTP عادي.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.OPENPHONE" xml:space="preserve">
@@ -1073,7 +1269,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.AddAlbumNameUnder" xml:space="preserve">
-    <value>يضيف اسم الألبوم تحت اسم الفنان في بطاقتك على Discord. عند الإيقاف تقتصر البطاقة على العنوان والفنان.</value>
+    <value>إظهار اسم الألبوم تحت الفنان على بطاقة ديسكورد الخاصة بك.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.LastFmScrobbling" xml:space="preserve">
@@ -1121,7 +1317,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.StreamLibraryFromJellyfin" xml:space="preserve">
-    <value>بث مكتبتك من Jellyfin أو Navidrome أو Airsonic أو Gonic أو أي خادم آخر متوافق مع Subsonic.</value>
+    <value>بث من Jellyfin, Navidrome, Airsonic, Gonic أو أي خادم سوبسونيك.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.TYPE" xml:space="preserve">
@@ -1148,7 +1344,7 @@
     <value>اسم المستخدم</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
-  <data name="Settings.Username" xml:space="preserve">
+  <data name="Settings.UsernameWatermark" xml:space="preserve">
     <value>اسم المستخدم</value>
     <comment>Watermark in SettingsView.axaml</comment>
   </data>
@@ -1156,7 +1352,7 @@
     <value>كلمة المرور</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
-  <data name="Settings.Password" xml:space="preserve">
+  <data name="Settings.PasswordWatermark" xml:space="preserve">
     <value>كلمة المرور</value>
     <comment>Watermark in SettingsView.axaml</comment>
   </data>
@@ -1245,7 +1441,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.RenameMoveFilesInto" xml:space="preserve">
-    <value>يعيد تسمية الملفات وينقلها إلى بنية مجلدات مبنية على الوسوم، مع معاينة أولًا.</value>
+    <value>فرز الملفات إلى مجلدات حسب العلامة.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.Organize" xml:space="preserve">
@@ -1257,7 +1453,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.FindDuplicateTracksRemove" xml:space="preserve">
-    <value>يعثر على المقاطع المكررة ويزيل النسخ التي لا تريدها.</value>
+    <value>البحث عن الأغاني المكررة وإزالتها.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.Find" xml:space="preserve">
@@ -1269,7 +1465,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.IdentifyPoorlyTaggedTracks" xml:space="preserve">
-    <value>يحدد المقاطع ذات الوسوم الرديئة ويعرض الوسوم المقترحة للمراجعة قبل تطبيقها.</value>
+    <value>إصلاح العلامات المفقودة أو الخاطئة.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.ImportPlaylist" xml:space="preserve">
@@ -1277,7 +1473,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.ImportM3UExportifyCSV" xml:space="preserve">
-    <value>استورد ملف M3U أو CSV من Exportify أو JSON من TuneMyMusic، أو رابط قائمة تشغيل من Deezer، وطابق المقاطع مع مكتبتك.</value>
+    <value>من ملف أو رابط Deezer/TIDAL.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.Import" xml:space="preserve">
@@ -1329,7 +1525,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.RemovedFromLibraryTheir" xml:space="preserve">
-    <value>أزيلت من مكتبتك مع بقاء ملفاتها على القرص. الاستعادة تعيد إضافتها.</value>
+    <value>تمت إزالتها من المكتبة، الملفات المحفوظة على القرص. الاستعادة تضيفها مرة أخرى.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.NoRemovedTracks" xml:space="preserve">
@@ -1421,7 +1617,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.ClickKeyChangePress" xml:space="preserve">
-    <value>انقر على مفتاح لتغييره. اضغط Esc أثناء التسجيل للإلغاء، وBackspace لإلغاء الربط. مفاتيح الوسائط في لوحة مفاتيحك تعمل دائمًا وليست مدرجة هنا.</value>
+    <value>انقر فوق مفتاح لتغييره. إلغاء Esc ، إلغاء الارتباطات في الفضاء الخلفي. مفاتيح الوسائط تعمل دائماً.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.ResetAll" xml:space="preserve">
@@ -1480,10 +1676,6 @@
     <value>الاستماع</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
-  <data name="Settings.Listening" xml:space="preserve">
-    <value>استماعك</value>
-    <comment>Text in SettingsView.axaml</comment>
-  </data>
   <data name="Settings.TotalPlays" xml:space="preserve">
     <value>إجمالي مرات التشغيل</value>
     <comment>Text in SettingsView.axaml</comment>
@@ -1521,7 +1713,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.ViewAllStats" xml:space="preserve">
-    <value>عرض كل الإحصائيات  →</value>
+    <value>عرض جميع الإحصائيات</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <!-- AddSongsDialog.axaml (auto-migrated) -->
@@ -1709,7 +1901,7 @@
     <comment>Header in AlbumDetailView.axaml</comment>
   </data>
   <data name="AlbumDetail.EditDescription" xml:space="preserve">
-    <value>تعديل الوصف</value>
+    <value>تحديث الوصف</value>
     <comment>Header in AlbumDetailView.axaml</comment>
   </data>
   <data name="AlbumDetail.ConvertAlbum" xml:space="preserve">
@@ -1805,14 +1997,6 @@
     <value>محتوى صريح</value>
     <comment>ToolTip.Tip in ArtistDetailView.axaml</comment>
   </data>
-  <data name="ArtistDetail.ListenCountTip" xml:space="preserve">
-    <value>عدد مرات الاستماع</value>
-    <comment>ToolTip.Tip in ArtistDetailView.axaml</comment>
-  </data>
-  <data name="ArtistDetail.Plays" xml:space="preserve">
-    <value>مرة تشغيل</value>
-    <comment>Text in ArtistDetailView.axaml</comment>
-  </data>
   <data name="ArtistDetail.PlayEverythingByArtistTip" xml:space="preserve">
     <value>تشغيل كل أعمال هذا الفنان</value>
     <comment>ToolTip.Tip in ArtistDetailView.axaml</comment>
@@ -1830,7 +2014,7 @@
     <comment>ToolTip.Tip in ArtistDetailView.axaml</comment>
   </data>
   <data name="ArtistDetail.ShufflePopular" xml:space="preserve">
-    <value>خلط الأشهر</value>
+    <value>خلط أفضل الأغاني</value>
     <comment>Header in ArtistDetailView.axaml</comment>
   </data>
   <data name="ArtistDetail.ShuffleFavorites" xml:space="preserve">
@@ -1862,16 +2046,8 @@
     <comment>Text in ArtistDetailView.axaml</comment>
   </data>
   <data name="ArtistDetail.Popular" xml:space="preserve">
-    <value>الأشهر</value>
+    <value>افضل الاغاني</value>
     <comment>Text in ArtistDetailView.axaml</comment>
-  </data>
-  <data name="ArtistDetail.Releases" xml:space="preserve">
-    <value>الإصدارات</value>
-    <comment>Text in ArtistDetailView.axaml</comment>
-  </data>
-  <data name="ArtistDetail.All" xml:space="preserve">
-    <value>الكل</value>
-    <comment>Content in ArtistDetailView.axaml</comment>
   </data>
   <data name="ArtistDetail.Albums" xml:space="preserve">
     <value>الألبومات</value>
@@ -1889,56 +2065,84 @@
     <value>يظهر في</value>
     <comment>Text in ArtistDetailView.axaml</comment>
   </data>
-  <data name="ArtistDetail.About" xml:space="preserve">
-    <value>نبذة عن </value>
+  <data name="ArtistDetail.Overview" xml:space="preserve">
+    <value>نظرة عامة</value>
+    <comment>Tab in ArtistDetailView.axaml</comment>
+  </data>
+  <data name="ArtistDetail.Songs" xml:space="preserve">
+    <value>الأغاني</value>
+    <comment>Tab in ArtistDetailView.axaml</comment>
+  </data>
+  <data name="ArtistDetail.SimilarArtists" xml:space="preserve">
+    <value>فنانون مشابهون</value>
+    <comment>Tab in ArtistDetailView.axaml</comment>
+  </data>
+  <data name="ArtistDetail.SeeAll" xml:space="preserve">
+    <value>شاهد الكل</value>
+    <comment>Content in ArtistDetailView.axaml</comment>
+  </data>
+  <data name="ArtistDetail.NoSongsMatch" xml:space="preserve">
+    <value>لا تطابق الأغنية.</value>
     <comment>Text in ArtistDetailView.axaml</comment>
   </data>
-  <data name="ArtistDetail.NoBiographyFoundArtist" xml:space="preserve">
-    <value>لم يُعثر على سيرة لهذا الفنان بعد.</value>
+  <data name="ArtistDetail.AboutTitle" xml:space="preserve">
+    <value>حول </value>
+    <comment>Text in ArtistDetailView.axaml</comment>
+  </data>
+  <data name="ArtistDetail.Links" xml:space="preserve">
+    <value>الروابط</value>
     <comment>Text in ArtistDetailView.axaml</comment>
   </data>
   <data name="ArtistDetail.FROM" xml:space="preserve">
     <value>من</value>
     <comment>Text in ArtistDetailView.axaml</comment>
   </data>
-  <data name="ArtistDetail.ACTIVE" xml:space="preserve">
-    <value>سنوات النشاط</value>
+  <data name="ArtistDetail.GENRE" xml:space="preserve">
+    <value>جاري</value>
     <comment>Text in ArtistDetailView.axaml</comment>
   </data>
-  <data name="ArtistDetail.GENRES" xml:space="preserve">
-    <value>الأنواع</value>
-    <comment>Text in ArtistDetailView.axaml</comment>
-  </data>
-  <data name="ArtistDetail.LIBRARY" xml:space="preserve">
-    <value>في مكتبتك</value>
-    <comment>Text in ArtistDetailView.axaml</comment>
-  </data>
-  <data name="ArtistDetail.RELEASES" xml:space="preserve">
+  <data name="ArtistDetail.ReleasesTile" xml:space="preserve">
     <value>الإصدارات</value>
     <comment>Text in ArtistDetailView.axaml</comment>
   </data>
-  <data name="ArtistDetail.SONGS" xml:space="preserve">
+  <data name="ArtistDetail.SongsTile" xml:space="preserve">
     <value>الأغاني</value>
     <comment>Text in ArtistDetailView.axaml</comment>
   </data>
-  <data name="ArtistDetail.TOTALLENGTH" xml:space="preserve">
-    <value>المدة الإجمالية</value>
+  <data name="ArtistDetail.TotalLengthTile" xml:space="preserve">
+    <value>إجمالي طول</value>
     <comment>Text in ArtistDetailView.axaml</comment>
   </data>
-  <data name="ArtistDetail.MOSTPLAYED" xml:space="preserve">
-    <value>الأكثر تشغيلًا</value>
+  <data name="ArtistDetail.MostPlayedTile" xml:space="preserve">
+    <value>الأكثر تشغيلاً</value>
     <comment>Text in ArtistDetailView.axaml</comment>
   </data>
-  <data name="ArtistDetail.FAVORITED" xml:space="preserve">
-    <value>في المفضلة</value>
+  <data name="ArtistDetail.SinceTile" xml:space="preserve">
+    <value>في المكتبة منذ</value>
     <comment>Text in ArtistDetailView.axaml</comment>
   </data>
-  <data name="ArtistDetail.Songs" xml:space="preserve">
-    <value> أغنية</value>
+  <data name="ArtistDetail.NotInLibrary" xml:space="preserve">
+    <value>ليس في مكتبتك</value>
     <comment>Text in ArtistDetailView.axaml</comment>
   </data>
-  <data name="ArtistDetail.SINCE" xml:space="preserve">
-    <value>منذ</value>
+  <data name="ArtistDetail.FansCount" xml:space="preserve">
+    <value>مشجعين {0}</value>
+    <comment>Hero line under the artist name; {0} = Deezer fan count</comment>
+  </data>
+  <data name="ArtistDetail.FindingSimilar" xml:space="preserve">
+    <value>العثور على فنانين مشابهين…</value>
+    <comment>Text in ArtistDetailView.axaml</comment>
+  </data>
+  <data name="ArtistDetail.NoSimilar" xml:space="preserve">
+    <value>لم يتم العثور على فنانين مماثلين.</value>
+    <comment>Text in ArtistDetailView.axaml</comment>
+  </data>
+  <data name="ArtistDetail.LookingUp" xml:space="preserve">
+    <value>النظر إلى الفنان…</value>
+    <comment>Text in ArtistDetailView.axaml</comment>
+  </data>
+  <data name="ArtistDetail.NoBiographyFoundArtist" xml:space="preserve">
+    <value>لم يُعثر على سيرة لهذا الفنان بعد.</value>
     <comment>Text in ArtistDetailView.axaml</comment>
   </data>
   <!-- AudioCdView.axaml (auto-migrated) -->
@@ -2137,7 +2341,7 @@
     <comment>Text in CreateSmartPlaylistDialog.axaml</comment>
   </data>
   <data name="CreateSmartPlaylist.Value" xml:space="preserve">
-    <value>القيمة...</value>
+    <value>القيمة</value>
     <comment>Watermark in CreateSmartPlaylistDialog.axaml</comment>
   </data>
   <data name="CreateSmartPlaylist.To" xml:space="preserve">
@@ -2162,7 +2366,7 @@
     <comment>Title in DuplicateFinderDialog.axaml</comment>
   </data>
   <data name="DuplicateFinder.GroupedByArtistTitle" xml:space="preserve">
-    <value>مجمّعة حسب الفنان + العنوان مع تطابق المدة. تُحفظ أفضل نسخة افتراضيًا؛ راجع قبل الحذف.</value>
+    <value>نفس الأغنية، أكثر من مرة. حافظ على أفضل نسخة.</value>
     <comment>Text in DuplicateFinderDialog.axaml</comment>
   </data>
   <data name="DuplicateFinder.Rescan" xml:space="preserve">
@@ -2324,9 +2528,13 @@
     <value>إخفاء هذا القسم أو إظهاره</value>
     <comment>ToolTip.Tip in HomeView.axaml</comment>
   </data>
-  <data name="Home.MostListened" xml:space="preserve">
-    <value>الأكثر استماعًا</value>
-    <comment>Text in HomeView.axaml</comment>
+  <data name="Home.MostPlayed" xml:space="preserve">
+    <value>الأكثر تشغيلاً</value>
+    <comment>Home chart header</comment>
+  </data>
+  <data name="Home.LastPlayed" xml:space="preserve">
+    <value>آخر لاعب</value>
+    <comment>Home chart header</comment>
   </data>
   <data name="Home.Text" xml:space="preserve">
     <value>♪</value>
@@ -2348,9 +2556,9 @@
     <value>أبرز الفنانين</value>
     <comment>Text in HomeView.axaml</comment>
   </data>
-  <data name="Home.RecentlyPlayed" xml:space="preserve">
-    <value>المشغّلة مؤخرًا</value>
-    <comment>Text in HomeView.axaml</comment>
+  <data name="Home.Albums" xml:space="preserve">
+    <value>ألبومات</value>
+    <comment>Home right-hand rail header (last played album)</comment>
   </data>
   <data name="Home.PlayTip" xml:space="preserve">
     <value>تشغيل</value>
@@ -2371,6 +2579,34 @@
   <data name="Home.BackEarsAfterLong" xml:space="preserve">
     <value>عادت إلى مسامعك بعد غياب طويل</value>
     <comment>Text in HomeView.axaml</comment>
+  </data>
+  <data name="Home.Songs" xml:space="preserve">
+    <value>أغاني</value>
+    <comment>Recently Played rail card: "2017 | 9 songs"</comment>
+  </data>
+  <data name="Home.OptionsTip" xml:space="preserve">
+    <value>خيارات</value>
+    <comment>Most Listened To row dots button</comment>
+  </data>
+  <data name="Home.ContinueListening" xml:space="preserve">
+    <value>مواصلة الإستماع</value>
+    <comment>Home hero kicker above the last played track</comment>
+  </data>
+  <data name="Home.Resume" xml:space="preserve">
+    <value>استئناف</value>
+    <comment>Home hero primary button</comment>
+  </data>
+  <data name="Home.Pause" xml:space="preserve">
+    <value>إيقاف</value>
+    <comment>Home hero primary button while its track is playing</comment>
+  </data>
+  <data name="Home.PlayAlbum" xml:space="preserve">
+    <value>تشغيل الألبوم</value>
+    <comment>Home hero secondary button</comment>
+  </data>
+  <data name="Home.TimeLeft" xml:space="preserve">
+    <value>متبقي {0}</value>
+    <comment>Home hero: remaining time of the last played track, e.g. "1:06 left"</comment>
   </data>
   <!-- LibraryAlbumsView.axaml (auto-migrated) -->
   <data name="LibraryAlbums.Text" xml:space="preserve">
@@ -2589,6 +2825,10 @@
     <value>مفضلة</value>
     <comment>ToolTip.Tip in LibrarySongsView.axaml</comment>
   </data>
+  <data name="LibrarySongs.PlayFromHereTip" xml:space="preserve">
+    <value>العب من هنا</value>
+    <comment>ToolTip.Tip in LibrarySongsView.axaml</comment>
+  </data>
   <data name="LibrarySongs.OptionsTip" xml:space="preserve">
     <value>خيارات</value>
     <comment>ToolTip.Tip in LibrarySongsView.axaml</comment>
@@ -2746,6 +2986,14 @@
   <data name="LyricShare.SaveCard" xml:space="preserve">
     <value>حفظ البطاقة</value>
     <comment>Content in LyricShareDialog.axaml</comment>
+  </data>
+  <data name="LyricShare.Copy" xml:space="preserve">
+    <value>نسخ</value>
+    <comment>Content in LyricShareDialog.axaml</comment>
+  </data>
+  <data name="LyricShare.CopyImageTip" xml:space="preserve">
+    <value>نسخ صورة البطاقة إلى الحافظة</value>
+    <comment>ToolTip in LyricShareDialog.axaml</comment>
   </data>
   <!-- LyricsPanelView.axaml (auto-migrated) -->
   <data name="LyricsPanel.NoLyricsTrack" xml:space="preserve">
@@ -3003,7 +3251,7 @@
     <comment>Text in MainWindow.axaml</comment>
   </data>
   <data name="Main.ImportPlaylist" xml:space="preserve">
-    <value>استيراد قائمة تشغيل…</value>
+    <value>استيراد قائمة التشغيل</value>
     <comment>Text in MainWindow.axaml</comment>
   </data>
   <data name="Main.FromM3uM3u8File" xml:space="preserve">
@@ -3062,6 +3310,22 @@
     <value>تخطيط انسياب الأغلفة</value>
     <comment>ToolTip.Tip in MainWindow.axaml</comment>
   </data>
+  <data name="Main.FilterTip" xml:space="preserve">
+    <value>تصفية</value>
+    <comment>Top-right corner filter icon tooltip prefix</comment>
+  </data>
+  <data name="Main.SwitchToCoverFlow" xml:space="preserve">
+    <value>التبديل إلى تدفق الغلاف</value>
+    <comment>Top-right view-mode icon tooltip</comment>
+  </data>
+  <data name="Main.SwitchToLibrary" xml:space="preserve">
+    <value>التبديل إلى المكتبة</value>
+    <comment>Top-right view-mode icon tooltip</comment>
+  </data>
+  <data name="Main.Layout" xml:space="preserve">
+    <value>التخطيط:</value>
+    <comment>Cover Flow layout icon tooltip prefix</comment>
+  </data>
   <data name="Main.Carousel" xml:space="preserve">
     <value>دوّار</value>
     <comment>Header in MainWindow.axaml</comment>
@@ -3104,7 +3368,7 @@
     <comment>Title in MetadataFinderDialog.axaml</comment>
   </data>
   <data name="MetadataFinder.IdentifyPoorlyTaggedTracks" xml:space="preserve">
-    <value>يحدد المقاطع ذات الوسوم الرديئة ويعرض الوسوم المقترحة للمراجعة قبل تطبيقها.</value>
+    <value>إصلاح العلامات المفقودة أو الخاطئة. مراجعة قبل التطبيق.</value>
     <comment>Text in MetadataFinderDialog.axaml</comment>
   </data>
   <data name="MetadataFinder.IdentifyAll" xml:space="preserve">
@@ -3143,6 +3407,114 @@
   <data name="Metadata.FavoritedTip" xml:space="preserve">
     <value>في المفضلة</value>
     <comment>ToolTip.Tip in MetadataWindow.axaml</comment>
+  </data>
+  <data name="Metadata.GroupInfo" xml:space="preserve">
+    <value>معلومات</value>
+    <comment>Rail group label in MetadataWindow.axaml</comment>
+  </data>
+  <data name="Metadata.GroupLyrics" xml:space="preserve">
+    <value>كلمات</value>
+    <comment>Rail group label in MetadataWindow.axaml</comment>
+  </data>
+  <data name="Metadata.GroupPlayback" xml:space="preserve">
+    <value>تشغيل</value>
+    <comment>Rail group label in MetadataWindow.axaml</comment>
+  </data>
+  <data name="Metadata.GroupFile" xml:space="preserve">
+    <value>ملف</value>
+    <comment>Rail group label in MetadataWindow.axaml</comment>
+  </data>
+  <data name="Metadata.NoChangesYet" xml:space="preserve">
+    <value>لا توجد تغييرات بعد</value>
+    <comment>Footer status in MetadataWindow.axaml</comment>
+  </data>
+  <data name="Metadata.ChangesOne" xml:space="preserve">
+    <value>1 تغيير</value>
+    <comment>Footer status in MetadataWindow.axaml</comment>
+  </data>
+  <data name="Metadata.ChangesMany" xml:space="preserve">
+    <value>التغييرات {0}</value>
+    <comment>Footer status in MetadataWindow.axaml</comment>
+  </data>
+  <data name="Metadata.AppliesToFiles" xml:space="preserve">
+    <value>ينطبق على ملفات {0}</value>
+    <comment>Footer status in MetadataWindow.axaml</comment>
+  </data>
+  <data name="Metadata.MixedHint" xml:space="preserve">
+    <value>القيم التي تختلف عبر مسارات {0} تظهر كمختلطة</value>
+    <comment>Details tab hint in MetadataWindow.axaml</comment>
+  </data>
+  <data name="Metadata.SecSorting" xml:space="preserve">
+    <value>فرز</value>
+    <comment>Text in MetadataWindow.axaml</comment>
+  </data>
+  <data name="Metadata.SecPeople" xml:space="preserve">
+    <value>الأشخاص والائتمانات</value>
+    <comment>Text in MetadataWindow.axaml</comment>
+  </data>
+  <data name="Metadata.SecIdentification" xml:space="preserve">
+    <value>تعريف</value>
+    <comment>Text in MetadataWindow.axaml</comment>
+  </data>
+  <data name="Metadata.SecContent" xml:space="preserve">
+    <value>محتوى</value>
+    <comment>Text in MetadataWindow.axaml</comment>
+  </data>
+  <data name="Metadata.SecTechnical" xml:space="preserve">
+    <value>فني</value>
+    <comment>Text in MetadataWindow.axaml</comment>
+  </data>
+  <data name="Metadata.SecCustomTags" xml:space="preserve">
+    <value>علامات مخصصة</value>
+    <comment>Text in MetadataWindow.axaml</comment>
+  </data>
+  <data name="Metadata.SecKind" xml:space="preserve">
+    <value>مميّز</value>
+    <comment>Text in MetadataWindow.axaml</comment>
+  </data>
+  <data name="Metadata.SecPlayRange" xml:space="preserve">
+    <value>نطاق اللعب</value>
+    <comment>Text in MetadataWindow.axaml</comment>
+  </data>
+  <data name="Metadata.SecBehaviour" xml:space="preserve">
+    <value>السلوك</value>
+    <comment>Text in MetadataWindow.axaml</comment>
+  </data>
+  <data name="Metadata.SecSound" xml:space="preserve">
+    <value>صوت</value>
+    <comment>Text in MetadataWindow.axaml</comment>
+  </data>
+  <data name="Metadata.SecAudio" xml:space="preserve">
+    <value>الصوت</value>
+    <comment>Text in MetadataWindow.axaml</comment>
+  </data>
+  <data name="Metadata.SecDates" xml:space="preserve">
+    <value>التواريخ</value>
+    <comment>Text in MetadataWindow.axaml</comment>
+  </data>
+  <data name="Metadata.SecLocation" xml:space="preserve">
+    <value>الموقع</value>
+    <comment>Text in MetadataWindow.axaml</comment>
+  </data>
+  <data name="Metadata.ShowInFolder" xml:space="preserve">
+    <value>إظهار في المجلد</value>
+    <comment>Text in MetadataWindow.axaml</comment>
+  </data>
+  <data name="Metadata.CopyPath" xml:space="preserve">
+    <value>نسخ المسار</value>
+    <comment>Text in MetadataWindow.axaml</comment>
+  </data>
+  <data name="Metadata.DoubleClickToReset" xml:space="preserve">
+    <value>انقر نقرا مزدوجا على شريط التمرير لإعادة تعيين</value>
+    <comment>Text in MetadataWindow.axaml</comment>
+  </data>
+  <data name="Metadata.ArtworkSharedByAlbum" xml:space="preserve">
+    <value>مشترك مع الألبوم بأكمله</value>
+    <comment>Text in MetadataWindow.axaml</comment>
+  </data>
+  <data name="Metadata.AnimatedArtworkHint" xml:space="preserve">
+    <value>لكل ألبوم · تشغيل على صفحة الألبوم والتشغيل الآن</value>
+    <comment>Text in MetadataWindow.axaml</comment>
   </data>
   <data name="Metadata.Cancel" xml:space="preserve">
     <value>إلغاء</value>
@@ -3844,7 +4216,7 @@
     <comment>Title in OrganizeFilesDialog.axaml</comment>
   </data>
   <data name="OrganizeFiles.RenameMoveFilesInto" xml:space="preserve">
-    <value>يعيد تسمية الملفات وينقلها إلى بنية مجلدات مشتقة من الوسوم. راجع كل نقلة قبل التطبيق.</value>
+    <value>فرز الملفات إلى مجلدات حسب علاماتهم. معاينة أولاً.</value>
     <comment>Text in OrganizeFilesDialog.axaml</comment>
   </data>
   <data name="OrganizeFiles.UndoLast" xml:space="preserve">
@@ -4225,6 +4597,10 @@
   <data name="Playlist.Text4" xml:space="preserve">
     <value></value>
     <comment>Text in PlaylistView.axaml</comment>
+  </data>
+  <data name="Playlist.Kicker" xml:space="preserve">
+    <value>اللعب</value>
+    <comment>Hero kicker in PlaylistView.axaml</comment>
   </data>
   <data name="Playlist.PlayFromHereTip" xml:space="preserve">
     <value>التشغيل من هنا</value>
@@ -4702,6 +5078,18 @@
     <value>التوزيع حسب الصيغة</value>
     <comment>Text in StatisticsView.axaml</comment>
   </data>
+  <data name="Statistics.Library" xml:space="preserve">
+    <value>المكتبة</value>
+    <comment>Overview section title in StatisticsView.axaml</comment>
+  </data>
+  <data name="Statistics.Liked" xml:space="preserve">
+    <value>أحب</value>
+    <comment>Library footer fact, lowercase</comment>
+  </data>
+  <data name="Statistics.AvgLength" xml:space="preserve">
+    <value>متوسط طول</value>
+    <comment>Library footer fact, lowercase</comment>
+  </data>
   <data name="Statistics.NoTracksLibrary" xml:space="preserve">
     <value>لا توجد مقاطع في المكتبة</value>
     <comment>Text in StatisticsView.axaml</comment>
@@ -4947,10 +5335,10 @@
     <value>الإضافات</value>
   </data>
   <data name="Plugins.Description" xml:space="preserve">
-    <value>وسّع Noctis بإضافات المجتمع. ضع مجلد الإضافة في دليل الإضافات وأعد التحميل؛ ويمكنك إيقاف أي إضافة من هنا دون حذفها.</value>
+    <value>إسقاط مجلد البرنامج المساعد في دليل الإضافات وإعادة التحميل. قم بتبديل البرنامج المساعد إلى هنا دون حذفه.</value>
   </data>
   <data name="Plugins.Warning" xml:space="preserve">
-    <value>تعمل الإضافات بنفس صلاحيات Noctis نفسه. لا تثبّت إلا إضافات من أشخاص تثق بهم.</value>
+    <value>الإضافات تعمل بنفس الصلاحية مثل Noctis. فقط قم بتثبيت المكونات التي تثق بها.</value>
   </data>
   <data name="Plugins.OpenFolder" xml:space="preserve">
     <value>فتح مجلد الإضافات</value>
@@ -4966,7 +5354,7 @@
     <value>خادم Noctis</value>
   </data>
   <data name="Server.Description" xml:space="preserve">
-    <value>يتيح لهاتفك وأجهزتك الأخرى تصفح هذه المكتبة وتشغيلها. يعمل مع أي تطبيق Subsonic (مثل Symfonium وTempo وDSub…) ومع تطبيق Noctis للهواتف. اتصال HTTPS بشهادة هذا الحاسوب نفسه؛ الحسابات أدناه.</value>
+    <value>السماح لهاتفك والأجهزة الأخرى بالتصفح وتشغيل هذه المكتبة. يعمل مع أي تطبيق سوبسونيك و تطبيق نوكتيس، عبر HTTPS.</value>
   </data>
   <data name="Server.Port" xml:space="preserve">
     <value>المنفذ</value>
@@ -5005,7 +5393,7 @@
     <value>مفتاح API الخاص بـ</value>
   </data>
   <data name="Server.ApiKeyOnce" xml:space="preserve">
-    <value>انسخه الآن — يُعرض مرة واحدة فقط. إنشاء مفتاح جديد يستبدل هذا المفتاح.</value>
+    <value>انسخها الآن. تظهر مرة واحدة ، ويستبدل مفتاح جديد.</value>
   </data>
   <data name="Server.Done" xml:space="preserve">
     <value>تم</value>
@@ -5024,19 +5412,19 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.TidalDescription" xml:space="preserve">
-    <value>Sign in to import your TIDAL playlists by link. Noctis only asks to read playlists.</value>
+    <value>قم بتسجيل الدخول لاستيراد قوائم تشغيل TIDAL عن طريق الرابط.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.TidalConnected" xml:space="preserve">
-    <value>Signed in — tidal.com links import directly.</value>
+    <value>تسجيل الدخول - استيراد روابط tidal.com مباشرة.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.FlowingOff" xml:space="preserve">
-    <value>Off</value>
+    <value>متوقف</value>
     <comment>Flowing-background picker row</comment>
   </data>
   <data name="Settings.FlowingDrift" xml:space="preserve">
-    <value>Drift</value>
+    <value>الانجراف</value>
     <comment>Flowing-background picker row (built-in style)</comment>
   </data>
   <data name="Settings.FlowingKawarp" xml:space="preserve">
@@ -5044,11 +5432,11 @@
     <comment>Flowing-background picker row (liquid warp, beat-reactive)</comment>
   </data>
   <data name="Settings.FlowingKawarpCalm" xml:space="preserve">
-    <value>Kawarp (no beat)</value>
+    <value>كاوارب (بدون ضرب)</value>
     <comment>Flowing-background picker row</comment>
   </data>
   <data name="Settings.KawarpWarp" xml:space="preserve">
-    <value>Warp strength</value>
+    <value>قوة الورك</value>
     <comment>Kawarp slider label</comment>
   </data>
   <data name="Settings.KawarpBlur" xml:space="preserve">
@@ -5057,339 +5445,339 @@
   </data>
   <!-- 2026-09 feature batch: pitch, click-to-rate, Send to Folder, bulk lyrics, YouTube, Account & Sync, Lyrics Studio, upmix -->
   <data name="PlaybackBar.Pitch" xml:space="preserve">
-    <value>Pitch</value>
+    <value>قماش</value>
     <comment>Speed menu → pitch submenu header (island)</comment>
   </data>
   <data name="PlaybackBar.PitchNormal" xml:space="preserve">
-    <value>Normal</value>
+    <value>عادي</value>
     <comment>Pitch submenu: reset to ±0 semitones</comment>
   </data>
   <data name="LibrarySongs.RateTip" xml:space="preserve">
-    <value>Rate (click a star; click the same star again to clear)</value>
+    <value>تقييم (انقر على نجمة؛ انقر على نفس النجمة مرة أخرى لمسح)</value>
     <comment>ToolTip on the Songs row stars</comment>
   </data>
   <data name="SendTo.Title" xml:space="preserve">
-    <value>Send to Folder</value>
+    <value>إرسال إلى المجلد</value>
     <comment>Dialog title</comment>
   </data>
   <data name="SendTo.Destination" xml:space="preserve">
-    <value>Destination</value>
+    <value>الوجهة</value>
     <comment>Send to Folder dialog</comment>
   </data>
   <data name="SendTo.DestinationHint" xml:space="preserve">
-    <value>A USB drive, phone or any folder</value>
+    <value>محرك أقراص USB أو الهاتف أو أي مجلد</value>
     <comment>Destination watermark</comment>
   </data>
   <data name="SendTo.Browse" xml:space="preserve">
-    <value>Browse…</value>
+    <value>تصفح…</value>
     <comment>Folder picker button</comment>
   </data>
   <data name="SendTo.Organize" xml:space="preserve">
-    <value>Organize into folders</value>
+    <value>التنظيم إلى مجلدات</value>
     <comment>Toggle label</comment>
   </data>
   <data name="SendTo.OrganizeHint" xml:space="preserve">
-    <value>Artist and album folders using your file pattern:</value>
+    <value>الفنان ومجلدات الألبوم باستخدام نمط الملف الخاص بك:</value>
     <comment>Toggle help, followed by the pattern</comment>
   </data>
   <data name="SendTo.IncludeLyrics" xml:space="preserve">
-    <value>Include lyrics files</value>
+    <value>تضمين ملفات الكلمات</value>
     <comment>Toggle label</comment>
   </data>
   <data name="SendTo.IncludeLyricsHint" xml:space="preserve">
-    <value>Copies each song's .lrc alongside it when there is one.</value>
+    <value>ينسخ كل أغنية .lrc جنباً إلى جنب عندما يكون هناك واحدة.</value>
     <comment>Toggle help</comment>
   </data>
   <data name="SendTo.LyricsIncluded" xml:space="preserve">
-    <value>Lyrics file included</value>
+    <value>تم تضمين ملف كلمات الاغنية</value>
     <comment>Row tooltip</comment>
   </data>
   <data name="SendTo.Copy" xml:space="preserve">
-    <value>Copy</value>
+    <value>نسخ</value>
     <comment>Primary button</comment>
   </data>
   <data name="SendTo.Close" xml:space="preserve">
-    <value>Close</value>
+    <value>أغلق</value>
     <comment>Secondary button</comment>
   </data>
   <data name="BulkLyrics.Title" xml:space="preserve">
-    <value>Lyrics</value>
+    <value>كلمات</value>
     <comment>Dialog title (window)</comment>
   </data>
   <data name="BulkLyrics.Close" xml:space="preserve">
-    <value>Close</value>
+    <value>أغلق</value>
     <comment>Secondary button</comment>
   </data>
   <data name="Main.AddFromYouTube" xml:space="preserve">
-    <value>Add from YouTube</value>
+    <value>إضافة من يوتيوب</value>
     <comment>New/Add menu item</comment>
   </data>
   <data name="Main.AddFromYouTubeHint" xml:space="preserve">
-    <value>Search or paste a link — downloads into your library</value>
+    <value>البحث عن رابط أو لصقه - التنزيلات في مكتبتك</value>
     <comment>New/Add menu item subtitle</comment>
   </data>
   <data name="YouTube.Title" xml:space="preserve">
-    <value>Add from YouTube</value>
+    <value>إضافة من يوتيوب</value>
     <comment>Dialog title</comment>
   </data>
   <data name="YouTube.Subtitle" xml:space="preserve">
-    <value>Search or paste a link. The song is downloaded, tagged with cover art and added to your library folder.</value>
+    <value>ابحث عن رابط أو لصقه. تم حفظه في مكتبتك مع فن الغلاف.</value>
     <comment>Dialog subtitle</comment>
   </data>
   <data name="YouTube.SearchHint" xml:space="preserve">
-    <value>Search YouTube or paste a link…</value>
+    <value>البحث في يوتيوب أو لصق رابط…</value>
     <comment>Search box watermark</comment>
   </data>
   <data name="YouTube.Search" xml:space="preserve">
-    <value>Search</value>
+    <value>البحث</value>
     <comment>Search button</comment>
   </data>
   <data name="YouTube.SetupTitle" xml:space="preserve">
-    <value>One-time setup</value>
+    <value>إعداد لمرة واحدة</value>
     <comment>First-run card title</comment>
   </data>
   <data name="YouTube.SetupBody" xml:space="preserve">
-    <value>Noctis uses yt-dlp (free, open source) to talk to YouTube. It is downloaded once into Noctis's own folder and updated from here.</value>
+    <value>Noctis يستخدم yt-dlp (مجاني، المصدر المفتوح) للتحدث إلى يوتيوب. يتم تنزيله مرة واحدة في مجلد Noctis الخاص ويتم تحديثه من هنا.</value>
     <comment>First-run card body</comment>
   </data>
   <data name="YouTube.Install" xml:space="preserve">
-    <value>Install yt-dlp</value>
+    <value>تثبيت yt-dlp</value>
     <comment>First-run card button</comment>
   </data>
   <data name="YouTube.Download" xml:space="preserve">
-    <value>Download</value>
+    <value>تنزيل</value>
     <comment>Per-result button</comment>
   </data>
   <data name="YouTube.SavesTo" xml:space="preserve">
-    <value>Saves to</value>
+    <value>يحفظ إلى</value>
     <comment>Footer label before the folder</comment>
   </data>
   <data name="YouTube.EmptyHint" xml:space="preserve">
-    <value>Results appear here. Downloads land in your library folder, tagged and with cover art.</value>
+    <value>تظهر النتائج هنا. تحميل الأرض في مجلد مكتبتك، موسومة مع فن الغلاف</value>
     <comment>Empty state</comment>
   </data>
   <data name="YouTube.Close" xml:space="preserve">
-    <value>Close</value>
+    <value>أغلق</value>
     <comment>Secondary button</comment>
   </data>
   <data name="YouTubeSettings.Section" xml:space="preserve">
-    <value>YOUTUBE DOWNLOADS</value>
+    <value>التحميل الخاص بك</value>
     <comment>Library tab section title</comment>
   </data>
   <data name="YouTubeSettings.Title" xml:space="preserve">
-    <value>Add songs from YouTube</value>
+    <value>إضافة أغاني من اليوتيوب</value>
     <comment>Card title</comment>
   </data>
   <data name="YouTubeSettings.Description" xml:space="preserve">
-    <value>Search or paste a link; the song is downloaded into the folder below, tagged with cover art and added to your library. There is no YouTube section in Noctis — this only feeds your own library.</value>
+    <value>البحث أو لصق رابط للتنزيل.</value>
     <comment>Card description</comment>
   </data>
   <data name="YouTubeSettings.Open" xml:space="preserve">
-    <value>Open downloader</value>
+    <value>فتح التحميل</value>
     <comment>Card button</comment>
   </data>
   <data name="YouTubeSettings.Folder" xml:space="preserve">
-    <value>Download folder</value>
+    <value>مجلد التحميل</value>
     <comment>Row label</comment>
   </data>
   <data name="YouTubeSettings.FolderHint" xml:space="preserve">
-    <value>Leave empty to use a "YouTube" folder inside your first music folder.</value>
+    <value>فراغ يستخدم مجلد &quot;YouTube&quot; داخل مجلد الموسيقى الأول الخاص بك.</value>
     <comment>Row help</comment>
   </data>
   <data name="YouTubeSettings.Tool" xml:space="preserve">
-    <value>yt-dlp</value>
+    <value>زلادة</value>
     <comment>Row label</comment>
   </data>
   <data name="YouTubeSettings.InstallUpdate" xml:space="preserve">
-    <value>Install / update</value>
+    <value>تثبيت / تحديث</value>
     <comment>Row button</comment>
   </data>
   <data name="YouTubeSettings.ToolPathHint" xml:space="preserve">
-    <value>Custom path to yt-dlp (optional)</value>
+    <value>مسار مخصص إلى yt-dlp (اختياري)</value>
     <comment>Path watermark</comment>
   </data>
   <data name="Upmix.Title" xml:space="preserve">
-    <value>Multi-channel upmix</value>
+    <value>متعدد القنوات المزيج</value>
     <comment>Audio card title</comment>
   </data>
   <data name="Upmix.Description" xml:space="preserve">
-    <value>Play stereo music through every speaker of a 5.1 or 7.1 system.</value>
+    <value>تشغيل ستيريو من خلال كل متكلم في نظام 5.1 أو 7.1</value>
     <comment>Audio card description</comment>
   </data>
   <data name="Upmix.Off" xml:space="preserve">
-    <value>Off</value>
+    <value>متوقف</value>
     <comment>Upmix mode</comment>
   </data>
   <data name="Upmix.OffHint" xml:space="preserve">
-    <value>Stereo only</value>
+    <value>ستيريو فقط</value>
     <comment>Upmix mode hint</comment>
   </data>
   <data name="Upmix.Duplicate" xml:space="preserve">
-    <value>Stereo everywhere</value>
+    <value>ستيريو في كل مكان</value>
     <comment>Upmix mode</comment>
   </data>
   <data name="Upmix.DuplicateHint" xml:space="preserve">
-    <value>Same music on every pair, centre and bass filled in</value>
+    <value>نفس الموسيقى على كل زوج و مركز و قس ممتلئ</value>
     <comment>Upmix mode hint</comment>
   </data>
   <data name="Upmix.Surround" xml:space="preserve">
-    <value>Surround</value>
+    <value>محيطة</value>
     <comment>Upmix mode</comment>
   </data>
   <data name="Upmix.SurroundHint" xml:space="preserve">
-    <value>Ambience to the rears, wide stage in front</value>
+    <value>امكانية الى الخلف، مرحلة واسعة امام</value>
     <comment>Upmix mode hint</comment>
   </data>
   <data name="Upmix.Note" xml:space="preserve">
-    <value>Applies to the built-in output engine. Exclusive Mode keeps the file's own channel layout.</value>
+    <value>محرك الإخراج المدمج فقط. الوضع الحصري يحافظ على تخطيط الملف الخاص به.</value>
     <comment>Upmix footnote</comment>
   </data>
   <data name="Server.AccountsMoved" xml:space="preserve">
-    <value>Accounts and device sync are managed in Account &amp; Sync.</value>
+    <value>تتم إدارة الحسابات ومزامنة الجهاز في الحساب والمزامنة.</value>
     <comment>Integrations → Noctis Server card footer</comment>
   </data>
   <data name="Server.OpenAccountSync" xml:space="preserve">
-    <value>Open Account &amp; Sync</value>
+    <value>فتح الحساب والمزامنة</value>
     <comment>Integrations → Noctis Server card button</comment>
   </data>
   <data name="AccountSync.YourAccount" xml:space="preserve">
-    <value>YOUR ACCOUNT</value>
+    <value>حسابك</value>
     <comment>Account &amp; Sync section title</comment>
   </data>
   <data name="AccountSync.CreateTitle" xml:space="preserve">
-    <value>Create your account</value>
+    <value>إنشاء حسابك</value>
     <comment>No-account state title</comment>
   </data>
   <data name="AccountSync.CreateHelp" xml:space="preserve">
-    <value>Your phone and other devices sign in with this to browse, play and sync this library. The password is stored hashed and never leaves this computer.</value>
+    <value>أجهزة تسجيل الدخول الخاصة بك بهذا التصفح والتشغيل والمزامنة. يتم تخزين كلمة المرور ولا تترك هذا الكمبيوتر.</value>
     <comment>No-account state help</comment>
   </data>
   <data name="AccountSync.Name" xml:space="preserve">
-    <value>Name</value>
+    <value>الاسم</value>
     <comment>Create form watermark</comment>
   </data>
   <data name="AccountSync.Password" xml:space="preserve">
-    <value>Password (8+ characters)</value>
+    <value>كلمة المرور (8+ حرف)</value>
     <comment>Create form watermark</comment>
   </data>
   <data name="AccountSync.Create" xml:space="preserve">
-    <value>Create</value>
+    <value>إنشاء</value>
     <comment>Create form button</comment>
   </data>
   <data name="AccountSync.PairDevice" xml:space="preserve">
-    <value>Pair a device</value>
+    <value>إقران جهاز</value>
     <comment>Account card button</comment>
   </data>
   <data name="AccountSync.NewApiKey" xml:space="preserve">
-    <value>New API key</value>
+    <value>مفتاح API جديد</value>
     <comment>Account card button</comment>
   </data>
   <data name="AccountSync.ChangePassword" xml:space="preserve">
-    <value>Change password</value>
+    <value>تغيير كلمة المرور</value>
     <comment>Account card button</comment>
   </data>
   <data name="AccountSync.NewPassword" xml:space="preserve">
-    <value>New password (8+ characters)</value>
+    <value>كلمة المرور الجديدة (8+ حرف)</value>
     <comment>Change password watermark</comment>
   </data>
   <data name="AccountSync.Save" xml:space="preserve">
-    <value>Save</value>
+    <value>حفظ</value>
     <comment>Change password button</comment>
   </data>
   <data name="AccountSync.Remove" xml:space="preserve">
-    <value>Remove</value>
+    <value>إزالة</value>
     <comment>Account card button</comment>
   </data>
   <data name="AccountSync.PairHelp" xml:space="preserve">
-    <value>On your phone, open the Noctis app (or any Subsonic app), scan the code or type the address, and sign in with your account.</value>
+    <value>على هاتفك، افتح Noctis أو أي تطبيق Subsonic ، ومسح الكود أو اكتب العنوان، وتسجيل الدخول.</value>
     <comment>Pairing block help</comment>
   </data>
   <data name="AccountSync.ServerOffHelp" xml:space="preserve">
-    <value>Devices connect through Noctis Server on this computer. It is off right now.</value>
+    <value>الأجهزة متصلة من خلال خادم Noctis على هذا الكمبيوتر. تم إيقاف تشغيلها.</value>
     <comment>Pairing block when the server is off</comment>
   </data>
   <data name="AccountSync.TurnOnServer" xml:space="preserve">
-    <value>Turn on Noctis Server</value>
+    <value>تشغيل خادم Noctis</value>
     <comment>Pairing block button</comment>
   </data>
   <data name="AccountSync.SyncSection" xml:space="preserve">
-    <value>SYNC</value>
+    <value>سفينة</value>
     <comment>Account &amp; Sync section title</comment>
   </data>
   <data name="AccountSync.OtherAccounts" xml:space="preserve">
-    <value>OTHER ACCOUNTS</value>
+    <value>حسابات أخرى</value>
     <comment>Account &amp; Sync section title</comment>
   </data>
   <data name="AccountSync.OtherTitle" xml:space="preserve">
-    <value>Family and guests</value>
+    <value>الأسرة والضيوف</value>
     <comment>Other accounts card title</comment>
   </data>
   <data name="AccountSync.OtherHelp" xml:space="preserve">
-    <value>Extra accounts that can sign in to this library from their own devices.</value>
+    <value>حسابات إضافية يمكن تسجيل الدخول من أجهزتهم الخاصة.</value>
     <comment>Other accounts card help</comment>
   </data>
   <data name="Sync.Title" xml:space="preserve">
-    <value>Sync between your devices</value>
+    <value>المزامنة بين أجهزتك</value>
     <comment>Sync card title</comment>
   </data>
   <data name="Sync.Description" xml:space="preserve">
-    <value>Favourites, ratings, play counts and playlists stay the same on every device signed in to your account. Changes meet here; the newest one wins.</value>
+    <value>المفضلة، التقييمات، العد و قوائم التشغيل تبقى كما هي على كل جهاز مسجل الدخول. يفوز أحدث تغيير.</value>
     <comment>Sync card description</comment>
   </data>
   <data name="Sync.DeviceName" xml:space="preserve">
-    <value>This device</value>
+    <value>هذا الجهاز</value>
     <comment>Sync card row label</comment>
   </data>
   <data name="Sync.WhatSyncs" xml:space="preserve">
-    <value>Music files stay where they are — only what you do with them syncs. Requires Noctis Server (Integrations).</value>
+    <value>تبقى ملفات الموسيقى أينما كانت. تحتاج خادم Noctis لتكون قيد التشغيل.</value>
     <comment>Sync card footnote</comment>
   </data>
   <data name="LyricsStudioSettings.ModelSection" xml:space="preserve">
-    <value>SPEECH MODEL</value>
+    <value>مشرف خاص</value>
     <comment>Lyrics Studio tab section title</comment>
   </data>
   <data name="LyricsStudioSettings.Title" xml:space="preserve">
-    <value>Lyrics Studio</value>
+    <value>استوديو الكلمات</value>
     <comment>Card title</comment>
   </data>
   <data name="LyricsStudioSettings.Description" xml:space="preserve">
-    <value>Listens to a song and times its lyrics word by word — or writes them down when there are none. Everything runs on this computer; you review each song before anything is saved.</value>
+    <value>مرات كلمات الأغاني بكلمة على هذا الكمبيوتر. تراجع قبل الحفظ.</value>
     <comment>Card description</comment>
   </data>
   <data name="LyricsStudioSettings.Model" xml:space="preserve">
-    <value>Model</value>
+    <value>الموديل</value>
     <comment>Row label</comment>
   </data>
   <data name="LyricsStudioSettings.Language" xml:space="preserve">
-    <value>Language</value>
+    <value>اللغة</value>
     <comment>Row label</comment>
   </data>
   <data name="LyricsStudioSettings.Download" xml:space="preserve">
-    <value>Download</value>
+    <value>تنزيل</value>
     <comment>Model button</comment>
   </data>
   <data name="LyricsStudioSettings.Delete" xml:space="preserve">
-    <value>Delete</value>
+    <value>حذف</value>
     <comment>Model button</comment>
   </data>
   <data name="LyricsStudioSettings.OutputSection" xml:space="preserve">
-    <value>OUTPUT</value>
+    <value>اغلاق</value>
     <comment>Section title</comment>
   </data>
   <data name="LyricsStudioSettings.WordTimings" xml:space="preserve">
-    <value>Word-by-word timings</value>
+    <value>توقيت الكلمة كلماتية</value>
     <comment>Toggle title</comment>
   </data>
   <data name="LyricsStudioSettings.WordTimingsHint" xml:space="preserve">
-    <value>Save enhanced LRC with a time for every word (karaoke sweep). Off saves one time per line.</value>
+    <value>وقت لكل كلمة. لا توفر واحدة لكل سطر.</value>
     <comment>Toggle help</comment>
   </data>
   <data name="LyricsStudioSettings.EmbedTags" xml:space="preserve">
-    <value>Also write lyrics into the file's tags</value>
+    <value>كتابة كلمات الاغاني أيضا في وسوم الملف</value>
     <comment>Toggle title</comment>
   </data>
   <data name="LyricsStudioSettings.EmbedTagsHint" xml:space="preserve">
-    <value>The .lrc file next to the song is always written; this additionally stores the plain lyrics inside the audio file.</value>
+    <value>أيضًا تخزين كلمات الأغاني العادية داخل ملف الصوت.</value>
     <comment>Toggle help</comment>
   </data>
   <data name="LyricsStudioSettings.RunSection" xml:space="preserve">
@@ -5397,151 +5785,587 @@
     <comment>Section title</comment>
   </data>
   <data name="LyricsStudioSettings.OpenTitle" xml:space="preserve">
-    <value>Songs missing the chosen format</value>
+    <value>الأغاني مفقودة التنسيق المختار</value>
     <comment>Run card title</comment>
   </data>
   <data name="LyricsStudioSettings.OpenHelp" xml:space="preserve">
-    <value>Opens Lyrics Studio with up to 40 songs that lack the format above: with word-by-word timings on, songs with only line-timed LRC are included; songs that already have ELRC are not. You can also right-click any songs → Lyrics → Open in Lyrics Studio.</value>
+    <value>ما يصل إلى 40 أغنية تفتقر إلى التنسيق أعلاه.</value>
     <comment>Run card help</comment>
   </data>
   <data name="LyricsStudioSettings.Open" xml:space="preserve">
-    <value>Open Lyrics Studio</value>
+    <value>افتح ستوديو الكلمات</value>
     <comment>Run card button</comment>
   </data>
+  <data name="LyricsStudioSettings.CountWord" xml:space="preserve">
+    <value>توقيت الكلمات</value>
+    <comment>Library count tile</comment>
+  </data>
+  <data name="LyricsStudioSettings.CountLine" xml:space="preserve">
+    <value>توقيت الخط</value>
+    <comment>Library count tile</comment>
+  </data>
+  <data name="LyricsStudioSettings.CountPlain" xml:space="preserve">
+    <value>عادي فقط</value>
+    <comment>Library count tile</comment>
+  </data>
+  <data name="LyricsStudioSettings.CountNone" xml:space="preserve">
+    <value>لا توجد كلمات</value>
+    <comment>Library count tile</comment>
+  </data>
+  <data name="LyricsStudioSettings.Installed" xml:space="preserve">
+    <value>مثبت</value>
+    <comment>Model state chip</comment>
+  </data>
+  <data name="LyricsStudioSettings.NotInstalled" xml:space="preserve">
+    <value>لم يتم تثبيته</value>
+    <comment>Model state chip</comment>
+  </data>
   <data name="LyricsStudio.Title" xml:space="preserve">
-    <value>Lyrics Studio</value>
+    <value>استوديو الكلمات</value>
     <comment>Dialog title</comment>
   </data>
   <data name="LyricsStudio.Subtitle" xml:space="preserve">
-    <value>Times your lyrics against the recording, or transcribes when there are none. Review each song, fix any word, then save.</value>
+    <value>أوقات كلمات الأغاني للتسجيل، أو تنسخ عندما لا يكون هناك أحد.</value>
     <comment>Dialog subtitle</comment>
   </data>
-  <data name="LyricsStudio.Close" xml:space="preserve">
-    <value>Close</value>
-    <comment>Dialog button</comment>
-  </data>
   <data name="LyricsStudio.Model" xml:space="preserve">
-    <value>Model</value>
+    <value>الموديل</value>
     <comment>Footer label</comment>
   </data>
   <data name="LyricsStudio.Language" xml:space="preserve">
-    <value>Language</value>
+    <value>اللغة</value>
     <comment>Footer label</comment>
   </data>
   <data name="LyricsStudio.WordTimings" xml:space="preserve">
-    <value>Word timings (ELRC)</value>
+    <value>توقيت الكلمات</value>
     <comment>Footer checkbox</comment>
   </data>
   <data name="LyricsStudio.SkipAlreadyTimed" xml:space="preserve">
-    <value>Skip songs that already have this format</value>
+    <value>تخطي الأغاني بالفعل في هذا التنسيق</value>
     <comment>Footer checkbox</comment>
   </data>
   <data name="LyricsStudio.SkipAlreadyTimedTip" xml:space="preserve">
-    <value>ELRC (a time for every word) and LRC (one time per line) are different formats. With word timings on, songs that only have line-timed LRC are still processed; songs that already have ELRC are left alone.</value>
+    <value>توقيت الكلمات (ELRC) وتوقيت الأسطر (LRC) صيغ مختلفة. لا يزال يتم معالجة الأغاني التي لها مواعيد سطرية فقط.</value>
     <comment>Footer checkbox tooltip</comment>
   </data>
   <data name="LyricsStudio.TranscribeOnly" xml:space="preserve">
-    <value>Ignore existing lyrics, transcribe</value>
+    <value>انسخ بواسطة الأذن (تجاهل الكلمات الموجودة)</value>
     <comment>Footer checkbox</comment>
   </data>
+  <data name="LyricsStudio.TranscribeOnlyTip" xml:space="preserve">
+    <value>نموذج الكلام يستمع إلى الأغنية ويكتب الكلمات نفسها، حتى عندما تكون للأغنية كلمات بالفعل. الأغاني التي لا تحتوي على كلمات تنتشر دائمًا.</value>
+    <comment>Footer checkbox tooltip</comment>
+  </data>
+  <data name="LyricsStudio.OnlineLyrics" xml:space="preserve">
+    <value>ابحث عن كلمات الاغاني على الانترنت عندما لا تملك الاغنية</value>
+    <comment>Footer checkbox</comment>
+  </data>
+  <data name="LyricsStudio.OnlineLyricsTip" xml:space="preserve">
+    <value>يتم جلب كلمات الأغاني السهلة من LRCLIB أولا، لذا يجب على النموذج فقط أن يوقفها. يوقف، النموذج يكتب الكلمات عن طريق الأذن.</value>
+    <comment>Footer checkbox tooltip</comment>
+  </data>
   <data name="LyricsStudio.DownloadModel" xml:space="preserve">
-    <value>Download model</value>
+    <value>نموذج التحميل</value>
     <comment>Footer button</comment>
   </data>
   <data name="LyricsStudio.Start" xml:space="preserve">
-    <value>Start</value>
+    <value>ابدأ</value>
     <comment>Footer button</comment>
   </data>
   <data name="LyricsStudio.Stop" xml:space="preserve">
-    <value>Stop</value>
+    <value>توقف</value>
     <comment>Footer button</comment>
   </data>
   <data name="LyricsStudio.NeedsFfmpeg" xml:space="preserve">
-    <value>ffmpeg is needed to decode songs. Set its path under Settings → Audio → Audio tools, then reopen Lyrics Studio.</value>
+    <value>ffmpeg مطلوب لفك شفرة الصوت. تعيين مساره في الإعدادات &lt;unk&gt; برامج مساعد متقدمة.</value>
     <comment>Banner</comment>
   </data>
+  <data name="LyricsStudio.Backdrops" xml:space="preserve">
+    <value>الخلفية</value>
+    <comment>Header disclosure in LyricsStudioView.axaml</comment>
+  </data>
+  <data name="LyricsStudio.Options" xml:space="preserve">
+    <value>خيارات</value>
+    <comment>Footer dropdown holding the run options</comment>
+  </data>
+  <data name="LyricsStudio.Loading" xml:space="preserve">
+    <value>جاري التحميل</value>
+    <comment>Page scan in progress</comment>
+  </data>
+  <data name="LyricsStudio.BackdropsTip" xml:space="preserve">
+    <value>تدوير الفيديو خلف كلمات الاغاني، ومقاطع الفيديو الموسيقية في فتحة الغلاف</value>
+    <comment>Tooltip in LyricsStudioView.axaml</comment>
+  </data>
+  <data name="LyricsStudio.ChooseSongs" xml:space="preserve">
+    <value>اختر الأغاني</value>
+    <comment>Header chip in LyricsStudioView.axaml: opens the song/album picker</comment>
+  </data>
+  <data name="LyricsStudio.ChooseSongsTip" xml:space="preserve">
+    <value>اختر أغاني أو ألبومات كاملة للستوديو وما إذا كنت تريد كتابة الكلمات أو مواعيد الخط</value>
+    <comment>Tooltip in LyricsStudioView.axaml</comment>
+  </data>
+  <data name="LyricsStudioPicker.Title" xml:space="preserve">
+    <value>اختر أغاني و ألبومات</value>
+    <comment>Picker dialog title</comment>
+  </data>
+  <data name="LyricsStudioPicker.Subtitle" xml:space="preserve">
+    <value>ماذا يتكرر الاستوديو في المرة التالية، و الشكل الذي يكتبه.</value>
+    <comment>Picker dialog subtitle</comment>
+  </data>
+  <data name="LyricsStudioPicker.Format" xml:space="preserve">
+    <value>التنسيق</value>
+    <comment>Picker: format card title</comment>
+  </data>
+  <data name="LyricsStudioPicker.FormatHint" xml:space="preserve">
+    <value>توقيت الكلمات ينقل كلمة بكلمة (ELRC)؛ توقيت الخط ينقل سطراً بسطر (LRC).</value>
+    <comment>Picker: format card hint</comment>
+  </data>
+  <data name="LyricsStudioPicker.WordTimings" xml:space="preserve">
+    <value>توقيت الكلمات · ELRC</value>
+    <comment>Picker: format chip</comment>
+  </data>
+  <data name="LyricsStudioPicker.LineTimings" xml:space="preserve">
+    <value>توقيت الخط · LRC</value>
+    <comment>Picker: format chip</comment>
+  </data>
+  <data name="LyricsStudioPicker.Search" xml:space="preserve">
+    <value>البحث عن الأغاني والبومات…</value>
+    <comment>Picker search box</comment>
+  </data>
+  <data name="LyricsStudioPicker.PromptTitle" xml:space="preserve">
+    <value>البحث عن أغنية أو ألبوم</value>
+    <comment>Picker empty state</comment>
+  </data>
+  <data name="LyricsStudioPicker.PromptBody" xml:space="preserve">
+    <value>كل أغنية محلية لديها بالفعل هذا التنسيق. الألبوم يضيف كل أغنية فيه؛ الحبوب على الأغنية تظهر ما لديها الآن.</value>
+    <comment>Picker empty state (also shown when nothing is missing)</comment>
+  </data>
+  <data name="LyricsStudioPicker.Add" xml:space="preserve">
+    <value>إضافة إلى الاستوديو</value>
+    <comment>Picker confirm button</comment>
+  </data>
+  <data name="LyricsStudioPicker.MissingWord" xml:space="preserve">
+    <value>مع الأخبار العالمية</value>
+    <comment>Picker: header over the suggestions when word timings is chosen</comment>
+  </data>
+  <data name="LyricsStudioPicker.MissingLine" xml:space="preserve">
+    <value>مع التصنيفات</value>
+    <comment>Picker: header over the suggestions when line timings is chosen</comment>
+  </data>
+  <data name="LyricsStudioPicker.Scanning" xml:space="preserve">
+    <value>النظر من خلال المكتبة…</value>
+    <comment>Picker: while the suggestions load</comment>
+  </data>
+  <data name="LyricsStudioPicker.SelectAll" xml:space="preserve">
+    <value>حدد الكل</value>
+    <comment>Picker footer</comment>
+  </data>
+  <data name="LyricsStudioPicker.DeselectAll" xml:space="preserve">
+    <value>إلغاء تحديد الكل</value>
+    <comment>Picker footer</comment>
+  </data>
   <data name="LyricsStudio.Queue" xml:space="preserve">
-    <value>SONGS</value>
+    <value>الأصدارات</value>
     <comment>Queue column header</comment>
   </data>
   <data name="LyricsStudio.ReviewEmptyTitle" xml:space="preserve">
-    <value>Nothing to review yet</value>
+    <value>لا شيء للمراجعة بعد</value>
     <comment>Review pane empty state</comment>
   </data>
   <data name="LyricsStudio.ReviewEmptyBody" xml:space="preserve">
-    <value>Pick a song. Songs that already have synced lyrics open here right away; press Start for the rest. Check the words, nudge the timing and save.</value>
+    <value>اختر أغنية واضغط على Start.</value>
     <comment>Review pane empty state</comment>
   </data>
   <data name="LyricsStudio.Upgrade" xml:space="preserve">
-    <value>Upgrade to word timings</value>
+    <value>وقت كل كلمة</value>
     <comment>Review button, shown for line-level lyrics</comment>
   </data>
   <data name="LyricsStudio.UpgradeTip" xml:space="preserve">
-    <value>Runs the speech model over this song and times every word of the loaded lines (ELRC). The line-level LRC is kept alongside.</value>
+    <value>مرات كل كلمة من هذه الأسطور. يتم الاحتفاظ بملف مستوى الخط.</value>
     <comment>Review button tooltip</comment>
   </data>
   <data name="LyricsStudio.ReviewHint" xml:space="preserve">
-    <value>Click a time to hear that line. Edit any text in place. Tinted lines were not heard clearly — check them first.</value>
+    <value>انقر فوق وقت لسماع هذا الخط. تحرير النص في الموقع. الخطوط الموصوفة تحتاج إلى نظرة ثانية.</value>
     <comment>Review pane hint</comment>
   </data>
   <data name="LyricsStudio.NudgeEarlier" xml:space="preserve">
-    <value>All lines 0.1 s earlier</value>
+    <value>جميع الأسطر 0.1 ث قبل ذلك</value>
     <comment>Tooltip</comment>
   </data>
   <data name="LyricsStudio.NudgeLater" xml:space="preserve">
-    <value>All lines 0.1 s later</value>
+    <value>جميع الأسطر 0.1 ثانية لاحقاً</value>
     <comment>Tooltip</comment>
   </data>
   <data name="LyricsStudio.Redo" xml:space="preserve">
-    <value>Transcribe instead</value>
+    <value>انسخ بدلاً من ذلك</value>
     <comment>Review button</comment>
   </data>
   <data name="LyricsStudio.RedoTip" xml:space="preserve">
-    <value>Ignore the found lyrics and write down what is actually sung</value>
+    <value>تجاهل هذه الكلمات ونسخ ما هو غروب الشمس</value>
     <comment>Tooltip</comment>
   </data>
   <data name="LyricsStudio.Skip" xml:space="preserve">
-    <value>Skip</value>
+    <value>تخطي</value>
     <comment>Review button</comment>
   </data>
   <data name="LyricsStudio.Save" xml:space="preserve">
-    <value>Save lyrics</value>
+    <value>حفظ الكلمات</value>
     <comment>Review button</comment>
   </data>
   <data name="LyricsStudio.Words" xml:space="preserve">
-    <value>Words</value>
+    <value>الكلمات</value>
     <comment>Per-line toggle that opens the word strip</comment>
   </data>
   <data name="LyricsStudio.WordsTip" xml:space="preserve">
-    <value>Show each word with its time. Click a word to hear it; nudge or tap to retime it.</value>
+    <value>إظهار كل كلمة بوقتها. انقر على كلمة واحدة لسماعها.</value>
     <comment>Word toggle tooltip</comment>
   </data>
   <data name="LyricsStudio.WordEarlier" xml:space="preserve">
-    <value>Selected word 50 ms earlier (its neighbours stay put)</value>
+    <value>الكلمة المختارة 50 ثانية قبل ذلك (لا يزال جيرانه)</value>
     <comment>Word nudge tooltip</comment>
   </data>
   <data name="LyricsStudio.WordLater" xml:space="preserve">
-    <value>Selected word 50 ms later (its neighbours stay put)</value>
+    <value>الكلمة المختارة 50 ثانية في وقت لاحق (لا يزال جيرانه)</value>
     <comment>Word nudge tooltip</comment>
   </data>
   <data name="LyricsStudio.TapWords" xml:space="preserve">
-    <value>Tap words</value>
+    <value>انقر على الكلمات</value>
     <comment>Starts tap-to-time for one line</comment>
   </data>
   <data name="LyricsStudio.TapTip" xml:space="preserve">
-    <value>Plays the line; press Space (or Tap) as each word is sung. One more tap after the last word marks the line end.</value>
+    <value>يلعب الخط. اضغط على المسافة أو اضغط على كل كلمة؛ ونقر مرة أخرى على الخط.</value>
     <comment>Tap button tooltip</comment>
   </data>
   <data name="LyricsStudio.Tap" xml:space="preserve">
-    <value>Tap</value>
+    <value>انقر</value>
     <comment>Tap bar button</comment>
   </data>
   <data name="LyricsStudio.TapCancel" xml:space="preserve">
-    <value>Done</value>
+    <value>تم</value>
     <comment>Tap bar leave button</comment>
   </data>
   <data name="LyricsStudio.PlayFromHere" xml:space="preserve">
-    <value>Play from here</value>
+    <value>العب من هنا</value>
     <comment>Time pill tooltip</comment>
+  </data>
+  <data name="Settings.Desc.General" xml:space="preserve">
+    <value>اللغة، والبدء، وكيف تتصرف النافذة والشريط الجانبي.</value>
+    <comment>Settings page description</comment>
+  </data>
+  <data name="Settings.Desc.Appearance" xml:space="preserve">
+    <value>الموضوعات واللون والزجاج والرسوم المتحركة للنص والأعمال الفنية.</value>
+    <comment>Settings page description</comment>
+  </data>
+  <data name="Settings.Desc.Player" xml:space="preserve">
+    <value>جزيرة اللاعب، اللاعب المصغر، التدفق و الآن اللعب الفني.</value>
+    <comment>Settings page description</comment>
+  </data>
+  <data name="Settings.Desc.Lyrics" xml:space="preserve">
+    <value>صفحة الكلمات، مصادر كلمات الاغاني عبر الانترنت، واستوديو الكلمات</value>
+    <comment>Settings page description</comment>
+  </data>
+  <data name="Settings.Desc.Shortcuts" xml:space="preserve">
+    <value>انقر فوق مفتاح لتغييره. إلغاء Esc ، فك الارتباطات في الفضاء الخلفي.</value>
+    <comment>Settings page description</comment>
+  </data>
+  <data name="Settings.Desc.Audio" xml:space="preserve">
+    <value>التشغيل والنواتج والتحليل والمُوازن.</value>
+    <comment>Settings page description</comment>
+  </data>
+  <data name="Settings.Desc.Library" xml:space="preserve">
+    <value>المجلدات الإعلامية، والمسح الضوئي، وكيفية تنظيم الفنانين والألبومات، وأدوات المكتبة.</value>
+    <comment>Settings page description</comment>
+  </data>
+  <data name="Settings.Desc.Advanced" xml:space="preserve">
+    <value>التخزين، برامج المساعد، التحديثات وإعادة الضبط.</value>
+    <comment>Settings page description</comment>
+  </data>
+  <data name="Settings.Desc.AccountDevices" xml:space="preserve">
+    <value>الحساب الخاص بك، المزامنة بين الأجهزة، و الويب عن بعد.</value>
+    <comment>Settings page description</comment>
+  </data>
+  <data name="Settings.Desc.Integrations" xml:space="preserve">
+    <value>خوادم ديسكورد، سكروبلينغ، تيدال والموسيقى.</value>
+    <comment>Settings page description</comment>
+  </data>
+  <data name="Settings.Desc.Plugins" xml:space="preserve">
+    <value>الإضافات المثبتة.</value>
+    <comment>Settings page description</comment>
+  </data>
+  <data name="Settings.Desc.Statistics" xml:space="preserve">
+    <value>مكتبتك والاستماع للنظرة.</value>
+    <comment>Settings page description</comment>
+  </data>
+  <data name="Settings.Desc.About" xml:space="preserve">
+    <value>الإصدار والتحديثات والروابط.</value>
+    <comment>Settings page description</comment>
+  </data>
+  <data name="Settings.Section.Language" xml:space="preserve">
+    <value>اللغة</value>
+    <comment>Settings section label</comment>
+  </data>
+  <data name="Settings.Section.StartupWindow" xml:space="preserve">
+    <value>بدء التشغيل والنافذة</value>
+    <comment>Settings section label</comment>
+  </data>
+  <data name="Settings.Section.Sidebar" xml:space="preserve">
+    <value>Sidebar</value>
+    <comment>Settings section label</comment>
+  </data>
+  <data name="Settings.Section.Files" xml:space="preserve">
+    <value>الملفات</value>
+    <comment>Settings section label</comment>
+  </data>
+  <data name="Settings.Section.Theme" xml:space="preserve">
+    <value>السمة</value>
+    <comment>Settings section label</comment>
+  </data>
+  <data name="Settings.Section.TextAnimation" xml:space="preserve">
+    <value>المؤثر الحركي للنص</value>
+    <comment>Settings section label</comment>
+  </data>
+  <data name="Settings.Section.Home" xml:space="preserve">
+    <value>المنزل</value>
+    <comment>Settings section label</comment>
+  </data>
+  <data name="Settings.Section.Artwork" xml:space="preserve">
+    <value>الأعمال الفنية</value>
+    <comment>Settings section label</comment>
+  </data>
+  <data name="Settings.HomeHeavyRotation" xml:space="preserve">
+    <value>دوران ثقيل</value>
+    <comment>Appearance › Home toggle</comment>
+  </data>
+  <data name="Settings.HomeHeavyRotationDesc" xml:space="preserve">
+    <value>إظهار الصف "عند تكرار هذه الأسبوعين الماضيين" في الصفحة الرئيسية.</value>
+    <comment>Appearance › Home toggle description</comment>
+  </data>
+  <data name="Settings.Section.Taskbar" xml:space="preserve">
+    <value>شريط المهام</value>
+    <comment>Settings section label</comment>
+  </data>
+  <data name="Settings.Section.PlayerIsland" xml:space="preserve">
+    <value>جزيرة اللاعب</value>
+    <comment>Settings section label</comment>
+  </data>
+  <data name="Settings.Section.MiniPlayer" xml:space="preserve">
+    <value>لاعب صغير</value>
+    <comment>Settings section label</comment>
+  </data>
+  <data name="Settings.Section.NowPlayingArtwork" xml:space="preserve">
+    <value>العمل الفني للعب الآن</value>
+    <comment>Settings section label</comment>
+  </data>
+  <data name="Settings.Section.CoverFlow" xml:space="preserve">
+    <value>تدفق الغطاء</value>
+    <comment>Settings section label</comment>
+  </data>
+  <data name="Settings.Section.LyricsPage" xml:space="preserve">
+    <value>صفحة الكلمات</value>
+    <comment>Settings section label</comment>
+  </data>
+  <data name="Settings.Section.OnlineLyrics" xml:space="preserve">
+    <value>كلمات الاغنية على الانترنت</value>
+    <comment>Settings section label</comment>
+  </data>
+  <data name="Settings.Section.LyricsStudio" xml:space="preserve">
+    <value>استوديو الكلمات</value>
+    <comment>Settings section label</comment>
+  </data>
+  <data name="Settings.Section.Playback" xml:space="preserve">
+    <value>تشغيل</value>
+    <comment>Settings section label</comment>
+  </data>
+  <data name="Settings.Section.Output" xml:space="preserve">
+    <value>الناتج</value>
+    <comment>Settings section label</comment>
+  </data>
+  <data name="Settings.Section.Analysis" xml:space="preserve">
+    <value>تحليل</value>
+    <comment>Settings section label</comment>
+  </data>
+  <data name="Settings.Section.Equalizer" xml:space="preserve">
+    <value>المعادل</value>
+    <comment>Settings section label</comment>
+  </data>
+  <data name="Settings.Section.Folders" xml:space="preserve">
+    <value>المجلدات والمسح</value>
+    <comment>Settings section label</comment>
+  </data>
+  <data name="Settings.Section.Organisation" xml:space="preserve">
+    <value>Organisation</value>
+    <comment>Settings section label</comment>
+  </data>
+  <data name="Settings.Section.Metadata" xml:space="preserve">
+    <value>مصادر البيانات الوصفية</value>
+    <comment>Settings section label</comment>
+  </data>
+  <data name="Settings.Section.Tools" xml:space="preserve">
+    <value>أدوات</value>
+    <comment>Settings section label</comment>
+  </data>
+  <data name="Settings.Section.HiddenTracks" xml:space="preserve">
+    <value>المسارات المخفية</value>
+    <comment>Settings section label</comment>
+  </data>
+  <data name="Settings.Section.Storage" xml:space="preserve">
+    <value>التخزين</value>
+    <comment>Settings section label</comment>
+  </data>
+  <data name="Settings.Section.AudioTools" xml:space="preserve">
+    <value>برامج المساعدة</value>
+    <comment>Settings section label</comment>
+  </data>
+  <data name="Settings.Section.Updates" xml:space="preserve">
+    <value>التحديثات والمطور</value>
+    <comment>Settings section label</comment>
+  </data>
+  <data name="Settings.Section.Reset" xml:space="preserve">
+    <value>Reset</value>
+    <comment>Settings section label</comment>
+  </data>
+  <data name="Settings.Section.YourAccount" xml:space="preserve">
+    <value>حسابك</value>
+    <comment>Settings section label</comment>
+  </data>
+  <data name="Settings.Section.Sync" xml:space="preserve">
+    <value>مزامنة</value>
+    <comment>Settings section label</comment>
+  </data>
+  <data name="Settings.Section.OtherAccounts" xml:space="preserve">
+    <value>حسابات أخرى</value>
+    <comment>Settings section label</comment>
+  </data>
+  <data name="Settings.Section.NoctisServer" xml:space="preserve">
+    <value>Noctis Server</value>
+    <comment>Settings section label</comment>
+  </data>
+  <data name="Settings.Section.WebRemote" xml:space="preserve">
+    <value>الويب عن بعد</value>
+    <comment>Settings section label</comment>
+  </data>
+  <data name="Settings.Section.Discord" xml:space="preserve">
+    <value>ديسكورد</value>
+    <comment>Settings section label</comment>
+  </data>
+  <data name="Settings.Section.Scrobbling" xml:space="preserve">
+    <value>Scrobbling</value>
+    <comment>Settings section label</comment>
+  </data>
+  <data name="Settings.Section.TIDAL" xml:space="preserve">
+    <value>TIDAL</value>
+    <comment>Settings section label</comment>
+  </data>
+  <data name="Settings.Section.MediaServer" xml:space="preserve">
+    <value>خادم الوسائط</value>
+    <comment>Settings section label</comment>
+  </data>
+  <data name="Settings.Section.LibraryOverview" xml:space="preserve">
+    <value>نظرة عامة على المكتبة</value>
+    <comment>Settings section label</comment>
+  </data>
+  <data name="Settings.Section.Listening" xml:space="preserve">
+    <value>الاستماع</value>
+    <comment>Settings section label</comment>
+  </data>
+  <data name="Settings.Section.TopPlayed" xml:space="preserve">
+    <value>أعلى اللعب</value>
+    <comment>Settings section label</comment>
+  </data>
+  <data name="Settings.CloseTip" xml:space="preserve">
+    <value>إغلاق الإعدادات</value>
+    <comment>Tooltip on the X in the settings header</comment>
+  </data>
+  <data name="AccountSync.EmailWatermark" xml:space="preserve">
+    <value>عنوان البريد الإلكتروني</value>
+    <comment>Create form watermark</comment>
+  </data>
+  <data name="AccountSync.PasswordWatermark" xml:space="preserve">
+    <value>كلمة المرور</value>
+    <comment>Create form watermark</comment>
+  </data>
+  <data name="Settings.YourListening" xml:space="preserve">
+    <value>الاستماع</value>
+    <comment>Statistics card label</comment>
+  </data>
+  <data name="Settings.RemovePictureTip" xml:space="preserve">
+    <value>إزالة الصورة</value>
+    <comment>Profile avatar X tooltip</comment>
+  </data>
+  <data name="ThemeEditor.Subtitle" xml:space="preserve">
+    <value>اختر ثلاثة ألوان. تحديث المعاينة المباشرة.</value>
+    <comment>Dialog subtitle</comment>
+  </data>
+  <data name="Settings.Tab.General" xml:space="preserve">
+    <value>عام</value>
+    <comment>Settings rail</comment>
+  </data>
+  <data name="Settings.Tab.Appearance" xml:space="preserve">
+    <value>المظهر</value>
+    <comment>Settings rail</comment>
+  </data>
+  <data name="Settings.Tab.Player" xml:space="preserve">
+    <value>المشغّل</value>
+    <comment>Settings rail</comment>
+  </data>
+  <data name="Settings.Tab.Lyrics" xml:space="preserve">
+    <value>كلمات الأغاني</value>
+    <comment>Settings rail</comment>
+  </data>
+  <data name="Settings.Tab.Shortcuts" xml:space="preserve">
+    <value>الاختصارات</value>
+    <comment>Settings rail</comment>
+  </data>
+  <data name="Settings.Tab.Audio" xml:space="preserve">
+    <value>الصوت</value>
+    <comment>Settings rail</comment>
+  </data>
+  <data name="Settings.Tab.Library" xml:space="preserve">
+    <value>المكتبة</value>
+    <comment>Settings rail</comment>
+  </data>
+  <data name="Settings.Tab.Advanced" xml:space="preserve">
+    <value>متقدم</value>
+    <comment>Settings rail</comment>
+  </data>
+  <data name="Settings.Tab.AccountDevices" xml:space="preserve">
+    <value>الحساب والأجهزة</value>
+    <comment>Settings rail</comment>
+  </data>
+  <data name="Settings.Tab.Integrations" xml:space="preserve">
+    <value>التكاملات</value>
+    <comment>Settings rail</comment>
+  </data>
+  <data name="Settings.Tab.Plugins" xml:space="preserve">
+    <value>الإضافات</value>
+    <comment>Settings rail</comment>
+  </data>
+  <data name="Settings.Tab.Statistics" xml:space="preserve">
+    <value>الإحصائيات</value>
+    <comment>Settings rail</comment>
+  </data>
+  <data name="Settings.Tab.About" xml:space="preserve">
+    <value>حول</value>
+    <comment>Settings rail</comment>
+  </data>
+  <data name="Settings.Group.App" xml:space="preserve">
+    <value>التطبيق</value>
+    <comment>Settings rail</comment>
+  </data>
+  <data name="Settings.Group.Playback" xml:space="preserve">
+    <value>التشغيل</value>
+    <comment>Settings rail</comment>
+  </data>
+  <data name="Settings.Group.Library" xml:space="preserve">
+    <value>المكتبة</value>
+    <comment>Settings rail</comment>
+  </data>
+  <data name="Settings.Group.Connect" xml:space="preserve">
+    <value>الاتصال</value>
+    <comment>Settings rail</comment>
+  </data>
+  <data name="Settings.Group.More" xml:space="preserve">
+    <value>المزيد</value>
+    <comment>Settings rail</comment>
   </data>
 </root>
