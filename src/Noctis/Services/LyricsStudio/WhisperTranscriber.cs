@@ -43,7 +43,13 @@ public sealed class WhisperTranscriber
 
             var words = new List<RecognizedWord>();
             var detected = language ?? "auto";
-            using var processor = builder.Build();
+            // Async disposal: Whisper.net refuses a synchronous Dispose while a decode is in
+            // flight ("Cannot dispose while processing, please use DisposeAsync instead"),
+            // which is exactly the state Stop leaves the processor in. The old `using` threw
+            // that on the row, and the session then freed the native factory under a live
+            // processor and took the app down (user report 09-19). DisposeAsync waits for
+            // the cancelled decode to let go first.
+            await using var processor = builder.Build();
             await foreach (var segment in processor.ProcessAsync(pcm16k, ct).ConfigureAwait(false))
             {
                 if (!string.IsNullOrWhiteSpace(segment.Language)) detected = segment.Language;

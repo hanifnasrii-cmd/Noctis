@@ -90,6 +90,7 @@ public partial class LyricsStudioViewModel : ViewModelBase
     public bool ReviewCanUpgrade => !IsRunning && Selected is { Status: StudioStatus.Loaded, Existing.Format: LyricsFormat.Lrc };
     public string ReviewTitle => Selected?.Title ?? string.Empty;
     public string ReviewSubtitle => Selected?.Subtitle ?? string.Empty;
+    public bool ReviewIsExplicit => Selected?.Track.IsExplicit == true;
     public string ReviewSourceText => Selected?.Result?.Source switch
     {
         LyricsStudioSource.ExistingLyrics => "From the song's lyrics",
@@ -291,6 +292,7 @@ public partial class LyricsStudioViewModel : ViewModelBase
         OnPropertyChanged(nameof(HasReview));
         OnPropertyChanged(nameof(ReviewTitle));
         OnPropertyChanged(nameof(ReviewSubtitle));
+        OnPropertyChanged(nameof(ReviewIsExplicit));
         OnPropertyChanged(nameof(ReviewSourceText));
         OnPropertyChanged(nameof(ReviewConfidenceText));
         OnPropertyChanged(nameof(ReviewIsTranscription));
@@ -348,6 +350,9 @@ public partial class LyricsStudioViewModel : ViewModelBase
     {
         if (!CanStart) return;
         var items = Queue.Where(i => i.Status == StudioStatus.Waiting).ToList();
+        // The song the user clicked goes first (user ask 09-19); the rest follow in queue order.
+        if (Selected is { Status: StudioStatus.Waiting } chosen && items.Remove(chosen))
+            items.Insert(0, chosen);
         if (items.Count == 0)
         {
             // Nothing queued: "Re-sync" re-times the song on screen, after a warning.

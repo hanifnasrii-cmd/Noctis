@@ -1,3 +1,4 @@
+using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
@@ -13,6 +14,37 @@ namespace Noctis.Views;
 /// </summary>
 public partial class LyricsStudioPanel : UserControl
 {
+    /// <summary>Child lookups for <see cref="OnTitleCellLayoutUpdated"/>, resolved once per cell and
+    /// stashed in Tag: LayoutUpdated fires after every layout pass and a cell's children never change.</summary>
+    private sealed record TitleCellChildren(Control Title, Control? ExplicitBadge);
+
+    /// <summary>
+    /// A title cell is an Auto,Auto grid so the E badge hugs the title; Auto columns measure
+    /// unbounded, so the title's MaxWidth is capped to the cell minus the badge here and
+    /// TextTrimming does the rest (the AddSongsDialog recipe).
+    /// </summary>
+    private void OnTitleCellLayoutUpdated(object? sender, System.EventArgs e)
+    {
+        if (sender is not Grid cell) return;
+        if (cell.Tag is not TitleCellChildren children)
+        {
+            var title = cell.Children.FirstOrDefault(c => c.Name == "TitleBox");
+            if (title is null) return;
+            children = new TitleCellChildren(title, cell.Children.FirstOrDefault(c => c.Name == "ExplicitBadge"));
+            cell.Tag = children;
+        }
+
+        var reserved = 0.0;
+        if (children.ExplicitBadge is { IsVisible: true } badge)
+        {
+            var width = badge.Bounds.Width > 0 ? badge.Bounds.Width : badge.DesiredSize.Width;
+            reserved = width + badge.Margin.Left + badge.Margin.Right;
+        }
+        var max = System.Math.Max(0, cell.Bounds.Width - reserved);
+        if (System.Math.Abs(children.Title.MaxWidth - max) > 0.5)
+            children.Title.MaxWidth = max;
+    }
+
     /// <summary>Title, subtitle and the round X. The sidebar page hides it and draws its own header.</summary>
     public static readonly StyledProperty<bool> ShowHeaderProperty =
         AvaloniaProperty.Register<LyricsStudioPanel, bool>(nameof(ShowHeader), true);

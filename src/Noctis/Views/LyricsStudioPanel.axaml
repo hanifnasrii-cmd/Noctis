@@ -328,20 +328,25 @@
                             <DataTemplate x:DataType="vm:LyricsStudioViewModel+StudioItem">
                                 <Border Classes="queue-row">
                                     <StackPanel Spacing="3">
-                                        <!-- Star column bounds the title so TextTrimming ellipsises it; in a
-                                             StackPanel it measured unbounded and the row clipped mid-glyph. -->
-                                        <Grid ColumnDefinitions="*,Auto,Auto">
-                                            <Border Grid.Column="0" Classes="title-hover">
-                                                <TextBlock Text="{Binding Title}" FontSize="13" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
-                                            </Border>
-                                            <!-- Same E badge as the island's title. -->
-                                            <Border Grid.Column="1" Background="{DynamicResource IslandExplicitBadge}" CornerRadius="2" Padding="4,0" Height="14"
-                                                    Margin="6,0,0,0" VerticalAlignment="Center" IsVisible="{Binding Track.IsExplicit}"
-                                                    ToolTip.Tip="{loc:T PlaybackBar.ExplicitTip}">
-                                                <TextBlock Text="E" FontSize="9" FontWeight="Bold" VerticalAlignment="Center" TextAlignment="Center"
-                                                           Foreground="{DynamicResource IslandIconFill}" />
-                                            </Border>
-                                            <PathIcon Grid.Column="2" Data="{StaticResource CheckmarkIcon}" Width="12" Height="12" Margin="6,0,0,0"
+                                        <Grid ColumnDefinitions="*,Auto">
+                                            <!-- Title cell: the E badge hugs the title (user ask 09-19). Auto,Auto keeps
+                                                 them together; the LayoutUpdated handler caps the title's width so a long
+                                                 one trims instead of pushing the badge out of the row. -->
+                                            <Grid Grid.Column="0" ColumnDefinitions="Auto,Auto" ClipToBounds="True"
+                                                  LayoutUpdated="OnTitleCellLayoutUpdated">
+                                                <Border Grid.Column="0" Classes="title-hover" Name="TitleBox">
+                                                    <TextBlock Text="{Binding Title}" FontSize="13" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                                                </Border>
+                                                <!-- Same E badge as the island's title. -->
+                                                <Border Grid.Column="1" Name="ExplicitBadge"
+                                                        Background="{DynamicResource IslandExplicitBadge}" CornerRadius="2" Padding="4,0" Height="14"
+                                                        Margin="6,0,0,0" VerticalAlignment="Center" IsVisible="{Binding Track.IsExplicit}"
+                                                        ToolTip.Tip="{loc:T PlaybackBar.ExplicitTip}">
+                                                    <TextBlock Text="E" FontSize="9" FontWeight="Bold" VerticalAlignment="Center" TextAlignment="Center"
+                                                               Foreground="{DynamicResource IslandIconFill}" />
+                                                </Border>
+                                            </Grid>
+                                            <PathIcon Grid.Column="1" Data="{StaticResource CheckmarkIcon}" Width="12" Height="12" Margin="6,0,0,0"
                                                       Foreground="{DynamicResource AccentColorBrush}" IsVisible="{Binding IsSaved}" />
                                         </Grid>
                                         <TextBlock Text="{Binding Subtitle}" FontSize="11" Foreground="{DynamicResource AccentColorBrush}" TextTrimming="CharacterEllipsis" />
@@ -370,8 +375,20 @@
                         <StackPanel DockPanel.Dock="Top" Spacing="8" Margin="0,0,16,10">
                             <Grid ColumnDefinitions="*,Auto">
                                 <StackPanel Grid.Column="0" Spacing="2">
-                                    <TextBlock Text="{Binding ReviewTitle}" FontSize="16" FontWeight="Bold" TextTrimming="CharacterEllipsis" />
-                                    <TextBlock Text="{Binding ReviewSubtitle}" FontSize="12" Opacity="0.6" />
+                                    <!-- Same title + E badge as the queue row; artist in the accent like the row (user ask 09-19). -->
+                                    <Grid ColumnDefinitions="Auto,Auto" ClipToBounds="True" LayoutUpdated="OnTitleCellLayoutUpdated">
+                                        <Border Grid.Column="0" Name="TitleBox">
+                                            <TextBlock Text="{Binding ReviewTitle}" FontSize="16" FontWeight="Bold" TextTrimming="CharacterEllipsis" />
+                                        </Border>
+                                        <Border Grid.Column="1" Name="ExplicitBadge"
+                                                Background="{DynamicResource IslandExplicitBadge}" CornerRadius="2" Padding="4,0" Height="14"
+                                                Margin="8,0,0,0" VerticalAlignment="Center" IsVisible="{Binding ReviewIsExplicit}"
+                                                ToolTip.Tip="{loc:T PlaybackBar.ExplicitTip}">
+                                            <TextBlock Text="E" FontSize="9" FontWeight="Bold" VerticalAlignment="Center" TextAlignment="Center"
+                                                       Foreground="{DynamicResource IslandIconFill}" />
+                                        </Border>
+                                    </Grid>
+                                    <TextBlock Text="{Binding ReviewSubtitle}" FontSize="12" Foreground="{DynamicResource AccentColorBrush}" />
                                 </StackPanel>
                                 <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
                                     <Button Command="{Binding UpgradeToWordTimingsCommand}" IsVisible="{Binding ReviewCanUpgrade}"
