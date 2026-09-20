@@ -55,6 +55,55 @@ public class MetadataTagRoundTripTests : IDisposable
             Assert.Equal(new[] { "Rock", "Jazz" }, f.Tag.Genres);
     }
 
+    // Discord (aaron, 09-15): any album save shrank "February 10, 2004" to "2004" — the
+    // year setter overwrote the TDRC frame the full date is read from.
+    [Fact]
+    public void Save_KeepsFullReleaseDate_WhenYearUnchanged()
+    {
+        var path = CreateWav();
+        using (var f = TagLib.File.Create(path))
+        {
+            f.Tag.Title = "Song";
+            var id3 = (TagLib.Id3v2.Tag)f.GetTag(TagLib.TagTypes.Id3v2, true);
+            TagLib.Id3v2.TextInformationFrame.Get(id3, "TDRC", true).Text = new[] { "2004-02-10" };
+            f.Save();
+        }
+
+        var svc = new MetadataService();
+        var track = svc.ReadTrackMetadata(path)!;
+        Assert.Equal("2004-02-10", track.ReleaseDate);
+        Assert.Equal(2004, track.Year);
+
+        track.Comment = "edited";
+        Assert.True(svc.WriteTrackMetadata(track));
+
+        var again = svc.ReadTrackMetadata(path)!;
+        Assert.Equal("2004-02-10", again.ReleaseDate);
+        Assert.Equal(2004, again.Year);
+    }
+
+    [Fact]
+    public void Save_WithChangedYear_DropsStaleFullDate()
+    {
+        var path = CreateWav();
+        using (var f = TagLib.File.Create(path))
+        {
+            f.Tag.Title = "Song";
+            var id3 = (TagLib.Id3v2.Tag)f.GetTag(TagLib.TagTypes.Id3v2, true);
+            TagLib.Id3v2.TextInformationFrame.Get(id3, "TDRC", true).Text = new[] { "2004-02-10" };
+            f.Save();
+        }
+
+        var svc = new MetadataService();
+        var track = svc.ReadTrackMetadata(path)!;
+        track.Year = 2005;
+        Assert.True(svc.WriteTrackMetadata(track));
+
+        var again = svc.ReadTrackMetadata(path)!;
+        Assert.Equal(2005, again.Year);
+        Assert.Equal(string.Empty, again.ReleaseDate);
+    }
+
     [Fact]
     public void Save_WithChangedGenre_WritesTheNewSingleValue()
     {

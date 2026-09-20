@@ -102,24 +102,85 @@ public partial class CoverFlowViewModel : ViewModelBase, IDisposable
     [ObservableProperty] private bool _centerIsFavorite;
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(ShowCarousel))]
+    [NotifyPropertyChangedFor(nameof(ShowCascade))]
     [NotifyPropertyChangedFor(nameof(ShowEmptyState))]
     private bool _hasQueue;
 
-    /// <summary>Collage sub-mode: a static, decorative library-artwork showcase instead of the carousel.</summary>
+    /// <summary>Which arrangement the page shows (Appearance → Cover Flow Layout; the top-bar
+    /// pill segment steps through them). MainWindowViewModel keeps this two-way with the
+    /// persisted setting. Defaults to the classic carousel.</summary>
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsCollageMode))]
+    [NotifyPropertyChangedFor(nameof(IsCarouselMode))]
+    [NotifyPropertyChangedFor(nameof(IsCascadeMode))]
     [NotifyPropertyChangedFor(nameof(ShowCarousel))]
+    [NotifyPropertyChangedFor(nameof(ShowCascade))]
     [NotifyPropertyChangedFor(nameof(ShowEmptyState))]
-    private bool _isCollageMode;
+    [NotifyPropertyChangedFor(nameof(LayoutLabel))]
+    private CoverFlowLayout _layout = CoverFlowLayout.Carousel;
 
-    /// <summary>Carousel (queue-driven) shows only outside collage mode and when a queue exists.</summary>
-    public bool ShowCarousel => !IsCollageMode && HasQueue;
-    /// <summary>"Nothing playing" empty state — carousel mode with no queue.</summary>
+    /// <summary>Collage: a static, decorative queue-artwork mosaic instead of the carousel.</summary>
+    public bool IsCollageMode => Layout == CoverFlowLayout.Collage;
+    public bool IsCarouselMode => Layout == CoverFlowLayout.Carousel;
+    public bool IsCascadeMode => Layout == CoverFlowLayout.Cascade;
+
+    /// <summary>Classic row (queue-driven) shows only in carousel layout and when a queue exists.</summary>
+    public bool ShowCarousel => IsCarouselMode && HasQueue;
+    /// <summary>Cascade pile + text column: cascade layout with a queue.</summary>
+    public bool ShowCascade => IsCascadeMode && HasQueue;
+    /// <summary>"Nothing playing" empty state — any queue-driven layout with no queue.</summary>
     public bool ShowEmptyState => !IsCollageMode && !HasQueue;
 
+    /// <summary>Top-bar pill segment: Carousel → Cascade → Collage → Carousel.</summary>
     [RelayCommand]
-    private void ToggleCollageMode() => IsCollageMode = !IsCollageMode;
+    private void ToggleCollageMode() => Layout = CoverFlowLayouts.Next(Layout);
+
+    /// <summary>Top-bar layout dropdown: pick a layout by name ("Carousel" / "Cascade" / "Collage").</summary>
+    [RelayCommand]
+    private void SetLayout(string? name) => Layout = CoverFlowLayouts.Parse(name);
+
+    /// <summary>Human label for the current layout (the dropdown's face).</summary>
+    public string LayoutLabel => Layout.ToString();
 
     public PlayerViewModel Player => _player;
+
+    /// <summary>
+    /// Raised after the slots are refreshed whenever the centre track changed. The
+    /// argument is how many slots the row moved: +1/+2 when the new centre was the next /
+    /// far-next card, −1/−2 when it was the previous / far-previous one, 0 when the new
+    /// centre came from nowhere in the row (a fresh album, a direct play) — the view
+    /// slides the cards for a non-zero step and snaps for zero.
+    /// </summary>
+    public event EventHandler<int>? CarouselShifted;
+
+    /// <summary>Slots moved between two centre tracks, judged from the OLD row: the new
+    /// centre is looked up among the old neighbours. Reference identity — the queue and
+    /// history hold the very same Track instances.</summary>
+    internal static int StepBetween(Track? oldCenter, Track? newCenter,
+        Track? oldPrev1, Track? oldPrev2, Track? oldNext1, Track? oldNext2,
+        Track? oldPrev3 = null, Track? oldPrev4 = null, Track? oldNext3 = null, Track? oldNext4 = null)
+    {
+        if (newCenter == null || ReferenceEquals(oldCenter, newCenter)) return 0;
+        if (ReferenceEquals(newCenter, oldNext1)) return 1;
+        if (ReferenceEquals(newCenter, oldNext2)) return 2;
+        if (ReferenceEquals(newCenter, oldNext3)) return 3;
+        if (ReferenceEquals(newCenter, oldNext4)) return 4;
+        if (ReferenceEquals(newCenter, oldPrev1)) return -1;
+        if (ReferenceEquals(newCenter, oldPrev2)) return -2;
+        if (ReferenceEquals(newCenter, oldPrev3)) return -3;
+        if (ReferenceEquals(newCenter, oldPrev4)) return -4;
+        return 0;
+    }
+
+    /// <summary>Carousel click / wheel / arrow keys: play the track <paramref name="offset"/>
+    /// slots away (+ = up next, − = history). Jumping into history re-queues what was
+    /// skipped over so the order survives; 0 is a no-op.</summary>
+    [RelayCommand]
+    private void JumpTo(int offset)
+    {
+        if (offset > 0) _player.PlayFromUpNextAt(offset - 1);
+        else if (offset < 0) _player.PlayFromHistoryAt(-offset - 1);
+    }
 
     public CoverFlowViewModel(PlayerViewModel player)
     {
@@ -182,6 +243,11 @@ public partial class CoverFlowViewModel : ViewModelBase, IDisposable
         var history = _player.History;
 
         HasQueue = current != null || upNext.Count > 0;
+
+        // Judge the slide BEFORE the slots move: the old neighbours are still in place.
+        var centerChanged = !ReferenceEquals(CenterTrack, current);
+        var step = StepBetween(CenterTrack, current, PreviousTrack, FarPreviousTrack, NextTrack, FarNextTrack,
+            EdgePreviousTrack, OffPreviousTrack, EdgeNextTrack, OffNextTrack);
 
         // Track center track property changes (e.g. IsFavorite toggle)
         if (_subscribedCenterTrack != current)
@@ -286,6 +352,9 @@ public partial class CoverFlowViewModel : ViewModelBase, IDisposable
         Next29Track = upNext.Count > 28 ? upNext[28] : null;
         Next30Track = upNext.Count > 29 ? upNext[29] : null;
         Next31Track = upNext.Count > 30 ? upNext[30] : null;
+
+        if (centerChanged)
+            CarouselShifted?.Invoke(this, step);
     }
 
     private void OnCenterTrackPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)

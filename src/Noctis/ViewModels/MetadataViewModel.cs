@@ -1,4 +1,6 @@
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
+using System.ComponentModel;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform.Storage;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -207,6 +209,17 @@ public partial class MetadataViewModel : ViewModelBase
     [ObservableProperty] private string _barcode = string.Empty;
 
     [ObservableProperty] private string _selectedAdvisory = "None";
+
+    // ── "Album is explicit" (Details tab, whole-album dialog only) ──
+    // One checkbox marks every track of the album explicit (or clears it), written per
+    // file as ITUNESADVISORY on Save. A single track keeps its advisory picker on the
+    // Advanced tab; a multi-track selection is not an album, so it gets neither.
+    [ObservableProperty] private bool _isExplicit;
+    private bool _loadedIsExplicit;
+
+    public bool ShowExplicitCheckbox => _albumScoped && !_multiSelect;
+    public string ExplicitCheckboxLabel => "Album is explicit";
+
     [ObservableProperty] private string _language = string.Empty;
     [ObservableProperty] private string _mood = string.Empty;
     [ObservableProperty] private string _advDescription = string.Empty;
@@ -396,6 +409,7 @@ public partial class MetadataViewModel : ViewModelBase
             RebuildRenamePreview();
 
         CaptureLoadedTagSignatures();
+        CaptureChangeBaseline();
     }
 
     /// <summary>
@@ -459,6 +473,179 @@ public partial class MetadataViewModel : ViewModelBase
         ApplyArtwork(artwork);
         if (advanced != null)
             ApplyAdvancedFields(advanced);
+
+        // The advanced tags and artwork above are the last loaded state; anything the
+        // user types from here on is a change worth showing in the rail and footer.
+        CaptureChangeBaseline();
+    }
+
+    // ── Change tracking (rail dots + footer summary) ─────────────────────────
+    // A snapshot of every editable field is taken once the dialog is fully loaded;
+    // each later edit is compared against it, so the rail can mark the sections that
+    // carry unsaved edits and the footer can say how many fields Save will write.
+    // Reverting a field by hand takes it back out of the count.
+
+    private static readonly (string Name, MetadataSection Section)[] TrackedFields =
+    {
+        (nameof(Title), MetadataSection.Details), (nameof(Artist), MetadataSection.Details),
+        (nameof(AlbumArtist), MetadataSection.Details), (nameof(Performer), MetadataSection.Details),
+        (nameof(Album), MetadataSection.Details), (nameof(Genre), MetadataSection.Details),
+        (nameof(Composer), MetadataSection.Details), (nameof(TrackNumber), MetadataSection.Details),
+        (nameof(TrackCount), MetadataSection.Details), (nameof(DiscNumber), MetadataSection.Details),
+        (nameof(DiscCount), MetadataSection.Details), (nameof(Bpm), MetadataSection.Details),
+        (nameof(Year), MetadataSection.Details), (nameof(IsCompilation), MetadataSection.Details),
+        (nameof(IsExplicit), MetadataSection.Details), (nameof(ShowComposerInAllViews), MetadataSection.Details),
+        (nameof(Grouping), MetadataSection.Details), (nameof(UseWorkAndMovement), MetadataSection.Details),
+        (nameof(WorkName), MetadataSection.Details), (nameof(MovementName), MetadataSection.Details),
+        (nameof(MovementNumber), MetadataSection.Details), (nameof(MovementCount), MetadataSection.Details),
+        (nameof(Comment), MetadataSection.Details), (nameof(Rating), MetadataSection.Details),
+        (nameof(IsDisliked), MetadataSection.Details), (nameof(ApplyRename), MetadataSection.Details),
+        (nameof(RenamePattern), MetadataSection.Details),
+
+        (nameof(TitleSort), MetadataSection.Advanced), (nameof(ArtistSort), MetadataSection.Advanced),
+        (nameof(AlbumSort), MetadataSection.Advanced), (nameof(AlbumArtistSort), MetadataSection.Advanced),
+        (nameof(ComposerSort), MetadataSection.Advanced), (nameof(Conductor), MetadataSection.Advanced),
+        (nameof(Lyricist), MetadataSection.Advanced), (nameof(Publisher), MetadataSection.Advanced),
+        (nameof(EncodedBy), MetadataSection.Advanced), (nameof(Isrc), MetadataSection.Advanced),
+        (nameof(CatalogNumber), MetadataSection.Advanced), (nameof(Barcode), MetadataSection.Advanced),
+        (nameof(SelectedAdvisory), MetadataSection.Advanced), (nameof(Language), MetadataSection.Advanced),
+        (nameof(Mood), MetadataSection.Advanced), (nameof(AdvDescription), MetadataSection.Advanced),
+        (nameof(AdvReleaseDate), MetadataSection.Advanced), (nameof(Copyright), MetadataSection.Advanced),
+
+        (nameof(Lyrics), MetadataSection.PlainLyrics), (nameof(HasCustomLyrics), MetadataSection.PlainLyrics),
+        (nameof(SyncedLyrics), MetadataSection.SyncedLyrics), (nameof(HasCustomSyncedLyrics), MetadataSection.SyncedLyrics),
+
+        (nameof(SkipWhenShuffling), MetadataSection.Options), (nameof(RememberPlaybackPosition), MetadataSection.Options),
+        (nameof(MediaKind), MetadataSection.Options), (nameof(ReleaseTypeOverride), MetadataSection.Options),
+        (nameof(HasStartTime), MetadataSection.Options), (nameof(StartTime), MetadataSection.Options),
+        (nameof(HasStopTime), MetadataSection.Options), (nameof(StopTime), MetadataSection.Options),
+        (nameof(VolumeAdjust), MetadataSection.Options), (nameof(SelectedEqPreset), MetadataSection.Options),
+    };
+
+    // Properties that carry no value of their own but signal that staged state
+    // (artwork bytes, animated cover source, play-count reset) moved.
+    private static readonly HashSet<string> ChangeTriggers = new(
+        TrackedFields.Select(f => f.Name).Concat(new[]
+        {
+            nameof(ArtworkPreview), nameof(HasArtwork),
+            nameof(AnimatedCoverPath), nameof(HasAnimatedCover),
+            nameof(PlayCountDisplay),
+        }));
+
+    private readonly Dictionary<string, object?> _changeBaseline = new();
+    private string _customTagsBaseline = string.Empty;
+    private bool _changeBaselineCaptured;
+    private bool _customTagsHooked;
+
+    public int ChangeCount { get; private set; }
+    public bool HasChanges => ChangeCount > 0;
+    public bool DetailsChanged { get; private set; }
+    public bool AdvancedChanged { get; private set; }
+    public bool ArtworkChanged { get; private set; }
+    public bool AnimatedArtworkChanged { get; private set; }
+    public bool PlainLyricsChanged { get; private set; }
+    public bool SyncedLyricsChanged { get; private set; }
+    public bool OptionsChanged { get; private set; }
+
+    /// <summary>Footer line: "No changes yet" / "3 changes · applies to 22 files".</summary>
+    public string ChangeSummary
+    {
+        get
+        {
+            if (ChangeCount == 0) return Localization.Loc.T("Metadata.NoChangesYet");
+            var count = ChangeCount == 1
+                ? Localization.Loc.T("Metadata.ChangesOne")
+                : Localization.Loc.T("Metadata.ChangesMany", ChangeCount);
+            var files = _albumTracks?.Count ?? 1;
+            return files > 1 ? $"{count} · {Localization.Loc.T("Metadata.AppliesToFiles", files)}" : count;
+        }
+    }
+
+    private void CaptureChangeBaseline()
+    {
+        foreach (var (name, _) in TrackedFields)
+            _changeBaseline[name] = ReadTracked(name);
+        _customTagsBaseline = CustomTagsSignature();
+        if (!_customTagsHooked)
+        {
+            _customTagsHooked = true;
+            CustomTags.CollectionChanged += OnCustomTagsChanged;
+        }
+        foreach (var tag in CustomTags)
+        {
+            tag.PropertyChanged -= OnCustomTagEdited;
+            tag.PropertyChanged += OnCustomTagEdited;
+        }
+        _changeBaselineCaptured = true;
+        RecomputeChanges();
+    }
+
+    private object? ReadTracked(string name) => GetType().GetProperty(name)!.GetValue(this);
+
+    private string CustomTagsSignature() =>
+        string.Join("", CustomTags.Select(t => t.Key + "" + t.Value));
+
+    private void OnCustomTagsChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        if (e.NewItems != null)
+            foreach (CustomTagItem tag in e.NewItems) tag.PropertyChanged += OnCustomTagEdited;
+        if (e.OldItems != null)
+            foreach (CustomTagItem tag in e.OldItems) tag.PropertyChanged -= OnCustomTagEdited;
+        RecomputeChanges();
+    }
+
+    private void OnCustomTagEdited(object? sender, PropertyChangedEventArgs e) => RecomputeChanges();
+
+    protected override void OnPropertyChanged(PropertyChangedEventArgs e)
+    {
+        base.OnPropertyChanged(e);
+        if (_changeBaselineCaptured && e.PropertyName is { } name && ChangeTriggers.Contains(name))
+            RecomputeChanges();
+    }
+
+    private void RecomputeChanges()
+    {
+        if (!_changeBaselineCaptured) return;
+
+        var perSection = new int[Enum.GetValues<MetadataSection>().Length];
+        foreach (var (name, section) in TrackedFields)
+        {
+            if (!Equals(ReadTracked(name), _changeBaseline.GetValueOrDefault(name)))
+                perSection[(int)section]++;
+        }
+        if (_resetPlayCountPending) perSection[(int)MetadataSection.Details]++;
+        if (CustomTagsSignature() != _customTagsBaseline) perSection[(int)MetadataSection.Advanced]++;
+        if (_newArtworkData != null || _artworkRemoved) perSection[(int)MetadataSection.Artwork]++;
+        if (_newAnimatedCoverSource != null || _animatedCoverRemoved) perSection[(int)MetadataSection.AnimatedArtwork]++;
+
+        DetailsChanged = Flag(DetailsChanged, perSection[(int)MetadataSection.Details], nameof(DetailsChanged), out var raiseDetails);
+        AdvancedChanged = Flag(AdvancedChanged, perSection[(int)MetadataSection.Advanced], nameof(AdvancedChanged), out var raiseAdvanced);
+        ArtworkChanged = Flag(ArtworkChanged, perSection[(int)MetadataSection.Artwork], nameof(ArtworkChanged), out var raiseArtwork);
+        AnimatedArtworkChanged = Flag(AnimatedArtworkChanged, perSection[(int)MetadataSection.AnimatedArtwork], nameof(AnimatedArtworkChanged), out var raiseAnimated);
+        PlainLyricsChanged = Flag(PlainLyricsChanged, perSection[(int)MetadataSection.PlainLyrics], nameof(PlainLyricsChanged), out var raisePlain);
+        SyncedLyricsChanged = Flag(SyncedLyricsChanged, perSection[(int)MetadataSection.SyncedLyrics], nameof(SyncedLyricsChanged), out var raiseSynced);
+        OptionsChanged = Flag(OptionsChanged, perSection[(int)MetadataSection.Options], nameof(OptionsChanged), out var raiseOptions);
+        // Raise only after every flag holds its new value: bindings read the property
+        // inside the PropertyChanged handler, so raising first would hand them the stale one.
+        foreach (var name in new[] { raiseDetails, raiseAdvanced, raiseArtwork, raiseAnimated, raisePlain, raiseSynced, raiseOptions })
+            if (name != null) OnPropertyChanged(name);
+
+        var total = perSection.Sum();
+        if (ChangeCount != total)
+        {
+            ChangeCount = total;
+            OnPropertyChanged(nameof(ChangeCount));
+            OnPropertyChanged(nameof(HasChanges));
+            OnPropertyChanged(nameof(ChangeSummary));
+        }
+    }
+
+    /// <summary>Returns the new flag value; <paramref name="raise"/> names the property when it flipped.</summary>
+    private static bool Flag(bool current, int changedFields, string propertyName, out string? raise)
+    {
+        var next = changedFields > 0;
+        raise = next != current ? propertyName : null;
+        return next;
     }
 
     // What each track's tags looked like when the dialog opened, so Save can tell whether a
@@ -714,6 +901,7 @@ public partial class MetadataViewModel : ViewModelBase
         else { _mixedFields.Add(nameof(Genre)); Genre = string.Empty; }
 
         IsCompilation = _albumTracks!.All(t => t.IsCompilation);
+        IsExplicit = _albumTracks!.All(t => t.IsExplicit);
         ShowComposerInAllViews = _albumTracks!.All(t => t.ShowComposerInAllViews);
 
         // Rating is album-wide here: show the shared value when every track agrees,
@@ -768,6 +956,7 @@ public partial class MetadataViewModel : ViewModelBase
         _albumLoaded[nameof(MovementNumber)] = MovementNumber;
         _albumLoaded[nameof(MovementCount)] = MovementCount;
         _loadedIsCompilation = IsCompilation;
+        _loadedIsExplicit = IsExplicit;
         _loadedShowComposerInAllViews = ShowComposerInAllViews;
         _loadedRating = Rating;
         _loadedIsDisliked = IsDisliked;
@@ -788,6 +977,26 @@ public partial class MetadataViewModel : ViewModelBase
         => current != _albumLoaded.GetValueOrDefault(key, string.Empty);
 
     private string Watermark(string key) => _mixedFields.Contains(key) ? "Mixed" : string.Empty;
+
+    /// <summary>Details tool-row hint for album / multi-track edits: why some fields read "Mixed".</summary>
+    public bool ShowMixedHint => _albumTracks is { Count: > 1 };
+
+    /// <summary>"3000 × 3000" chip on the Artwork tab; empty while there is no cover.</summary>
+    public string ArtworkDimensions => ArtworkPreview is { } bmp ? $"{bmp.PixelSize.Width} × {bmp.PixelSize.Height}" : string.Empty;
+
+    partial void OnArtworkPreviewChanged(Bitmap? value) => OnPropertyChanged(nameof(ArtworkDimensions));
+
+    [RelayCommand]
+    private void ShowInFolder() => PlatformHelper.ShowInFileManager(_track.FilePath);
+
+    [RelayCommand]
+    private async Task CopyPath(Avalonia.Controls.Window? window)
+    {
+        var clipboard = window?.Clipboard ?? Avalonia.Controls.TopLevel.GetTopLevel(window)?.Clipboard;
+        if (clipboard != null)
+            await clipboard.SetTextAsync(_track.FilePath);
+    }
+    public string MixedHint => ShowMixedHint ? Localization.Loc.T("Metadata.MixedHint", _albumTracks!.Count) : string.Empty;
 
     // ── Rename-by-pattern (multi-select) ──
     partial void OnRenamePatternChanged(string value) => RebuildRenamePreview();
@@ -946,6 +1155,8 @@ public partial class MetadataViewModel : ViewModelBase
         Bpm = _track.Bpm > 0 ? _track.Bpm.ToString() : string.Empty;
         Year = _track.Year > 0 ? _track.Year.ToString() : string.Empty;
         IsCompilation = _track.IsCompilation;
+        IsExplicit = _track.IsExplicit;
+        _loadedIsExplicit = IsExplicit;
         ShowComposerInAllViews = _track.ShowComposerInAllViews;
         Grouping = _track.Grouping;
         UseWorkAndMovement = _track.UseWorkAndMovement;
@@ -1588,6 +1799,34 @@ public partial class MetadataViewModel : ViewModelBase
             HasCustomSyncedLyrics = true;
     }
 
+    /// <summary>Seconds the "Shift all" buttons move every timestamp by (GitHub #57).
+    /// Free text so "1", "0.25" and "1,5" all work; anything unparseable is ignored.</summary>
+    [ObservableProperty] private string _shiftAllSeconds = "0.5";
+
+    [RelayCommand]
+    private void ShiftAllEarlier() => ShiftAllTimestamps(-1);
+
+    [RelayCommand]
+    private void ShiftAllLater() => ShiftAllTimestamps(+1);
+
+    private void ShiftAllTimestamps(int direction)
+    {
+        if (!TryParseShiftSeconds(ShiftAllSeconds, out var seconds) || seconds <= 0) return;
+        if (!LyricsTextHelper.ContainsTimestamps(SyncedLyrics)) return;
+
+        SyncedLyrics = LyricsTextHelper.ShiftAllTimestamps(SyncedLyrics, TimeSpan.FromSeconds(seconds * direction));
+        HasCustomSyncedLyrics = true;
+        RebuildSyncedLinesFromText();
+    }
+
+    internal static bool TryParseShiftSeconds(string? text, out double seconds)
+    {
+        var t = (text ?? string.Empty).Trim().Replace(',', '.');
+        return double.TryParse(t, System.Globalization.NumberStyles.Float,
+                   System.Globalization.CultureInfo.InvariantCulture, out seconds)
+               && double.IsFinite(seconds);
+    }
+
     [RelayCommand]
     private void NudgeSyncedLineBack(SyncedLyricEditorLine? line) => line?.Nudge(forward: false);
 
@@ -1596,6 +1835,76 @@ public partial class MetadataViewModel : ViewModelBase
 
     [RelayCommand]
     private void ClearSyncedLineTimestamp(SyncedLyricEditorLine? line) => line?.ClearTimestamp();
+
+    /// <summary>
+    /// "Import file" on the lyrics tabs (Discord ask, 2026-08-31): pick an .lrc or .txt
+    /// and load it as the track's lyrics, for the many songs no provider has. Nothing is
+    /// written until Save, which then takes the usual sidecar/tag path.
+    /// </summary>
+    [RelayCommand]
+    private async Task ImportLyricsFile(Avalonia.Visual visual)
+    {
+        var topLevel = Avalonia.Controls.TopLevel.GetTopLevel(visual);
+        if (topLevel == null) return;
+
+        var files = await topLevel.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+        {
+            Title = "Import Lyrics",
+            AllowMultiple = false,
+            FileTypeFilter = new[]
+            {
+                new FilePickerFileType("Lyrics") { Patterns = new[] { "*.lrc", "*.txt" } },
+                new FilePickerFileType("All files") { Patterns = new[] { "*" } }
+            }
+        });
+        if (files.Count == 0) return;
+
+        string text;
+        try
+        {
+            await using var stream = await files[0].OpenReadAsync();
+            // StreamReader strips a UTF-8/UTF-16 BOM, which a raw byte decode would leave
+            // in front of the first timestamp and break the parser.
+            using var reader = new StreamReader(stream, detectEncodingFromByteOrderMarks: true);
+            text = await reader.ReadToEndAsync();
+        }
+        catch (Exception ex)
+        {
+            SyncedLyricsSearchStatus = $"Couldn't read file: {ex.Message}";
+            return;
+        }
+
+        ImportLyricsText(text, files[0].Name);
+    }
+
+    /// <summary>
+    /// Routes imported text by content, not extension: timestamped lines become the synced
+    /// lyrics (a .txt full of [mm:ss] tags is still LRC), anything else becomes the plain
+    /// lyrics. Both tabs' Enable toggles flip on so the Save gate sees the import.
+    /// </summary>
+    internal void ImportLyricsText(string text, string fileName)
+    {
+        var normalized = (text ?? string.Empty).Replace("\r\n", "\n").Trim();
+        if (normalized.Length == 0)
+        {
+            SyncedLyricsSearchStatus = $"{fileName} is empty.";
+            return;
+        }
+
+        if (LyricsTextHelper.ContainsTimestamps(normalized))
+        {
+            SyncedLyrics = normalized;
+            HasCustomSyncedLyrics = true;
+            SyncedLyricsSearchStatus = $"Imported {fileName}";
+            RebuildSyncedLinesFromText();
+        }
+        else
+        {
+            Lyrics = normalized;
+            HasCustomLyrics = true;
+            SyncedLyricsSearchStatus = $"Imported {fileName} as plain lyrics (no timestamps found).";
+        }
+    }
 
     [RelayCommand]
     private async Task SearchSyncedLyrics()
@@ -2021,6 +2330,31 @@ public partial class MetadataViewModel : ViewModelBase
                     if (!_metadata.WriteTrackMetadata(t))
                         lock (failedWrites) failedWrites.Add(Path.GetFileName(t.FilePath));
             });
+
+            // "Album is explicit": write ITUNESADVISORY to every track whose flag differs
+            // from the checkbox. Only when the user actually toggled it — an untouched
+            // checkbox on a mixed album must not silently stamp every track.
+            if (IsExplicit != _loadedIsExplicit)
+            {
+                var advisoryTargets = _albumTracks.Where(t => t.IsExplicit != IsExplicit).ToList();
+                var advisoryValue = IsExplicit ? 1 : 0;
+                var flipped = new List<Track>();
+                await Task.Run(() =>
+                {
+                    foreach (var t in advisoryTargets)
+                    {
+                        if (_metadata.WriteAdvisory(t.FilePath, advisoryValue))
+                            lock (flipped) flipped.Add(t);
+                        else
+                            lock (failedWrites) failedWrites.Add(Path.GetFileName(t.FilePath));
+                    }
+                });
+                // Track.IsExplicit is observable, so every "E" badge and the playback
+                // filter see the change immediately; the library save below persists it.
+                foreach (var t in flipped) t.IsExplicit = IsExplicit;
+                _loadedIsExplicit = IsExplicit;
+                OnPropertyChanged(nameof(HeaderIsExplicit));
+            }
         }
         else if (NeedsTagWrite(_track))
         {
@@ -2437,6 +2771,9 @@ public partial class MetadataViewModel : ViewModelBase
 /// <summary>
 /// Observable key-value pair for custom tag editing in the Advanced Details tab.
 /// </summary>
+/// <summary>Rail sections of the metadata editor that can carry unsaved edits.</summary>
+public enum MetadataSection { Details, Advanced, Artwork, AnimatedArtwork, PlainLyrics, SyncedLyrics, Options }
+
 public partial class CustomTagItem : ObservableObject
 {
     [ObservableProperty] private string _key = string.Empty;

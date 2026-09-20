@@ -1,10 +1,11 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Threading;
 using Avalonia.Controls.ApplicationLifetimes;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Noctis.Localization;
 using Noctis.Models;
 using Noctis.Helpers;
 using Noctis.Services;
@@ -37,23 +38,41 @@ public partial class SidebarViewModel : ViewModelBase
     /// </summary>
     public ObservableCollection<PlaylistNavItem> SidebarRows { get; } = new();
 
-    /// <summary>Main navigation items (Home, Songs, Albums, Artists, Playlists, Settings).</summary>
+    /// <summary>Main navigation items (Home, Songs, Albums, Artists, Folders, Playlists, Visualizer, Settings).</summary>
     public ObservableCollection<NavItem> NavItems { get; } = new()
     {
-        new NavItem { Key = "home", Label = "Home", IconGlyph = "HomeIcon" },
-        new NavItem { Key = "songs", Label = "Songs", IconGlyph = "SongsIcon" },
-        new NavItem { Key = "albums", Label = "Albums", IconGlyph = "AlbumsIcon" },
-        new NavItem { Key = "artists", Label = "Artists", IconGlyph = "ArtistsIcon" },
-        new NavItem { Key = "folders", Label = "Folders", IconGlyph = "FoldersIcon" },
-        new NavItem { Key = "playlists", Label = "Playlists", IconGlyph = "PlaylistsIcon" },
-        new NavItem { Key = "settings", Label = "Settings", IconGlyph = "SettingsIcon" },
+        new NavItem { Key = "home", Label = Loc.T("Nav.Home"), IconGlyph = "HomeIcon" },
+        new NavItem { Key = "songs", Label = Loc.T("Nav.Songs"), IconGlyph = "SongsIcon" },
+        new NavItem { Key = "albums", Label = Loc.T("Nav.Albums"), IconGlyph = "AlbumsIcon" },
+        new NavItem { Key = "artists", Label = Loc.T("Nav.Artists"), IconGlyph = "ArtistsIcon" },
+        new NavItem { Key = "folders", Label = Loc.T("Nav.Folders"), IconGlyph = "FoldersIcon" },
+        new NavItem { Key = "playlists", Label = Loc.T("Nav.Playlists"), IconGlyph = "PlaylistsIcon" },
+        new NavItem { Key = "visualizer", Label = Loc.T("Nav.Visualizer"), IconGlyph = "SidebarVisualizerIcon" },
+        new NavItem { Key = "lyricsstudio", Label = Loc.T("Nav.LyricsStudio"), IconGlyph = "SidebarLyricsStudioIcon" },
+        new NavItem { Key = "settings", Label = Loc.T("Nav.Settings"), IconGlyph = "SettingsIcon" },
     };
 
     /// <summary>Favorites navigation item (below divider).</summary>
     public ObservableCollection<NavItem> FavoritesItems { get; } = new()
     {
-        new NavItem { Key = "favorites", Label = "Favorites", IconGlyph = "FavoritesIcon" },
+        new NavItem { Key = "favorites", Label = Loc.T("Nav.Favorites"), IconGlyph = "FavoritesIcon" },
     };
+
+    /// <summary>Resource key for a section's label, by nav key.</summary>
+    public static string LabelKey(string navKey) => navKey switch
+    {
+        "home" => "Nav.Home", "songs" => "Nav.Songs", "albums" => "Nav.Albums", "artists" => "Nav.Artists",
+        "folders" => "Nav.Folders", "playlists" => "Nav.Playlists", "visualizer" => "Nav.Visualizer", "lyricsstudio" => "Nav.LyricsStudio",
+        "settings" => "Nav.Settings", "favorites" => "Nav.Favorites", "server" => "Nav.Server", "cd" => "Nav.AudioCd",
+        _ => navKey,
+    };
+
+    /// <summary>Re-labels the section items after a language switch (labels are plain strings, not bindings).</summary>
+    private void RelabelSections()
+    {
+        foreach (var item in NavItems.Concat(FavoritesItems))
+            item.Label = Loc.T(LabelKey(item.Key));
+    }
 
     /// <summary>User-created playlists shown in sidebar with artwork thumbnails.</summary>
     public ObservableCollection<PlaylistNavItem> PlaylistItems { get; } = new();
@@ -71,6 +90,7 @@ public partial class SidebarViewModel : ViewModelBase
         _library = library;
         _library.LibraryUpdated += (_, _) => RefreshFavoritesCount();
         _library.FavoritesChanged += (_, _) => RefreshFavoritesCount();
+        Loc.Instance.CultureChanged += (_, _) => RelabelSections();
     }
 
     /// <summary>
@@ -79,21 +99,32 @@ public partial class SidebarViewModel : ViewModelBase
     /// container doesn't leave a dead gap in the rail.
     /// </summary>
     public void SetServerSectionVisible(bool visible)
+        => SetOptionalSectionVisible(visible, "server", Loc.T("Nav.Server"), "ServerIcon", after: null, before: "cd");
+
+    /// <summary>
+    /// Shows or hides the "Audio CD" entry. It sits after Server (when present),
+    /// otherwise directly above Settings, and only exists while an optical drive does.
+    /// </summary>
+    public void SetAudioCdSectionVisible(bool visible)
+        => SetOptionalSectionVisible(visible, "cd", Loc.T("Nav.AudioCd"), "CdIcon", after: "server", before: null);
+
+    /// <summary>Insert order: right after <paramref name="after"/> if present, else right before
+    /// <paramref name="before"/> if present, else above Settings.</summary>
+    private void SetOptionalSectionVisible(bool visible, string key, string label, string icon, string? after, string? before)
     {
-        var existing = NavItems.FirstOrDefault(i => i.Key == "server");
+        var existing = NavItems.FirstOrDefault(i => i.Key == key);
         if (visible == (existing != null)) return;
+        if (!visible) { NavItems.Remove(existing!); return; }
 
-        if (!visible)
-        {
-            NavItems.Remove(existing!);
-            return;
-        }
-
-        var settingsIndex = NavItems
-            .Select((item, index) => (item, index))
-            .FirstOrDefault(x => x.item.Key == "settings").index;
-        var insertAt = settingsIndex > 0 ? settingsIndex : NavItems.Count;
-        NavItems.Insert(insertAt, new NavItem { Key = "server", Label = "Server", IconGlyph = "ServerIcon" });
+        var indexed = NavItems.Select((item, index) => (item, index)).ToList();
+        var afterIndex = after == null ? -1 : indexed.FirstOrDefault(x => x.item.Key == after, (null!, -1)).index;
+        var beforeIndex = before == null ? -1 : indexed.FirstOrDefault(x => x.item.Key == before, (null!, -1)).index;
+        var settingsIndex = indexed.FirstOrDefault(x => x.item.Key == "settings", (null!, -1)).index;
+        var insertAt = afterIndex >= 0 ? afterIndex + 1
+            : beforeIndex >= 0 ? beforeIndex
+            : settingsIndex >= 0 ? settingsIndex
+            : NavItems.Count;
+        NavItems.Insert(insertAt, new NavItem { Key = key, Label = label, IconGlyph = icon });
     }
 
     private bool _suppressNavigationRequest;
@@ -295,6 +326,7 @@ public partial class SidebarViewModel : ViewModelBase
             Key = $"playlist:{pl.Id}",
             Label = pl.Name,
             IconGlyph = pl.IsSmartPlaylist ? "SmartPlaylistIcon" : "PlaylistsIcon",
+            IsSmartPlaylist = pl.IsSmartPlaylist,
             PlaylistId = pl.Id,
             TrackCount = pl.TrackIds.Count,
             CoverArtPath = pl.CoverArtPath,
@@ -341,7 +373,18 @@ public partial class SidebarViewModel : ViewModelBase
     }
 
     [RelayCommand]
-    private async Task CreatePlaylist()
+    private Task CreatePlaylist() => CreatePlaylistCoreAsync(folder: null);
+
+    /// <summary>Folder header context menu: "New Playlist in folder" lands inside that folder.</summary>
+    [RelayCommand]
+    private Task NewPlaylistInFolder(PlaylistNavItem? item)
+        => CreatePlaylistCoreAsync(item is { IsFolder: true } ? item.Label : null);
+
+    /// <summary>Sidebar header context menu: same dialog the Playlists page "New" menu opens.</summary>
+    [RelayCommand]
+    private Task CreateSmartPlaylistFromSidebar() => CreateSmartPlaylistAsync();
+
+    private async Task CreatePlaylistCoreAsync(string? folder)
     {
         var dialogVm = new CreatePlaylistDialogViewModel();
         var dialog = new CreatePlaylistDialog
@@ -381,13 +424,177 @@ public partial class SidebarViewModel : ViewModelBase
         {
             Name = playlistName,
             Description = playlistDescription,
-            Color = Playlist.GetRandomColor()
+            Color = Playlist.GetRandomColor(),
+            Folder = folder?.Trim() ?? string.Empty,
         };
         Playlists.Add(playlist);
         PlaylistItems.Add(BuildPlaylistNavItem(playlist));
         RebuildSidebarRows();
 
         await _persistence.SavePlaylistsAsync(Playlists.ToList());
+    }
+
+    // ── Sidebar context menu + drag-and-drop ──
+    // Right-click on a playlist row / folder header, and drops onto the list, come
+    // through here. Folders are just the Folder string on each playlist, so "create a
+    // folder" means "put a playlist in a folder with a new name" and a folder with no
+    // playlists left in it simply disappears.
+
+    [RelayCommand]
+    private async Task EditPlaylistItem(PlaylistNavItem? item)
+    {
+        var playlist = ResolveNavPlaylist(item);
+        if (playlist == null) return;
+        await EditPlaylistAsync(playlist);
+    }
+
+    [RelayCommand]
+    private async Task TogglePinItem(PlaylistNavItem? item)
+    {
+        if (item?.PlaylistId is { } id) await TogglePinAsync(id);
+    }
+
+    [RelayCommand]
+    private async Task DeletePlaylistItem(PlaylistNavItem? item)
+    {
+        if (item?.PlaylistId is { } id) await DeletePlaylist(id);
+    }
+
+    /// <summary>Prompts for a folder name (existing or new) and moves the playlist there.</summary>
+    [RelayCommand]
+    private async Task MoveToFolder(PlaylistNavItem? item)
+    {
+        var playlist = ResolveNavPlaylist(item);
+        if (playlist == null) return;
+
+        var existing = GetFolderNames();
+        var hint = existing.Count > 0
+            ? "Existing folders: " + string.Join(", ", existing) + ". Type a new name to create a folder."
+            : "Type a name to create a folder.";
+        var name = await Views.TextPromptDialog.ShowAsync("Move to folder", playlist.Folder, hint, "Move");
+        if (name == null) return;
+
+        await SetPlaylistFolderAsync(playlist, name);
+    }
+
+    [RelayCommand]
+    private async Task RemoveFromFolder(PlaylistNavItem? item)
+    {
+        var playlist = ResolveNavPlaylist(item);
+        if (playlist == null || string.IsNullOrWhiteSpace(playlist.Folder)) return;
+        await SetPlaylistFolderAsync(playlist, string.Empty);
+    }
+
+    /// <summary>Folder header: rename every playlist's Folder that matches.</summary>
+    [RelayCommand]
+    private async Task RenameFolder(PlaylistNavItem? item)
+    {
+        if (item is not { IsFolder: true }) return;
+        var newName = await Views.TextPromptDialog.ShowAsync("Rename folder", item.Label, null, "Rename");
+        if (string.IsNullOrWhiteSpace(newName) || string.Equals(newName, item.Label, StringComparison.Ordinal)) return;
+
+        var wasCollapsed = _collapsedFolders.Remove(item.Label);
+        if (wasCollapsed) _collapsedFolders.Add(newName);
+
+        foreach (var pl in Playlists.Where(p => string.Equals(p.Folder.Trim(), item.Label, StringComparison.OrdinalIgnoreCase)))
+        {
+            pl.Folder = newName;
+            pl.ModifiedAt = DateTime.UtcNow;
+            var nav = PlaylistItems.FirstOrDefault(n => n.PlaylistId == pl.Id);
+            if (nav != null) nav.Folder = newName;
+        }
+        RebuildSidebarRows();
+        await _persistence.SavePlaylistsAsync(Playlists.ToList());
+    }
+
+    /// <summary>Folder header: the playlists stay, the folder goes.</summary>
+    [RelayCommand]
+    private async Task DissolveFolder(PlaylistNavItem? item)
+    {
+        if (item is not { IsFolder: true }) return;
+        var confirmed = await Views.ConfirmationDialog.ShowAsync(
+            $"Remove the folder \"{item.Label}\"? The playlists inside it are kept.");
+        if (!confirmed) return;
+
+        _collapsedFolders.Remove(item.Label);
+        foreach (var pl in Playlists.Where(p => string.Equals(p.Folder.Trim(), item.Label, StringComparison.OrdinalIgnoreCase)))
+        {
+            pl.Folder = string.Empty;
+            pl.ModifiedAt = DateTime.UtcNow;
+            var nav = PlaylistItems.FirstOrDefault(n => n.PlaylistId == pl.Id);
+            if (nav != null) nav.Folder = string.Empty;
+        }
+        RebuildSidebarRows();
+        await _persistence.SavePlaylistsAsync(Playlists.ToList());
+    }
+
+    /// <summary>
+    /// Drop of a dragged playlist onto <paramref name="target"/>: onto a folder header
+    /// files it into that folder (end of the folder); onto another playlist places it
+    /// right before/after that row and adopts the row's group (pinned state + folder),
+    /// so "put it where I dropped it" is exactly what happens. Sidebar order within a
+    /// group is the saved playlist order.
+    /// </summary>
+    public async Task MovePlaylistAsync(Guid draggedId, PlaylistNavItem target, bool placeAfter)
+    {
+        var dragged = Playlists.FirstOrDefault(p => p.Id == draggedId);
+        if (dragged == null) return;
+
+        if (target.IsFolder)
+        {
+            dragged.IsPinned = false;
+            dragged.Folder = target.Label;
+            Playlists.Remove(dragged);
+            var lastInFolder = Playlists.LastOrDefault(p =>
+                !p.IsPinned && string.Equals(p.Folder.Trim(), target.Label, StringComparison.OrdinalIgnoreCase));
+            var insertAt = lastInFolder == null ? Playlists.Count : Playlists.IndexOf(lastInFolder) + 1;
+            Playlists.Insert(insertAt, dragged);
+        }
+        else
+        {
+            if (target.PlaylistId == null || target.PlaylistId == draggedId) return;
+            var targetPl = Playlists.FirstOrDefault(p => p.Id == target.PlaylistId);
+            if (targetPl == null) return;
+
+            dragged.IsPinned = targetPl.IsPinned;
+            dragged.Folder = targetPl.Folder;
+            Playlists.Remove(dragged);
+            var idx = Playlists.IndexOf(targetPl) + (placeAfter ? 1 : 0);
+            Playlists.Insert(Math.Clamp(idx, 0, Playlists.Count), dragged);
+        }
+
+        dragged.ModifiedAt = DateTime.UtcNow;
+        SyncPlaylistItemsWithPlaylists();
+        RebuildSidebarRows();
+        await _persistence.SavePlaylistsAsync(Playlists.ToList());
+    }
+
+    private Playlist? ResolveNavPlaylist(PlaylistNavItem? item)
+        => item?.PlaylistId is { } id ? Playlists.FirstOrDefault(p => p.Id == id) : null;
+
+    private async Task SetPlaylistFolderAsync(Playlist playlist, string folder)
+    {
+        playlist.Folder = folder.Trim();
+        playlist.ModifiedAt = DateTime.UtcNow;
+        var nav = PlaylistItems.FirstOrDefault(n => n.PlaylistId == playlist.Id);
+        if (nav != null) nav.Folder = playlist.Folder;
+        RebuildSidebarRows();
+        await _persistence.SavePlaylistsAsync(Playlists.ToList());
+    }
+
+    /// <summary>Re-orders PlaylistItems to match Playlists and copies pin/folder state across.</summary>
+    private void SyncPlaylistItemsWithPlaylists()
+    {
+        for (int i = 0; i < Playlists.Count; i++)
+        {
+            var pl = Playlists[i];
+            var nav = PlaylistItems.FirstOrDefault(n => n.PlaylistId == pl.Id);
+            if (nav == null) continue;
+            nav.IsPinned = pl.IsPinned;
+            nav.Folder = pl.Folder;
+            var at = PlaylistItems.IndexOf(nav);
+            if (at != i && i < PlaylistItems.Count) PlaylistItems.Move(at, i);
+        }
     }
 
     [RelayCommand]

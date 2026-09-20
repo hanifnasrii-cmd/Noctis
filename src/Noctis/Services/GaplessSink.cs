@@ -33,6 +33,15 @@ public sealed class GaplessSink : IDisposable
     private string? _deviceId; // endpoint the current output was opened against
     private readonly WaveFileWriter? _tap; // NOCTIS_ENGINE_TAP diagnostic capture
     private readonly ISampleProvider _renderSource;
+    private readonly MuteGateProvider _muteGate;
+
+    /// <summary>User mute, applied post-buffer in the render chain (instant, click-free).
+    /// Survives output rebuilds: the gate is upstream of the WasapiOut that gets replaced.</summary>
+    public bool IsMuted
+    {
+        get => _muteGate.IsMuted;
+        set => _muteGate.IsMuted = value;
+    }
     private readonly StallProbe _probe;
     private readonly Timer _deviceWatch;
     private volatile bool _desiredPlaying = true;
@@ -84,6 +93,16 @@ public sealed class GaplessSink : IDisposable
         // renders to a WAV so glitches can be inspected sample-by-sample
         // instead of by ear. Diagnostic only — never breaks rendering.
         ISampleProvider renderSource = Provider;
+        // Mute lives HERE, after the staged ring, not in LibVLC: VLC's mute is software
+        // gain on the blocks it hands us, so with seconds staged ahead it was heard ~2 s
+        // late (and unmute ~2 s late again, the ring being full of zeros by then). The
+        // gate ramps over a few ms and is a pure pass-through when open.
+        _muteGate = new MuteGateProvider(renderSource);
+        renderSource = _muteGate;
+        // Beat pulse for the flowing-artwork lyrics background: tapped post-mute so a
+        // muted player shows a still backdrop, stamped with this sink's output depth
+        // so the visual beat lands when the audible one does.
+        renderSource = new BeatTapProvider(renderSource, OutputLatencyMs);
         var tap = Environment.GetEnvironmentVariable("NOCTIS_ENGINE_TAP");
         if (!string.IsNullOrEmpty(tap))
         {
@@ -124,12 +143,66 @@ public sealed class GaplessSink : IDisposable
     // which read as a skip/pause. (The old "buzz at 50ms" was actually the
     // Array.Clear pad bug, not buffer starvation; an underrun now renders a
     // clean declicked pad, not stale audio.)
-    private WasapiOut CreateOutput()
+    /// <summary>Requested WasapiOut buffer depth. Also the lead of the segment's
+    /// consumed-frame position over the speaker (see VlcAudioPlayer.OutputLatency).</summary>
+    public const int OutputLatencyMs = 100;
+
+    // ── Multi-channel upmix (Settings → Audio) ──
+    // Read at output creation, so a change takes effect through the same rebuild
+    // path a device swap uses. Static because the sink is created before any
+    // settings object reaches the player and recreated on device changes.
+    private static int s_upmixMode = (int)Services.UpmixMode.Off;
+
+    /// <summary>Speaker-fill mode for 5.1/7.1 devices; changing it needs <see cref="RequestRebuild"/> on a live sink.</summary>
+    public static UpmixMode UpmixMode
     {
-        var wasapiOut = new WasapiOut(AudioClientShareMode.Shared, useEventSync: true, latency: 100);
+        get => (UpmixMode)Volatile.Read(ref s_upmixMode);
+        set => Volatile.Write(ref s_upmixMode, (int)value);
+    }
+
+    /// <summary>Parses the persisted setting name; unknown values mean Off.</summary>
+    public static UpmixMode ParseUpmixMode(string? name) =>
+        Enum.TryParse<UpmixMode>(name, ignoreCase: true, out var mode) ? mode : Services.UpmixMode.Off;
+
+    /// <summary>Recreates the WASAPI output (same device) so a new upmix mode applies. Playback continues from the staged ring.</summary>
+    public void RequestRebuild()
+    {
+        if (_disposed) return;
+        if (Interlocked.Exchange(ref _rebuilding, 1) == 0)
+            Task.Run(RebuildLoop);
+    }
+
+    /// <summary>Channels in the default device's mix format, or 2 when it cannot be read.</summary>
+    private static int DeviceMixChannels()
+    {
         try
         {
-            wasapiOut.Init(new SampleToWaveProvider(_renderSource));
+            using var enumerator = new MMDeviceEnumerator();
+            using var device = enumerator.GetDefaultAudioEndpoint(DataFlow.Render, Role.Multimedia);
+            return device.AudioClient.MixFormat.Channels;
+        }
+        catch { return 2; }
+    }
+
+    private WasapiOut CreateOutput()
+    {
+        var wasapiOut = new WasapiOut(AudioClientShareMode.Shared, useEventSync: true, latency: OutputLatencyMs);
+        try
+        {
+            ISampleProvider render = _renderSource;
+            var mode = UpmixMode;
+            if (mode != Services.UpmixMode.Off)
+            {
+                var deviceChannels = DeviceMixChannels();
+                if (deviceChannels > Channels)
+                {
+                    // Shared mode takes IEEE float at the mix format's channel count natively,
+                    // so the upmixed stream needs no resampler and stays sample-accurate.
+                    render = new UpmixSampleProvider(_renderSource, deviceChannels, mode);
+                    DebugLogger.Info(DebugLogger.Category.Playback, "GaplessEngine.Upmix", $"mode={mode}, channels={deviceChannels}");
+                }
+            }
+            wasapiOut.Init(new SampleToWaveProvider(render));
         }
         catch
         {

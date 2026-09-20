@@ -94,19 +94,19 @@ public static class SmartPlaylistEvaluator
     /// </summary>
     public static string GetOperatorDisplayName(RuleOperator op) => op switch
     {
-        RuleOperator.Contains => "contains",
-        RuleOperator.Equals => "equals",
-        RuleOperator.StartsWith => "starts with",
-        RuleOperator.EndsWith => "ends with",
-        RuleOperator.DoesNotContain => "does not contain",
-        RuleOperator.GreaterThan => "greater than",
-        RuleOperator.LessThan => "less than",
-        RuleOperator.Between => "between",
-        RuleOperator.IsTrue => "is true",
-        RuleOperator.IsFalse => "is false",
-        RuleOperator.Before => "before",
-        RuleOperator.After => "after",
-        RuleOperator.InLastNDays => "in last N days",
+        RuleOperator.Contains => "Contains",
+        RuleOperator.Equals => "Equals",
+        RuleOperator.StartsWith => "Starts with",
+        RuleOperator.EndsWith => "Ends with",
+        RuleOperator.DoesNotContain => "Does not contain",
+        RuleOperator.GreaterThan => "Greater than",
+        RuleOperator.LessThan => "Less than",
+        RuleOperator.Between => "Between",
+        RuleOperator.IsTrue => "Is true",
+        RuleOperator.IsFalse => "Is false",
+        RuleOperator.Before => "Before",
+        RuleOperator.After => "After",
+        RuleOperator.InLastNDays => "In last N days",
         _ => op.ToString()
     };
 

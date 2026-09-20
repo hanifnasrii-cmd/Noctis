@@ -1,5 +1,7 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:helpers="using:Noctis.Helpers"
+             xmlns:loc="using:Noctis.Localization"
              xmlns:vm="using:Noctis.ViewModels"
              xmlns:m="using:Noctis.Models"
              xmlns:ctrl="using:Noctis.Controls"
@@ -44,7 +46,7 @@
                                               CommandParameter="{Binding}"
                                               MaxWidth="400">
                                         <MenuItem.Header>
-                                            <TextBlock Text="Play"
+                                            <TextBlock Text="{loc:T MoreByArtist.Play}"
                                                        TextTrimming="CharacterEllipsis"
                                                        FontWeight="Normal"
                                                        FontSize="14"
@@ -54,21 +56,21 @@
                                             <Border Width="14" Height="14" Background="{DynamicResource SystemControlForegroundBaseHighBrush}" RenderOptions.BitmapInterpolationMode="HighQuality"><Border.OpacityMask><ImageBrush Source="avares://Noctis/Assets/Icons/Play%20ICON.png" Stretch="Uniform" /></Border.OpacityMask></Border>
                                         </MenuItem.Icon>
                                     </MenuItem>
-                                    <MenuItem Header="Shuffle"
+                                    <MenuItem Header="{loc:T MoreByArtist.Shuffle}"
                                               Command="{Binding $parent[UserControl].((vm:MoreByArtistViewModel)DataContext).LibraryAlbumsVm.ShuffleAlbumCommand}"
                                               CommandParameter="{Binding}">
                                         <MenuItem.Icon>
                                             <PathIcon Data="{StaticResource ShuffleIcon}" Width="14" Height="14" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" />
                                         </MenuItem.Icon>
                                     </MenuItem>
-                                    <MenuItem Header="Play Next"
+                                    <MenuItem Header="{loc:T MoreByArtist.PlayNext}"
                                               Command="{Binding $parent[UserControl].((vm:MoreByArtistViewModel)DataContext).LibraryAlbumsVm.PlayNextCommand}"
                                               CommandParameter="{Binding}">
                                         <MenuItem.Icon>
                                             <Border Width="14" Height="14" Background="{DynamicResource SystemControlForegroundBaseHighBrush}" RenderOptions.BitmapInterpolationMode="HighQuality"><Border.OpacityMask><ImageBrush Source="avares://Noctis/Assets/Icons/Forward%20ICON.png" Stretch="Uniform" /></Border.OpacityMask></Border>
                                         </MenuItem.Icon>
                                     </MenuItem>
-                                    <MenuItem Header="Add to Queue"
+                                    <MenuItem Header="{loc:T MoreByArtist.AddQueue}"
                                               Command="{Binding $parent[UserControl].((vm:MoreByArtistViewModel)DataContext).LibraryAlbumsVm.AddToQueueCommand}"
                                               CommandParameter="{Binding}">
                                         <MenuItem.Icon>
@@ -76,7 +78,7 @@
                                         </MenuItem.Icon>
                                     </MenuItem>
                                     <Separator />
-                                    <MenuItem Header="Add to Playlist"
+                                    <MenuItem Header="{loc:T MoreByArtist.AddPlaylist}"
                                               Command="{Binding $parent[UserControl].((vm:MoreByArtistViewModel)DataContext).LibraryAlbumsVm.AddToNewPlaylistCommand}"
                                               CommandParameter="{Binding}">
                                         <MenuItem.Icon>
@@ -84,7 +86,7 @@
                                         </MenuItem.Icon>
                                     </MenuItem>
                                     <Separator />
-                                    <MenuItem Header="Favorites"
+                                    <MenuItem Header="{loc:T MoreByArtist.Favorites}"
                                               Command="{Binding $parent[UserControl].((vm:MoreByArtistViewModel)DataContext).LibraryAlbumsVm.ToggleAlbumFavoritesCommand}"
                                               CommandParameter="{Binding}"
                                               IsVisible="{Binding !IsAllTracksFavorite}">
@@ -92,7 +94,7 @@
                                             <Border Width="14" Height="14" Background="{DynamicResource SystemControlForegroundBaseHighBrush}" RenderOptions.BitmapInterpolationMode="HighQuality"><Border.OpacityMask><ImageBrush Source="avares://Noctis/Assets/Icons/Favorites%20icon.png" Stretch="Uniform" /></Border.OpacityMask></Border>
                                         </MenuItem.Icon>
                                     </MenuItem>
-                                    <MenuItem Header="Remove from Favorites"
+                                    <MenuItem Header="{loc:T MoreByArtist.RemoveFromFavorites}"
                                               Command="{Binding $parent[UserControl].((vm:MoreByArtistViewModel)DataContext).LibraryAlbumsVm.ToggleAlbumFavoritesCommand}"
                                               CommandParameter="{Binding}"
                                               IsVisible="{Binding IsAllTracksFavorite}">
@@ -100,14 +102,14 @@
                                             <PathIcon Data="{StaticResource HeartFillIcon}" Width="14" Height="14" Foreground="#E74856" />
                                         </MenuItem.Icon>
                                     </MenuItem>
-                                    <MenuItem Header="Metadata"
+                                    <MenuItem Header="{loc:T MoreByArtist.Metadata}"
                                               Command="{Binding $parent[UserControl].((vm:MoreByArtistViewModel)DataContext).LibraryAlbumsVm.OpenMetadataCommand}"
                                               CommandParameter="{Binding}">
                                         <MenuItem.Icon>
                                             <Border Width="14" Height="14" Background="{DynamicResource SystemControlForegroundBaseHighBrush}" RenderOptions.BitmapInterpolationMode="HighQuality"><Border.OpacityMask><ImageBrush Source="avares://Noctis/Assets/Icons/Metadata%20ICON.png" Stretch="Uniform" /></Border.OpacityMask></Border>
                                         </MenuItem.Icon>
                                     </MenuItem>
-                                    <MenuItem Header="Show Folder"
+                                    <MenuItem Header="{loc:T MoreByArtist.ShowFolder}"
                                               Command="{Binding $parent[UserControl].((vm:MoreByArtistViewModel)DataContext).LibraryAlbumsVm.ShowInExplorerCommand}"
                                               CommandParameter="{Binding}">
                                         <MenuItem.Icon>
@@ -115,7 +117,7 @@
                                         </MenuItem.Icon>
                                     </MenuItem>
                                     <Separator />
-                                    <MenuItem Header="Remove from Library" Classes="danger"
+                                    <MenuItem Header="{loc:T MoreByArtist.RemoveFromLibrary}" Classes="danger"
                                               Command="{Binding $parent[UserControl].((vm:MoreByArtistViewModel)DataContext).LibraryAlbumsVm.RemoveFromLibraryCommand}"
                                               CommandParameter="{Binding}">
                                         <MenuItem.Icon>
@@ -134,7 +136,7 @@
                                         ClipToBounds="True"
                                         Background="#1AFFFFFF">
                                     <Panel>
-                                        <TextBlock Text="&#x266A;"
+                                        <TextBlock Text="{loc:T MoreByArtist.Text}"
                                                    FontSize="40"
                                                    HorizontalAlignment="Center"
                                                    VerticalAlignment="Center"
@@ -144,37 +146,62 @@
                                                           Stretch="UniformToFill"
                                                           RenderOptions.BitmapInterpolationMode="HighQuality"
                                                           IsVisible="{Binding ArtworkPath, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                                                    <!-- Hover overlay (09-13): dim + Play/Pause + dots; styles in Styles.axaml -->
+                                                    <Border Classes="tile-dim" />
+                                                    <Button Classes="tile-play"
+                                                            Command="{Binding $parent[UserControl].((vm:MoreByArtistViewModel)DataContext).LibraryAlbumsVm.TogglePlayAlbumCommand}"
+                                                            CommandParameter="{Binding}">
+                                                        <Panel>
+                                                            <Viewbox Width="12" Height="12" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="1,0,0,0" IsVisible="{Binding !IsNowPlaying}"><Path Data="{StaticResource PlayIcon}" Fill="White" /></Viewbox>
+                                                            <Viewbox Width="12" Height="12" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding IsNowPlaying}"><Path Data="{StaticResource PauseIcon}" Fill="White" /></Viewbox>
+                                                        </Panel>
+                                                    </Button>
+                                                    <Button Classes="tile-more" Click="OnTileMoreClick">
+                                                        <Viewbox Width="14" Height="14" HorizontalAlignment="Center" VerticalAlignment="Center"><Path Data="{StaticResource MoreDotsIcon}" Fill="White" /></Viewbox>
+                                                    </Button>
                                     </Panel>
                                 </Border>
-                                <StackPanel Grid.Row="1" Spacing="0">
-                                    <TextBlock Margin="0,5,0,0"
-                                               FontSize="13"
-                                               FontWeight="SemiBold"
-                                               TextWrapping="Wrap"
-                                               TextTrimming="CharacterEllipsis"
-                                               MaxLines="2">
-                                        <Run Text="{Binding Name}" />
-                                        <InlineUIContainer BaselineAlignment="Center">
-                                            <Border Classes="explicit-badge compact"
-                                                    Margin="4,0,0,0"
-                                                    IsVisible="{Binding IsExplicit}"
-                                                    ToolTip.Tip="Explicit">
-                                                <TextBlock Text="E"
-                                                           Classes="explicit-badge-text compact"
-                                                           FontSize="9"
-                                                           Opacity="0.9" />
-                                            </Border>
-                                        </InlineUIContainer>
-                                    </TextBlock>
-                                    <!-- Artist name · release year (mirrors the Albums grid subtitle) -->
-                                    <TextBlock Text="{Binding TileSubtitle}"
-                                               FontSize="12"
-                                               FontWeight="Bold"
-                                               Opacity="0.55"
-                                               TextTrimming="CharacterEllipsis"
-                                               MaxLines="1"
-                                               Margin="0,1,0,0" />
-                                </StackPanel>
+                                        <StackPanel Grid.Row="1" Classes="tile-text" Spacing="0">
+                                            <!-- Title + explicit badge; the heart sits at the line's right end (09-13) -->
+                                            <Grid ColumnDefinitions="*,Auto" Margin="0,5,0,0">
+                                                <TextBlock Grid.Column="0"
+                                                           helpers:TitleWrap.Watch="True"
+                                                           FontSize="13"
+                                                           FontWeight="SemiBold"
+                                                           TextWrapping="Wrap"
+                                                           TextTrimming="CharacterEllipsis"
+                                                           MaxLines="2">
+                                                    <Run Text="{Binding Name}" />
+                                                    <InlineUIContainer BaselineAlignment="Center">
+                                                        <Border Classes="explicit-badge compact"
+                                                                Margin="4,0,0,0"
+                                                                IsVisible="{Binding IsExplicit}"
+                                                                ToolTip.Tip="{loc:T MoreByArtist.ExplicitTip}">
+                                                            <TextBlock Text="E"
+                                                                       Classes="explicit-badge-text compact"
+                                                                       FontSize="8"
+                                                                       Opacity="0.9" />
+                                                        </Border>
+                                                    </InlineUIContainer>
+                                                </TextBlock>
+                                                <Panel Grid.Column="1" Classes="heart-title" VerticalAlignment="Top" Margin="6,2,0,0">
+                                                    <ctrl:HeartIcon Size="14" ShowWhenOff="False" IsFavorite="{Binding HasFavoriteTrack}" />
+                                                </Panel>
+                                            </Grid>
+                                            <!-- Subtitle; the heart lands here instead when the title wraps -->
+                                            <Grid ColumnDefinitions="*,Auto" Margin="0,1,0,0">
+                                                <TextBlock Grid.Column="0"
+                                                           Text="{Binding TileSubtitle}"
+                                                           FontSize="12"
+                                                           FontWeight="Bold"
+                                                           Opacity="0.55"
+                                                           TextTrimming="CharacterEllipsis"
+                                                           MaxLines="1" />
+                                                <Panel Grid.Column="1" Classes="heart-sub" VerticalAlignment="Center" Margin="6,0,0,0">
+                                                    <ctrl:HeartIcon Size="14" ShowWhenOff="False" IsFavorite="{Binding HasFavoriteTrack}" />
+                                                </Panel>
+                                            </Grid>
+                                        </StackPanel>
                             </Grid>
                         </Button>
                     </DataTemplate>

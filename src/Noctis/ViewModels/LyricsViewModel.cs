@@ -183,15 +183,12 @@ public partial class LyricsViewModel : ViewModelBase, IDisposable
 
     private const int LineSyncIntervalMs = 100;
 
-    // ── Extrapolated playback clock ──
-    // LibVLC only refreshes MediaPlayer.Time every ~150-300ms, so raw Position reads
-    // move in coarse steps — far too chunky for the word-level colour sweep. Anchor
-    // each fresh raw value against Stopwatch time and extrapolate between updates,
-    // with a monotonic guard so re-anchor jitter never drags the sweep backwards.
-    private long _clockRawMs = -1;
-    private long _clockAnchorMs;
-    private long _clockAnchorTimestamp;
-    private double _clockLastMs;
+    // ── Rate-locked playback clock ──
+    // Raw Position reaches us in coarse steps (audio-layer blocks → 100ms poll →
+    // dispatcher), far too chunky for the word-level colour sweep. The clock runs
+    // continuously and bends its rate toward the raw source instead of re-anchoring
+    // (which froze or jumped the sweep at every poll). See LyricsPlaybackClock.
+    private readonly LyricsPlaybackClock _clock = new();
 
     // True while the RequestAnimationFrame loop driving the word sweep is running.
     // Managed by UpdateWordClockSubscription() / OnWordClockFrame().
@@ -1459,13 +1456,14 @@ public partial class LyricsViewModel : ViewModelBase, IDisposable
             {
                 if (!string.IsNullOrWhiteSpace(trackPath))
                 {
-                    var lrcPath = Path.ChangeExtension(trackPath, ".lrc");
                     // Unregister only once the file is actually gone: the trash move
                     // can fail (file locked/in use), and dropping the registry entry
                     // first left the app's own file on disk permanently looking
                     // user-owned — Remove would then never touch it again.
-                    if (SidecarRegistry.Contains(lrcPath))
+                    foreach (var ext in new[] { ".elrc", ".lrc" })
                     {
+                        var lrcPath = Path.ChangeExtension(trackPath, ext);
+                        if (!SidecarRegistry.Contains(lrcPath)) continue;
                         if (!File.Exists(lrcPath) || TrashSidecarFile(lrcPath))
                             SidecarRegistry.Remove(lrcPath);
                         else
@@ -1898,6 +1896,11 @@ public partial class LyricsViewModel : ViewModelBase, IDisposable
             OnPropertyChanged(nameof(IsLyricsFocusActive));
             RefreshFocusDimming();
         }
+        // Minimum line opacity moved: re-floor the ramp in place.
+        else if (e.PropertyName == nameof(PlayerViewModel.LyricsMinLineOpacity))
+        {
+            RefreshFocusDimming();
+        }
         // Word-joining flipped: it changes how the sidecar is parsed, not how it is
         // drawn, so the current track has to go back through the load path.
         else if (e.PropertyName == nameof(PlayerViewModel.LyricsJoinSplitWords))
@@ -1972,6 +1975,24 @@ public partial class LyricsViewModel : ViewModelBase, IDisposable
     {
         // Read the parse-affecting setting here, on the UI thread that owns it.
         var joinSplitWords = _player.LyricsJoinSplitWords;
+
+        // Fade the (still-visible) old lyrics out WHILE the probe runs, not after
+        // it. The swap below — a full ItemsControl rebuild plus a scroll snap —
+        // must land off-screen, but the fade needs no probe result; waiting for
+        // one first (the old order) added the whole sidecar/store disk read to
+        // the time the previous track's lyrics stayed up after the new track had
+        // already started. Measured: LyricsTrackChangeTimingTests.
+        var fadeOut = Task.CompletedTask;
+        if (LyricsSwapPending != null)
+        {
+            if (Dispatcher.UIThread.CheckAccess())
+                LyricsSwapPending?.Invoke(this, EventArgs.Empty);
+            else
+                await Dispatcher.UIThread.InvokeAsync(() => LyricsSwapPending?.Invoke(this, EventArgs.Empty));
+            fadeOut = Task.Delay(LyricsSwapFadeOutMs);
+        }
+
+        var probeClock = System.Diagnostics.Stopwatch.StartNew();
         var probe = await Task.Run(() =>
         {
             // Track lyrics are store-backed and lazy: the first touch is a small
@@ -1982,18 +2003,14 @@ public partial class LyricsViewModel : ViewModelBase, IDisposable
             _loadedSyncedLyrics = track.SyncedLyrics;
             return ProbeLocalLyricSources(track, joinSplitWords);
         });
+        // Visible in Settings ▸ About ▸ Developer Mode ▸ Copy Logs: how long the
+        // disk probe took on THIS machine (the fade hides up to LyricsSwapFadeOutMs of it).
+        DebugLogger.Info(DebugLogger.Category.Lyrics, "LocalProbe",
+            $"ms={probeClock.ElapsedMilliseconds}, source={probe.Source}");
 
         if (generation != _searchGeneration) return;
-
-        // Give attached views one beat to fade the (still-visible) old lyrics
-        // out, so the swap below — a full ItemsControl rebuild plus a scroll
-        // snap — happens off-screen instead of as a visible flash+jump.
-        if (LyricsSwapPending != null)
-        {
-            await Dispatcher.UIThread.InvokeAsync(() => LyricsSwapPending?.Invoke(this, EventArgs.Empty));
-            await Task.Delay(LyricsSwapFadeOutMs);
-            if (generation != _searchGeneration) return;
-        }
+        await fadeOut;
+        if (generation != _searchGeneration) return;
 
         var applied = new TaskCompletionSource();
         Dispatcher.UIThread.Post(() =>
@@ -2045,6 +2062,19 @@ public partial class LyricsViewModel : ViewModelBase, IDisposable
                 var (lines, plain) = TtmlParser.Parse(sidecarTtml, joinSplitWords);
                 if (lines != null && lines.Count > 0)
                     return new LocalLyricsProbe(lines, plain, "Sidecar:Ttml", FromCache: false);
+            }
+        }
+        catch { }
+
+        // Priority 3a: .elrc sidecar (enhanced LRC with word tags — what Lyrics Studio writes).
+        try
+        {
+            var sidecarElrc = TryReadSidecar(track.FilePath, new[] { ".elrc", ".ELRC", ".Elrc" });
+            if (sidecarElrc != null)
+            {
+                var lines = ParseLrcContent(sidecarElrc);
+                if (lines.Count > 0)
+                    return new LocalLyricsProbe(lines, null, "Sidecar:Elrc", FromCache: false);
             }
         }
         catch { }
@@ -2440,6 +2470,19 @@ public partial class LyricsViewModel : ViewModelBase, IDisposable
             if (MetadataTagRegex().IsMatch(trimmed))
                 continue;
 
+            // iTunes/Gramophone background vocal: "[bg: <t>word <t>word<t>]" — a line with
+            // no [mm:ss.xx] stamp that belongs to the main line directly above it in the
+            // file. Attach it here, in file order: the timestamp sort below would otherwise
+            // push it (as an "unsynced" line) to the very end of the song, and its raw
+            // "[bg: <00:36.938>(Ah, …]" text would render there as a lyric.
+            if (trimmed.StartsWith(BgLinePrefix, StringComparison.Ordinal))
+            {
+                var lastMain = lines.LastOrDefault(l => l.Timestamp.HasValue);
+                if (lastMain != null)
+                    AttachBackgroundLine(lastMain, trimmed, offsetMs);
+                continue;
+            }
+
             // Extract all timestamps from the line
             var matches = LrcTimestampRegex().Matches(trimmed);
             if (matches.Count > 0)
@@ -2521,6 +2564,28 @@ public partial class LyricsViewModel : ViewModelBase, IDisposable
         EnhancedLrcParser.FoldBackgroundLines(lines);
 
         return lines;
+    }
+
+    private const string BgLinePrefix = "[bg:";
+
+    /// <summary>
+    /// Parses a "[bg: …]" line body (prefix and closing bracket stripped) into the
+    /// preceding main line's background layer. A body without word tags becomes one
+    /// word starting at the main line's own timestamp so it still renders.
+    /// </summary>
+    private static void AttachBackgroundLine(LyricLine target, string trimmed, int offsetMs)
+    {
+        var body = trimmed[BgLinePrefix.Length..];
+        if (body.EndsWith(']')) body = body[..^1];
+
+        var (text, words) = EnhancedLrcParser.ParseLine(body);
+        if (string.IsNullOrWhiteSpace(text)) return;
+
+        List<WordTiming> bg = words != null
+            ? (offsetMs == 0 ? words : ShiftWords(words, offsetMs))
+            : [new WordTiming { Text = text, Start = target.Timestamp!.Value }];
+
+        EnhancedLrcParser.AppendBackground(target, bg, bg[^1].End);
     }
 
     /// <summary>Applies the global LRC offset to absolute word timings.</summary>
@@ -2698,21 +2763,25 @@ public partial class LyricsViewModel : ViewModelBase, IDisposable
             line.Timestamp.Value.TotalSeconds / _player.Duration.TotalSeconds);
     }
 
-    /// <summary>
-    /// Updates the currently active (highlighted) lyric line based on playback position.
-    /// Called from OnPlayerPropertyChanged which fires on UI thread, so no extra dispatch needed.
-    /// A 350ms lookahead compensates for VLC position polling latency + UI dispatch delay,
-    /// ensuring lyrics highlight at the moment the vocal begins rather than after.
-    ///
-    /// Uses a monotonic cursor (_lineCursor) that advances forward per tick — O(1) amortized
-    /// instead of scanning every line on every tick. Resets to 0 on seek-backwards.
-    /// </summary>
-    private static readonly TimeSpan LyricsLookahead = TimeSpan.FromMilliseconds(350);
-
     // Word-level lookahead: small lead so the sweep matches the vocal instead of trailing
     // UI dispatch latency. AMLL feels in-sync around 80ms — bigger leads start to read
     // as the colour racing ahead of the voice.
-    private static readonly TimeSpan WordLookahead = TimeSpan.FromMilliseconds(80);
+    private const int WordLookaheadMs = 80;
+    private static readonly TimeSpan WordLookahead = TimeSpan.FromMilliseconds(WordLookaheadMs);
+
+    /// <summary>
+    /// Lead for lines WITHOUT word timings. A plain line has no sweep, so its only cue
+    /// is the glide bringing it to the anchor — activate it early enough that the glide
+    /// has covered half its travel (the moment the eye reads it as "arrived") when the
+    /// vocal starts. Derived from the shared line-motion curve, plus the same small
+    /// dispatch lead the word clock uses; it was a fixed 350ms that pre-dated the
+    /// rate-locked clock and switched plain lines a beat early.
+    ///
+    /// UpdateActiveLine uses a monotonic cursor (_lineCursor) that advances forward per
+    /// tick — O(1) amortized instead of scanning every line. Resets on seek-backwards.
+    /// </summary>
+    private static readonly TimeSpan LyricsLookahead =
+        TimeSpan.FromMilliseconds(WordLookaheadMs + Helpers.LineMotion.HalfTravelMs);
 
     private void UpdateActiveLine(TimeSpan position)
     {
@@ -2809,6 +2878,9 @@ public partial class LyricsViewModel : ViewModelBase, IDisposable
                 bestMatch.IsActive = true;
 
             _currentActiveLine = bestMatch;
+            if (DebugLog.VlcBridgeEnabled)
+                Views.LyricsView.Trace($"active {ActiveLineIndex}→{bestIndex} at {position.TotalMilliseconds:0}ms" +
+                                       (bestMatch?.Timestamp is { } ts ? $" (line starts {ts.TotalMilliseconds:0}ms)" : ""));
             ActiveLineIndex = bestIndex;
             UpdateLineOpacities(bestIndex);
             UpdateWordClockSubscription();
@@ -2915,68 +2987,39 @@ public partial class LyricsViewModel : ViewModelBase, IDisposable
     }
 
     /// <summary>
-    /// Continuous playback clock. LibVLC refreshes its cached Time only every
-    /// ~150-300ms, so raw reads move in coarse steps that make the karaoke sweep
-    /// visibly jump. Extrapolates with a Stopwatch between raw updates while playing;
-    /// small backward re-anchors are held (monotonic), real seeks pass through.
+    /// Continuous playback clock for the sweep and line engine. The raw position
+    /// arrives in coarse steps; <see cref="LyricsPlaybackClock"/> turns them into a
+    /// smooth, rate-locked estimate (small disagreements bend the rate, seeks snap).
+    /// The engine's reported position is where the output buffer has been FILLED to,
+    /// which leads the speaker by the buffer depth — subtracted here so the sweep
+    /// lines up with what is audible, not with what has been queued.
     /// </summary>
     private TimeSpan GetPlaybackPosition()
     {
         var raw = _player.Position;
         if (_player.State != Models.PlaybackState.Playing)
         {
-            // Not advancing — drop the anchor so resume re-anchors fresh (an anchor
-            // held across a pause would otherwise add the pause length on resume).
-            _clockRawMs = -1;
-            _clockLastMs = raw.TotalMilliseconds;
+            // Not advancing — forget the clock so resume re-anchors fresh (state held
+            // across a pause would otherwise add the pause length on resume).
+            _clock.Reset();
             return raw;
         }
 
         // While the timeline is being dragged, Position is a target the user is steering,
         // not a clock that is running — VLC has not been told to seek yet, that happens on
-        // release. Extrapolating it forward actively fought a backward drag: hold the
-        // slider still and the estimate crept ahead by up to a second (the stall-guard
-        // cap), pulling the active line back down the list, then snapped up again when the
-        // drag resumed. A forward drag hid this completely because the creep pointed the
-        // same way the user was going. Re-anchor on the raw value so extrapolation resumes
-        // cleanly the moment the drag ends.
+        // release. Advancing it forward actively fought a backward drag: hold the slider
+        // still and the estimate crept ahead, pulling the active line back down the list,
+        // then snapped up again when the drag resumed. Follow the raw value verbatim and
+        // re-anchor the moment the drag ends.
         if (_player.IsSeeking)
         {
-            _clockRawMs = (long)raw.TotalMilliseconds;
-            _clockAnchorMs = _clockRawMs;
-            _clockAnchorTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
-            _clockLastMs = raw.TotalMilliseconds;
+            _clock.Reset();
             return raw;
         }
 
-        var rawMs = (long)raw.TotalMilliseconds;
-        var now = System.Diagnostics.Stopwatch.GetTimestamp();
-        // A raw value below the PREVIOUS raw value is the player itself moving backwards —
-        // a seek, or the timeline slider writing its target while the user drags. The
-        // monotonic guard below exists for VLC republishing a time behind our extrapolation,
-        // which never lowers the raw value, so the two cases are distinguishable. Without
-        // this, a slow drag backwards was smoothed away 300ms at a time and the position
-        // handed to UpdateActiveLine never actually moved back.
-        var rawMovedBack = _clockRawMs >= 0 && rawMs < _clockRawMs;
-        if (rawMs != _clockRawMs)
-        {
-            _clockRawMs = rawMs;
-            _clockAnchorMs = rawMs;
-            _clockAnchorTimestamp = now;
-        }
-
-        var elapsedMs = (now - _clockAnchorTimestamp) * 1000.0 / System.Diagnostics.Stopwatch.Frequency;
-        // Stall guard: if VLC stops publishing time (buffering hiccup), stop
-        // extrapolating past 1s rather than running away from the real position.
-        if (elapsedMs > 1000) elapsedMs = 1000;
-        var estimate = _clockAnchorMs + elapsedMs;
-
-        // Monotonic guard: a fresh raw value slightly behind our extrapolation would
-        // step the sweep backwards — hold instead. Larger drops are real seeks.
-        if (!rawMovedBack && estimate < _clockLastMs && _clockLastMs - estimate < 300)
-            estimate = _clockLastMs;
-        _clockLastMs = estimate;
-        return TimeSpan.FromMilliseconds(estimate);
+        var nowMs = System.Diagnostics.Stopwatch.GetTimestamp() * 1000.0 / System.Diagnostics.Stopwatch.Frequency;
+        var estimate = _clock.Sample(raw.TotalMilliseconds, nowMs) - _player.OutputLatency.TotalMilliseconds;
+        return TimeSpan.FromMilliseconds(Math.Max(0, estimate));
     }
 
     /// <summary>
@@ -3090,6 +3133,10 @@ public partial class LyricsViewModel : ViewModelBase, IDisposable
         // lines but can never be open with the page up, so the tight ramp never leaks
         // into it.
         var focus = IsLyricsFocusActive;
+        // Settings floor (percent): lines the ramp would hide stay at least this
+        // visible, and therefore clickable, so any part of the song can be reached
+        // from its lyrics. 0 keeps the ramp as designed.
+        var floor = Math.Clamp(_player.LyricsMinLineOpacity, 0, 100) / 100.0;
 
         for (int i = 0; i < LyricLines.Count; i++)
         {
@@ -3117,6 +3164,8 @@ public partial class LyricsViewModel : ViewModelBase, IDisposable
                      9 => 0.02,
                      _ => 0.0
                 };
+            if (absDist != 0 && opacity < floor)
+                opacity = floor;
             // Apple Music–style depth: active crisp, neighbours softly blurred.
             var blur = absDist switch
             {

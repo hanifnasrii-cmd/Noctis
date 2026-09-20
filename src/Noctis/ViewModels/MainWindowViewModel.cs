@@ -6,10 +6,13 @@ using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.DependencyInjection;
+using Noctis.Localization;
 using Noctis.Models;
+using Noctis.Services.Plugins;
 using Noctis.Services;
 using Noctis.Services.Loon;
 using Noctis.Services.MediaServer;
+using Noctis.Services.AudioCd;
 
 namespace Noctis.ViewModels;
 
@@ -82,13 +85,6 @@ public partial class MainWindowViewModel : ViewModelBase
         _foldersVm.IsActive = ReferenceEquals(current, _foldersVm);
         _favoritesVm.IsActive = ReferenceEquals(current, _favoritesVm);
     }
-
-    // ── Debug panel ──
-    [ObservableProperty] private bool _isDebugPanelVisible;
-    private DebugPanelViewModel? _debugPanelVm;
-
-    /// <summary>ViewModel for the debug overlay panel (created on first toggle).</summary>
-    public DebugPanelViewModel? DebugPanel => _debugPanelVm;
 
     // ── Scrobble tracking ──
     private DateTime _trackStartedAt;
@@ -204,6 +200,12 @@ public partial class MainWindowViewModel : ViewModelBase
     private readonly FavoritesViewModel _favoritesVm;
     private readonly LibraryFoldersViewModel _foldersVm;
     private readonly ServerViewModel _serverVm;
+    private readonly AudioCdViewModel _audioCdVm;
+    private readonly VisualizerViewModel _visualizerVm;
+    private readonly LyricsStudioPageViewModel _lyricsStudioPageVm;
+
+    /// <summary>Plugin host (Settings → Plugins; lyrics-page visual layers).</summary>
+    public PluginHost Plugins { get; }
 
     private readonly QueueViewModel _queueVm;
     private readonly LyricsViewModel _lyricsVm;
@@ -239,7 +241,8 @@ public partial class MainWindowViewModel : ViewModelBase
         ILrcLibService lrcLib,
         INetEaseService netEase,
         IPlayHistoryService playHistory,
-        IMediaServerService mediaServer)
+        IMediaServerService mediaServer,
+        IAudioCdService audioCd)
     {
         _library = library;
         _playHistory = playHistory;
@@ -266,7 +269,11 @@ public partial class MainWindowViewModel : ViewModelBase
         Settings.SetLoonClient(loon);
         Settings.SetLastFm(lastFm);
         Settings.SetListenBrainz(listenBrainz);
+        Settings.SetTidal(App.Services!.GetRequiredService<ITidalAuthService>());
         Settings.SetUpdateService(App.Services!.GetRequiredService<UpdateService>());
+        // Deferred tag writes skip the file that is playing; the player knows which one.
+        if (App.Services?.GetService<IDeferredTagWriter>() is { } tagWriter)
+            tagWriter.InUsePath = () => Player.CurrentTrack?.FilePath;
         Settings.SettingsReset += async (_, _) =>
         {
             // Guarded: an unhandled throw from an async-void handler crashes the app.
@@ -299,6 +306,43 @@ public partial class MainWindowViewModel : ViewModelBase
             if (!configured && ReferenceEquals(CurrentView, _serverVm))
                 Navigate("home");
         };
+        // The Audio CD entry only exists in the rail while an optical drive does; the
+        // service polls for drive/disc changes once the shell is up.
+        _audioCdVm = new AudioCdViewModel(audioCd, Player);
+        _visualizerVm = new VisualizerViewModel(Player, Settings);
+        _lyricsStudioPageVm = new LyricsStudioPageViewModel(library,
+            () => Settings.GetSettings().LyricsStudioWordTimings, MetadataHelper.CreateLyricsStudioViewModel);
+
+        // Plugins load once settings are read so the disabled list is honoured on the first pass.
+        Plugins = new PluginHost(Player, persistence.DataDirectory, () => Settings.GetSettings(),
+            () => _ = Settings.SaveAsync(), UpdateService.CurrentVersionDisplay);
+        Settings.Plugins = Plugins;
+        // LoadAll walks the plugins folder, loads assemblies and reflects over their
+        // types on the UI thread. Settings finish loading right after the window
+        // shows, so running it inline there held the first frame hostage to however
+        // many plugins are installed. Background priority lets the first page paint
+        // and settle first; VisualLayersChanged re-syncs any view that cares.
+        void LoadPluginsWhenIdle() =>
+            Dispatcher.UIThread.Post(() =>
+            {
+                Plugins.LoadAll();
+                Services.StartupTrace.Mark("plugins-loaded");
+            }, DispatcherPriority.Background);
+        if (Settings.IsSettingsLoaded) LoadPluginsWhenIdle();
+        else Settings.SettingsLoaded += (_, _) => LoadPluginsWhenIdle();
+        Loc.Instance.CultureChanged += (_, _) =>
+        {
+            TopBar.RefreshLocalizedTitles();
+            RefreshBackButton();
+        };
+        Sidebar.SetAudioCdSectionVisible(audioCd.HasDrive);
+        audioCd.DriveStateChanged += (_, _) => Dispatcher.UIThread.Post(() =>
+        {
+            Sidebar.SetAudioCdSectionVisible(audioCd.HasDrive);
+            if (!audioCd.HasDrive && ReferenceEquals(CurrentView, _audioCdVm))
+                Navigate("home");
+        });
+        audioCd.StartWatching();
         _homeVm = new HomeViewModel(Player, library, Sidebar, artistImageService, playHistory, Settings);
         _songsVm = new LibrarySongsViewModel(library, Player, Sidebar, persistence, Settings);
         _albumsVm = new LibraryAlbumsViewModel(library, Player, Sidebar, Settings);
@@ -318,6 +362,34 @@ public partial class MainWindowViewModel : ViewModelBase
         };
         _artistsVm = new LibraryArtistsViewModel(library);
         _artistsVm.SetArtistImageService(artistImageService);
+        // Artists sort: mirror the grid's sort state into the top-bar chip and persist
+        // changes — same shape as the Albums sort. Settings load asynchronously, so the
+        // persisted choice is adopted when ViewStateLoaded fires, not read here.
+        var adoptingArtistSort = false;
+        _artistsVm.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(LibraryArtistsViewModel.SortMode))
+            {
+                TopBar.ArtistSortMode = _artistsVm.SortMode;
+                TopBar.ArtistSortLabel = _artistsVm.SortLabel;
+                if (!adoptingArtistSort) Settings.ArtistSortMode = _artistsVm.SortMode;
+            }
+            else if (e.PropertyName == nameof(LibraryArtistsViewModel.SortAscending))
+            {
+                TopBar.ArtistSortAscending = _artistsVm.SortAscending;
+                if (!adoptingArtistSort) Settings.ArtistSortAscending = _artistsVm.SortAscending;
+            }
+        };
+        Settings.ViewStateLoaded += (_, _) =>
+        {
+            adoptingArtistSort = true;
+            try
+            {
+                _artistsVm.SortMode = Settings.ArtistSortMode;
+                _artistsVm.SortAscending = Settings.ArtistSortAscending;
+            }
+            finally { adoptingArtistSort = false; }
+        };
         _playlistsVm = new LibraryPlaylistsViewModel(Sidebar, Player, library, persistence);
         // Same mirroring as the Albums sort chip: the label lives on the grid view-model,
         // the control that shows it lives in the shared top bar.
@@ -325,6 +397,8 @@ public partial class MainWindowViewModel : ViewModelBase
         {
             if (e.PropertyName == nameof(LibraryPlaylistsViewModel.SortLabel))
                 TopBar.PlaylistSortLabel = _playlistsVm.SortLabel;
+            else if (e.PropertyName == nameof(LibraryPlaylistsViewModel.SortMode))
+                TopBar.PlaylistSortMode = _playlistsVm.SortMode;
         };
 
         _foldersVm = new LibraryFoldersViewModel(library, Player, persistence, Sidebar);
@@ -450,11 +524,26 @@ public partial class MainWindowViewModel : ViewModelBase
         _coverFlowVm.SetViewArtistAction(ViewArtistByName);
         _coverFlowVm.SetViewAlbumAction(track => OnViewAlbumFromTrack(this, track));
 
-        // Mirror the Cover Flow sub-mode (Carousel/Collage) into the top-bar pill segment.
+        // Mirror the Cover Flow layout into the top-bar pill segment, and keep it two-way
+        // with the Appearance setting: the pill segment writes the setting; the Appearance
+        // picker (and the load from disk) drives the page. Both setters no-op on equal
+        // values, so the pair cannot ping-pong.
+        _coverFlowVm.Layout = Settings.CoverFlowLayoutMode;
         _coverFlowVm.PropertyChanged += (_, e) =>
         {
             if (e.PropertyName == nameof(CoverFlowViewModel.IsCollageMode))
                 TopBar.IsCollageMode = _coverFlowVm.IsCollageMode;
+            else if (e.PropertyName == nameof(CoverFlowViewModel.Layout))
+            {
+                Settings.CoverFlowLayoutMode = _coverFlowVm.Layout;
+                TopBar.CoverFlowLayoutLabel = _coverFlowVm.LayoutLabel;
+            }
+        };
+        TopBar.CoverFlowLayoutLabel = _coverFlowVm.LayoutLabel;
+        Settings.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(SettingsViewModel.CoverFlowLayout))
+                _coverFlowVm.Layout = Settings.CoverFlowLayoutMode;
         };
 
         // Forward Player.HasContent changes to IsPlaybackBarVisible
@@ -534,6 +623,7 @@ public partial class MainWindowViewModel : ViewModelBase
                 try
                 {
                     await _library.ScanAsync(Settings.GetSettings().MusicFolders);
+                    Services.MemoryTrim.RequestAfterIdle("startup scan");
                 }
                 catch (Exception ex)
                 {
@@ -617,6 +707,10 @@ public partial class MainWindowViewModel : ViewModelBase
             // that first click as instant as the cached reuse on later clicks.
             Dispatcher.UIThread.Post(() => App.CachedLocator?.Build(_lyricsVm), DispatcherPriority.Background);
         });
+
+        // The load/scan/backfill burst above leaves a lot of dead large arrays behind;
+        // hand them back once everything has gone quiet (see MemoryTrim).
+        Services.MemoryTrim.RequestAfterIdle("startup");
 
         // Refresh non-visible content VMs so their data is ready when navigated to.
         // These are data-only refreshes (no visual tree work), so they're cheap.
@@ -731,6 +825,12 @@ public partial class MainWindowViewModel : ViewModelBase
         try { Player.PauseForShutdown(); }
         catch (Exception ex) { Debug.WriteLine($"[MainWindowVM] Shutdown pause failed: {ex.Message}"); }
 
+        // Plugins get their Shutdown() (timers, files), and the server releases its port.
+        try { Plugins.UnloadAll(); }
+        catch (Exception ex) { Debug.WriteLine($"[MainWindowVM] Plugin shutdown failed: {ex.Message}"); }
+        try { await Settings.StopNoctisServerAsync().WaitAsync(TimeSpan.FromSeconds(2)); }
+        catch (Exception ex) { Debug.WriteLine($"[MainWindowVM] Server stop failed: {ex.Message}"); }
+
         // Stop any in-flight library scan and flush its progress to disk so the next
         // launch resumes where it left off instead of re-scanning from scratch.
         try { await _library.PauseActiveScanForShutdownAsync(TimeSpan.FromSeconds(5)); }
@@ -750,6 +850,13 @@ public partial class MainWindowViewModel : ViewModelBase
         catch (Exception ex) { Debug.WriteLine($"[MainWindowVM] Settings save failed: {ex.Message}"); }
         try { await _playHistory.FlushAsync(); }
         catch (Exception ex) { Debug.WriteLine($"[MainWindowVM] Play-history flush failed: {ex.Message}"); }
+        // Ratings/lyrics waiting for the quiet period (or for the playing file) go to disk now.
+        try
+        {
+            if (App.Services?.GetService<IDeferredTagWriter>() is { } tagWriter)
+                await tagWriter.FlushAsync().WaitAsync(TimeSpan.FromSeconds(3));
+        }
+        catch (Exception ex) { Debug.WriteLine($"[MainWindowVM] Tag-write flush failed: {ex.Message}"); }
 
         // Snapshot the queue so the next launch restores it.
         try { await Player.SaveQueueStateAsync(); }
@@ -1190,20 +1297,37 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         TopBar.SearchWatermark = CurrentView switch
         {
-            PlaylistFeaturedArtistsViewModel => "Search in Featured Artists",
-            MoreByArtistViewModel => "Search in Albums",
-            _ => $"Search in {TopBar.CurrentTabName}"
+            PlaylistFeaturedArtistsViewModel => Loc.T("TopBar.SearchIn", Loc.T("TopBar.FeaturedArtists")),
+            MoreByArtistViewModel => Loc.T("TopBar.SearchIn", Loc.T("Nav.Albums")),
+            ArtistDetailViewModel artistPage => Loc.T("TopBar.SearchIn", artistPage.ArtistName),
+            _ => Loc.T("TopBar.SearchIn", TopBar.CurrentTabTitle)
         };
 
         // Search visibility follows the tab name (hidden on Home/Settings/Lyrics and
-        // in Cover Flow), except the More By page which is searchable regardless of
-        // the tab it was opened from (the tab name doesn't change on detail pages).
-        TopBar.IsSearchVisible = CurrentView is MoreByArtistViewModel
-            || (!_isCoverFlowMode && TopBar.CurrentTabName is not ("Home" or "Settings" or "Lyrics"));
+        // in Cover Flow), except the More By and Artist pages which are searchable
+        // regardless of the tab they were opened from (the tab name doesn't change on
+        // detail pages).
+        TopBar.IsSearchVisible = CurrentView is MoreByArtistViewModel or ArtistDetailViewModel
+            || (!_isCoverFlowMode && TopBar.CurrentTabName is not ("Home" or "Settings" or "Lyrics" or "Visualizer" or "Lyrics Studio"));
+
+        // Cover Flow is an overlay on the current section, so Back leaves it (the only
+        // exit used to be the "Library" segment in the top bar, which read as a trap).
+        if (_isCoverFlowMode && ReferenceEquals(CurrentView, _coverFlowVm))
+        {
+            TopBar.ShowBackButton("Back", new RelayCommand(ExitCoverFlowMode));
+            return;
+        }
 
         if (CurrentView is MoreByArtistViewModel mbaVm)
         {
             TopBar.ShowBackButton("Back", GoBackInHistoryCommand, mbaVm.Title);
+            return;
+        }
+
+        if (CurrentView is ArtistDetailViewModel)
+        {
+            // No context title: the hero already carries the artist's name.
+            TopBar.ShowBackButton("Back", GoBackInHistoryCommand);
             return;
         }
 
@@ -1506,6 +1630,12 @@ public partial class MainWindowViewModel : ViewModelBase
             return GetSectionBackButtonText("statistics");
         if (ReferenceEquals(view, _serverVm))
             return GetSectionBackButtonText("server");
+        if (ReferenceEquals(view, _audioCdVm))
+            return GetSectionBackButtonText("cd");
+        if (ReferenceEquals(view, _visualizerVm))
+            return GetSectionBackButtonText("visualizer");
+        if (ReferenceEquals(view, _lyricsStudioPageVm))
+            return GetSectionBackButtonText("lyricsstudio");
         if (ReferenceEquals(view, Settings))
             return GetSectionBackButtonText("settings");
         if (view is AlbumDetailViewModel)
@@ -1562,6 +1692,12 @@ public partial class MainWindowViewModel : ViewModelBase
             return "statistics";
         if (ReferenceEquals(view, _serverVm))
             return "server";
+        if (ReferenceEquals(view, _audioCdVm))
+            return "cd";
+        if (ReferenceEquals(view, _visualizerVm))
+            return "visualizer";
+        if (ReferenceEquals(view, _lyricsStudioPageVm))
+            return "lyricsstudio";
         if (ReferenceEquals(view, Settings))
             return "settings";
 
@@ -1653,10 +1789,12 @@ public partial class MainWindowViewModel : ViewModelBase
 
         var goingToEligibleSection = ToggleEligibleSections.Contains(key);
 
-        // If we're in Cover Flow and the user clicks an ineligible destination
-        // (album detail, settings, lyrics, etc.), auto-exit Cover Flow first
-        // so the toggle hide and the destination view land in a consistent state.
-        if (_isCoverFlowMode && !goingToEligibleSection)
+        // Any sidebar navigation leaves Cover Flow. It used to stay "sticky" across the
+        // seven toggle-eligible sections (click Songs while in Cover Flow and the carousel
+        // stayed up with Songs merely selected underneath), which read as being trapped —
+        // the sidebar highlight moved but the screen never changed. Cover Flow is now a
+        // mode of the section you are on; picking a section shows that section.
+        if (_isCoverFlowMode)
         {
             _isCoverFlowMode = false;
             TopBar.IsCoverFlowMode = false;
@@ -1669,17 +1807,8 @@ public partial class MainWindowViewModel : ViewModelBase
         if (goingToEligibleSection)
             _currentSectionKey = key;
 
-        // Resolve the destination view. If we're staying in Cover Flow (eligible
-        // destination + sticky mode), the visible content stays as the carousel;
-        // only the underlying section key changes.
-        if (_isCoverFlowMode && goingToEligibleSection)
-        {
-            // Touch the underlying section so its data is fresh when the user
-            // exits Cover Flow (mirrors what Navigate would normally do).
-            _ = ResolveSectionView(key);
-            // CurrentView stays as _coverFlowVm.
-        }
-        else
+        // Resolve the destination view (Cover Flow was left above, so this always shows
+        // the section itself).
         {
             CurrentView = key switch
             {
@@ -1694,6 +1823,9 @@ public partial class MainWindowViewModel : ViewModelBase
                 "queue" => _queueVm,
                 "lyrics" => EnsureLyricsAndReturn(_lyricsVm),
                 "server" => RefreshAndReturnServer(_serverVm),
+                "cd" => RefreshAndReturnAudioCd(_audioCdVm),
+                "visualizer" => _visualizerVm,
+                "lyricsstudio" => RefreshAndReturnLyricsStudio(),
                 "settings" => RefreshAndReturnSettings(),
                 _ when key.StartsWith("playlist:") => CreatePlaylistView(key),
                 _ => _homeVm
@@ -1732,6 +1864,9 @@ public partial class MainWindowViewModel : ViewModelBase
             "queue" => "Queue",
             "lyrics" => "Lyrics",
             "server" => "Server",
+            "cd" => "Audio CD",
+            "visualizer" => "Visualizer",
+            "lyricsstudio" => "Lyrics Studio",
             "settings" => "Settings",
             _ when key.StartsWith("playlist:") => "Playlist",
             _ => "Library"
@@ -1751,8 +1886,18 @@ public partial class MainWindowViewModel : ViewModelBase
             TopBar.ShowFavoritesActions(_favoritesVm.ShuffleAllCommand, _favoritesVm.PlayAllCommand);
         else if (key == "folders")
             TopBar.ShowFoldersActions(_foldersVm.PlayFolderCommand, _foldersVm.ShuffleFolderCommand, _foldersVm.OpenMediaFolderSettingsCommand);
+        else if (key == "artists")
+            TopBar.ShowArtistSort(_artistsVm.SetSortCommand, _artistsVm.SortLabel, _artistsVm.SortMode, _artistsVm.SortAscending);
 
         RefreshBackButton();
+    }
+
+    /// <summary>Sidebar Lyrics Studio: re-scans the library for songs missing the chosen format
+    /// unless a run or a review is in progress (then the page keeps its work).</summary>
+    private LyricsStudioPageViewModel RefreshAndReturnLyricsStudio()
+    {
+        _ = _lyricsStudioPageVm.RefreshAsync();
+        return _lyricsStudioPageVm;
     }
 
     private LyricsViewModel EnsureLyricsAndReturn(LyricsViewModel vm)
@@ -1791,6 +1936,12 @@ public partial class MainWindowViewModel : ViewModelBase
     }
 
     private ServerViewModel RefreshAndReturnServer(ServerViewModel vm)
+    {
+        vm.OnNavigatedTo();
+        return vm;
+    }
+
+    private AudioCdViewModel RefreshAndReturnAudioCd(AudioCdViewModel vm)
     {
         vm.OnNavigatedTo();
         return vm;
@@ -1948,19 +2099,35 @@ public partial class MainWindowViewModel : ViewModelBase
 
     private void OpenArtistDiscography(string artistName)
     {
+        // Dedicated artist page (hero, Popular, Releases, Appears On) — replaces the
+        // artist-filtered Albums grid. Long-lived per visit; disposed when it leaves
+        // history (DisposeViewIfTransient).
         PushCurrentViewToHistory();
         ClearAllTopBarActions();
-        SetupGlobalViewModeToggle();
-        _albumsVm.SetArtistFilter(artistName);
+        IsLyricsPanelOpen = false;
+        _isCoverFlowMode = false;
+        TopBar.IsCoverFlowMode = false;
+        _preCoverFlowView = null;
+        // The originating page's query is captured in history for back-restore.
+        TopBar.SearchText = string.Empty;
 
-        if (!ReferenceEquals(CurrentView, _albumsVm))
-            CurrentView = _albumsVm;
+        // About-the-artist facts (MusicBrainz + Wikipedia); resolved lazily so the
+        // long-lived shell constructor doesn't grow another parameter.
+        var artistInfo = App.Services?.GetService(typeof(ArtistInfoService)) as ArtistInfoService;
+        var similarArtists = App.Services?.GetService(typeof(SimilarArtistsService)) as SimilarArtistsService;
+        var page = new ArtistDetailViewModel(artistName, _library, Player, _albumsVm, _artistsVm, _artistImageService, Sidebar, artistInfo, similarArtists, Settings);
+        page.BackRequested += (_, _) =>
+        {
+            if (ReferenceEquals(CurrentView, page))
+                GoBackInHistory();
+        };
+        page.AlbumOpened += (_, album) => OpenAlbumDetail(album, backButtonText: page.ArtistName);
+        // Similar Artists tile for an artist in the library: their page, this one in history.
+        page.ArtistOpened += (_, name) => OpenArtistDiscography(name);
+        page.SearchLyricsRequested += (_, track) => SearchLyricsForTrack(track);
+        CurrentView = page;
         HighlightSidebarSection("artists");
-
-        TopBar.ShowArtistActions(
-            _albumsVm.ShuffleAllArtistTracksCommand,
-            _albumsVm.PlayAllArtistTracksCommand);
-
+        // No top-bar Play/Shuffle pills: the page's own hero carries them.
         RefreshBackButton();
     }
 
@@ -2089,6 +2256,7 @@ public partial class MainWindowViewModel : ViewModelBase
         TopBar.HideArtistActions();
         TopBar.HideFavoritesActions();
         TopBar.HideFoldersActions();
+        TopBar.HideArtistSort();
         TopBar.HideViewModeToggle();
     }
 
@@ -2141,7 +2309,9 @@ public partial class MainWindowViewModel : ViewModelBase
             new RelayCommand(EnterCoverFlowMode),
             _isCoverFlowMode,
             _coverFlowVm.ToggleCollageModeCommand,
-            _coverFlowVm.IsCollageMode);
+            _coverFlowVm.IsCollageMode,
+            _coverFlowVm.SetLayoutCommand,
+            _coverFlowVm.LayoutLabel);
 
         // Home and Cover Flow do not use the top-bar search field.
         if (_isCoverFlowMode || _currentSectionKey == "home")
@@ -2183,6 +2353,8 @@ public partial class MainWindowViewModel : ViewModelBase
         TopBar.IsCoverFlowMode = true;
         TopBar.IsSearchVisible = false;
         CurrentView = _coverFlowVm;
+        // Arms the sidebar Back chevron as "leave Cover Flow" (see RefreshBackButton).
+        RefreshBackButton();
     }
 
     private void ExitCoverFlowMode()
@@ -2201,7 +2373,9 @@ public partial class MainWindowViewModel : ViewModelBase
         {
             // Return to the section that was selected underneath
             CurrentView = ResolveSectionView(_currentSectionKey);
+            RestoreTopBarActionsForView(CurrentView);
         }
+        RefreshBackButton();
     }
 
     /// <summary>Resolves a sidebar section key to the cached long-lived ViewModel for that section. Refreshes content as needed (mirrors Navigate's switch).</summary>
@@ -2242,6 +2416,10 @@ public partial class MainWindowViewModel : ViewModelBase
             TopBar.ShowFavoritesActions(_favoritesVm.ShuffleAllCommand, _favoritesVm.PlayAllCommand);
         else if (ReferenceEquals(view, _lyricsVm))
             WireLyricsPageToPlayer();
+        else if (ReferenceEquals(view, _foldersVm))
+            TopBar.ShowFoldersActions(_foldersVm.PlayFolderCommand, _foldersVm.ShuffleFolderCommand, _foldersVm.OpenMediaFolderSettingsCommand);
+        else if (ReferenceEquals(view, _artistsVm))
+            TopBar.ShowArtistSort(_artistsVm.SetSortCommand, _artistsVm.SortLabel, _artistsVm.SortMode, _artistsVm.SortAscending);
         // Artist actions for _albumsVm are restored in CaptureRestoreState's lambda
     }
 
@@ -2259,6 +2437,9 @@ public partial class MainWindowViewModel : ViewModelBase
         if (CurrentView == _lyricsVm) return "lyrics";
         if (CurrentView == _statisticsVm) return "statistics";
         if (CurrentView == _serverVm) return "server";
+        if (CurrentView == _audioCdVm) return "cd";
+        if (CurrentView == _visualizerVm) return "visualizer";
+        if (CurrentView == _lyricsStudioPageVm) return "lyricsstudio";
         if (CurrentView == Settings) return "settings";
         if (CurrentView is AlbumDetailViewModel) return "albums";
         if (CurrentView is MoreByArtistViewModel) return "artists";
@@ -2600,7 +2781,8 @@ public partial class MainWindowViewModel : ViewModelBase
                 track.Title ?? "Unknown",
                 track.Artist ?? "Unknown Artist",
                 track.Album,
-                artworkUrl);
+                artworkUrl,
+                ShowAlbum: Settings.DiscordShowAlbum);
             await _discord.UpdateAsync(dto, position, track.Duration, isPlaying);
         }
         catch (Exception ex)
@@ -2662,31 +2844,6 @@ public partial class MainWindowViewModel : ViewModelBase
         catch (Exception ex) { Debug.WriteLine($"[MainWindowVM] Final scrobble flush: {ex.Message}"); }
     }
 
-    // ── Debug panel ──────────────────────────────────────────
-
-    /// <summary>Toggles the debug overlay panel and enables/disables logging.</summary>
-    public void ToggleDebugPanel()
-    {
-        if (IsDebugPanelVisible)
-        {
-            // The view-model was built once and never disposed, so a single Ctrl+Shift+D
-            // left a permanent subscription to Player.PropertyChanged posting
-            // RefreshLiveState to the UI thread on every Position tick — for the rest of
-            // the session, with the panel hidden.
-            IsDebugPanelVisible = false;
-            _debugPanelVm?.Dispose();
-            _debugPanelVm = null;
-            OnPropertyChanged(nameof(DebugPanel));
-            DebugLogger.Info(DebugLogger.Category.UI, "DebugPanel closed");
-            return;
-        }
-
-        _debugPanelVm = new DebugPanelViewModel(Player, this);
-        OnPropertyChanged(nameof(DebugPanel));
-        IsDebugPanelVisible = true;
-        DebugLogger.IsEnabled = true; // keep logging even when panel closes
-        DebugLogger.Info(DebugLogger.Category.UI, "DebugPanel opened");
-    }
 }
 
 

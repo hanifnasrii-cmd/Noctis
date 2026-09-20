@@ -285,4 +285,10 @@ public partial class LibraryAlbumsView : UserControl
         }
     }
 
+    /// <summary>Tile hover dots: the same menu a right-click on the tile opens.</summary>
+    private void OnTileMoreClick(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        Helpers.AlbumTile.OpenMenu(sender);
+        e.Handled = true;
+    }
 }

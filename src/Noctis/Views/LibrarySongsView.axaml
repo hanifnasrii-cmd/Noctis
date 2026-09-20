@@ -1,5 +1,6 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:loc="using:Noctis.Localization"
              xmlns:vm="using:Noctis.ViewModels"
              xmlns:m="using:Noctis.Models"
              xmlns:controls="using:Noctis.Controls"
@@ -45,52 +46,52 @@
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="42" />
             </Grid.ColumnDefinitions>
-            <Button Grid.Column="0" Content="Title" Command="{Binding SortCommand}" CommandParameter="Title"
+            <Button Grid.Column="0" Content="{loc:T LibrarySongs.Title}" Command="{Binding SortCommand}" CommandParameter="Title"
                     Background="Transparent" BorderThickness="0" Padding="0" MinWidth="0" HorizontalContentAlignment="Left" FontSize="12" FontWeight="SemiBold" Opacity="0.7" Cursor="Hand" HorizontalAlignment="Left" />
             <Border Grid.Column="1" Width="80"
                     IsVisible="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).Settings.ShowTimeColumn, FallbackValue=True}">
-                <Button Content="Time" Command="{Binding SortCommand}" CommandParameter="Time"
+                <Button Content="{loc:T LibrarySongs.Time}" Command="{Binding SortCommand}" CommandParameter="Time"
                         Background="Transparent" BorderThickness="0" Padding="0" MinWidth="0" HorizontalContentAlignment="Center" FontSize="12" FontWeight="SemiBold" Opacity="0.7" Cursor="Hand" HorizontalAlignment="Center" />
             </Border>
-            <Button Grid.Column="2" Content="Artist" Command="{Binding SortCommand}" CommandParameter="Artist"
+            <Button Grid.Column="2" Content="{loc:T LibrarySongs.Artist}" Command="{Binding SortCommand}" CommandParameter="Artist"
                     IsVisible="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).Settings.ShowArtistColumn, FallbackValue=True}"
                     Background="Transparent" BorderThickness="0" Padding="0" MinWidth="0" HorizontalContentAlignment="Left" FontSize="12" FontWeight="SemiBold" Opacity="0.7" Cursor="Hand" HorizontalAlignment="Left" />
-            <Button Grid.Column="3" Content="Album" Command="{Binding SortCommand}" CommandParameter="Album"
+            <Button Grid.Column="3" Content="{loc:T LibrarySongs.Album}" Command="{Binding SortCommand}" CommandParameter="Album"
                     IsVisible="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).Settings.ShowAlbumColumn, FallbackValue=True}"
                     Background="Transparent" BorderThickness="0" Padding="0" MinWidth="0" HorizontalContentAlignment="Left" FontSize="12" FontWeight="SemiBold" Opacity="0.7" Cursor="Hand" HorizontalAlignment="Left" />
             <Border Grid.Column="4" Width="110"
                     IsVisible="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).Settings.ShowGenreColumn, FallbackValue=True}">
-                <Button Content="Genre" Command="{Binding SortCommand}" CommandParameter="Genre"
+                <Button Content="{loc:T LibrarySongs.Genre}" Command="{Binding SortCommand}" CommandParameter="Genre"
                         Background="Transparent" BorderThickness="0" Padding="0" MinWidth="0" HorizontalContentAlignment="Left" FontSize="12" FontWeight="SemiBold" Opacity="0.7" Cursor="Hand" HorizontalAlignment="Left" />
             </Border>
             <Border Grid.Column="5" Width="80"
                     IsVisible="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).Settings.ShowFavoritesColumn, FallbackValue=True}">
-                <Button Content="Favorites" Command="{Binding SortCommand}" CommandParameter="IsFavorite"
+                <Button Content="{loc:T LibrarySongs.Favorites}" Command="{Binding SortCommand}" CommandParameter="IsFavorite"
                         Background="Transparent" BorderThickness="0" Padding="0" FontSize="12" FontWeight="SemiBold" Opacity="0.7" Cursor="Hand" HorizontalAlignment="Center" />
             </Border>
             <Border Grid.Column="6" Width="84"
                     IsVisible="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).Settings.ShowRatingColumn, FallbackValue=True}">
-                <Button Content="Rating" Command="{Binding SortCommand}" CommandParameter="Rating"
+                <Button Content="{loc:T LibrarySongs.Rating}" Command="{Binding SortCommand}" CommandParameter="Rating"
                         Background="Transparent" BorderThickness="0" Padding="0" MinWidth="0" HorizontalContentAlignment="Center" FontSize="12" FontWeight="SemiBold" Opacity="0.7" Cursor="Hand" HorizontalAlignment="Center" />
             </Border>
             <Border Grid.Column="7" Width="55"
                     IsVisible="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).Settings.ShowPlaysColumn, FallbackValue=True}">
-                <Button Content="Plays" Command="{Binding SortCommand}" CommandParameter="Plays"
+                <Button Content="{loc:T LibrarySongs.Plays}" Command="{Binding SortCommand}" CommandParameter="Plays"
                         Background="Transparent" BorderThickness="0" Padding="0" MinWidth="0" HorizontalContentAlignment="Center" FontSize="12" FontWeight="SemiBold" Opacity="0.7" Cursor="Hand" HorizontalAlignment="Center" />
             </Border>
             <Border Grid.Column="8" Width="48"
                     IsVisible="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).Settings.ShowBpmColumn, FallbackValue=False}">
-                <Button Content="BPM" Command="{Binding SortCommand}" CommandParameter="Bpm"
+                <Button Content="{loc:T LibrarySongs.BPM}" Command="{Binding SortCommand}" CommandParameter="Bpm"
                         Background="Transparent" BorderThickness="0" Padding="0" MinWidth="0" HorizontalContentAlignment="Center" FontSize="12" FontWeight="SemiBold" Opacity="0.7" Cursor="Hand" HorizontalAlignment="Center" />
             </Border>
             <Border Grid.Column="9" Width="72"
                     IsVisible="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).Settings.ShowBitrateColumn, FallbackValue=False}">
-                <Button Content="Bitrate" Command="{Binding SortCommand}" CommandParameter="Bitrate"
+                <Button Content="{loc:T LibrarySongs.Bitrate}" Command="{Binding SortCommand}" CommandParameter="Bitrate"
                         Background="Transparent" BorderThickness="0" Padding="0" MinWidth="0" HorizontalContentAlignment="Center" FontSize="12" FontWeight="SemiBold" Opacity="0.7" Cursor="Hand" HorizontalAlignment="Center" />
             </Border>
             <Border Grid.Column="10" Width="68"
                     IsVisible="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).Settings.ShowSampleRateColumn, FallbackValue=False}">
-                <Button Content="Sample" Command="{Binding SortCommand}" CommandParameter="SampleRate"
+                <Button Content="{loc:T LibrarySongs.Sample}" Command="{Binding SortCommand}" CommandParameter="SampleRate"
                         Background="Transparent" BorderThickness="0" Padding="0" MinWidth="0" HorizontalContentAlignment="Center" FontSize="12" FontWeight="SemiBold" Opacity="0.7" Cursor="Hand" HorizontalAlignment="Center" />
             </Border>
         </Grid>
@@ -192,6 +193,82 @@
                 <Style Selector="Border.row-body:pointerover">
                     <Setter Property="Background" Value="{DynamicResource TrackListHoverBrush}" />
                 </Style>
+                <!-- Row heart: invisible at rest, faint on row hover, brighter under the
+                     pointer, red and always visible once favorited. Declaration order
+                     matters — the favorited rules come last so they win on hovered rows. -->
+                <Style Selector="Button.row-heart">
+                    <Setter Property="Background" Value="Transparent" />
+                    <Setter Property="BorderThickness" Value="0" />
+                    <Setter Property="Padding" Value="6" />
+                    <Setter Property="Cursor" Value="Hand" />
+                    <Setter Property="Opacity" Value="0" />
+                    <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}" />
+                </Style>
+                <Style Selector="Button.row-heart:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+                    <Setter Property="Background" Value="Transparent" />
+                </Style>
+                <Style Selector="Button.row-heart:pressed /template/ ContentPresenter#PART_ContentPresenter">
+                    <Setter Property="Background" Value="Transparent" />
+                </Style>
+                <Style Selector="Border.row-body:pointerover Button.row-heart">
+                    <Setter Property="Opacity" Value="0.4" />
+                </Style>
+                <Style Selector="Border.row-body:pointerover Button.row-heart:pointerover">
+                    <Setter Property="Opacity" Value="0.9" />
+                </Style>
+                <Style Selector="Button.row-heart.is-favorite">
+                    <Setter Property="Opacity" Value="1" />
+                    <Setter Property="Foreground" Value="#E74856" />
+                </Style>
+                <Style Selector="Border.row-body:pointerover Button.row-heart.is-favorite">
+                    <Setter Property="Opacity" Value="1" />
+                </Style>
+                <!-- Artwork play overlay (09-14): hidden until the row is hovered; fills the
+                     36px thumb with a dim and a centred Play (Pause while this track plays).
+                     Same idiom as the playlist page's rows; no global button zoom. -->
+                <Style Selector="Button.art-play-overlay">
+                    <Setter Property="Opacity" Value="0" />
+                    <Setter Property="Transitions">
+                        <Transitions>
+                            <DoubleTransition Property="Opacity" Duration="0:0:0.12" />
+                        </Transitions>
+                    </Setter>
+                </Style>
+                <Style Selector="Border.row-body:pointerover Button.art-play-overlay">
+                    <Setter Property="Opacity" Value="1" />
+                </Style>
+                <Style Selector="Button.art-play-overlay:pointerover">
+                    <Setter Property="RenderTransform" Value="scale(1)" />
+                </Style>
+                <Style Selector="Button.art-play-overlay:pressed">
+                    <Setter Property="RenderTransform" Value="scale(1)" />
+                </Style>
+                <Style Selector="Button.art-play-overlay:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+                    <Setter Property="Background" Value="#80000000" />
+                </Style>
+                <Style Selector="Button.art-play-overlay Path">
+                    <Setter Property="Fill" Value="White" />
+                    <Setter Property="Stretch" Value="Uniform" />
+                </Style>
+                <!-- Row rating stars: same reveal idiom as the heart — hidden until the row is
+                     hovered, always visible once rated. -->
+                <Style Selector="controls|RatingStars.row-rating">
+                    <Setter Property="Opacity" Value="0" />
+                    <Setter Property="Transitions">
+                        <Transitions>
+                            <DoubleTransition Property="Opacity" Duration="0:0:0.08" />
+                        </Transitions>
+                    </Setter>
+                </Style>
+                <Style Selector="controls|RatingStars.row-rating.rated">
+                    <Setter Property="Opacity" Value="0.7" />
+                </Style>
+                <Style Selector="Border.row-body:pointerover controls|RatingStars.row-rating">
+                    <Setter Property="Opacity" Value="0.45" />
+                </Style>
+                <Style Selector="Border.row-body:pointerover controls|RatingStars.row-rating.rated">
+                    <Setter Property="Opacity" Value="1" />
+                </Style>
                 <Style Selector="ListBoxItem.ctrl-selected Border.row-body">
                     <Setter Property="Background" Value="#3FFFFFFF" />
                 </Style>
@@ -254,6 +331,26 @@
                                                           Stretch="UniformToFill"
                                                           RenderOptions.BitmapInterpolationMode="HighQuality"
                                                           IsVisible="{Binding HasAlbumArt}" />
+                                    <!-- Hover Play over the thumb (09-14): plays from this row like a
+                                         double-click; Pause while this is the playing track. -->
+                                    <Button Classes="art-play-overlay"
+                                            Background="#66000000"
+                                            BorderThickness="0"
+                                            Padding="0"
+                                            CornerRadius="5"
+                                            HorizontalAlignment="Stretch"
+                                            VerticalAlignment="Stretch"
+                                            HorizontalContentAlignment="Center"
+                                            VerticalContentAlignment="Center"
+                                            Cursor="Hand"
+                                            ToolTip.Tip="{loc:T LibrarySongs.PlayFromHereTip}"
+                                            Command="{Binding $parent[UserControl].((vm:LibrarySongsViewModel)DataContext).TogglePlayTrackCommand}"
+                                            CommandParameter="{Binding}">
+                                        <Panel>
+                                            <Viewbox Width="12" Height="12" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="1,0,0,0" IsVisible="{Binding !IsCurrentlyPlaying}"><Path Data="{StaticResource PlayIcon}" /></Viewbox>
+                                            <Viewbox Width="12" Height="12" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding IsCurrentlyPlaying}"><Path Data="{StaticResource PauseIcon}" /></Viewbox>
+                                        </Panel>
+                                    </Button>
                                 </Panel>
                             </Border>
                             <!-- Center: the cell is as tall as the 36px artwork, and a
@@ -274,10 +371,10 @@
                                     Classes="explicit-badge compact"
                                     Margin="6,0,4,0"
                                     IsVisible="{Binding IsExplicit}"
-                                    ToolTip.Tip="Explicit">
+                                    ToolTip.Tip="{loc:T LibrarySongs.ExplicitTip}">
                                 <TextBlock Text="E"
                                            Classes="explicit-badge-text compact"
-                                           FontSize="9"
+                                           FontSize="8"
                                            Opacity="0.9" />
                             </Border>
                         </Grid>
@@ -331,23 +428,36 @@
                         </Border>
                         <Border Grid.Column="5" Width="80"
                                 IsVisible="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).Settings.ShowFavoritesColumn, FallbackValue=True}">
-                            <PathIcon Data="{StaticResource HeartFillIcon}"
-                                     Width="12" Height="12"
-                                     Foreground="#E74856"
-                                     HorizontalAlignment="Center"
-                                     VerticalAlignment="Center"
-                                     IsVisible="{Binding IsFavorite}" />
+                            <!-- One-click favorite (Discord, Reuben Strides 2026-08-25): red when
+                                 favorited, faint on row hover otherwise, invisible at rest so the
+                                 column reads exactly as before. Ctrl-selected rows toggle together,
+                                 like the context menu. -->
+                            <Button Classes="row-heart"
+                                    Classes.is-favorite="{Binding IsFavorite}"
+                                    Command="{Binding $parent[UserControl].((vm:LibrarySongsViewModel)DataContext).ToggleFavoriteCommand}"
+                                    CommandParameter="{Binding}"
+                                    ToolTip.Tip="{loc:T LibrarySongs.FavoriteTip}"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center">
+                                <controls:HeartIcon Size="12" IsFavorite="{Binding IsFavorite}" />
+                            </Button>
                         </Border>
                         <Border Grid.Column="6" Width="84"
                                 IsVisible="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).Settings.ShowRatingColumn, FallbackValue=True}">
+                            <!-- Click-to-rate: dim stars appear on row hover for unrated songs;
+                                 rated songs always show them. The click rates the whole
+                                 Ctrl-selection when the row is part of it (OnRowRated). -->
                             <controls:RatingStars Value="{Binding Rating}"
+                                                  Classes="row-rating"
+                                                  Classes.rated="{Binding !!Rating}"
                                                   StarSize="11"
                                                   StarSpacing="2"
-                                                  IsHitTestVisible="False"
-                                                  Opacity="0.7"
+                                                  IsInteractive="True"
+                                                  Cursor="Hand"
+                                                  UserRated="OnRowRated"
+                                                  ToolTip.Tip="{loc:T LibrarySongs.RateTip}"
                                                   HorizontalAlignment="Center"
-                                                  VerticalAlignment="Center"
-                                                  IsVisible="{Binding !!Rating}" />
+                                                  VerticalAlignment="Center" />
                         </Border>
 
                         <Border Grid.Column="7" Width="55"
@@ -390,7 +500,7 @@
                                 VerticalAlignment="Center"
                                 Cursor="Hand"
                                 Tag="{Binding}"
-                                ToolTip.Tip="Options"
+                                ToolTip.Tip="{loc:T LibrarySongs.OptionsTip}"
                                 Click="OnOptionsButtonClick">
                             <PathIcon Classes="row-dots-icon"
                                      Data="{StaticResource MoreDotsIcon}"
@@ -409,12 +519,12 @@
                         HorizontalAlignment="Center"
                         VerticalAlignment="Center"
                         Spacing="8">
-                <TextBlock Text="No songs found"
+                <TextBlock Text="{loc:T LibrarySongs.NoSongsFound}"
                            FontSize="18"
                            Opacity="0.5"
                            HorizontalAlignment="Center"
                            TextAlignment="Center" />
-                <TextBlock Text="Add music folders in Settings to get started"
+                <TextBlock Text="{loc:T LibrarySongs.AddMusicFoldersSettings}"
                            FontSize="13"
                            Opacity="0.3"
                            HorizontalAlignment="Center"

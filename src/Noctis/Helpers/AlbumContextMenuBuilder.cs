@@ -15,6 +15,9 @@ public sealed class AlbumContextMenuBuilder
 {
     // ── Named menu item references ──
     public MenuItem Play { get; private set; } = null!;
+    public MenuItem LyricsBackground { get; private set; } = null!;
+    public MenuItem LyricsBackgroundChoose { get; private set; } = null!;
+    public MenuItem LyricsBackgroundClear { get; private set; } = null!;
     public MenuItem Shuffle { get; private set; } = null!;
     public MenuItem PlayNext { get; private set; } = null!;
     public MenuItem AddToQueue { get; private set; } = null!;
@@ -82,7 +85,7 @@ public sealed class AlbumContextMenuBuilder
         Metadata.Icon = TrackContextMenuBuilder.CreatePngIcon("avares://Noctis/Assets/Icons/Metadata%20ICON.png");
         items.Add(Metadata);
 
-        EditDescription = new MenuItem { Header = "Edit Description", IsVisible = false };
+        EditDescription = new MenuItem { Header = "Update Description", IsVisible = false };
         EditDescription.Icon = TrackContextMenuBuilder.CreatePngIcon("avares://Noctis/Assets/Icons/Metadata%20ICON.png");
         items.Add(EditDescription);
 
@@ -97,6 +100,16 @@ public sealed class AlbumContextMenuBuilder
         SearchLyrics = new MenuItem { Header = "Search Lyrics", IsVisible = false };
         SearchLyrics.Icon = TrackContextMenuBuilder.CreatePngIcon("avares://Noctis/Assets/Icons/Lyrics%20ICON.png");
         items.Add(SearchLyrics);
+
+        // Lyrics Background Video ▸ — one clip for every song on this album (a song's own
+        // clip still wins). Static commands; see Helpers.LyricsBackgroundOverrides.
+        LyricsBackground = new MenuItem { Header = "Lyrics Background Video" };
+        LyricsBackground.Icon = TrackContextMenuBuilder.CreatePngIcon("avares://Noctis/Assets/Icons/Lyrics%20ICON.png");
+        LyricsBackgroundChoose = new MenuItem { Header = "Choose video for this album…", Command = LyricsBackgroundOverrides.ChooseForAlbumCommand };
+        LyricsBackground.Items.Add(LyricsBackgroundChoose);
+        LyricsBackgroundClear = new MenuItem { Header = "Use default video", Command = LyricsBackgroundOverrides.ClearForAlbumCommand };
+        LyricsBackground.Items.Add(LyricsBackgroundClear);
+        items.Add(LyricsBackground);
 
         ShowFolder = new MenuItem { Header = "Show Folder" };
         ShowFolder.Icon = TrackContextMenuBuilder.CreatePngIcon("avares://Noctis/Assets/Icons/Folder%20ICON.png");
@@ -134,6 +147,10 @@ public sealed class AlbumContextMenuBuilder
         ICommand? searchLyricsCommand = null)
     {
         Menu.DataContext = album;
+
+        LyricsBackgroundChoose.CommandParameter = album;
+        LyricsBackgroundClear.CommandParameter = album;
+        LyricsBackgroundClear.IsVisible = LyricsBackgroundOverrides.HasOverride(LyricsBackgroundOverrides.KeyForAlbum(album));
 
         Play.Command = playCommand;
         Play.CommandParameter = album;

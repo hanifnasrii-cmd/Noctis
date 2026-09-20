@@ -1,0 +1,214 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:loc="using:Noctis.Localization"
+             xmlns:vm="using:Noctis.ViewModels"
+             xmlns:views="using:Noctis.Views"
+             xmlns:controls="using:Noctis.Controls"
+             x:Class="Noctis.Views.LyricsStudioView"
+             x:DataType="vm:LyricsStudioPageViewModel">
+
+    <!-- Sidebar section: page header with the per-format counts, then the shared Studio
+         surface (LyricsStudioPanel) over the songs that still lack the chosen format. -->
+    <UserControl.Styles>
+        <!-- Workbench header: the four library counts as compact pills on the title row,
+             instead of the tall tiles that used to own a band of their own. They are a
+             readout, not a control, so they stay quiet — one weight for the number, one
+             dimmer for its format. -->
+        <Style Selector="Border.studio-count">
+            <Setter Property="CornerRadius" Value="999"/>
+            <Setter Property="Padding" Value="11,4"/>
+            <Setter Property="Margin" Value="0,0,6,0"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
+        </Style>
+
+        <!-- Choose songs: the same quiet chip as Backdrops, as a plain button (09-19). -->
+        <Style Selector="Button.studio-chip">
+            <Setter Property="CornerRadius" Value="999"/>
+            <Setter Property="Padding" Value="14,5"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Margin" Value="0,0,8,0"/>
+        </Style>
+        <Style Selector="Button.studio-chip /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource ChipBackground}"/>
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+            <Setter Property="CornerRadius" Value="999"/>
+        </Style>
+        <Style Selector="Button.studio-chip:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource ChipHoverBackground}"/>
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+        </Style>
+        <Style Selector="Button.studio-chip:pointerover">
+            <Setter Property="RenderTransform" Value="scale(1)"/>
+        </Style>
+        <!-- Backdrops disclosure: same quiet chip as Add Rule, and it takes the accent only
+             while the section is open so the header shows what is folded out. -->
+        <Style Selector="ToggleButton.studio-disclosure">
+            <Setter Property="CornerRadius" Value="999"/>
+            <Setter Property="Padding" Value="14,5"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+        <!-- Fluent paints a ToggleButton's fill on its ContentPresenter, so a Background
+             setter on the control never shows — every state has to be stated on the part
+             or the chip comes up in Fluent's own light grey next to the dark count pills. -->
+        <Style Selector="ToggleButton.studio-disclosure /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource ChipBackground}"/>
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+            <Setter Property="CornerRadius" Value="999"/>
+        </Style>
+        <Style Selector="ToggleButton.studio-disclosure:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource ChipHoverBackground}"/>
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+        </Style>
+        <Style Selector="ToggleButton.studio-disclosure:checked /template/ ContentPresenter,
+                         ToggleButton.studio-disclosure:checked:pointerover /template/ ContentPresenter,
+                         ToggleButton.studio-disclosure:checked:pressed /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource AccentColorBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource AccentForegroundBrush}"/>
+        </Style>
+
+        <!-- Loading spinner: the Settings rotating-arc recipe. Animation keyed on
+             [IsVisible=True] so the infinite clock stops while the page is not loading. -->
+        <Style Selector="Ellipse.loading-spinner">
+            <Setter Property="Width" Value="16"/>
+            <Setter Property="Height" Value="16"/>
+            <Setter Property="Stroke" Value="{DynamicResource AccentColorBrush}"/>
+            <Setter Property="StrokeThickness" Value="2"/>
+            <Setter Property="StrokeDashArray" Value="11,5"/>
+            <Setter Property="StrokeLineCap" Value="Round"/>
+            <Setter Property="RenderTransformOrigin" Value="50%,50%"/>
+        </Style>
+        <Style Selector="Ellipse.loading-spinner[IsVisible=True]">
+            <Style.Animations>
+                <Animation Duration="0:0:0.85" IterationCount="INFINITE" Easing="LinearEasing">
+                    <KeyFrame Cue="0%"><Setter Property="RotateTransform.Angle" Value="0"/></KeyFrame>
+                    <KeyFrame Cue="100%"><Setter Property="RotateTransform.Angle" Value="360"/></KeyFrame>
+                </Animation>
+            </Style.Animations>
+        </Style>
+    </UserControl.Styles>
+
+    <DockPanel Margin="24,20,24,0">
+        <!-- Header: library counts on the left, the Backdrops disclosure on the right (09-17:
+             the title went, so the readout takes the left edge instead of leaving it empty). -->
+        <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto,Auto" Margin="0,0,0,12">
+            <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                <ItemsControl ItemsSource="{Binding Counts}" IsVisible="{Binding HasCounts}" VerticalAlignment="Center">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate><StackPanel Orientation="Horizontal"/></ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:LyricsStudioCount">
+                            <Border Classes="studio-count">
+                                <StackPanel Orientation="Horizontal" Spacing="5" VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding Count}" FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                    <!-- ELRC / LRC carry a short tag; the other two only have a
+                                         label ("Plain only", "No lyrics"), so one or the other shows. -->
+                                    <TextBlock Text="{Binding Tag}" FontSize="10.5" FontWeight="SemiBold" Opacity="0.45" VerticalAlignment="Center"
+                                               IsVisible="{Binding Tag, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+                                    <TextBlock Text="{Binding Label}" FontSize="10.5" FontWeight="SemiBold" Opacity="0.45" VerticalAlignment="Center"
+                                               IsVisible="{Binding Tag, Converter={x:Static StringConverters.IsNullOrEmpty}}"/>
+                                </StackPanel>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+            <Button Grid.Column="1" Classes="studio-chip"
+                    Content="{loc:T LyricsStudio.ChooseSongs}"
+                    ToolTip.Tip="{loc:T LyricsStudio.ChooseSongsTip}"
+                    Click="OnChooseSongsClick"/>
+            <ToggleButton Grid.Column="2" Classes="studio-disclosure"
+                          Content="{loc:T LyricsStudio.Backdrops}"
+                          ToolTip.Tip="{loc:T LyricsStudio.BackdropsTip}"
+                          IsChecked="{Binding ShowBackdrops}"/>
+        </Grid>
+
+        <!-- Backdrops, folded. Both cards are settings for the LYRICS PAGE, not studio work,
+             so the Workbench layout keeps them out of the way and gives the queue + review the
+             height instead. Glide is the Settings sub-block reveal (CollapsibleContent). -->
+        <controls:CollapsibleContent DockPanel.Dock="Top" IsOpen="{Binding ShowBackdrops}" Lift="10" Motion="Glide">
+        <StackPanel>
+
+        <!-- Lyrics Background Video: the clip behind the lyrics page and its pause toggle.
+             Moved here from Settings > Lyrics (user ask 09-08). Binds the app's SettingsViewModel
+             through the window; the Modify button opens the same picker Settings used. -->
+        <Border CornerRadius="16" Padding="18,12" Margin="0,0,0,12"
+                Background="{DynamicResource SystemControlBackgroundListLowBrush}"
+                DataContext="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).Settings}"
+                x:DataType="vm:SettingsViewModel">
+            <Grid ColumnDefinitions="*,Auto,Auto">
+                <StackPanel Grid.Column="0" Spacing="2" VerticalAlignment="Center">
+                    <TextBlock Text="{loc:T Settings.LyricsBackgroundVideo}" FontSize="15" FontWeight="SemiBold"/>
+                    <TextBlock Text="{loc:T Settings.LoopVideoGIFBehind}" FontSize="12" Opacity="0.5" TextWrapping="Wrap"/>
+                    <TextBlock Text="{Binding LyricsBackgroundMediaName}" FontSize="12" Opacity="0.7" Margin="0,4,0,0"
+                               TextTrimming="CharacterEllipsis" IsVisible="{Binding HasLyricsBackgroundMedia}"/>
+                </StackPanel>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center" Margin="24,0,20,0"
+                            ToolTip.Tip="{loc:T Settings.PauseVideoWithPlaybackDesc}">
+                    <TextBlock Text="{loc:T Settings.PauseVideoWithPlayback}" FontSize="12.5" FontWeight="SemiBold" Opacity="0.85" VerticalAlignment="Center"/>
+                    <controls:LottieToggle IsChecked="{Binding LyricsBackgroundPausesWithPlayback}" VerticalAlignment="Center"/>
+                </StackPanel>
+                <Button Grid.Column="2" Classes="accent-btn"
+                        Content="{loc:T Settings.Modify}"
+                        Padding="16,6" CornerRadius="999"
+                        Background="{DynamicResource AccentButtonBackground}"
+                        Foreground="{DynamicResource AccentForegroundBrush}"
+                        FontWeight="SemiBold" Cursor="Hand" VerticalAlignment="Center"
+                        Click="OnModifyLyricsBackgroundClick"/>
+            </Grid>
+        </Border>
+
+        <!-- Music videos (Discord, aaron 09-15): a clip named like the song, next to it or in a
+             videos folder, replaces the cover on the lyrics page and follows playback. -->
+        <Border CornerRadius="16" Padding="18,12" Margin="0,0,0,12"
+                Background="{DynamicResource SystemControlBackgroundListLowBrush}"
+                DataContext="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).Settings}"
+                x:DataType="vm:SettingsViewModel">
+            <Grid ColumnDefinitions="*,Auto,Auto">
+                <StackPanel Grid.Column="0" Spacing="2" VerticalAlignment="Center">
+                    <TextBlock Text="{loc:T Settings.MusicVideos}" FontSize="15" FontWeight="SemiBold"/>
+                    <TextBlock Text="{loc:T Settings.MusicVideosHint}" FontSize="12" Opacity="0.5" TextWrapping="Wrap"/>
+                </StackPanel>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center" Margin="24,0,20,0"
+                            ToolTip.Tip="{loc:T Settings.MusicVideoRoundedHint}">
+                    <TextBlock Text="{loc:T Settings.MusicVideoRounded}" FontSize="12.5" FontWeight="SemiBold" Opacity="0.85" VerticalAlignment="Center"/>
+                    <controls:LottieToggle IsChecked="{Binding MusicVideoRoundedCorners}" VerticalAlignment="Center"/>
+                </StackPanel>
+                <controls:LottieToggle Grid.Column="2" IsChecked="{Binding MusicVideosEnabled}" VerticalAlignment="Center"/>
+            </Grid>
+        </Border>
+
+        </StackPanel>
+        </controls:CollapsibleContent>
+
+        <!-- Body -->
+        <Border CornerRadius="20" ClipToBounds="True" Background="{DynamicResource SystemControlBackgroundListLowBrush}" Margin="0,0,0,96">
+            <Panel>
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="10" IsVisible="{Binding IsLoading}">
+                    <TextBlock Text="{Binding StatusText}" FontSize="13" Opacity="0.6" VerticalAlignment="Center"/>
+                    <Ellipse Classes="loading-spinner" IsVisible="{Binding IsLoading}"/>
+                </StackPanel>
+                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="6" MaxWidth="420" IsVisible="{Binding ShowEmpty}">
+                    <TextBlock Text="{loc:T LyricsStudio.Title}" FontSize="15" FontWeight="SemiBold" TextAlignment="Center" Opacity="0.7"/>
+                    <TextBlock Text="{Binding StatusText}" FontSize="12" Opacity="0.5" TextWrapping="Wrap" TextAlignment="Center"/>
+                </StackPanel>
+                <ContentControl Content="{Binding Studio}" IsVisible="{Binding Studio, Converter={x:Static ObjectConverters.IsNotNull}}">
+                    <ContentControl.ContentTemplate>
+                        <DataTemplate x:DataType="vm:LyricsStudioViewModel">
+                            <views:LyricsStudioPanel ShowHeader="False" Margin="0,8,0,0"/>
+                        </DataTemplate>
+                    </ContentControl.ContentTemplate>
+                </ContentControl>
+            </Panel>
+        </Border>
+    </DockPanel>
+</UserControl>

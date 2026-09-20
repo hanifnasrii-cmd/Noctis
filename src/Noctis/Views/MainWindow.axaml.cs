@@ -6,6 +6,7 @@ using Avalonia.Media;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 using Avalonia.Platform.Storage;
+using Noctis.Helpers;
 using Noctis.Models;
 using Noctis.Services;
 using Noctis.ViewModels;
@@ -14,8 +15,6 @@ namespace Noctis.Views;
 
 public partial class MainWindow : Window
 {
-    private static readonly IBrush ActiveToggleBg = new SolidColorBrush(Color.Parse("#30FFFFFF"));
-    private static readonly IBrush InactiveToggleBg = Brushes.Transparent;
 
     private TaskbarIntegrationService? _taskbar;
     private SmtcService? _smtc;
@@ -24,6 +23,38 @@ public partial class MainWindow : Window
     private TrayIcon? _trayIcon;
     private bool _exitRequestedFromTray;
     private EventHandler<string>? _themeChangedHandler;
+    private System.ComponentModel.PropertyChangedEventHandler? _artworkAccentPlayerHandler;
+    private System.ComponentModel.PropertyChangedEventHandler? _artworkAccentSettingsHandler;
+    private string? _artworkAccentPath;
+
+    /// <summary>
+    /// "Accent follows album art": recolours the accent from the playing cover's vibrant
+    /// colour (path-cached; first decode runs off the UI thread), and restores the user's
+    /// own accent when the toggle is off, nothing is playing, or the cover is too grey.
+    /// </summary>
+    private void ApplyArtworkAccent()
+    {
+        if (DataContext is not MainWindowViewModel vm || Avalonia.Application.Current is not App app) return;
+        var path = vm.Settings.AccentFollowsArtwork ? vm.Player.CurrentArtPath : null;
+        _artworkAccentPath = path;
+        if (path == null)
+        {
+            app.SetAccent(vm.Settings.ActiveAccentHex);
+            return;
+        }
+        Task.Run(() => ShareCardRenderer.GetVibrantColorHex(path)).ContinueWith(t =>
+        {
+            if (!t.IsCompletedSuccessfully) return;
+            var hex = Noctis.Helpers.ArtworkAccent.TameForAccent(t.Result);
+            Dispatcher.UIThread.Post(() =>
+            {
+                // A later track may have won the race; only the newest path paints.
+                if (!ReferenceEquals(_artworkAccentPath, path) || !vm.Settings.AccentFollowsArtwork) return;
+                app.SetAccent(hex ?? vm.Settings.ActiveAccentHex);
+            });
+        });
+    }
+
     private EventHandler<string>? _accentChangedHandler;
     private EventHandler<bool>? _liquidGlassChangedHandler;
     private EventHandler<bool>? _sidebarAlwaysExpandedHandler;
@@ -32,7 +63,6 @@ public partial class MainWindow : Window
     private bool _liquidGlassActive;
     private System.ComponentModel.PropertyChangedEventHandler? _playerPropertyChangedHandler;
     private System.ComponentModel.PropertyChangedEventHandler? _queuePopupStateHandler;
-    private System.ComponentModel.PropertyChangedEventHandler? _topBarPropertyChangedHandler;
     private System.ComponentModel.PropertyChangedEventHandler? _mainVmPropertyChangedHandler;
     private System.ComponentModel.PropertyChangedEventHandler? _currentTrackPropertyChangedHandler;
     private Track? _trackedFavoriteTrack;
@@ -41,6 +71,8 @@ public partial class MainWindow : Window
     private DockPanel? _contentDockPanel;
     private DockPanel? _rootPanel;
     private Border? _settingsOverlay;
+    private Border? _settingsScrim;
+    private Controls.GlassPanel? _settingsGlass;
     private Border? _settingsCard;
     private Border? _queuePopupPanel;
     private MiniPlayerWindow? _miniPlayer;
@@ -226,6 +258,8 @@ public partial class MainWindow : Window
         {
             ClearValue(TransparencyLevelHintProperty);
             if (acrylic != null) acrylic.IsVisible = false;
+            // Every GlassPanel (sidebar, Settings sheet, island) drops back to its plain fill.
+            AppGlass.Clear();
             return;
         }
 
@@ -234,7 +268,6 @@ public partial class MainWindow : Window
         // built-in or custom — keeps its own tint behind the glass.
         var main = ResolveThemeColor("AppMainBackground", Color.Parse("#252525"));
         var sidebar = ResolveThemeColor("AppSidebarBackground", Color.Parse("#141414"));
-        var accent = ResolveThemeColor("AccentColorBrush", Color.Parse("#E74856"));
 
         TransparencyLevelHint = new[]
         {
@@ -266,19 +299,45 @@ public partial class MainWindow : Window
         _liquidGlassOverlay = new ResourceDictionary
         {
             ["AppMainBackground"] = new SolidColorBrush(main, 0.35),
+            // The window root paints AppWindowBackgroundBrush (a gradient on some themes);
+            // while glass is on it goes translucent with the content surface.
+            ["AppWindowBackgroundBrush"] = new SolidColorBrush(main, 0.35),
             ["AppSidebarBackground"] = new SolidColorBrush(sidebar, 0.55),
-
-            // Accent-filled action buttons (accent-btn / accent-pill: Settings Close,
-            // Save, Confirm, Create, Play All, the queue pills) frost along with the
-            // surfaces they sit on, instead of staying the one opaque slab on a glass
-            // panel. 0.55 keeps enough accent for AccentForegroundBrush to stay legible
-            // against whatever the acrylic pulls through. AccentBorderBrush is consumed
-            // only by these buttons, so re-pointing it here adds the glass edge without
-            // touching anything else.
-            ["AccentButtonBackground"] = new SolidColorBrush(accent, 0.55),
-            ["AccentBorderBrush"] = new SolidColorBrush(Colors.White, 0.35),
+            // Accent action buttons deliberately keep their solid accent fill: frosting
+            // them (2026-08-06) read as washed-out, muddy buttons and was reverted 09-07.
         };
         Resources.MergedDictionaries.Add(_liquidGlassOverlay);
+
+        // In-app frost: GlassPanel hosts (sidebar, Settings sheet, playback island) blur the
+        // app content beneath them. Dialog windows are left alone: an AcrylicBlur hint on a
+        // borderless transparent window painted the whole owner black on Win32 (09-07).
+        AppGlass.Set(true, main, sidebar);
+    }
+
+    /// <summary>Card fade/scale plus the glass underlay's own Fade/scale, always together so the
+    /// frost and the content it carries are never out of step (see SettingsOverlay in the XAML).</summary>
+    private void SetSettingsSheet(bool shown)
+    {
+        var scale = Avalonia.Media.Transformation.TransformOperations.Parse(shown ? "scale(1)" : "scale(0.96)");
+        if (_settingsCard != null)
+        {
+            _settingsCard.Opacity = shown ? 1 : 0;
+            _settingsCard.RenderTransform = scale;
+        }
+        if (_settingsGlass != null)
+        {
+            _settingsGlass.Fade = shown ? 1 : 0;
+            _settingsGlass.RenderTransform = scale;
+        }
+    }
+
+    /// <summary>Mirrors the Settings overlay's visibility/opacity onto the sibling scrim
+    /// (see SettingsScrim in the XAML for why it is not the overlay's Background).</summary>
+    private void SetSettingsScrim(bool? visible, double? opacity)
+    {
+        if (_settingsScrim == null) return;
+        if (visible is { } v) _settingsScrim.IsVisible = v;
+        if (opacity is { } o) _settingsScrim.Opacity = o;
     }
 
     /// <summary>Reads a theme surface color from Application resources for the active
@@ -311,14 +370,27 @@ public partial class MainWindow : Window
 
                 _accentChangedHandler = (_, hex) =>
                 {
+                    // While the accent follows the cover, a picker change is stored but the
+                    // cover keeps the screen; it shows once playback stops or the toggle goes off.
+                    if (vm.Settings.AccentFollowsArtwork && vm.Player.CurrentArtPath != null)
+                        return;
                     if (Avalonia.Application.Current is App app)
                         app.SetAccent(hex);
-                    // The frosted button fill is derived from the accent, so it has to be
-                    // re-derived here too — same reason as the theme handler above.
-                    if (_liquidGlassActive)
-                        ApplyLiquidGlass(true);
                 };
                 vm.Settings.AccentChanged += _accentChangedHandler;
+
+                _artworkAccentPlayerHandler = (_, e) =>
+                {
+                    if (e.PropertyName == nameof(PlayerViewModel.CurrentArtPath))
+                        ApplyArtworkAccent();
+                };
+                vm.Player.PropertyChanged += _artworkAccentPlayerHandler;
+                _artworkAccentSettingsHandler = (_, e) =>
+                {
+                    if (e.PropertyName == nameof(SettingsViewModel.AccentFollowsArtwork))
+                        ApplyArtworkAccent();
+                };
+                vm.Settings.PropertyChanged += _artworkAccentSettingsHandler;
 
                 _liquidGlassChangedHandler = (_, on) => ApplyLiquidGlass(on);
                 vm.Settings.LiquidGlassChanged += _liquidGlassChangedHandler;
@@ -354,6 +426,8 @@ public partial class MainWindow : Window
                 _contentDockPanel = this.FindControl<DockPanel>("ContentDockPanel");
                 _rootPanel = this.FindControl<DockPanel>("RootPanel");
                 _settingsOverlay = this.FindControl<Border>("SettingsOverlay");
+                _settingsScrim = this.FindControl<Border>("SettingsScrim");
+                _settingsGlass = this.FindControl<Controls.GlassPanel>("SettingsGlass");
                 _settingsCard = this.FindControl<Border>("SettingsCard");
                 _queuePopupPanel = this.FindControl<Border>("QueuePopupPanel");
 
@@ -381,14 +455,8 @@ public partial class MainWindow : Window
                 Services.StartupTrace.Mark("initialize-async-done");
                 Services.StartupTrace.Flush();
 
-                // Wire up albums view-mode toggle visuals
-                _topBarPropertyChangedHandler = (_, e) =>
-                {
-                    if (e.PropertyName is nameof(TopBarViewModel.IsCoverFlowMode) or nameof(TopBarViewModel.IsCollageMode))
-                        UpdateViewModeToggleVisuals(vm.TopBar.IsCoverFlowMode, vm.TopBar.IsCollageMode);
-                };
-                vm.TopBar.PropertyChanged += _topBarPropertyChangedHandler;
-                UpdateViewModeToggleVisuals(vm.TopBar.IsCoverFlowMode, vm.TopBar.IsCollageMode);
+                // View-mode corner icons bind to TopBar.IsCoverFlowMode directly (09-13);
+                // nothing to toggle by name any more.
 
                 // Queue row position numbers: rows are virtualized and recycled, so
                 // there is no per-item index to bind — stamp the 1-based position when
@@ -411,6 +479,7 @@ public partial class MainWindow : Window
                         {
                             if (mainVm2.IsLyricsPanelOpen)
                             {
+                                EnsureLyricsPanelLoaded(mainVm2);
                                 _lyricsPanelWrapper.IsVisible = true;
                                 _lyricsPanelWrapper.Width = 356;
                             }
@@ -458,22 +527,14 @@ public partial class MainWindow : Window
                                     // the restored section undimmed). The card itself still
                                     // plays the normal fade/scale entrance on top of it.
                                     mainVm2.SkipNextSettingsOpenAnimation = false;
-                                    var overlayTransitions = _settingsOverlay.Transitions;
-                                    var cardTransitions = _settingsCard.Transitions;
-                                    _settingsOverlay.Transitions = null;
-                                    _settingsCard.Transitions = null;
-                                    _settingsOverlay.Opacity = 1;
-                                    _settingsCard.Opacity = 0;
-                                    _settingsCard.RenderTransform =
-                                        Avalonia.Media.Transformation.TransformOperations.Parse("scale(0.96)");
+                                    var scrimTransitions = _settingsScrim?.Transitions;
+                                    if (_settingsScrim != null) _settingsScrim.Transitions = null;
+                                    SetSettingsScrim(visible: true, opacity: 1);
                                     _settingsOverlay.IsVisible = true;
                                     Avalonia.Threading.Dispatcher.UIThread.Post(() =>
                                     {
-                                        _settingsOverlay.Transitions = overlayTransitions;
-                                        _settingsCard.Transitions = cardTransitions;
-                                        _settingsCard.Opacity = 1;
-                                        _settingsCard.RenderTransform =
-                                            Avalonia.Media.Transformation.TransformOperations.Parse("scale(1)");
+                                        if (_settingsScrim != null) _settingsScrim.Transitions = scrimTransitions;
+                                        SetSettingsSheet(shown: true);
                                     }, Avalonia.Threading.DispatcherPriority.Render);
                                 }
                                 else
@@ -481,27 +542,29 @@ public partial class MainWindow : Window
                                     // Backdrop fades in while the card scales up; the settle
                                     // happens on the next frame so the transitions animate it.
                                     _settingsOverlay.IsVisible = true;
+                                    SetSettingsScrim(visible: true, opacity: null);
                                     Avalonia.Threading.Dispatcher.UIThread.Post(() =>
                                     {
-                                        _settingsOverlay.Opacity = 1;
-                                        _settingsCard.RenderTransform =
-                                            Avalonia.Media.Transformation.TransformOperations.Parse("scale(1)");
+                                        SetSettingsScrim(visible: null, opacity: 1);
+                                        SetSettingsSheet(shown: true);
                                     }, Avalonia.Threading.DispatcherPriority.Render);
                                 }
                             }
                             else
                             {
                                 // Mirror of the open animation, then drop the overlay out
-                                // of the tree once the 180ms transitions have played.
-                                _settingsOverlay.Opacity = 0;
-                                _settingsCard.RenderTransform =
-                                    Avalonia.Media.Transformation.TransformOperations.Parse("scale(0.96)");
+                                // of the tree once the 140ms transitions have played.
+                                SetSettingsScrim(visible: null, opacity: 0);
+                                SetSettingsSheet(shown: false);
                                 Avalonia.Threading.DispatcherTimer.RunOnce(() =>
                                 {
                                     if (_settingsOverlay != null &&
                                         DataContext is MainWindowViewModel m && !m.IsSettingsModalOpen)
+                                    {
                                         _settingsOverlay.IsVisible = false;
-                                }, TimeSpan.FromMilliseconds(200));
+                                        SetSettingsScrim(visible: false, opacity: null);
+                                    }
+                                }, TimeSpan.FromMilliseconds(150));
                             }
                         }
                     }
@@ -583,6 +646,21 @@ public partial class MainWindow : Window
     /// the launch path, paid on every start whether or not the user opens Settings.
     /// Idempotent; cheap enough to call on every open.
     /// </summary>
+    /// <summary>
+    /// Builds the lyrics side panel the first time it opens. Same reasoning as
+    /// <see cref="EnsureSettingsViewLoaded"/>: the view was instantiated inline in
+    /// MainWindow.axaml, so its whole karaoke layout was templated inside
+    /// InitializeComponent on every launch although the panel starts closed.
+    /// Idempotent.
+    /// </summary>
+    internal void EnsureLyricsPanelLoaded(MainWindowViewModel vm)
+    {
+        var host = this.FindControl<ContentControl>("LyricsPanelHost");
+        if (host is null || host.Content is not null) return;
+
+        host.Content = new LyricsPanelView { DataContext = vm.Lyrics };
+    }
+
     private void EnsureSettingsViewLoaded()
     {
         var host = this.FindControl<ContentControl>("SettingsViewHost");
@@ -602,8 +680,10 @@ public partial class MainWindow : Window
         // click a lyric line to seek and Space re-seeked to it, click the fullscreen
         // toggle and Space toggled fullscreen again. Tunnel it, same reasoning as the
         // queue-popup handler above.
-        AddHandler(KeyDownEvent, OnGlobalPlayPauseKeyDown, RoutingStrategies.Tunnel);
-        AddHandler(KeyUpEvent, OnGlobalPlayPauseKeyUp, RoutingStrategies.Tunnel);
+        // Every rebindable shortcut goes through the same tunnel pair, resolved against
+        // ShortcutService so Settings › Shortcuts can change any of them at runtime.
+        AddHandler(KeyDownEvent, OnGlobalShortcutKeyDown, RoutingStrategies.Tunnel);
+        AddHandler(KeyUpEvent, OnGlobalShortcutKeyUp, RoutingStrategies.Tunnel);
 
         // Volume control via mouse wheel and keyboard
         KeyDown += OnWindowKeyDown;
@@ -749,7 +829,9 @@ public partial class MainWindow : Window
             appMenu.Items.Add(settings);
             NativeMenu.SetMenu(Application.Current!, appMenu);
 
-            // Gestures mirror Music.app (⌘→ next, ⌘← previous).
+            // Gestures mirror Music.app (⌘→ next, ⌘← previous) by default, and follow
+            // whatever the user rebinds in Settings › Shortcuts.
+            var shortcuts = vm.Settings.ShortcutService;
             var playback = new NativeMenu();
 
             var playPause = new NativeMenuItem("Play / Pause");
@@ -758,17 +840,23 @@ public partial class MainWindow : Window
 
             var next = new NativeMenuItem("Next Track")
             {
-                Gesture = new KeyGesture(Key.Right, KeyModifiers.Meta),
+                Gesture = shortcuts.Get(ShortcutAction.NextTrack),
             };
             next.Click += (_, _) => vm.Player.NextCommand.Execute(null);
             playback.Items.Add(next);
 
             var previous = new NativeMenuItem("Previous Track")
             {
-                Gesture = new KeyGesture(Key.Left, KeyModifiers.Meta),
+                Gesture = shortcuts.Get(ShortcutAction.PreviousTrack),
             };
             previous.Click += (_, _) => vm.Player.PreviousCommand.Execute(null);
             playback.Items.Add(previous);
+
+            shortcuts.Changed += (_, _) =>
+            {
+                next.Gesture = shortcuts.Get(ShortcutAction.NextTrack);
+                previous.Gesture = shortcuts.Get(ShortcutAction.PreviousTrack);
+            };
 
             var windowMenu = new NativeMenu();
             windowMenu.Items.Add(new NativeMenuItem("Playback") { Menu = playback });
@@ -991,6 +1079,11 @@ public partial class MainWindow : Window
             if (_accentChangedHandler != null)
                 vm.Settings.AccentChanged -= _accentChangedHandler;
 
+            if (_artworkAccentPlayerHandler != null)
+                vm.Player.PropertyChanged -= _artworkAccentPlayerHandler;
+            if (_artworkAccentSettingsHandler != null)
+                vm.Settings.PropertyChanged -= _artworkAccentSettingsHandler;
+
             if (_liquidGlassChangedHandler != null)
                 vm.Settings.LiquidGlassChanged -= _liquidGlassChangedHandler;
 
@@ -1011,9 +1104,6 @@ public partial class MainWindow : Window
                 _trackedFavoriteTrack.PropertyChanged -= _currentTrackPropertyChangedHandler;
                 _trackedFavoriteTrack = null;
             }
-
-            if (_topBarPropertyChangedHandler != null)
-                vm.TopBar.PropertyChanged -= _topBarPropertyChangedHandler;
 
             if (_mainVmPropertyChangedHandler != null)
                 vm.PropertyChanged -= _mainVmPropertyChangedHandler;
@@ -1095,6 +1185,11 @@ public partial class MainWindow : Window
                 if (e.PropertyName == nameof(PlayerViewModel.State))
                 {
                     _taskbar?.UpdatePlayPauseState(vm.Player.State == PlaybackState.Playing);
+                    UpdateTaskbarProgress(vm);
+                }
+                else if (e.PropertyName is nameof(PlayerViewModel.Position) or nameof(PlayerViewModel.Duration))
+                {
+                    UpdateTaskbarProgress(vm);
                 }
                 // IsQueuePopupOpen is handled by InitializeQueuePopupBinding, which runs
                 // on every platform — it must not depend on the taskbar being available.
@@ -1107,11 +1202,36 @@ public partial class MainWindow : Window
 
             // Seed initial state so icons reflect reality on first paint.
             RebindCurrentTrack();
+
+            // Taskbar progress (GitHub #53) follows its Settings toggle live: switching
+            // it off must clear the overlay, not leave the last frame painted.
+            vm.Settings.PropertyChanged += (_, e) =>
+            {
+                if (e.PropertyName == nameof(SettingsViewModel.TaskbarProgressEnabled))
+                    UpdateTaskbarProgress(vm);
+            };
+            UpdateTaskbarProgress(vm);
         }
         catch
         {
             // Non-critical — taskbar buttons are a nice-to-have
         }
+    }
+
+    /// <summary>Pushes the current song position onto the taskbar button, or clears it
+    /// when the setting is off or nothing is playing. The service de-duplicates values,
+    /// so calling this on every position tick is cheap.</summary>
+    private void UpdateTaskbarProgress(MainWindowViewModel vm)
+    {
+        if (_taskbar == null) return;
+        var player = vm.Player;
+        if (!vm.Settings.TaskbarProgressEnabled || player.State == PlaybackState.Stopped || player.CurrentTrack == null)
+        {
+            _taskbar.ClearProgress();
+            return;
+        }
+        _taskbar.SetProgress(player.Position.TotalSeconds, player.Duration.TotalSeconds,
+            paused: player.State != PlaybackState.Playing);
     }
 
     // The file-import drag-drop below uses Avalonia's pre-11.3 IDataObject/DataFormats
@@ -1271,94 +1391,122 @@ public partial class MainWindow : Window
 #pragma warning restore CS0618 // Type or member is obsolete
 
     /// <summary>
-    /// True between the Space press we consumed as play/pause and its release. Button
-    /// raises Click on key *up*, so swallowing only the press still let the focused
-    /// button fire on the way back up.
+    /// Set when the tunnelling KeyDown handler ran a shortcut, so the matching KeyUp is
+    /// swallowed too. Avalonia's Button raises Click on key *up*, so swallowing only the
+    /// press still let the focused button fire on the way back up.
     /// </summary>
-    private bool _spaceShortcutConsumed;
+    private ShortcutAction? _consumedShortcut;
 
-    private void OnGlobalPlayPauseKeyDown(object? sender, KeyEventArgs e)
+    private ShortcutService? Shortcuts => (DataContext as MainWindowViewModel)?.Settings.ShortcutService;
+
+    private void OnGlobalShortcutKeyDown(object? sender, KeyEventArgs e)
     {
-        if (e.Key != Key.Space || e.KeyModifiers != KeyModifiers.None) return;
-        if (DataContext is not MainWindowViewModel vm) return;
+        if (DataContext is not MainWindowViewModel vm || Shortcuts is not { } shortcuts) return;
+        // A Shortcuts-tab chip is waiting for a chord: the chip owns every key until it
+        // is done, otherwise pressing the key you are trying to assign would run it.
+        if (vm.Settings.Shortcuts.IsRecording) return;
+        if (shortcuts.TryMatch(e) is not { } action) return;
 
-        // Typing a space in a search/edit box stays typing a space.
-        if (e.Source is TextBox) return;
+        // An unmodified key (Space, or whatever the user bound) must still type in an
+        // edit box: typing a space in the search box stays typing a space.
+        if (e.KeyModifiers == KeyModifiers.None && e.Source is TextBox) return;
 
-        vm.Player.PlayPauseCommand.Execute(null);
-        _spaceShortcutConsumed = true;
+        if (!ExecuteShortcut(vm, action)) return;
+        _consumedShortcut = action;
         e.Handled = true;
     }
 
-    private void OnGlobalPlayPauseKeyUp(object? sender, KeyEventArgs e)
+    private void OnGlobalShortcutKeyUp(object? sender, KeyEventArgs e)
     {
-        if (e.Key != Key.Space || !_spaceShortcutConsumed) return;
-        _spaceShortcutConsumed = false;
+        if (_consumedShortcut is null) return;
+        _consumedShortcut = null;
         e.Handled = true;
+    }
+
+    /// <summary>Runs the command behind a shortcut. Returns false for actions this window
+    /// does not handle, so the key falls through untouched.</summary>
+    private bool ExecuteShortcut(MainWindowViewModel vm, ShortcutAction action)
+    {
+        switch (action)
+        {
+            case ShortcutAction.PlayPause:
+                vm.Player.PlayPauseCommand.Execute(null);
+                return true;
+            case ShortcutAction.NextTrack:
+                vm.Player.NextCommand.Execute(null);
+                return true;
+            case ShortcutAction.PreviousTrack:
+                vm.Player.PreviousCommand.Execute(null);
+                return true;
+            case ShortcutAction.VolumeUp:
+                vm.Player.Volume = Math.Min(100, vm.Player.Volume + 5);
+                return true;
+            case ShortcutAction.VolumeDown:
+                vm.Player.Volume = Math.Max(0, vm.Player.Volume - 5);
+                return true;
+            case ShortcutAction.ToggleFavorite:
+                if (vm.Player.CurrentTrack == null) return false;
+                vm.Player.ToggleCurrentTrackFavoriteCommand.Execute(null);
+                return true;
+            case ShortcutAction.ToggleFullscreen:
+                ToggleFullScreen();
+                return true;
+            case ShortcutAction.SearchLibrary:
+                // With Settings open the search key belongs to the settings search box.
+                if (vm.IsSettingsModalOpen
+                    && this.FindControl<ContentControl>("SettingsViewHost")?.Content is SettingsView settingsView)
+                {
+                    settingsView.FocusSearch();
+                    return true;
+                }
+                vm.Sidebar.TopBar.ToggleSearchCommand.Execute(null);
+                return true;
+            case ShortcutAction.CommandPalette:
+                _ = vm.OpenCommandPaletteAsync();
+                return true;
+            case ShortcutAction.NewPlaylist:
+                vm.Sidebar.CreatePlaylistCommand.Execute(null);
+                return true;
+            default:
+                return false;
+        }
     }
 
     private void OnWindowKeyDown(object? sender, KeyEventArgs e)
     {
         if (DataContext is not MainWindowViewModel vm) return;
 
-        switch (e.Key)
+        // Escape is the one fixed key: it closes the topmost open surface, in z-order.
+        // Everything rebindable is dispatched by OnGlobalShortcutKeyDown (tunnelling) so
+        // a focused button can't swallow it first.
+        if (e.Key != Key.Escape) return;
+
+        // Escape used to check only the queue popup and otherwise unconditionally clear
+        // the search box — so with the Settings modal or the lyrics side panel open it
+        // silently wiped the user's search while the modal stayed up.
+        if (WindowState == WindowState.FullScreen)
         {
-            case Key.Up when e.KeyModifiers == KeyModifiers.Control:
-                vm.Player.Volume = Math.Min(100, vm.Player.Volume + 5);
-                e.Handled = true;
-                break;
-            case Key.Down when e.KeyModifiers == KeyModifiers.Control:
-                vm.Player.Volume = Math.Max(0, vm.Player.Volume - 5);
-                e.Handled = true;
-                break;
-            case Key.Escape:
-                // Close the topmost open surface, in z-order. Escape used to check only
-                // the queue popup and otherwise unconditionally clear the search box —
-                // so with the Settings modal or the lyrics side panel open it silently
-                // wiped the user's search while the modal stayed up.
-                if (WindowState == WindowState.FullScreen)
-                {
-                    // Fullscreen (F11) counts as the topmost surface — leave it first,
-                    // browser-style, before closing any in-app overlay.
-                    ToggleFullScreen();
-                }
-                else if (vm.IsSettingsModalOpen)
-                {
-                    vm.CloseSettingsCommand.Execute(null);
-                }
-                else if (vm.IsLyricsPanelOpen)
-                {
-                    vm.IsLyricsPanelOpen = false;
-                }
-                else if (vm.Player.IsQueuePopupOpen)
-                {
-                    vm.Player.IsQueuePopupOpen = false;
-                }
-                else
-                {
-                    vm.TopBar.ClearSearchCommand.Execute(null);
-                }
-                e.Handled = true;
-                break;
-            // Space is handled by OnGlobalPlayPauseKeyDown (tunneling) so a focused
-            // button can't swallow it first.
-            case Key.D when e.KeyModifiers == (KeyModifiers.Control | KeyModifiers.Shift):
-                vm.ToggleDebugPanel();
-                e.Handled = true;
-                break;
-            case Key.K when e.KeyModifiers == KeyModifiers.Control:
-                _ = vm.OpenCommandPaletteAsync();
-                e.Handled = true;
-                break;
-            // F2 mirrors F11: on some Linux desktops the F9–F12 range is captured by
-            // the DE/media layer and never reaches the app, so a low F-key is the
-            // only fullscreen shortcut those users can actually press.
-            case Key.F2:
-            case Key.F11:
-                ToggleFullScreen();
-                e.Handled = true;
-                break;
+            // Fullscreen counts as the topmost surface — leave it first, browser-style,
+            // before closing any in-app overlay.
+            ToggleFullScreen();
         }
+        else if (vm.IsSettingsModalOpen)
+        {
+            vm.CloseSettingsCommand.Execute(null);
+        }
+        else if (vm.IsLyricsPanelOpen)
+        {
+            vm.IsLyricsPanelOpen = false;
+        }
+        else if (vm.Player.IsQueuePopupOpen)
+        {
+            vm.Player.IsQueuePopupOpen = false;
+        }
+        else
+        {
+            vm.TopBar.ClearSearchCommand.Execute(null);
+        }
+        e.Handled = true;
     }
 
     // ── Fullscreen toggle (issue #22) ──
@@ -1397,27 +1545,6 @@ public partial class MainWindow : Window
             vm.IsSidebarHidden = immersive;
         if (vm.Lyrics.IsFullScreenPageActive != immersive)
             vm.Lyrics.IsFullScreenPageActive = immersive;
-    }
-
-    // ── Albums toggle visuals ──
-
-    private void UpdateViewModeToggleVisuals(bool isCoverFlow, bool isCollage = false)
-    {
-        if (AlbumsLibraryModeBtn != null)
-        {
-            AlbumsLibraryModeBtn.Background = isCoverFlow ? InactiveToggleBg : ActiveToggleBg;
-            AlbumsLibraryModeBtn.Opacity = isCoverFlow ? 0.5 : 1.0;
-        }
-        if (AlbumsUpNextModeBtn != null)
-        {
-            AlbumsUpNextModeBtn.Background = isCoverFlow ? ActiveToggleBg : InactiveToggleBg;
-            AlbumsUpNextModeBtn.Opacity = isCoverFlow ? 1.0 : 0.5;
-        }
-        if (AlbumsCollageModeBtn != null)
-        {
-            AlbumsCollageModeBtn.Background = isCollage ? ActiveToggleBg : InactiveToggleBg;
-            AlbumsCollageModeBtn.Opacity = isCollage ? 1.0 : 0.5;
-        }
     }
 
     // ── Queue popup event handlers ──
@@ -1567,12 +1694,6 @@ public partial class MainWindow : Window
         _queueDragRowOffsetY = e.GetPosition(rowControl).Y;
         _queueDragStartPos = e.GetPosition(this);
         _queueDragActive = false;
-    }
-
-    private void OnPageSortByMenuItemPointerEntered(object? sender, PointerEventArgs e)
-    {
-        if (sender is MenuItem item)
-            item.IsSubMenuOpen = true;
     }
 
     private void OnQueueItemPointerMoved(object? sender, PointerEventArgs e)

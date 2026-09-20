@@ -16,16 +16,23 @@
     <RootNamespace>Noctis</RootNamespace>
     <Product>Noctis</Product>
     <Company>Noctis</Company>
-    <Version>1.4.7</Version>
+    <Version>1.5.0</Version>
     <!-- Pre-release marker: numeric Version stays 1.1.16 (update checks + the
          displayed number are unchanged); the "-prerelease" SemVer suffix on the
          informational version is what lights the "Pre-release" badge in Settings.
          Remove this line (or drop the suffix) when cutting a stable release. -->
-    <InformationalVersion>1.4.7</InformationalVersion>
+    <InformationalVersion>1.5.0</InformationalVersion>
     <ApplicationManifest Condition="$([MSBuild]::IsOSPlatform('Windows'))">app.manifest</ApplicationManifest>
 
     <!-- Avalonia requires this for XAML compilation -->
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+
+    <!-- Startup: precompile IL to native code at publish time (ReadyToRun). A cold
+         launch otherwise JITs Avalonia, Skia bindings, System.Text.Json and the
+         large view models from tier-0 IL before the first frame. Publish-only;
+         plain builds and tests are unaffected. Every CI leg publishes with a RID
+         and self-contained, which is what crossgen2 needs. -->
+    <PublishReadyToRun>true</PublishReadyToRun>
 
     <!-- Suppress build warnings.
          CS8625 was dropped: it was a project-wide nullability switch kept on for exactly
@@ -41,6 +48,17 @@
   <ItemGroup>
     <InternalsVisibleTo Include="Noctis.Tests" />
   </ItemGroup>
+  <!-- Built-in Noctis server (Settings → Integrations): OpenSubsonic API over Kestrel.
+       The shared framework is only loaded when the server is switched on. -->
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+  <!-- Plugin SDK: the public surface plugins compile against (Settings → Plugins). -->
+  <ItemGroup>
+    <ProjectReference Include="..\Noctis.Plugins.Abstractions\Noctis.Plugins.Abstractions.csproj" />
+    <!-- UI-free core (models, persistence, library, server, sync); shared with noctis-server. -->
+    <ProjectReference Include="..\Noctis.Core\Noctis.Core.csproj" />
+  </ItemGroup>
 
   <!-- Avalonia UI -->
   <ItemGroup>
@@ -54,6 +72,8 @@
          FreeDesktop backend already ships transitively — no new vendor. -->
     <PackageReference Include="Tmds.DBus.Protocol" Version="0.21.3" />
     <PackageReference Include="DiscordRichPresence" Version="1.6.1.70" />
+    <PackageReference Include="Whisper.net" Version="1.9.1" />
+    <PackageReference Include="Whisper.net.Runtime" Version="1.9.1" />
   </ItemGroup>
 
   <!-- MVVM -->

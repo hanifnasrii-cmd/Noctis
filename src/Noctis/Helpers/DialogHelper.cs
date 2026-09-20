@@ -1,5 +1,7 @@
 using Avalonia;
 using Avalonia.Controls;
+using Microsoft.Extensions.DependencyInjection;
+using Noctis.ViewModels;
 
 namespace Noctis.Helpers;
 
@@ -10,6 +12,11 @@ public static class DialogHelper
     /// </summary>
     public static void SizeToOwner(Window dialog, Window owner)
     {
+        // A dialog raised while Settings is open is part of the Settings section: Styles.axaml
+        // keys its hover rules (no zoom, accent hover shade) off this class.
+        if (App.Services?.GetService<MainWindowViewModel>()?.IsSettingsModalOpen == true)
+            dialog.Classes.Add("settings-popup");
+
         var screen = owner.Screens.ScreenFromWindow(owner);
         var scaling = screen?.Scaling ?? 1.0;
 

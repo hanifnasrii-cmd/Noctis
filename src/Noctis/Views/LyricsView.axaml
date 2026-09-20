@@ -1,5 +1,6 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:loc="using:Noctis.Localization"
              xmlns:vm="using:Noctis.ViewModels"
              xmlns:m="using:Noctis.Models"
              xmlns:conv="using:Noctis.Converters"
@@ -236,13 +237,15 @@
         </Style>
 
         <!-- AMLL-style active-line presentation: inactive lines sit at 0.96× and the
-             active line springs to natural size (same visual zoom as scaling up, but
+             active line grows to natural size (same visual zoom as scaling up, but
              nothing ever renders outside its layout bounds, so the viewport can't
              clip the grown line at the right edge). Origin pinned to the left edge
-             so text grows in place instead of drifting. -->
+             so text grows in place instead of drifting. No translate: the active
+             line used to lift 2px as well, which read as the lyric hopping up while
+             it was sung. -->
         <Style Selector="Button.lyric-line-btn">
             <Setter Property="RenderTransformOrigin" Value="0,0.5"/>
-            <Setter Property="RenderTransform" Value="translate(0px,0px) scale(0.96)"/>
+            <Setter Property="RenderTransform" Value="scale(0.96)"/>
             <!-- Button defaults to ClipToBounds=True, which hard-clips anything the
                  word layer renders past the line's layout box: the emphasis swell
                  (1.04, centre origin) nibbled edge glyphs of full-width melisma words
@@ -251,10 +254,13 @@
             <Setter Property="ClipToBounds" Value="False"/>
             <Setter Property="Transitions">
                 <Transitions>
-                    <!-- Near-critically-damped spring: <2% overshoot. Reads as a soft settle, not a bounce. -->
-                    <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.45">
+                    <!-- Same curve and length as the scroll glide (LineMotion): the line
+                         grows WHILE the list moves, one motion — a faster spring here
+                         popped the line to full size before the glide had visibly
+                         started. Duration is pinned to LineMotion.DurationMs by test. -->
+                    <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.65">
                         <TransformOperationsTransition.Easing>
-                            <helpers:SpringEase Damping="7.5" Frequency="4.0"/>
+                            <helpers:LineMotionEase/>
                         </TransformOperationsTransition.Easing>
                     </TransformOperationsTransition>
                     <DoubleTransition Property="Opacity" Duration="0:0:0.5" Easing="CubicEaseInOut"/>
@@ -262,7 +268,7 @@
             </Setter>
         </Style>
         <Style Selector="Button.lyric-line-btn.active">
-            <Setter Property="RenderTransform" Value="translate(0px,-2px) scale(1)"/>
+            <Setter Property="RenderTransform" Value="scale(1)"/>
         </Style>
         <!-- No hover/press box on lyric lines: the line stays clickable (Cursor=Hand
              on the button) but reads as text, not as a button. -->
@@ -274,25 +280,18 @@
         </Style>
         <!-- Suppress global hover-scale on lyric lines (match the resting transforms). -->
         <Style Selector="ItemsControl#LyricsItemsControl Button:pointerover">
-            <Setter Property="RenderTransform" Value="translate(0px,0px) scale(0.96)"/>
+            <Setter Property="RenderTransform" Value="scale(0.96)"/>
         </Style>
         <Style Selector="ItemsControl#LyricsItemsControl Button.lyric-line-btn.active:pointerover">
-            <Setter Property="RenderTransform" Value="translate(0px,-2px) scale(1)"/>
+            <Setter Property="RenderTransform" Value="scale(1)"/>
         </Style>
 
-        <!-- Per-word lift: words fire rapidly, so spring oscillation reads as chatter.
-             Use a quick cubic ease-out instead — glides up, no bounce. -->
+        <!-- Regular words do NOT move as they are sung — the sweep is the cue, as in
+             Apple Music. (They used to lift 1px and grow 1% each, a chain of small
+             hops on every fast passage.) Only held-note emphasis words swell below. -->
         <Style Selector="Panel.word-cell">
             <Setter Property="RenderTransformOrigin" Value="0.5,1"/>
             <Setter Property="RenderTransform" Value="translate(0px,0px) scale(1)"/>
-            <Setter Property="Transitions">
-                <Transitions>
-                    <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.22" Easing="CubicEaseOut"/>
-                </Transitions>
-            </Setter>
-        </Style>
-        <Style Selector="Panel.word-cell.current">
-            <Setter Property="RenderTransform" Value="translate(0px,-1px) scale(1.01)"/>
         </Style>
 
         <!-- Held-note emphasis (Apple Music style): long words swell slowly while sung
@@ -431,61 +430,110 @@
                  bitmap) paints synchronously on page mount, and after this much blur
                  a higher-res source adds nothing — so the old hi-res CachedImage
                  layer is gone entirely. -->
-            <Image Source="{Binding Player.AlbumArt, Converter={StaticResource PreBlurArt}}"
-                   Stretch="UniformToFill"
-                   RenderOptions.BitmapInterpolationMode="HighQuality"
-                   IsVisible="{Binding Player.AlbumArt, Converter={x:Static ObjectConverters.IsNotNull}}">
+            <!-- Pulse host: FlowingArtworkAnimator breathes this whole stack about its
+                 centre on every beat (BeatMeter) and drifts/rotates the two extra copies
+                 below, so the background keeps the artwork's own colours — the old
+                 palette-tinted blobs recoloured the whole page when the toggle went on. -->
+            <Panel x:Name="FlowBackdrop">
+                <Image Source="{Binding Player.AlbumArt, Converter={StaticResource PreBlurArt}}"
+                Stretch="UniformToFill"
+                RenderOptions.BitmapInterpolationMode="HighQuality"
+                IsVisible="{Binding Player.AlbumArt, Converter={x:Static ObjectConverters.IsNotNull}}">
                 <!-- Gentle outward scale so blur edges never reveal the underlying solid fill. -->
                 <Image.RenderTransform>
-                    <ScaleTransform ScaleX="1.18" ScaleY="1.18"/>
+                <ScaleTransform ScaleX="1.18" ScaleY="1.18"/>
                 </Image.RenderTransform>
-            </Image>
-            <!-- Flowing-light layer (issue #22): three large palette-tinted blobs drift
-                 slowly over the blurred cover, Apple-Music style. Soft edges come from
-                 radial gradients that fade to transparent — deliberately NO live blur
-                 effect (a per-frame fullscreen gaussian is what dropped this page to
-                 ~25fps, see the pre-blurred Image above). Stop colors are retinted in
-                 place from code-behind whenever the VM re-derives the artwork palette
-                 (MeshBlobColor1-3); positions/opacity are driven by a code-behind timer
-                 that only runs while this view is attached and artwork mode is active
-                 (a XAML KeyFrame animation on RenderTransform crashes at startup). -->
-            <Canvas x:Name="MeshBlobLayer"
-                    ClipToBounds="True"
-                    IsHitTestVisible="False"
-                    IsVisible="{Binding Player.LyricsFlowingLightEnabled}">
-                <Ellipse x:Name="MeshBlob1">
-                    <Ellipse.Fill>
-                        <RadialGradientBrush>
-                            <GradientStop Color="#D83A1C71" Offset="0"/>
-                            <GradientStop Color="#603A1C71" Offset="0.6"/>
-                            <GradientStop Color="#003A1C71" Offset="1"/>
-                        </RadialGradientBrush>
-                    </Ellipse.Fill>
-                </Ellipse>
-                <Ellipse x:Name="MeshBlob2">
-                    <Ellipse.Fill>
-                        <RadialGradientBrush>
-                            <GradientStop Color="#D8D76D77" Offset="0"/>
-                            <GradientStop Color="#60D76D77" Offset="0.6"/>
-                            <GradientStop Color="#00D76D77" Offset="1"/>
-                        </RadialGradientBrush>
-                    </Ellipse.Fill>
-                </Ellipse>
-                <Ellipse x:Name="MeshBlob3">
-                    <Ellipse.Fill>
-                        <RadialGradientBrush>
-                            <GradientStop Color="#D8FFAF7B" Offset="0"/>
-                            <GradientStop Color="#60FFAF7B" Offset="0.6"/>
-                            <GradientStop Color="#00FFAF7B" Offset="1"/>
-                        </RadialGradientBrush>
-                    </Ellipse.Fill>
-                </Ellipse>
-            </Canvas>
+                </Image>
+                <!-- Flowing-artwork layer (issue #22): two more copies of the same
+                     pre-blurred cover slowly rotate in opposite directions over the static
+                     one. Transform/opacity only — no live blur, no layout, so a frame is a
+                     handful of property writes on the compositor's own clock. -->
+                <!-- Visibility is set from code-behind (UpdateFlowAnimationState): on only when the
+                     toggle is on AND the style is the built-in Drift — a plugin style replaces it. -->
+                <Panel x:Name="FlowLayerHost" IsHitTestVisible="False" IsVisible="False">
+                    <Image x:Name="FlowLayer1"
+                           Source="{Binding Player.AlbumArt, Converter={StaticResource PreBlurArt}}"
+                           Stretch="UniformToFill"
+                           RenderOptions.BitmapInterpolationMode="HighQuality"
+                           Opacity="0.5"/>
+                    <Image x:Name="FlowLayer2"
+                           Source="{Binding Player.AlbumArt, Converter={StaticResource PreBlurArt}}"
+                           Stretch="UniformToFill"
+                           RenderOptions.BitmapInterpolationMode="HighQuality"
+                           Opacity="0.36"/>
+                </Panel>
+            </Panel>
+            <!-- Beat glow: a white wash the animator lifts for a few frames on each beat. -->
+            <Rectangle x:Name="BeatGlow" Fill="White" Opacity="0" IsHitTestVisible="False" IsVisible="False"/>
             <!-- Dark scrim: drops the cover's brightness so white lyrics stay readable.
                  Kept strong enough that bright/near-white covers don't bleed a light
                  halo around the title/artist/album text. -->
             <Rectangle Fill="#99000000"/>
         </Grid>
+
+        <!-- Optional looping video/GIF background (Settings → Appearance → Lyrics
+             Background Video). Sits over the artwork backdrop (same ZIndex, later in
+             document order) so the blurred cover stays visible until the first decoded
+             frame lands — no black flash. Its own scrim keeps the lyrics legible on
+             bright clips. Decoding runs only while this page is attached and the window
+             isn't minimized (VideoBackdrop). -->
+        <Grid x:Name="LyricsMediaBackdrop"
+              Grid.ColumnSpan="2"
+              Grid.RowSpan="2"
+              ZIndex="-1"
+              ClipToBounds="True"
+              IsHitTestVisible="False"
+              IsVisible="{Binding Player.LyricsBackgroundMediaPath, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+            <controls:VideoBackdrop x:Name="MediaBackdrop"
+                                    Source="{Binding Player.LyricsBackgroundMediaPath}"
+                                    IsPaused="{Binding Player.LyricsBackgroundHoldsWhilePaused}"
+                                    IsActive="{Binding $self.IsVisible}" />
+            <Rectangle Fill="#8C000000"/>
+        </Grid>
+
+        <!-- Live audio visualizer (Settings → Appearance → Audio Visualizer): the spectrum
+             of what is being heard, drawn along the bottom of the page over every background
+             mode and under the lyrics. Reads SpectrumMeter, which the output chains feed
+             from the same post-gain tap as the beat pulse; runs only while this page is
+             visible and the toggle is on (SpectrumVisualizer parks itself otherwise). -->
+        <controls:SpectrumVisualizer x:Name="LyricsSpectrum"
+                                     Grid.ColumnSpan="2"
+                                     Grid.RowSpan="2"
+                                     ZIndex="-1"
+                                     VerticalAlignment="Bottom"
+                                     Height="220"
+                                     Margin="24,0,24,0"
+                                     Opacity="0.55"
+                                     IsHitTestVisible="False"
+                                     Fill="White"
+                                     ArtworkColor="{Binding Player.ArtworkAccentColor}"
+                                     UseArtworkColor="{Binding Player.LyricsVisualizerArtworkColor}"
+                                     StyleName="{Binding Player.LyricsVisualizerStyle}"
+                                     IsActive="{Binding $self.IsVisible}"
+                                     IsVisible="{Binding Player.LyricsVisualizerEnabled}"/>
+
+        <!-- Kawarp (GitHub #58): built-in liquid warp of the cover, one of the Flowing Lyrics
+             Background styles. Code-behind (UpdateFlowAnimationState) shows/activates it in
+             place of the Drift layers; parked (no frame loop) otherwise. -->
+        <controls:KawarpBackground x:Name="KawarpLayer"
+                                   Grid.ColumnSpan="2"
+                                   Grid.RowSpan="2"
+                                   ZIndex="-1"
+                                   IsVisible="False"
+                                   ArtworkPath="{Binding Player.CurrentArtPath}"
+                                   WarpIntensity="{Binding Player.LyricsKawarpWarp}"
+                                   BlurPasses="{Binding Player.LyricsKawarpBlur}"/>
+
+        <!-- Plugin visual layer: the IVisualLayerProvider picked by Settings → Appearance →
+             Flowing Lyrics Background → Style, filled by code-behind (RebuildPluginLayers) only
+             while the toggle is on and no video background covers the page; behind the lyrics,
+             above the backdrop. Empty (and its RAF loops stopped) otherwise. -->
+        <Panel x:Name="PluginLayerHost"
+               Grid.ColumnSpan="2"
+               Grid.RowSpan="2"
+               ZIndex="-1"
+               ClipToBounds="True"
+               IsHitTestVisible="False"/>
 
 
         <!-- ══════════════════════════════════════════════════════ -->
@@ -514,33 +562,37 @@
                 <Border x:Name="AlbumArtBorder"
                         Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2"
                         Width="630" Height="630"
-                        CornerRadius="12"
-                        ClipToBounds="True"
-                        HorizontalAlignment="Center"
-                        BoxShadow="0 16 50 0 #60000000">
+                        HorizontalAlignment="Center">
+                    <!-- The cover, or the same art on a CD / vinyl sleeve / cassette
+                         (Appearance → Now Playing Artwork). The control owns the corner
+                         radius, clip and shadow: a spinning disc cannot sit inside a
+                         square shadow, so this Border is only the sizing box that the
+                         code-behind drives (Width/Height/Margin/alignment).
+                         FallbackSource is the mini-player's already-decoded 768px bitmap:
+                         it prevents the gray placeholder flashing between page-attach and
+                         the 1280px CachedImage decode. -->
                     <Panel>
-                        <Border Background="#333344">
-                            <TextBlock Text="&#x266B;"
-                                       FontSize="60"
-                                       Foreground="#555566"
-                                       HorizontalAlignment="Center"
-                                       VerticalAlignment="Center"/>
-                        </Border>
-                        <!-- Instant fallback bitmap (already cached at 768px for the
-                             mini-player). Prevents the gray placeholder from flashing
-                             between page-attach and the 1280px CachedImage decode. -->
-                        <Image Source="{Binding Player.AlbumArt}"
-                               Stretch="UniformToFill"
-                               RenderOptions.BitmapInterpolationMode="HighQuality"
-                               IsVisible="{Binding Player.AlbumArt, Converter={x:Static ObjectConverters.IsNotNull}}"/>
-                        <controls:CachedImage SourcePath="{Binding Player.CurrentTrack.AlbumArtworkPath}" ClearOnSourceChange="False"
-                                              DecodeWidth="1280"
-                                              Stretch="UniformToFill"
-                                              RenderOptions.BitmapInterpolationMode="HighQuality"
-                                              IsVisible="{Binding Player.CurrentTrack.AlbumArtworkPath, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
-                        <controls:AnimatedCoverImage
-                            Source="{Binding Player.CurrentAnimatedCoverPath}"
-                            IsActive="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).Settings.EnableAnimatedCovers, FallbackValue=False}" />
+                        <controls:MediaArtwork
+                            SourcePath="{Binding Player.CurrentTrack.AlbumArtworkPath}"
+                            FallbackSource="{Binding Player.AlbumArt}"
+                            DecodeWidth="1280"
+                            AnimatedSource="{Binding Player.CurrentAnimatedCoverPath}"
+                            AnimatedActive="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).Settings.EnableAnimatedCovers, FallbackValue=False}"
+                            Medium="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).Settings.NowPlayingArtworkMedium, FallbackValue={x:Static m:ArtworkMedium.Cover}}"
+                            IsSpinning="{Binding Player.IsPlaying}"
+                            IsVisible="{Binding !Player.HasMusicVideo}"
+/>
+                        <!-- Music video (Settings → Lyrics Studio → Music videos): the clip found next
+                             to the song plays here in place of the cover, letterboxed to the slot and
+                             kept in step with the song's position; the song's own audio is what plays. -->
+                        <controls:VideoBackdrop x:Name="MusicVideo"
+                                                Source="{Binding Player.CurrentMusicVideoPath}"
+                                                SyncPosition="{Binding Player.Position}"
+                                                IsPaused="{Binding !Player.IsPlaying}"
+                                                Stretch="Uniform"
+                                                CornerRadius="{Binding Player.MusicVideoCornerRadius}"
+                                                IsVisible="{Binding Player.HasMusicVideo}"
+                                                IsActive="{Binding $self.IsVisible}" />
                     </Panel>
                 </Border>
 
@@ -561,7 +613,7 @@
                         <controls:MarqueeTextBlock.InlineContent>
                             <Border Classes="lyrics-explicit"
                                     IsVisible="{Binding Player.CurrentTrack.IsExplicit, FallbackValue=False}"
-                                    ToolTip.Tip="Explicit">
+                                    ToolTip.Tip="{loc:T Lyrics.ExplicitTip}">
                                 <TextBlock Text="E"
                                            FontSize="9"
                                            FontWeight="Bold"
@@ -617,7 +669,7 @@
                                  otherwise render a stray leading "· 2018 · 24 tracks" dot. -->
                             <MultiBinding Converter="{StaticResource MetadataLine}" ConverterParameter="track">
                                 <Binding Path="Player.CurrentTrack.Genre" FallbackValue=""/>
-                                <Binding Path="Player.CurrentTrack.Year" FallbackValue="0"/>
+                                <Binding Path="Player.CurrentTrack.DisplayYear" FallbackValue="0"/>
                                 <Binding Path="Player.CurrentTrack.TrackCount" FallbackValue="0"/>
                             </MultiBinding>
                         </TextBlock.Text>
@@ -668,11 +720,9 @@
                                Foreground="{Binding LyricsSubtleFg}"
                                VerticalAlignment="Center"
                                IsVisible="{Binding ShowMetadataFavoriteHeart}" />
-                    <PathIcon Data="{StaticResource HeartFillIcon}"
-                              Width="12" Height="12"
-                              Foreground="#E74856"
-                              VerticalAlignment="Center"
-                              IsVisible="{Binding ShowMetadataFavoriteHeart}"/>
+                    <controls:HeartIcon Size="12" ShowWhenOff="False"
+                                        VerticalAlignment="Center"
+                                        IsFavorite="{Binding ShowMetadataFavoriteHeart}"/>
                 </StackPanel>
                 </StackPanel>
                 </Grid>
@@ -775,20 +825,20 @@
                                                     Background="Transparent"
                                                     BorderThickness="0" Padding="8,3" CornerRadius="999" Cursor="Hand"
                                                     Opacity="{Binding IsColorModeArtwork, Converter={StaticResource BoolToOpacity}}"
-                                                    ToolTip.Tip="Show blurred album artwork as background">
-                                                <TextBlock Text="Artwork" FontSize="10" FontWeight="SemiBold" Foreground="White"/>
+                                                    ToolTip.Tip="{loc:T Lyrics.ShowBlurredAlbumArtworkTip}">
+                                                <TextBlock Text="{loc:T Lyrics.Artwork}" FontSize="10" FontWeight="SemiBold" Foreground="White"/>
                                             </Button>
                                             <Button Command="{Binding SelectColorModeSolidCommand}"
                                                     Background="Transparent"
                                                     BorderThickness="0" Padding="8,3" CornerRadius="999" Cursor="Hand"
                                                     Opacity="{Binding IsColorModeSolid, Converter={StaticResource BoolToOpacity}}">
-                                                <TextBlock Text="Solid" FontSize="10" FontWeight="SemiBold" Foreground="White"/>
+                                                <TextBlock Text="{loc:T Lyrics.Solid}" FontSize="10" FontWeight="SemiBold" Foreground="White"/>
                                             </Button>
                                             <Button Command="{Binding SelectColorModeGradientCommand}"
                                                     Background="Transparent"
                                                     BorderThickness="0" Padding="8,3" CornerRadius="999" Cursor="Hand"
                                                     Opacity="{Binding IsColorModeGradient, Converter={StaticResource BoolToOpacity}}">
-                                                <TextBlock Text="Gradient" FontSize="10" FontWeight="SemiBold" Foreground="White"/>
+                                                <TextBlock Text="{loc:T Lyrics.Gradient}" FontSize="10" FontWeight="SemiBold" Foreground="White"/>
                                             </Button>
                                         </StackPanel>
                                     </Border>
@@ -924,7 +974,7 @@
                         CornerRadius="22"
                         Command="{Binding SearchLyricsCommand}"
                         HorizontalAlignment="Center">
-                    <TextBlock Text="Search Lyrics"
+                    <TextBlock Text="{loc:T Lyrics.SearchLyrics}"
                                FontSize="13"
                                FontWeight="SemiBold"
                                Foreground="White"
@@ -988,7 +1038,7 @@
                     <Ellipse Classes="dot2" Width="9" Height="9" Fill="{Binding LyricsPrimaryFg}" Opacity="0.25"/>
                     <Ellipse Classes="dot3" Width="9" Height="9" Fill="{Binding LyricsPrimaryFg}" Opacity="0.25"/>
                 </StackPanel>
-                <TextBlock Text="Searching for Lyrics"
+                <TextBlock Text="{loc:T Lyrics.SearchingLyrics}"
                            FontSize="14"
                            Foreground="{Binding LyricsSubtleFg}"
                            HorizontalAlignment="Center"/>
@@ -1223,7 +1273,7 @@
                                HorizontalAlignment="Left"
                                MaxWidth="{Binding #LyricsItemsControl.MaxWidth}"
                                Margin="2,44,0,0"
-                               IsVisible="{Binding WrittenByText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"><Run Text="Written By: " FontWeight="SemiBold" Foreground="{Binding LyricsSecondaryFg}"/><Run Text="{Binding WrittenByText}" Foreground="{Binding LyricsSubtleFg}"/></TextBlock>
+                               IsVisible="{Binding WrittenByText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"><Run Text="{loc:T Lyrics.WrittenBy}" FontWeight="SemiBold" Foreground="{Binding LyricsSecondaryFg}"/><Run Text="{Binding WrittenByText}" Foreground="{Binding LyricsSubtleFg}"/></TextBlock>
                     </StackPanel>
                 </ScrollViewer>
             </Border>
@@ -1242,7 +1292,7 @@
                     <PathIcon Data="{StaticResource ClipboardIcon}"
                              Width="14" Height="14"
                              VerticalAlignment="Center"/>
-                    <TextBlock Text="Follow" VerticalAlignment="Center"/>
+                    <TextBlock Text="{loc:T Lyrics.Follow}" VerticalAlignment="Center"/>
                 </StackPanel>
             </Button>
         </Grid>

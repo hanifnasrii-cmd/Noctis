@@ -1,12 +1,14 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:loc="using:Noctis.Localization"
         xmlns:vm="using:Noctis.ViewModels"
         xmlns:m="using:Noctis.Models"
         xmlns:svc="using:Noctis.Services"
+        xmlns:controls="using:Noctis.Controls"
         xmlns:conv="using:Noctis.Converters"
         x:Class="Noctis.Views.CreateSmartPlaylistDialog"
         x:DataType="vm:CreateSmartPlaylistDialogViewModel"
-        Title="Create Smart Playlist"
+        Title="{loc:T CreateSmartPlaylist.CreateSmartPlaylist}"
         CanResize="False"
         SystemDecorations="None"
         TransparencyLevelHint="Transparent"
@@ -21,17 +23,82 @@
     <!-- Scoped outlines so input rows + the Cancel pill stay visible on light themes
          where the dialog body and inputs share a (near-)white surface. -->
     <Window.Styles>
-        <Style Selector="TextBox.crisp-input">
-            <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" />
-            <Setter Property="BorderThickness" Value="1" />
+        <!-- One outline for every control on a rule row. The Value box gets its white
+             1.5px ring from the global TextBox.crisp-input rule, which paints the
+             TEMPLATE part (Border#PART_BorderElement) — a Setter on the control's own
+             BorderBrush, as this block used to carry, never reached it, so the dropdowns
+             and the limit box sat in Fluent's dimmer grey next to a white Value pill.
+             These pin the same white on each template's own border part. -->
+        <Style Selector="ComboBox.crisp-combo">
+            <Setter Property="CornerRadius" Value="999" />
+            <Setter Property="BorderThickness" Value="1.5" />
+            <Setter Property="BorderBrush" Value="White" />
+            <Setter Property="UseLayoutRounding" Value="True" />
         </Style>
-        <Style Selector="ComboBox">
-            <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" />
-            <Setter Property="BorderThickness" Value="1" />
+        <!-- Border#Background is Fluent's ComboBox border; HighlightBackground is the
+             focus/press overlay drawn over it, so both need the pill radius or the
+             corners square off the moment the dropdown is opened. -->
+        <Style Selector="ComboBox.crisp-combo /template/ Border#Background">
+            <Setter Property="CornerRadius" Value="999" />
+            <Setter Property="BorderThickness" Value="1.5" />
+            <Setter Property="BorderBrush" Value="White" />
+            <Setter Property="UseLayoutRounding" Value="True" />
         </Style>
+        <Style Selector="ComboBox.crisp-combo:pointerover /template/ Border#Background">
+            <Setter Property="BorderBrush" Value="White" />
+        </Style>
+        <Style Selector="ComboBox.crisp-combo:focus /template/ Border#Background,
+                         ComboBox.crisp-combo:pressed /template/ Border#Background">
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentColorBrush}" />
+        </Style>
+        <Style Selector="ComboBox.crisp-combo /template/ Border#HighlightBackground">
+            <Setter Property="CornerRadius" Value="999" />
+        </Style>
+
+        <!-- Pill-shaped hover/selection highlight for the dropdown items, the same recipe
+             the Songs View Options sheet uses for its Sort by list. -->
+        <Style Selector="ComboBoxItem">
+            <Setter Property="Margin" Value="4,1" />
+            <Setter Property="Padding" Value="12,6" />
+            <Setter Property="MinHeight" Value="30" />
+            <Setter Property="CornerRadius" Value="999" />
+        </Style>
+        <Style Selector="ComboBoxItem /template/ ContentPresenter">
+            <Setter Property="CornerRadius" Value="999" />
+        </Style>
+
+        <!-- The limit box is a NumericUpDown, so its visible ring is the ButtonSpinner's
+             border, not the inner TextBox's (that one is pinned to 0 in Styles.axaml). -->
         <Style Selector="NumericUpDown.limit-pill-number">
-            <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" />
-            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="BorderThickness" Value="1.5" />
+            <Setter Property="BorderBrush" Value="White" />
+            <Setter Property="UseLayoutRounding" Value="True" />
+        </Style>
+        <Style Selector="NumericUpDown.limit-pill-number /template/ ButtonSpinner#PART_Spinner">
+            <Setter Property="CornerRadius" Value="999" />
+            <Setter Property="BorderThickness" Value="1.5" />
+            <Setter Property="BorderBrush" Value="White" />
+            <Setter Property="UseLayoutRounding" Value="True" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+        </Style>
+        <Style Selector="NumericUpDown.limit-pill-number /template/ ButtonSpinner#PART_Spinner /template/ Border#PART_BorderElement">
+            <Setter Property="CornerRadius" Value="999" />
+            <Setter Property="BorderThickness" Value="1.5" />
+            <Setter Property="BorderBrush" Value="White" />
+        </Style>
+
+        <!-- Until "Limit to" is ticked, both of its controls are switched off. The white
+             above is pinned per template part, so Fluent's own disabled chrome never gets a
+             look in — each one therefore states its own greyed-out ring here, and they use
+             the SAME brush so the pair dims together rather than one staying lit. -->
+        <Style Selector="ComboBox.crisp-combo:disabled /template/ Border#Background">
+            <Setter Property="BorderBrush" Value="#59FFFFFF" />
+        </Style>
+        <Style Selector="NumericUpDown.limit-pill-number:disabled /template/ ButtonSpinner#PART_Spinner">
+            <Setter Property="BorderBrush" Value="#59FFFFFF" />
+        </Style>
+        <Style Selector="NumericUpDown.limit-pill-number:disabled /template/ ButtonSpinner#PART_Spinner /template/ Border#PART_BorderElement">
+            <Setter Property="BorderBrush" Value="#59FFFFFF" />
         </Style>
     </Window.Styles>
 
@@ -86,7 +153,7 @@
                             </TextBlock.Text>
                         </TextBlock>
                         <Button Grid.Column="2"
-                                Content="Cancel"
+                                Content="{loc:T CreateSmartPlaylist.Cancel}"
                                 Command="{Binding CancelCommand}"
                                 BorderThickness="0"
                                 Width="100"
@@ -97,7 +164,7 @@
                                 Margin="0,0,8,0"
                                 Cursor="Hand" />
                         <Button Grid.Column="3"
-                                Content="Create"
+                                Content="{loc:T CreateSmartPlaylist.Create}"
                                 Command="{Binding CreateCommand}"
                                 Width="100"
                                 Padding="0,8"
@@ -116,7 +183,7 @@
                     <StackPanel Margin="24,20,24,16" Spacing="14">
 
                         <!-- Title -->
-                        <TextBlock Text="Create Smart Playlist"
+                        <TextBlock Text="{loc:T CreateSmartPlaylist.CreateSmartPlaylist}"
                                    FontSize="20"
                                    FontWeight="Bold"
                                    HorizontalAlignment="Center" />
@@ -125,17 +192,17 @@
                         <StackPanel Spacing="10" Margin="0,4,0,0">
                             <TextBox Text="{Binding PlaylistName}"
                                      Classes="crisp-input"
-                                     Watermark="Playlist name"
+                                     Watermark="{loc:T CreateSmartPlaylist.PlaylistName}"
                                      CornerRadius="999"
                                      Padding="14,8"
                                      x:Name="NameTextBox" />
-                            <TextBlock Text="Name is required"
+                            <TextBlock Text="{loc:T CreateSmartPlaylist.NameRequired}"
                                        FontSize="11"
                                        Foreground="{DynamicResource AccentColorBrush}"
                                        IsVisible="{Binding ShowNameRequiredError}" />
                             <TextBox Text="{Binding PlaylistDescription}"
                                      Classes="crisp-input"
-                                     Watermark="Description (optional)"
+                                     Watermark="{loc:T CreateSmartPlaylist.DescriptionOptional}"
                                      CornerRadius="999"
                                      Padding="14,8" />
                         </StackPanel>
@@ -143,18 +210,26 @@
                         <!-- Rules header with the match mode inline on the right -->
                         <Grid ColumnDefinitions="*,Auto" Margin="0,6,0,0">
                             <TextBlock Grid.Column="0"
-                                       Text="Rules"
+                                       Text="{loc:T CreateSmartPlaylist.Rules}"
                                        FontSize="16"
                                        FontWeight="SemiBold"
                                        VerticalAlignment="Center" />
                             <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
-                                <TextBlock Text="Match"
+                                <TextBlock Text="{loc:T CreateSmartPlaylist.Match}"
                                            VerticalAlignment="Center"
                                            FontSize="13"
                                            Opacity="0.7" />
-                                <ToggleSwitch IsChecked="{Binding MatchAll}"
-                                              OnContent="ALL rules"
-                                              OffContent="ANY rule" />
+                                <!-- The same switch every Settings row uses (LottieToggle),
+                                     not Fluent's ToggleSwitch: its off state is the dark
+                                     slate track with a white knob rather than the pale pill
+                                     Fluent draws here. LottieToggle carries no On/Off
+                                     content, so the label sits beside it. -->
+                                <controls:LottieToggle IsChecked="{Binding MatchAll}"
+                                                       VerticalAlignment="Center" />
+                                <TextBlock Text="ALL rules" VerticalAlignment="Center" FontSize="13"
+                                           IsVisible="{Binding MatchAll}" />
+                                <TextBlock Text="ANY rule" VerticalAlignment="Center" FontSize="13"
+                                           IsVisible="{Binding !MatchAll}" />
                             </StackPanel>
                         </Grid>
 
@@ -162,10 +237,16 @@
                         <ItemsControl ItemsSource="{Binding Rules}">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate x:DataType="vm:SmartPlaylistRuleViewModel">
+                                    <!-- Glide, the Settings sub-block reveal: a new rule slides
+                                         out from under Add Rule and a removed one folds away
+                                         instead of both popping. Lift/Motion copied from the
+                                         Integrations "Show Album on Discord" block. -->
+                                    <controls:CollapsibleContent IsOpen="{Binding IsRevealed}" Lift="10" Motion="Glide">
                                     <Border Background="{DynamicResource ChipBackground}" CornerRadius="12" Padding="12" Margin="0,3">
                                         <Grid ColumnDefinitions="*,*,*,Auto">
                                             <!-- Field dropdown -->
                                             <ComboBox Grid.Column="0"
+                                                      Classes="crisp-combo"
                                                       ItemsSource="{Binding $parent[Window].((vm:CreateSmartPlaylistDialogViewModel)DataContext).AllFields}"
                                                       SelectedItem="{Binding SelectedField}"
                                                       Margin="0,0,8,0"
@@ -183,6 +264,7 @@
 
                                             <!-- Operator dropdown -->
                                             <ComboBox Grid.Column="1"
+                                                      Classes="crisp-combo"
                                                       ItemsSource="{Binding AvailableOperators}"
                                                       SelectedItem="{Binding SelectedOperator}"
                                                       Margin="0,0,8,0"
@@ -203,7 +285,7 @@
                                                 <TextBox Text="{Binding Value}"
                                                          Classes="crisp-input"
                                                          IsVisible="{Binding ShowValueInput}"
-                                                         Watermark="Value..."
+                                                         Watermark="{loc:T CreateSmartPlaylist.Value}"
                                                          MinWidth="100"
                                                          CornerRadius="999"
                                                          Padding="12,6"
@@ -213,7 +295,7 @@
                                                 <TextBox Text="{Binding Value2}"
                                                          Classes="crisp-input"
                                                          IsVisible="{Binding ShowValue2Input}"
-                                                         Watermark="To..."
+                                                         Watermark="{loc:T CreateSmartPlaylist.To}"
                                                          Width="80"
                                                          CornerRadius="999"
                                                          Padding="12,6"
@@ -236,6 +318,7 @@
                                             </Button>
                                         </Grid>
                                     </Border>
+                                    </controls:CollapsibleContent>
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
@@ -251,17 +334,17 @@
                                 Cursor="Hand">
                             <StackPanel Orientation="Horizontal" Spacing="6">
                                 <PathIcon Data="{StaticResource AddIcon}" Width="12" Height="12" VerticalAlignment="Center" />
-                                <TextBlock Text="Add Rule" VerticalAlignment="Center" />
+                                <TextBlock Text="{loc:T CreateSmartPlaylist.AddRule}" VerticalAlignment="Center" />
                             </StackPanel>
                         </Button>
 
                         <!-- Limit section -->
                         <StackPanel Orientation="Horizontal" Spacing="12" Margin="0,4,0,0">
-                            <CheckBox Classes="metadata-pill-checkbox" IsChecked="{Binding HasLimit}" Content="Limit to" VerticalAlignment="Center" Padding="4,0,0,0" />
+                            <CheckBox Classes="metadata-pill-checkbox" IsChecked="{Binding HasLimit}" Content="{loc:T CreateSmartPlaylist.Limit}" VerticalAlignment="Center" Padding="4,0,0,0" />
                             <NumericUpDown Value="{Binding LimitCount}"
                                            Minimum="1" Maximum="1000"
                                            IsEnabled="{Binding HasLimit}"
-                                           Width="90"
+                                           Width="72"
                                            Height="36"
                                            Classes="limit-pill-number"
                                            CornerRadius="999"
@@ -272,8 +355,9 @@
                                            HorizontalContentAlignment="Center"
                                            VerticalAlignment="Center"
                                            VerticalContentAlignment="Center" />
-                            <TextBlock Text="tracks, sorted by" VerticalAlignment="Center" FontSize="13" />
-                            <ComboBox ItemsSource="{Binding AllSortOptions}"
+                            <TextBlock Text="{loc:T CreateSmartPlaylist.TracksSortedBy}" VerticalAlignment="Center" FontSize="13" />
+                            <ComboBox Classes="crisp-combo"
+                                      ItemsSource="{Binding AllSortOptions}"
                                       SelectedItem="{Binding SortBy}"
                                       IsEnabled="{Binding HasLimit}"
                                       Width="160"

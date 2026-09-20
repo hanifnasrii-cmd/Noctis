@@ -1,4 +1,4 @@
-using System.Linq;
+﻿using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
@@ -86,8 +86,98 @@ public static class MetadataHelper
     public static async Task OpenPlaylistImportDialog()
     {
         var service = App.Services!.GetRequiredService<IPlaylistImportService>();
-        var vm = new PlaylistImportViewModel(service);
+        var vm = new PlaylistImportViewModel(service, App.Services!.GetRequiredService<ITidalAuthService>());
         var window = new PlaylistImportDialog(vm);
+        await ShowDialogOwned(window);
+    }
+
+    /// <summary>Send to Folder (MusicBee-style copy) for a selection.</summary>
+    public static async Task OpenSendToFolderDialog(IReadOnlyList<Track> tracks)
+    {
+        if (tracks == null || tracks.Count == 0) return;
+        var service = App.Services!.GetRequiredService<ISendToFolderService>();
+        var settings = App.Services!.GetService<MainWindowViewModel>()?.Settings.GetSettings();
+        var vm = new SendToFolderViewModel(tracks, service, settings?.OrganizePattern ?? FileOrganizePlanner.DefaultPattern);
+        await ShowDialogOwned(new SendToFolderDialog(vm));
+    }
+
+    /// <summary>Bulk lyrics: fetch from LRCLIB and save, or remove app-written lyrics.</summary>
+    public static async Task OpenBulkLyricsDialog(IReadOnlyList<Track> tracks, bool remove)
+    {
+        if (tracks == null || tracks.Count == 0) return;
+        var service = App.Services!.GetRequiredService<Services.Lyrics.ILyricsBulkService>();
+        var vm = new BulkLyricsViewModel(tracks, service, remove);
+        await ShowDialogOwned(new BulkLyricsDialog(vm));
+    }
+
+    /// <summary>Lyrics Studio: time existing lyrics or transcribe, review, then save.</summary>
+    public static async Task OpenLyricsStudio(IReadOnlyList<Track> tracks)
+    {
+        if (tracks == null || tracks.Count == 0) return;
+        await ShowDialogOwned(new LyricsStudioDialog(CreateLyricsStudioViewModel(tracks)));
+    }
+
+    /// <summary>The Studio over a track list, wired to the app's engine, writer and prefs (dialog and sidebar page).</summary>
+    public static LyricsStudioViewModel CreateLyricsStudioViewModel(IReadOnlyList<Track> tracks)
+    {
+        var main = App.Services!.GetService<MainWindowViewModel>();
+        return new LyricsStudioViewModel(
+            tracks,
+            App.Services!.GetRequiredService<Services.LyricsStudio.ILyricsStudioEngine>(),
+            App.Services!.GetRequiredService<Services.Lyrics.LyricsWriter>(),
+            App.Services!.GetRequiredService<ILibraryService>(),
+            main?.Player,
+            () => main?.Settings.GetSettings() ?? new AppSettings(),
+            s => { if (main is not null) main.Settings.ApplyLyricsStudioSettings(s); },
+            new Services.LyricsStudio.LyricsStudioDraftStore(
+                Path.Combine(App.Services!.GetRequiredService<IPersistenceService>().DataDirectory, "lyrics_studio_drafts")));
+    }
+
+    /// <summary>
+    /// Lyrics Studio over the songs that lack the format the Studio is set to write: with
+    /// word timings on, line-only LRC counts as missing (ELRC and LRC are different things);
+    /// with it off, any timed lyrics count as done. First 40, so a run stays reviewable.
+    /// </summary>
+    public static Task OpenLyricsStudioForLibrary(MainWindowViewModel main) =>
+        OpenLyricsStudioForLibrary(main.Settings.GetSettings().LyricsStudioWordTimings);
+
+    public static async Task OpenLyricsStudioForLibrary(bool wordTimings)
+    {
+        var library = App.Services!.GetRequiredService<ILibraryService>();
+        var local = library.Tracks.Where(t => t.SourceType == SourceType.Local).ToList();
+        // Format detection reads disk per track — keep the library-wide pass off the UI thread.
+        var tracks = await Task.Run(() =>
+        {
+            // Chunked so the scan stops once 40 are found instead of touching the whole library.
+            const int chunk = 500;
+            var picked = new List<Track>(40);
+            for (var start = 0; start < local.Count && picked.Count < 40; start += chunk)
+            {
+                var slice = local.GetRange(start, Math.Min(chunk, local.Count - start));
+                var formats = Services.LyricsStudio.ExistingLyricsLoader.DetectFormats(slice);
+                for (var i = 0; i < slice.Count && picked.Count < 40; i++)
+                    if (!Services.LyricsStudio.LyricsFormatDetector.AlreadyHas(formats[i], wordTimings)) picked.Add(slice[i]);
+            }
+            return picked;
+        });
+        if (tracks.Count > 0) await OpenLyricsStudio(tracks);
+    }
+
+    /// <summary>Search YouTube / paste a link and download into the library folder.</summary>
+    public static async Task OpenYouTubeDownloadDialog(string? initialQuery = null)
+    {
+        var service = App.Services!.GetRequiredService<Services.YouTube.IYouTubeImportService>();
+        var vm = new YouTubeDownloadViewModel(service, App.Services!.GetRequiredService<HttpClient>(), initialQuery);
+        await ShowDialogOwned(new YouTubeDownloadDialog(vm));
+    }
+
+    /// <summary>Opens the Spek-style spectrogram window for one track (decodes via ffmpeg).</summary>
+    public static async Task OpenSpectrogramWindow(Track track)
+    {
+        if (track == null) return;
+        var converter = App.Services!.GetRequiredService<IAudioConverterService>();
+        var vm = new SpectrogramViewModel(track, converter);
+        var window = new SpectrogramWindow(vm);
         await ShowDialogOwned(window);
     }
 

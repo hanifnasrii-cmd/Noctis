@@ -135,6 +135,16 @@ public partial class PlaylistViewModel : ViewModelBase, ISearchable, IDisposable
     }
 
     /// <summary>Playlist cover color (hex).</summary>
+    /// <summary>Starred in the sidebar (hero star button, 09-14).</summary>
+    public bool IsPinned => _playlist.IsPinned;
+
+    [RelayCommand]
+    private async Task TogglePin()
+    {
+        await _sidebar.TogglePinAsync(_playlist.Id);
+        OnPropertyChanged(nameof(IsPinned));
+    }
+
     public string PlaylistColor => _playlist.Color;
 
     /// <summary>Custom cover art path (if set).</summary>
@@ -568,6 +578,54 @@ public partial class PlaylistViewModel : ViewModelBase, ISearchable, IDisposable
         var idx = tracks.IndexOf(track);
         if (idx < 0) idx = 0;
         _player.ReplaceQueueAndPlay(tracks, idx);
+    }
+
+    /// <summary>The Ctrl-selection when the acted-on row is part of it, else just that row.</summary>
+    private List<Track> SelectionOr(Track track) =>
+        CtrlSelectedTracks.Count > 0 && CtrlSelectedTracks.Contains(track) ? CtrlSelectedTracks.ToList() : new List<Track> { track };
+
+    [RelayCommand]
+    private Task RateTrack(RateRequest request) => _library.SetTracksRatingAsync(SelectionOr(request.Track), request.Stars);
+
+    [RelayCommand]
+    private async Task FetchLyrics(Track track)
+    {
+        var tracks = SelectionOr(track);
+        CtrlSelectedTracks.Clear();
+        await MetadataHelper.OpenBulkLyricsDialog(tracks, remove: false);
+    }
+
+    [RelayCommand]
+    private async Task RemoveLyrics(Track track)
+    {
+        var tracks = SelectionOr(track);
+        CtrlSelectedTracks.Clear();
+        await MetadataHelper.OpenBulkLyricsDialog(tracks, remove: true);
+    }
+
+    [RelayCommand]
+    private async Task OpenLyricsStudio(Track track)
+    {
+        var tracks = SelectionOr(track);
+        CtrlSelectedTracks.Clear();
+        await MetadataHelper.OpenLyricsStudio(tracks);
+    }
+
+    [RelayCommand]
+    private async Task SendToFolder(Track track)
+    {
+        var tracks = SelectionOr(track);
+        CtrlSelectedTracks.Clear();
+        await MetadataHelper.OpenSendToFolderDialog(tracks);
+    }
+
+    /// <summary>Whole playlist → folder (header action).</summary>
+    [RelayCommand]
+    private async Task SendPlaylistToFolder()
+    {
+        var tracks = Tracks.ToList();
+        if (tracks.Count == 0) return;
+        await MetadataHelper.OpenSendToFolderDialog(tracks);
     }
 
     [RelayCommand]

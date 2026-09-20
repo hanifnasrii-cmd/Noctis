@@ -602,20 +602,19 @@ public partial class LibraryAlbumsViewModel : ViewModelBase, ISearchable, IDispo
                 a.Tracks.Any(t => MatchesSearch(t.Title, t.SearchTitleKey, q, qNoSpaces) ||
                                   MatchesSearch(t.Artist, t.SearchArtistKey, q, qNoSpaces)));
 
-            // In artist discographies, show the artist's own releases before feature appearances.
+            // Artist discographies read as one timeline: collab albums sit among the
+            // artist's own releases by year (Discord request), not after them.
             filtered = filtered
-                .OrderBy(a => GetArtistDiscographyRank(a, artistFilter))
-                .ThenBy(a => GetAlbumSearchRank(a, q, qNoSpaces))
-                .ThenBy(a => a.Artist, StringComparer.OrdinalIgnoreCase)
+                .OrderBy(a => GetAlbumSearchRank(a, q, qNoSpaces))
                 .ThenBy(a => a.Year)
+                .ThenBy(a => a.Artist, StringComparer.OrdinalIgnoreCase)
                 .ThenBy(a => a.Name, StringComparer.OrdinalIgnoreCase);
         }
         else if (!string.IsNullOrEmpty(artistFilter))
         {
             filtered = filtered
-                .OrderBy(a => GetArtistDiscographyRank(a, artistFilter))
+                .OrderBy(a => a.Year)
                 .ThenBy(a => a.Artist, StringComparer.OrdinalIgnoreCase)
-                .ThenBy(a => a.Year)
                 .ThenBy(a => a.Name, StringComparer.OrdinalIgnoreCase);
         }
 
@@ -918,6 +917,18 @@ public partial class LibraryAlbumsViewModel : ViewModelBase, ISearchable, IDispo
         _player.ReplaceQueueAndPlay(album.Tracks, 0);
     }
 
+    /// <summary>Tile hover button: Pause/resume when this album is the loaded one, else
+    /// play it from track 1 in disc/track order.</summary>
+    [RelayCommand]
+    private void TogglePlayAlbum(Album album)
+    {
+        if (album == null) return;
+        if (album.IsCurrent) { _player.PlayPauseCommand.Execute(null); return; }
+        var ordered = Helpers.AlbumTile.OrderedTracks(album);
+        if (ordered.Count == 0) return;
+        _player.ReplaceQueueAndPlay(ordered, 0);
+    }
+
     [RelayCommand]
     private void ShuffleAlbum(Album album)
     {
@@ -1188,7 +1199,9 @@ public partial class LibraryAlbumsViewModel : ViewModelBase, ISearchable, IDispo
         if (source.Contains(query, StringComparison.OrdinalIgnoreCase))
             return true;
 
-        if (sourceKey.Contains(queryNoSpaces, StringComparison.OrdinalIgnoreCase))
+        // queryNoSpaces is empty for a punctuation-only query ("&", "**"); every key
+        // contains "" so that matched the whole library. Only the raw check above counts then.
+        if (queryNoSpaces.Length > 0 && sourceKey.Contains(queryNoSpaces, StringComparison.OrdinalIgnoreCase))
             return true;
 
         // Word-level match: every word in the query must appear somewhere in the source
@@ -1234,18 +1247,20 @@ public partial class LibraryAlbumsViewModel : ViewModelBase, ISearchable, IDispo
         // RemoveWhitespace(source.Trim()) result without the per-call allocations.
         var normalized = source.Trim();
 
+        var hasKey = queryNoSpaces.Length > 0; // empty for punctuation-only queries
+
         if (string.Equals(normalized, query, StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(sourceKey, queryNoSpaces, StringComparison.OrdinalIgnoreCase))
+            (hasKey && string.Equals(sourceKey, queryNoSpaces, StringComparison.OrdinalIgnoreCase)))
             return 0;
 
         if (normalized.StartsWith(query, StringComparison.OrdinalIgnoreCase) ||
-            sourceKey.StartsWith(queryNoSpaces, StringComparison.OrdinalIgnoreCase))
+            (hasKey && sourceKey.StartsWith(queryNoSpaces, StringComparison.OrdinalIgnoreCase)))
             return 1;
 
         if (normalized.Contains(query, StringComparison.OrdinalIgnoreCase))
             return 2;
 
-        if (sourceKey.Contains(queryNoSpaces, StringComparison.OrdinalIgnoreCase))
+        if (hasKey && sourceKey.Contains(queryNoSpaces, StringComparison.OrdinalIgnoreCase))
             return 3;
 
         // Word-level match: all query words found in source
@@ -1261,7 +1276,7 @@ public partial class LibraryAlbumsViewModel : ViewModelBase, ISearchable, IDispo
     /// Both sides are tokenised so that filtering by "A &amp; B" matches fields
     /// containing either "A" or "B", and vice versa.
     /// </summary>
-    private static bool ContainsArtistToken(string? artistField, string artistName)
+    internal static bool ContainsArtistToken(string? artistField, string artistName)
     {
         if (string.IsNullOrWhiteSpace(artistField))
             return false;

@@ -1,4 +1,4 @@
-<Styles xmlns="https://github.com/avaloniaui"
+﻿<Styles xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:helpers="using:Noctis.Helpers"
         xmlns:controls="using:Noctis.Controls">
@@ -30,6 +30,8 @@
                     <SolidColorBrush x:Key="AccentButtonBackground" Color="{StaticResource SystemAccentColor}" />
                     <SolidColorBrush x:Key="AccentForegroundBrush" Color="White" />
                     <SolidColorBrush x:Key="AccentBorderBrush" Color="{StaticResource SystemAccentColorDark1}" />
+                    <!-- Hover shade for accent-filled buttons in Settings (App.SetAccent re-derives it). -->
+                    <SolidColorBrush x:Key="AccentColorBrushDark1" Color="{StaticResource SystemAccentColorDark1}" />
                     <SolidColorBrush x:Key="AccentTextBrush" Color="{StaticResource SystemAccentColor}" />
                     <SolidColorBrush x:Key="AccentTextExactBrush" Color="{StaticResource SystemAccentColor}" />
                     <SolidColorBrush x:Key="NowPlayingRowBrush" Color="{StaticResource SystemAccentColor}" />
@@ -90,10 +92,17 @@
                     <!-- Home card pills -->
                     <SolidColorBrush x:Key="HomeCardBackground" Color="#18FFFFFF" />
                     <SolidColorBrush x:Key="HomeCardHoverBackground" Color="#28FFFFFF" />
+                    <!-- Podium tints for ranked-list numerals: gold / silver / bronze. -->
+                    <SolidColorBrush x:Key="RankGoldBrush" Color="#F2C14E" />
+                    <SolidColorBrush x:Key="RankSilverBrush" Color="#C9CED6" />
+                    <SolidColorBrush x:Key="RankBronzeBrush" Color="#D68A4F" />
 
                     <!-- Filter chips (release type, etc.) -->
                     <SolidColorBrush x:Key="ChipBackground" Color="#1AFFFFFF" />
                     <SolidColorBrush x:Key="ChipHoverBackground" Color="#28FFFFFF" />
+                    <!-- Settings hover shade: every clickable button in Settings (and the dialogs
+                         it opens) darkens in place on hover, the way the accent buttons do. -->
+                    <SolidColorBrush x:Key="SettingsButtonHoverBrush" Color="#33000000" />
 
                     <!-- Glass pill buttons (Sort / options) — neutral gray, theme-aware -->
                     <SolidColorBrush x:Key="GlassPillBackground" Color="#26FFFFFF" />
@@ -112,12 +121,29 @@
                     <SolidColorBrush x:Key="IslandSliderUnfilled" Color="#4A4A4A" />
                     <SolidColorBrush x:Key="IslandAlbumArtPlaceholder" Color="#33FFFFFF" />
                     <SolidColorBrush x:Key="IslandExplicitBadge" Color="#88888888" />
+                    <SolidColorBrush x:Key="IslandTrackBoxSliderUnfilled" Color="#2EFFFFFF" />
                     <SolidColorBrush x:Key="IslandIconAccent" Color="#E74856" />
 
                     <!-- Sidebar highlight -->
                     <SolidColorBrush x:Key="SidebarSelectedBrush" Color="#545454" />
                     <SolidColorBrush x:Key="SidebarSelectedHoverBrush" Color="#626262" />
                     <SolidColorBrush x:Key="SidebarHoverBrush" Color="#20FFFFFF" />
+
+                    <!-- Keys introduced with the Ink / Smoke themes. Values here
+                         reproduce the literals the views used to carry, so Gray/Dark/Midnight
+                         render byte-identically; the new overlays give them real palettes. -->
+                    <SolidColorBrush x:Key="AppWindowBackgroundBrush" Color="#252525" />
+                    <Color x:Key="IslandBackgroundColor">#202020</Color>
+                    <SolidColorBrush x:Key="PrimaryTextBrush" Color="White" />
+                    <SolidColorBrush x:Key="SecondaryTextBrush" Color="#80FFFFFF" />
+                    <SolidColorBrush x:Key="TertiaryTextBrush" Color="#4DFFFFFF" />
+                    <SolidColorBrush x:Key="QueueDrawerBackground" Color="#E61C1C1C" />
+                    <SolidColorBrush x:Key="QueueDrawerForeground" Color="White" />
+                    <SolidColorBrush x:Key="InputOutlineBrush" Color="White" />
+                    <SolidColorBrush x:Key="TrackListMultiSelectBrush" Color="#3FFFFFFF" />
+                    <SolidColorBrush x:Key="ToggleTrackOffBrush" Color="#484C54" />
+                    <SolidColorBrush x:Key="ToggleKnobOffBrush" Color="White" />
+                    <SolidColorBrush x:Key="ArtworkPlaceholderBackground" Color="#2E2E2E" />
                 </ResourceDictionary>
 
                 <ResourceDictionary x:Key="Light">
@@ -138,6 +164,8 @@
                     <SolidColorBrush x:Key="AccentButtonBackground" Color="{StaticResource SystemAccentColor}" />
                     <SolidColorBrush x:Key="AccentForegroundBrush" Color="White" />
                     <SolidColorBrush x:Key="AccentBorderBrush" Color="{StaticResource SystemAccentColorDark1}" />
+                    <!-- Hover shade for accent-filled buttons in Settings (App.SetAccent re-derives it). -->
+                    <SolidColorBrush x:Key="AccentColorBrushDark1" Color="{StaticResource SystemAccentColorDark1}" />
                     <SolidColorBrush x:Key="AccentTextBrush" Color="{StaticResource SystemAccentColor}" />
                     <SolidColorBrush x:Key="AccentTextExactBrush" Color="{StaticResource SystemAccentColor}" />
                     <SolidColorBrush x:Key="NowPlayingRowBrush" Color="{StaticResource SystemAccentColor}" />
@@ -205,10 +233,17 @@
                     <!-- Home card pills -->
                     <SolidColorBrush x:Key="HomeCardBackground" Color="#18000000" />
                     <SolidColorBrush x:Key="HomeCardHoverBackground" Color="#28000000" />
+                    <!-- Podium tints, deepened for a white page. -->
+                    <SolidColorBrush x:Key="RankGoldBrush" Color="#C9960C" />
+                    <SolidColorBrush x:Key="RankSilverBrush" Color="#8E949C" />
+                    <SolidColorBrush x:Key="RankBronzeBrush" Color="#A8622A" />
 
                     <!-- Filter chips (release type, etc.) -->
                     <SolidColorBrush x:Key="ChipBackground" Color="#14000000" />
                     <SolidColorBrush x:Key="ChipHoverBackground" Color="#22000000" />
+                    <!-- Settings hover shade: every clickable button in Settings (and the dialogs
+                         it opens) darkens in place on hover, the way the accent buttons do. -->
+                    <SolidColorBrush x:Key="SettingsButtonHoverBrush" Color="#14000000" />
 
                     <!-- Glass pill buttons (Sort / options) — neutral gray, theme-aware -->
                     <SolidColorBrush x:Key="GlassPillBackground" Color="#18000000" />
@@ -227,12 +262,29 @@
                     <SolidColorBrush x:Key="IslandSliderUnfilled" Color="#4A4A4A" />
                     <SolidColorBrush x:Key="IslandAlbumArtPlaceholder" Color="#33FFFFFF" />
                     <SolidColorBrush x:Key="IslandExplicitBadge" Color="#88888888" />
+                    <SolidColorBrush x:Key="IslandTrackBoxSliderUnfilled" Color="#2EFFFFFF" />
                     <SolidColorBrush x:Key="IslandIconAccent" Color="#E74856" />
 
                     <!-- Sidebar highlight -->
                     <SolidColorBrush x:Key="SidebarSelectedBrush" Color="#545454" />
                     <SolidColorBrush x:Key="SidebarSelectedHoverBrush" Color="#D0D0D0" />
                     <SolidColorBrush x:Key="SidebarHoverBrush" Color="#20FFFFFF" />
+
+                    <!-- Keys introduced with the Ink / Smoke themes (see the Dark
+                         block). The Light theme keeps its current look, so the drawer, toggle
+                         and multi-select values stay the dark-tuned literals they were. -->
+                    <SolidColorBrush x:Key="AppWindowBackgroundBrush" Color="#FFFFFF" />
+                    <Color x:Key="IslandBackgroundColor">#202020</Color>
+                    <SolidColorBrush x:Key="PrimaryTextBrush" Color="Black" />
+                    <SolidColorBrush x:Key="SecondaryTextBrush" Color="#80FFFFFF" />
+                    <SolidColorBrush x:Key="TertiaryTextBrush" Color="#4DFFFFFF" />
+                    <SolidColorBrush x:Key="QueueDrawerBackground" Color="#E61C1C1C" />
+                    <SolidColorBrush x:Key="QueueDrawerForeground" Color="White" />
+                    <SolidColorBrush x:Key="InputOutlineBrush" Color="White" />
+                    <SolidColorBrush x:Key="TrackListMultiSelectBrush" Color="#3FFFFFFF" />
+                    <SolidColorBrush x:Key="ToggleTrackOffBrush" Color="#484C54" />
+                    <SolidColorBrush x:Key="ToggleKnobOffBrush" Color="White" />
+                    <SolidColorBrush x:Key="ArtworkPlaceholderBackground" Color="#2E2E2E" />
                 </ResourceDictionary>
             </ResourceDictionary.ThemeDictionaries>
 
@@ -292,10 +344,21 @@
         <Setter Property="Padding" Value="4,0" />
         <Setter Property="Height" Value="16" />
         <Setter Property="VerticalAlignment" Value="Center" />
+        <!-- Centering on the line box sits the badge on the descender space and reads
+             LOW against the capitals; nudge it up so it centres on the letters instead. -->
+        <Setter Property="RenderTransform" Value="translateY(-1px)" />
     </Style>
 
+    <!-- Compact variant (tiles + list rows, 09-14, Apple Music): a 12px box with an 8px
+         glyph. No nudge here: with Inter the cap centre IS the line-box centre
+         (ascent 0.969 − capHeight/2 0.364 = 0.605 ≈ 1.21/2), so a run centred on the
+         line box (BaselineAlignment=Center) already sits on the capitals — as long as the
+         box is no taller than the ascent (12.6px at 13px), or the run grows the line's
+         ascent and drifts high. Pinned by TitleBadgeAndMarqueeProbeTests. -->
     <Style Selector="Border.explicit-badge.compact">
-        <Setter Property="Height" Value="14" />
+        <Setter Property="Height" Value="12" />
+        <Setter Property="Padding" Value="3,0" />
+        <Setter Property="RenderTransform" Value="none" />
     </Style>
 
     <Style Selector="TextBlock.explicit-badge-text">
@@ -371,6 +434,27 @@
         <Setter Property="TextAlignment" Value="Center" />
         <Setter Property="HorizontalContentAlignment" Value="Center" />
         <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+
+    <!-- The "bubble" behind the number. Background on the TextBox above does not reach
+         Fluent's own border part, and Fluent repaints that part per state (rest, hover,
+         focus, DISABLED), so a filled lozenge — sized to the digits and rounded to 999 by
+         the rules above — sat inside the pill in every state, including greyed out. Pin the
+         part itself transparent everywhere; the surrounding pill is the only chrome here. -->
+    <Style Selector="NumericUpDown.limit-pill-number /template/ TextBox /template/ Border#PART_BorderElement,
+                     NumericUpDown.limit-pill-number /template/ TextBox:pointerover /template/ Border#PART_BorderElement,
+                     NumericUpDown.limit-pill-number /template/ TextBox:focus /template/ Border#PART_BorderElement,
+                     NumericUpDown.limit-pill-number /template/ TextBox:focus-within /template/ Border#PART_BorderElement,
+                     NumericUpDown.limit-pill-number /template/ TextBox:disabled /template/ Border#PART_BorderElement">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+    </Style>
+
+    <!-- Selection paints even when the box does not have focus, which put an accent-coloured
+         lozenge around the digits the moment the field had ever been entered. Only show it
+         while the box is actually being edited. -->
+    <Style Selector="NumericUpDown.limit-pill-number:not(:focus-within) /template/ TextBox">
+        <Setter Property="SelectionBrush" Value="Transparent" />
     </Style>
 
     <!-- Smooth scrolling for all ScrollViewers -->
@@ -837,6 +921,12 @@
     <Style Selector="Border.now-playing TextBlock.explicit-badge-text">
         <Setter Property="Foreground" Value="{DynamicResource NowPlayingRowForegroundBrush}" />
     </Style>
+    <!-- The favorite heart defaults to the app's red; on a red (or any dark) accent row
+         it vanished into the fill. Both states take the row foreground here. -->
+    <Style Selector="Border.now-playing controls|HeartIcon">
+        <Setter Property="OnBrush" Value="{DynamicResource NowPlayingRowForegroundBrush}" />
+        <Setter Property="OffBrush" Value="{DynamicResource NowPlayingRowForegroundBrush}" />
+    </Style>
 
     <!-- Note: track-list items get their container template from TrackListBoxItemTheme
          (ItemContainerTheme, set above). That theme declares no BasedOn and carries only a
@@ -922,6 +1012,13 @@
         <Setter Property="Background" Value="Transparent"/>
         <Setter Property="RenderTransform" Value="scale(1)"/>
     </Style>
+    <!-- Fluent's template paints ButtonBackgroundPointerOver on the presenter itself, so
+         the Background setter above never reached it: every tile (Albums, Favorites,
+         Playlists, Artist page, More by artist) hovered with a wash behind title and
+         artist too (user, 09-14). Only the artwork dims (Border.tile-dim). -->
+    <Style Selector="Button.album-tile:pointerover /template/ ContentPresenter#PART_ContentPresenter, Button.album-tile:pressed /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="Transparent"/>
+    </Style>
 
     <!-- Ctrl+Click multi-select highlight for album tiles (red border) -->
     <Style Selector="Button.album-tile.ctrl-selected">
@@ -942,34 +1039,107 @@
         <Setter Property="BorderBrush" Value="{DynamicResource AccentColorBrush}" />
     </Style>
 
+    <!-- Album/single tile hover (09-13, Apple Music): the artwork dims a little, a
+         Play/Pause circle appears bottom-left and a dots circle bottom-right. Both
+         circles sit inside the artwork Border of every tile (Albums grid, Home,
+         Favorites, Artist page, More by artist); Helpers/AlbumTile.cs routes the dots
+         to the tile's own menu. Glyphs are Paths, not PathIcons (per-tile cost, 09-12). -->
+    <Style Selector="Border.tile-dim">
+        <Setter Property="Background" Value="#000000" />
+        <Setter Property="Opacity" Value="0" />
+        <Setter Property="IsHitTestVisible" Value="False" />
+        <Setter Property="Transitions">
+            <Transitions>
+                <DoubleTransition Property="Opacity" Duration="0:0:0.12" />
+            </Transitions>
+        </Setter>
+    </Style>
+    <Style Selector="Button.album-tile:pointerover Border.tile-dim">
+        <Setter Property="Opacity" Value="0.3" />
+    </Style>
+    <Style Selector="Button.tile-play, Button.tile-more">
+        <Setter Property="Width" Value="32" />
+        <Setter Property="Height" Value="32" />
+        <Setter Property="CornerRadius" Value="16" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="HorizontalContentAlignment" Value="Center" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Background" Value="#B3232325" />
+        <Setter Property="VerticalAlignment" Value="Bottom" />
+        <Setter Property="Margin" Value="8" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="Opacity" Value="0" />
+        <Setter Property="Transitions">
+            <Transitions>
+                <DoubleTransition Property="Opacity" Duration="0:0:0.12" />
+            </Transitions>
+        </Setter>
+    </Style>
+    <Style Selector="Button.tile-play">
+        <Setter Property="HorizontalAlignment" Value="Left" />
+    </Style>
+    <Style Selector="Button.tile-more">
+        <Setter Property="HorizontalAlignment" Value="Right" />
+    </Style>
+    <Style Selector="Button.album-tile:pointerover Button.tile-play, Button.album-tile:pointerover Button.tile-more">
+        <Setter Property="Opacity" Value="1" />
+    </Style>
+    <Style Selector="Button.tile-play:pointerover /template/ ContentPresenter, Button.tile-more:pointerover /template/ ContentPresenter">
+        <Setter Property="Background" Value="#E6303032" />
+    </Style>
+    <Style Selector="Button.tile-play:pressed /template/ ContentPresenter, Button.tile-more:pressed /template/ ContentPresenter">
+        <Setter Property="Background" Value="#E6303032" />
+    </Style>
+    <!-- Glyphs sit in a centred Viewbox. Stretch=Uniform drops the geometry's origin
+         offset (the 24-unit icon grid's padding); with Stretch=None the Path measures
+         bounds.Right x bounds.Bottom and the Viewbox scales that padding too, landing
+         the ink ~2px right (Play) and ~4px low (dots) of the circle centre. -->
+    <Style Selector="Button.tile-play Path, Button.tile-more Path">
+        <Setter Property="Fill" Value="White" />
+        <Setter Property="Stretch" Value="Uniform" />
+    </Style>
+
+    <!-- Tile heart (09-13): at the right end of the title line; when the title wraps to
+         a second line (Helpers/TitleWrap sets .wrapped on the tile-text panel) it moves
+         to the subtitle line instead. The title-line slot keeps its width while hidden so
+         the title does not reflow and flip the decision back. -->
+    <Style Selector="StackPanel.tile-text.wrapped Panel.heart-title">
+        <Setter Property="Opacity" Value="0" />
+        <Setter Property="IsHitTestVisible" Value="False" />
+    </Style>
+    <Style Selector="StackPanel.tile-text:not(.wrapped) Panel.heart-sub">
+        <Setter Property="IsVisible" Value="False" />
+    </Style>
+
     <Style Selector="ListBox.track-list Button:pointerover">
         <Setter Property="RenderTransform" Value="scale(1)" />
     </Style>
 
-    <!-- Ctrl+Click multi-select highlight for track rows (gray background) -->
+    <!-- Ctrl+Click multi-select highlight for track rows (theme-keyed wash) -->
     <Style Selector="ListBox.track-list ListBoxItem.ctrl-selected">
-        <Setter Property="Background" Value="#3FFFFFFF" />
+        <Setter Property="Background" Value="{DynamicResource TrackListMultiSelectBrush}" />
     </Style>
     <Style Selector="ListBox.track-list ListBoxItem.ctrl-selected:nth-child(2n)">
-        <Setter Property="Background" Value="#3FFFFFFF" />
+        <Setter Property="Background" Value="{DynamicResource TrackListMultiSelectBrush}" />
     </Style>
     <Style Selector="ListBox.track-list ListBoxItem.ctrl-selected:pointerover">
-        <Setter Property="Background" Value="#3FFFFFFF" />
+        <Setter Property="Background" Value="{DynamicResource TrackListMultiSelectBrush}" />
     </Style>
     <Style Selector="ListBox.track-list ListBoxItem.ctrl-selected:nth-child(2n):pointerover">
-        <Setter Property="Background" Value="#3FFFFFFF" />
+        <Setter Property="Background" Value="{DynamicResource TrackListMultiSelectBrush}" />
     </Style>
     <Style Selector="ListBox.track-list ListBoxItem.ctrl-selected /template/ ContentPresenter">
-        <Setter Property="Background" Value="#3FFFFFFF" />
+        <Setter Property="Background" Value="{DynamicResource TrackListMultiSelectBrush}" />
     </Style>
     <Style Selector="ListBox.track-list ListBoxItem.ctrl-selected:pointerover /template/ ContentPresenter">
-        <Setter Property="Background" Value="#3FFFFFFF" />
+        <Setter Property="Background" Value="{DynamicResource TrackListMultiSelectBrush}" />
     </Style>
     <Style Selector="ListBox.track-list ListBoxItem.ctrl-selected:selected">
-        <Setter Property="Background" Value="#3FFFFFFF" />
+        <Setter Property="Background" Value="{DynamicResource TrackListMultiSelectBrush}" />
     </Style>
     <Style Selector="ListBox.track-list ListBoxItem.ctrl-selected:selected /template/ ContentPresenter">
-        <Setter Property="Background" Value="#3FFFFFFF" />
+        <Setter Property="Background" Value="{DynamicResource TrackListMultiSelectBrush}" />
     </Style>
 
     <!-- Generic pill-shaped button (fully rounded) -->
@@ -1056,8 +1226,35 @@
         </Setter>
     </Style>
 
+    <!-- A theme switch re-resolves every Button's Background; lerping a translucent white
+         into an opaque fill (Gray's #18FFFFFF card → Ink's #1C1C1C) passes through a much
+         lighter grey and read as a white flash on the Home tiles. App.SetTheme puts
+         theme-switching on the main window for the swap so it lands in one frame
+         (HomeTileThemeSwitchTests). -->
+    <Style Selector=":is(Window).theme-switching Button">
+        <Setter Property="Transitions">
+            <Transitions/>
+        </Setter>
+    </Style>
+
     <Style Selector="Button:pointerover">
         <Setter Property="RenderTransform" Value="scale(1.045)"/>
+    </Style>
+
+    <!-- Dialogs opened while Settings is up (DialogHelper.SizeToOwner tags them settings-popup):
+         no hover zoom anywhere in the Settings section, and accent buttons darken on hover
+         so the pointer is seen to be over them (user ask 09-07). -->
+    <Style Selector="Window.settings-popup Button:pointerover">
+        <Setter Property="RenderTransform" Value="scale(1)"/>
+    </Style>
+    <Style Selector="Window.settings-popup Button.pill:pointerover">
+        <Setter Property="RenderTransform" Value="scale(1)"/>
+    </Style>
+    <Style Selector="Window.settings-popup ComboBox.pill-combo:pointerover">
+        <Setter Property="RenderTransform" Value="scale(1)"/>
+    </Style>
+    <Style Selector="Window.settings-popup CheckBox.metadata-pill-checkbox:pointerover /template/ Border#IndicatorBorder">
+        <Setter Property="RenderTransform" Value="scale(1)"/>
     </Style>
 
     <Style Selector="Button.album-tile:pointerover">
@@ -1120,6 +1317,17 @@
         <Setter Property="Foreground" Value="{TemplateBinding Foreground}" />
     </Style>
 
+    <!-- Dialogs opened from Settings (settings-popup): the same hover shade as the Settings
+         page itself — grey/transparent buttons take the translucent SettingsButtonHoverBrush
+         wash, accent buttons darken to AccentColorBrushDark1. Declared after the pill rules
+         above so it wins the cascade; a dialog's own Border.Styles still override it. -->
+    <Style Selector="Window.settings-popup Button:pointerover /template/ ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource SettingsButtonHoverBrush}"/>
+    </Style>
+    <Style Selector="Window.settings-popup Button.accent-btn:pointerover /template/ ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource AccentColorBrushDark1}"/>
+    </Style>
+
     <!-- Search TextBox styling: strip all chrome so the pill container controls the look -->
     <Style Selector="TextBox.search-box">
         <Setter Property="MinHeight" Value="0"/>
@@ -1147,20 +1355,20 @@
         <Setter Property="BorderThickness" Value="0"/>
     </Style>
 
-    <!-- Global crisp input outline: white 1.5px outline, focus turns #E74856 -->
+    <!-- Global crisp input outline: theme-keyed 1.5px outline, focus turns accent -->
     <Style Selector="TextBox.crisp-input">
         <Setter Property="BorderThickness" Value="1.5" />
-        <Setter Property="BorderBrush" Value="White" />
+        <Setter Property="BorderBrush" Value="{DynamicResource InputOutlineBrush}" />
         <Setter Property="UseLayoutRounding" Value="True" />
     </Style>
     <Style Selector="TextBox.crisp-input /template/ Border#PART_BorderElement">
         <Setter Property="BorderThickness" Value="1.5" />
-        <Setter Property="BorderBrush" Value="White" />
+        <Setter Property="BorderBrush" Value="{DynamicResource InputOutlineBrush}" />
         <Setter Property="UseLayoutRounding" Value="True" />
     </Style>
     <Style Selector="TextBox.crisp-input:pointerover /template/ Border#PART_BorderElement">
         <Setter Property="BorderThickness" Value="1.5" />
-        <Setter Property="BorderBrush" Value="White" />
+        <Setter Property="BorderBrush" Value="{DynamicResource InputOutlineBrush}" />
     </Style>
     <Style Selector="TextBox.crisp-input:focus /template/ Border#PART_BorderElement">
         <Setter Property="BorderThickness" Value="1.5" />

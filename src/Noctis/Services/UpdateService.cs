@@ -29,6 +29,14 @@ public sealed class UpdateService
         Assembly.GetExecutingAssembly().GetName().Version ?? new Version(0, 0, 0);
 
     /// <summary>Current version formatted for display, e.g. "Version 1.1.1".</summary>
+    /// <summary>Header lines for the session log: product + version, then install source.</summary>
+    public static string DescribeBuild()
+    {
+        var v = CurrentVersion;
+        return $"Noctis {v.Major}.{v.Minor}.{v.Build}" + (IsPrereleaseBuild ? " (pre-release)" : "")
+             + $"\nInstall source: {Source}";
+    }
+
     public static string CurrentVersionDisplay
     {
         get

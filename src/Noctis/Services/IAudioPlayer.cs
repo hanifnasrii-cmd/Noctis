@@ -34,6 +34,11 @@ public interface IAudioPlayer : IDisposable
     /// <summary>Current playback position.</summary>
     TimeSpan Position { get; }
 
+    /// <summary>How far <see cref="Position"/> (and PositionChanged) lead the speaker:
+    /// the depth of output buffer already filled but not yet heard. Zero when the
+    /// reported position is already the audible one. Lyrics subtract it.</summary>
+    TimeSpan OutputLatency { get; }
+
     /// <summary>Monotonic playback session id, incremented for every Play request.</summary>
     long CurrentSessionId { get; }
 
@@ -102,6 +107,22 @@ public interface IAudioPlayer : IDisposable
     /// stop/parse/start path.
     /// </summary>
     void SetGapless(bool enabled);
+
+    /// <summary>Playback speed (0.5–2.0, 1.0 = normal), pitch-preserving. Sticks across
+    /// track changes until changed again; not persisted.</summary>
+    void SetPlaybackRate(double rate);
+
+    /// <summary>
+    /// Pitch shift in semitones (−12 … +12) independent of speed. Gapless-engine output
+    /// only: the LibVLC output paths have no pitch stage and ignore it.
+    /// </summary>
+    void SetPitchSemitones(double semitones);
+
+    /// <summary>
+    /// Multi-channel upmix for 5.1/7.1 devices ("Off", "Duplicate" or "Surround" — see
+    /// <see cref="UpmixMode"/>). Shared-mode gapless engine only; Exclusive Mode stays bit-exact.
+    /// </summary>
+    void SetUpmixMode(string mode);
 
     /// <summary>Prepares a next media item for an AutoMix transition without making it active.</summary>
     void PrepareNext(string filePath, long startPositionMs = -1);

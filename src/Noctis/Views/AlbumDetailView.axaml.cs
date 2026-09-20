@@ -233,7 +233,19 @@ public partial class AlbumDetailView : UserControl
             convertCommand: vm.ConvertTrackCommand,
             scanReplayGainCommand: vm.ScanTrackReplayGainCommand,
             startRadioCommand: vm.StartRadioCommand,
-            snoozeCommand: vm.SnoozeForMonthCommand);
+            snoozeCommand: vm.SnoozeForMonthCommand,
+            rateCommand: vm.RateTrackCommand,
+            fetchLyricsCommand: vm.FetchLyricsCommand,
+            lyricsStudioCommand: vm.OpenLyricsStudioCommand,
+            removeLyricsCommand: vm.RemoveLyricsCommand,
+            sendToFolderCommand: vm.SendToFolderCommand);
+    }
+
+    /// <summary>Click on a row's stars rates that track.</summary>
+    private void OnRowRated(object? sender, int stars)
+    {
+        if (sender is Noctis.Controls.RatingStars control && control.DataContext is Track track && DataContext is AlbumDetailViewModel vm)
+            _ = vm.RateAsync(track, stars);
     }
 
     private void DetachMenuFromOwner()
@@ -388,7 +400,7 @@ public partial class AlbumDetailView : UserControl
         if (_bgHandler != null)
         {
             newVm.PropertyChanged += _bgHandler;
-            AlbumGradientBg.Opacity = newVm.BackgroundBrush != null ? 1 : 0;
+            AlbumTintBg.Opacity = newVm.BackgroundBrush != null ? 1 : 0;
         }
 
         if (newVm.SavedScrollOffset > 0)
@@ -421,12 +433,12 @@ public partial class AlbumDetailView : UserControl
         if (DataContext is AlbumDetailViewModel vm2)
         {
             if (vm2.BackgroundBrush != null)
-                AlbumGradientBg.Opacity = 1;
+                AlbumTintBg.Opacity = 1;
 
             _bgHandler = (_, args) =>
             {
                 if (args.PropertyName == nameof(AlbumDetailViewModel.BackgroundBrush))
-                    AlbumGradientBg.Opacity = ((AlbumDetailViewModel)DataContext!).BackgroundBrush != null ? 1 : 0;
+                    AlbumTintBg.Opacity = ((AlbumDetailViewModel)DataContext!).BackgroundBrush != null ? 1 : 0;
             };
             vm2.PropertyChanged += _bgHandler;
         }

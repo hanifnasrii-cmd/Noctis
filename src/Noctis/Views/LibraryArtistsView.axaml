@@ -1,5 +1,6 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:loc="using:Noctis.Localization"
              xmlns:vm="using:Noctis.ViewModels"
              xmlns:m="using:Noctis.Models"
              xmlns:ctrl="using:Noctis.Controls"
@@ -62,83 +63,95 @@
                             </ItemsControl.ItemsPanel>
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate DataType="{x:Type m:Artist}">
+                                    <!-- Only the portrait circle is interactive: the Button IS the circle
+                                         (fixed square + elliptical Clip, which Avalonia hit-testing honours),
+                                         so the gap between two tiles, the square corners around the disc and
+                                         the name underneath no longer open the artist. -->
+                                    <StackPanel Spacing="10" HorizontalAlignment="Center" Margin="4,6">
+                                    <!-- 190px disc (user ask 09-15, up from 160); the artist page's Similar Artists tiles match. -->
+                                    <Panel HorizontalAlignment="Center" Width="190" Height="190">
                                     <Button Classes="artist-tile"
                                             Focusable="False"
                                             Background="Transparent"
                                             BorderThickness="0"
                                             Padding="0"
-                                            Margin="4,6"
-                                            HorizontalAlignment="Stretch"
-                                            HorizontalContentAlignment="Center"
+                                            Width="190" Height="190"
+                                            CornerRadius="95"
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Center"
                                             Cursor="Hand"
                                             Command="{Binding $parent[UserControl].((vm:LibraryArtistsViewModel)DataContext).OpenArtistCommand, FallbackValue={x:Null}}"
                                             CommandParameter="{Binding}">
+                                        <Button.Clip>
+                                            <EllipseGeometry Center="95,95" RadiusX="95" RadiusY="95" />
+                                        </Button.Clip>
                                         <Button.ContextMenu>
                                             <ContextMenu DataContext="{Binding}">
                                                 <!-- Favorite toggle (GitHub #41). IsFavorite isn't observable;
                                                      the rows re-materialize after every toggle, so the next
                                                      open shows the right item — same deal as Remove Picture. -->
-                                                <MenuItem Header="Set as Favorite" Click="OnToggleFavoriteArtistClick"
+                                                <MenuItem Header="{loc:T LibraryArtists.SetAsFavorite}" Click="OnToggleFavoriteArtistClick"
                                                           IsVisible="{Binding !IsFavorite}" />
-                                                <MenuItem Header="Remove from Favorites" Click="OnToggleFavoriteArtistClick"
+                                                <MenuItem Header="{loc:T LibraryArtists.RemoveFromFavorites}" Click="OnToggleFavoriteArtistClick"
                                                           IsVisible="{Binding IsFavorite}" />
                                                 <Separator />
-                                                <MenuItem Header="Choose from File" Click="OnChangeArtistImageClick" />
-                                                <MenuItem Header="Find Picture Online" Click="OnSearchArtistImageClick" />
-                                                <MenuItem Header="Remove Picture" Classes="danger" Click="OnRemoveArtistImageClick"
+                                                <MenuItem Header="{loc:T LibraryArtists.ChooseFromFile}" Click="OnChangeArtistImageClick" />
+                                                <MenuItem Header="{loc:T LibraryArtists.FindPictureOnline}" Click="OnSearchArtistImageClick" />
+                                                <MenuItem Header="{loc:T LibraryArtists.RemovePicture}" Classes="danger" Click="OnRemoveArtistImageClick"
                                                           IsVisible="{Binding ImagePath, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
                                             </ContextMenu>
                                         </Button.ContextMenu>
-                                        <StackPanel Spacing="10" HorizontalAlignment="Center">
-                                            <!-- Circular portrait with icon fallback -->
-                                            <Panel HorizontalAlignment="Center">
-                                                <Border Width="124" Height="124"
-                                                        CornerRadius="62"
-                                                        Background="#2E2E2E"
-                                                        ClipToBounds="True"
-                                                        HorizontalAlignment="Center">
-                                                    <Panel>
-                                                        <PathIcon Data="{StaticResource ArtistsIcon}"
-                                                                  Width="44"
-                                                                  Height="44"
-                                                                  HorizontalAlignment="Center"
-                                                                  VerticalAlignment="Center"
-                                                                  Opacity="0.35" />
-                                                        <ctrl:CachedImage SourcePath="{Binding ImagePath}"
-                                                                          Stretch="UniformToFill"
-                                                                          Width="124"
-                                                                          Height="124"
-                                                                          IsVisible="{Binding ImagePath, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
-                                                    </Panel>
-                                                </Border>
-                                                <!-- Favorite star (GitHub #41): accent-colored, riding the
-                                                     portrait's bottom-right rim. Sibling of the clipped circle,
-                                                     not a child, so the corner doesn't slice it; the dark disc
-                                                     keeps it readable over any photo. -->
-                                                <Border Width="26" Height="26" CornerRadius="13"
-                                                        Background="#D91E1E24"
-                                                        HorizontalAlignment="Right" VerticalAlignment="Bottom"
-                                                        Margin="0,0,2,2"
-                                                        IsVisible="{Binding IsFavorite}">
-                                                    <PathIcon Data="{StaticResource StarIcon}"
-                                                              Width="15" Height="15"
-                                                              Foreground="{DynamicResource AccentColorBrush}"
-                                                              HorizontalAlignment="Center"
-                                                              VerticalAlignment="Center" />
-                                                </Border>
+                                        <!-- Circular portrait with icon fallback -->
+                                        <Border Width="190" Height="190"
+                                                CornerRadius="95"
+                                                Background="{DynamicResource ArtworkPlaceholderBackground}"
+                                                ClipToBounds="True">
+                                            <Panel>
+                                                <!-- Path shapes, not PathIcon: PathIcon is a templated control and the two per tile
+                                                     cost ~3.6ms of every realized row of seven (09-12 scroll-hitch probe). -->
+                                                <!-- Height only: the glyph is taller than wide (16×20 units), and a forced
+                                                     56×56 box left the Uniform-scaled geometry at the box's left edge, so the
+                                                     placeholder sat ~5px left of the circle's centre. Width follows the aspect
+                                                     and the Path itself is centred. -->
+                                                <Path Data="{StaticResource ArtistsIcon}" Stretch="Uniform" Fill="{DynamicResource SystemControlForegroundBaseHighBrush}" Height="56"
+                                                      HorizontalAlignment="Center"
+                                                      VerticalAlignment="Center"
+                                                      Opacity="0.35" />
+                                                <ctrl:CachedImage SourcePath="{Binding ImagePath}"
+                                                                  Stretch="UniformToFill"
+                                                                  Width="190"
+                                                                  Height="190"
+                                                                  IsVisible="{Binding ImagePath, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
                                             </Panel>
-                                            <ctrl:HighlightTextBlock DisplayText="{Binding Name}"
-                                                                     HighlightText="{Binding $parent[UserControl].((vm:LibraryArtistsViewModel)DataContext).SearchText, FallbackValue=''}"
-                                                                     FontSize="13"
-                                                                     FontWeight="SemiBold"
-                                                                     TextWrapping="NoWrap"
-                                                                     MaxLines="1"
-                                                                     TextTrimming="CharacterEllipsis"
-                                                                     TextAlignment="Center"
-                                                                     MaxWidth="132"
-                                                                     HorizontalAlignment="Center" />
-                                        </StackPanel>
+                                        </Border>
                                     </Button>
+                                    <!-- Favorite star (GitHub #41): accent-colored, riding the
+                                         portrait's bottom-right rim. Sibling of the clipped circle,
+                                         not a child, so the corner doesn't slice it; the dark disc
+                                         keeps it readable over any photo. Not hit-testable: it sits
+                                         outside the circle and must not open the artist. -->
+                                    <Border Width="26" Height="26" CornerRadius="13"
+                                            Background="#D91E1E24"
+                                            HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                                            Margin="0,0,6,6"
+                                            IsHitTestVisible="False"
+                                            IsVisible="{Binding IsFavorite}">
+                                        <Path Data="{StaticResource StarIcon}" Stretch="Uniform" Width="15" Height="15" Fill="{DynamicResource AccentColorBrush}"
+                                              HorizontalAlignment="Center"
+                                              VerticalAlignment="Center" />
+                                    </Border>
+                                    </Panel>
+                                    <ctrl:HighlightTextBlock DisplayText="{Binding Name}"
+                                                             HighlightText="{Binding $parent[UserControl].((vm:LibraryArtistsViewModel)DataContext).SearchText, FallbackValue=''}"
+                                                             FontSize="14"
+                                                             FontWeight="SemiBold"
+                                                             TextWrapping="NoWrap"
+                                                             MaxLines="1"
+                                                             TextTrimming="CharacterEllipsis"
+                                                             TextAlignment="Center"
+                                                             MaxWidth="198"
+                                                             HorizontalAlignment="Center" />
+                                    </StackPanel>
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
@@ -151,12 +164,12 @@
                         HorizontalAlignment="Center"
                         VerticalAlignment="Center"
                         Spacing="8">
-                <TextBlock Text="No artists found"
+                <TextBlock Text="{loc:T LibraryArtists.NoArtistsFound}"
                            FontSize="18"
                            Opacity="0.5"
                            HorizontalAlignment="Center"
                            TextAlignment="Center" />
-                <TextBlock Text="Add music folders in Settings to get started"
+                <TextBlock Text="{loc:T LibraryArtists.AddMusicFoldersSettings}"
                            FontSize="13"
                            Opacity="0.3"
                            HorizontalAlignment="Center"

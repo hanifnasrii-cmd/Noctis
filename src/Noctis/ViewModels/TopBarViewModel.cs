@@ -1,8 +1,9 @@
-using System;
+﻿using System;
 using System.Collections.ObjectModel;
 using System.Windows.Input;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Noctis.Localization;
 using Noctis.Services;
 
 namespace Noctis.ViewModels;
@@ -15,15 +16,44 @@ public partial class TopBarViewModel : ViewModelBase
 {
     [ObservableProperty] private string _searchText = string.Empty;
     [ObservableProperty] private bool _isSearchFocused;
+    /// <summary>The current section's ENGLISH tab name — an identifier, compared in several
+    /// places ("Home", "Settings", "Lyrics", …). Never shown directly: the header and the
+    /// search watermark use <see cref="CurrentTabTitle"/>, its localized form.</summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(PageTitleDisplay))]
+    [NotifyPropertyChangedFor(nameof(CurrentTabTitle))]
     [NotifyPropertyChangedFor(nameof(IsSearchActionAvailable))]
     private string _currentTabName = "Library";
 
+    /// <summary>Localized display name of the current section.</summary>
+    public string CurrentTabTitle => Loc.T(TabTitleKey(CurrentTabName));
+
+    /// <summary>Resource key for a tab name; unknown names (a playlist's own title) pass through
+    /// unchanged because <see cref="Loc.T(string)"/> returns unknown keys verbatim.</summary>
+    public static string TabTitleKey(string tabName) => tabName switch
+    {
+        "Home" => "Nav.Home", "Songs" => "Nav.Songs", "Albums" => "Nav.Albums", "Artists" => "Nav.Artists",
+        "Folders" => "Nav.Folders", "Playlists" => "Nav.Playlists", "Favorites" => "Nav.Favorites",
+        "Visualizer" => "Nav.Visualizer", "Lyrics Studio" => "Nav.LyricsStudio", "Settings" => "Nav.Settings", "Server" => "Nav.Server", "Audio CD" => "Nav.AudioCd",
+        "Statistics" => "Tab.Statistics", "Queue" => "Tab.Queue", "Lyrics" => "Tab.Lyrics",
+        "Playlist" => "Tab.Playlist", "Library" => "Tab.Library",
+        _ => tabName,
+    };
+
     /// <summary>Header title: reflects the Cover Flow / Collage view when active, otherwise the section name.
     /// Collage is a Cover Flow sub-mode, so its label only applies while Cover Flow is active.</summary>
-    public string PageTitleDisplay => IsCoverFlowMode ? (IsCollageMode ? "Cover Collage" : "Cover Flow") : CurrentTabName;
-    [ObservableProperty] private string _searchWatermark = "Search in Library";
+    public string PageTitleDisplay => IsCoverFlowMode
+        ? Loc.T(IsCollageMode ? "TopBar.CoverCollage" : "TopBar.CoverFlow")
+        : CurrentTabTitle;
+    [ObservableProperty] private string _searchWatermark = Loc.T("TopBar.SearchIn", Loc.T("Tab.Library"));
+
+    /// <summary>Re-reads the localized header/watermark after a language switch (the watermark
+    /// is owned by MainWindowViewModel.RefreshBackButton, which listens for the same event).</summary>
+    public void RefreshLocalizedTitles()
+    {
+        OnPropertyChanged(nameof(CurrentTabTitle));
+        OnPropertyChanged(nameof(PageTitleDisplay));
+    }
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsSearchActionAvailable))]
     private bool _isSearchVisible = true;
@@ -36,6 +66,9 @@ public partial class TopBarViewModel : ViewModelBase
     // the user browses/filters and only closes explicitly (toggle, Esc, or navigating
     // to a page without search).
     [ObservableProperty] private bool _isSearchOpen;
+
+    /// <summary>"Add from YouTube" in the New/Add menu — always available, downloads into the library folder.</summary>
+    public IAsyncRelayCommand AddFromYouTubeCommand { get; } = new AsyncRelayCommand(() => MetadataHelper.OpenYouTubeDownloadDialog());
 
     // Back button (shown in detail views like Album Detail, Genre Detail, etc.)
     [ObservableProperty] private bool _isBackButtonVisible;
@@ -68,6 +101,7 @@ public partial class TopBarViewModel : ViewModelBase
         || HasArtistActions
         || HasFavoritesActions
         || HasFoldersActions
+        || HasArtistSort
         || SongsFiltersVisible;
 
     public void ShowBackButton(string text, ICommand command, string? contextTitle = null)
@@ -133,12 +167,14 @@ public partial class TopBarViewModel : ViewModelBase
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(SongsFiltersVisible))]
     [NotifyPropertyChangedFor(nameof(HasBarContent))]
+    [NotifyPropertyChangedFor(nameof(IsSongsFilterActive))]
     private bool _hasSongsFilters;
     [ObservableProperty] private string _songsSummaryText = string.Empty;
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(SongsQualityAll))]
     [NotifyPropertyChangedFor(nameof(SongsQualityLossless))]
     [NotifyPropertyChangedFor(nameof(SongsQualityHiRes))]
+    [NotifyPropertyChangedFor(nameof(IsSongsFilterActive))]
     private string _songsQualityFilter = "All";
     [ObservableProperty] private ICommand? _songsQualityCommand;
 
@@ -167,7 +203,51 @@ public partial class TopBarViewModel : ViewModelBase
     // Playlist-specific action buttons
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasBarContent))]
+    [NotifyPropertyChangedFor(nameof(PlaylistActionsVisible))]
     private bool _hasPlaylistActions;
+
+    // Section actions don't apply while the Cover Flow overlay is up (its content is
+    // the queue, not the section underneath), so every section's action group is gated
+    // the same way the Songs actions already were. Previously only Songs was gated,
+    // which is why Folders/Playlists/Favorites buttons leaked into Cover Flow.
+    public bool PlaylistActionsVisible => HasPlaylistActions && !IsCoverFlowMode;
+    public bool FoldersActionsVisible => HasFoldersActions && !IsCoverFlowMode;
+    public bool FavoritesActionsVisible => HasFavoritesActions && !IsCoverFlowMode;
+
+    // Cover Flow layout picker (Carousel / Cascade / Collage), shown as a labelled
+    // dropdown segment on the view-mode pill while Cover Flow is active.
+    [ObservableProperty] private ICommand? _setCoverFlowLayoutCommand;
+    [ObservableProperty] private string _coverFlowLayoutLabel = "Carousel";
+
+    // Artists grid sort (Name / Songs / Albums + direction), mirrored here for top-bar
+    // placement — same pattern as the Albums sort chip.
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasBarContent))]
+    private bool _hasArtistSort;
+    [ObservableProperty] private ICommand? _artistSortCommand;
+    [ObservableProperty] private string _artistSortLabel = "Name";
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ArtistSortDescending))]
+    private bool _artistSortAscending = true;
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsArtistSortActive))]
+    private string _artistSortMode = "name";
+    public bool ArtistSortDescending => !ArtistSortAscending;
+
+    public void ShowArtistSort(ICommand sortCommand, string label, string mode, bool ascending)
+    {
+        ArtistSortCommand = sortCommand;
+        ArtistSortLabel = label;
+        ArtistSortMode = mode;
+        ArtistSortAscending = ascending;
+        HasArtistSort = true;
+    }
+
+    public void HideArtistSort()
+    {
+        HasArtistSort = false;
+        ArtistSortCommand = null;
+    }
     [ObservableProperty] private ICommand? _pageCreatePlaylistCommand;
     [ObservableProperty] private ICommand? _pageCreateSmartPlaylistCommand;
     [ObservableProperty] private ICommand? _pageImportPlaylistCommand;
@@ -176,6 +256,9 @@ public partial class TopBarViewModel : ViewModelBase
     // Albums sort chip above. Rides HasPlaylistActions so it appears and disappears with
     // the New button rather than needing its own visibility flag.
     [ObservableProperty] private string _playlistSortLabel = "Default";
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsPlaylistSortActive))]
+    private string _playlistSortMode = "default";
     [ObservableProperty] private ICommand? _playlistSortCommand;
 
     // Global view mode toggle (Library / Cover Flow) — shown on Home, Songs, Albums, Artists, Folders, Playlists, Favorites
@@ -185,6 +268,9 @@ public partial class TopBarViewModel : ViewModelBase
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(PageActionsVisible))]
     [NotifyPropertyChangedFor(nameof(SongsFiltersVisible))]
+    [NotifyPropertyChangedFor(nameof(PlaylistActionsVisible))]
+    [NotifyPropertyChangedFor(nameof(FoldersActionsVisible))]
+    [NotifyPropertyChangedFor(nameof(FavoritesActionsVisible))]
     [NotifyPropertyChangedFor(nameof(PageTitleDisplay))]
     [NotifyPropertyChangedFor(nameof(HasBarContent))]
     private bool _isCoverFlowMode;
@@ -207,6 +293,7 @@ public partial class TopBarViewModel : ViewModelBase
     // Folders action buttons (Play / Shuffle / Manage Folders)
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasBarContent))]
+    [NotifyPropertyChangedFor(nameof(FoldersActionsVisible))]
     private bool _hasFoldersActions;
     [ObservableProperty] private ICommand? _pagePlayFolderCommand;
     [ObservableProperty] private ICommand? _pageShuffleFolderCommand;
@@ -215,12 +302,17 @@ public partial class TopBarViewModel : ViewModelBase
     // Favorites action buttons
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasBarContent))]
+    [NotifyPropertyChangedFor(nameof(FavoritesActionsVisible))]
     private bool _hasFavoritesActions;
     [ObservableProperty] private ICommand? _pageShuffleFavoritesCommand;
     [ObservableProperty] private ICommand? _pagePlayFavoritesCommand;
-    [ObservableProperty] private bool _pageShowOnlyFavorites;
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsSongsFilterActive))]
+    private bool _pageShowOnlyFavorites;
     [ObservableProperty] private bool _pageSortAscending = true;
-    [ObservableProperty] private string _pageSortColumn = string.Empty;
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsSongsSortActive))]
+    private string _pageSortColumn = string.Empty;
     [ObservableProperty] private ICommand? _pageSetShowAllItemsCommand;
     [ObservableProperty] private ICommand? _pageSetShowOnlyFavoritesCommand;
     [ObservableProperty] private ICommand? _pageSortCommand;
@@ -338,13 +430,16 @@ public partial class TopBarViewModel : ViewModelBase
     }
 
     public void ShowViewModeToggle(ICommand setLibraryMode, ICommand setCoverFlowMode, bool isCoverFlowMode,
-        ICommand? toggleCollageMode = null, bool isCollageMode = false)
+        ICommand? toggleCollageMode = null, bool isCollageMode = false,
+        ICommand? setLayoutCommand = null, string? layoutLabel = null)
     {
         SetLibraryModeCommand = setLibraryMode;
         SetCoverFlowModeCommand = setCoverFlowMode;
         IsCoverFlowMode = isCoverFlowMode;
         ToggleCollageModeCommand = toggleCollageMode;
         IsCollageMode = isCollageMode;
+        SetCoverFlowLayoutCommand = setLayoutCommand;
+        if (layoutLabel != null) CoverFlowLayoutLabel = layoutLabel;
         HasViewModeToggle = true;
     }
 
@@ -378,6 +473,7 @@ public partial class TopBarViewModel : ViewModelBase
     // is. AlbumSortMode is compared per item via StringEqualsConverter.
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(AlbumSortDirectionEnabled))]
+    [NotifyPropertyChangedFor(nameof(IsAlbumSortActive))]
     private string _albumSortMode = "default";
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(AlbumSortDescending))]
@@ -391,9 +487,40 @@ public partial class TopBarViewModel : ViewModelBase
 
     // Dropdown variants of the release-type / quality filters (albums grid top bar).
     [ObservableProperty] private ICommand? _releaseTypeFilterCommand;
-    [ObservableProperty] private string _releaseTypeFilterLabel = "All";
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsReleaseTypeFiltered))]
+    [NotifyPropertyChangedFor(nameof(IsAlbumFilterActive))]
+    private string _releaseTypeFilterLabel = "All";
     [ObservableProperty] private ICommand? _qualityFilterCommand;
-    [ObservableProperty] private string _qualityFilterLabel = "All";
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(AlbumQualityAll))]
+    [NotifyPropertyChangedFor(nameof(AlbumQualityLossless))]
+    [NotifyPropertyChangedFor(nameof(AlbumQualityHiRes))]
+    [NotifyPropertyChangedFor(nameof(IsAlbumFilterActive))]
+    private string _qualityFilterLabel = "All";
+
+    // Albums quality pill segments (mirrors the Songs pill; label is what the albums VM reports).
+    public bool AlbumQualityAll => QualityFilterLabel == "All";
+    public bool AlbumQualityLossless => QualityFilterLabel == "Lossless";
+    public bool AlbumQualityHiRes => QualityFilterLabel == "Hi-Res";
+
+    // ── Corner icon "not at default" dots ──
+    //
+    // The top-right corner shows filter / sort as round icon buttons (no label, no
+    // value at rest); a small accent dot on the icon says the control is away from its
+    // default, so a filtered or re-sorted grid never looks like the plain one. The
+    // labels compared here are the raw keys the grid view-models report, not localized
+    // text (LibraryAlbumsViewModel.ReleaseTypeFilterLabel etc. are English constants).
+    public bool IsReleaseTypeFiltered => ReleaseTypeFilterLabel != "All";
+    public bool IsAlbumFilterActive => IsReleaseTypeFiltered || QualityFilterLabel != "All";
+    public bool IsAlbumSortActive => AlbumSortMode != "default";
+    /// <summary>The quality part only counts where the quality items are offered (Songs page);
+    /// the filter string is not reset when another page hides them.</summary>
+    public bool IsSongsFilterActive => PageShowOnlyFavorites || (HasSongsFilters && SongsQualityFilter != "All");
+    /// <summary>Songs default order is "Date Added" (LibrarySongsViewModel); empty = not reported yet.</summary>
+    public bool IsSongsSortActive => PageSortColumn is not ("" or "Date Added");
+    public bool IsArtistSortActive => ArtistSortMode != "name";
+    public bool IsPlaylistSortActive => PlaylistSortMode != "default";
 
     public void ShowReleaseTypeChips(ObservableCollection<ReleaseTypeChip> chips, ICommand selectCommand,
         ObservableCollection<QualityChip>? qualityChips = null, ICommand? qualityCommand = null,

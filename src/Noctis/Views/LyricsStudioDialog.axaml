@@ -1,0 +1,32 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:loc="using:Noctis.Localization"
+        xmlns:vm="using:Noctis.ViewModels"
+        xmlns:views="using:Noctis.Views"
+        x:Class="Noctis.Views.LyricsStudioDialog"
+        x:DataType="vm:LyricsStudioViewModel"
+        Title="{loc:T LyricsStudio.Title}"
+        CanResize="False"
+        SystemDecorations="None"
+        TransparencyLevelHint="Transparent"
+        Background="Transparent"
+        ShowInTaskbar="False"
+        WindowStartupLocation="CenterOwner">
+
+    <!-- Per-song Lyrics Studio (right-click → Lyrics Studio). The surface itself lives in
+         LyricsStudioPanel, shared with the sidebar's Lyrics Studio page. -->
+    <Border Background="#50000000">
+        <Border CornerRadius="20"
+                ClipToBounds="True"
+                Background="{DynamicResource AppMainBackground}"
+                Width="1000"
+                Height="720"
+                MaxHeight="900"
+                Margin="0,40"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                BoxShadow="0 8 32 0 #80000000, 0 0 0 1 #33FFFFFF">
+            <views:LyricsStudioPanel />
+        </Border>
+    </Border>
+</Window>

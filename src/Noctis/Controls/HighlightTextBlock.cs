@@ -52,20 +52,46 @@ public class HighlightTextBlock : TextBlock
         if (change.Property == DisplayTextProperty ||
             change.Property == HighlightTextProperty ||
             change.Property == HighlightForegroundProperty ||
-            change.Property == IsExplicitProperty ||
-            change.Property == FontFamilyProperty ||
-            change.Property == ForegroundProperty ||
-            change.Property == FontWeightProperty)
+            change.Property == IsExplicitProperty)
         {
+            UpdateInlines();
+        }
+        else if ((change.Property == FontFamilyProperty ||
+                  change.Property == ForegroundProperty ||
+                  change.Property == FontWeightProperty) && Inlines is { Count: > 0 })
+        {
+            // Runs copy the font properties, so only a block that actually holds runs has to
+            // rebuild them. On the plain-Text path these fire once each as styles land during
+            // realization and used to rebuild the inlines three times per tile for nothing.
             UpdateInlines();
         }
     }
 
     private void UpdateInlines()
     {
+        var text = DisplayText ?? string.Empty;
+        var query = HighlightText;
+        var needsInlines = IsExplicit ||
+            (!string.IsNullOrWhiteSpace(query) && FindMatchRanges(text, query.Trim()).Count > 0);
+
+        if (!needsInlines)
+        {
+            // Plain Text, no runs. Inline layout costs several times a plain run and every
+            // grid tile / list row paid it with no query active: 3.4ms of a realized Artists
+            // row of seven, a third of the hitch the wheel glide showed on each new row (09-12).
+            if (Inlines is { Count: > 0 }) Inlines.Clear();
+            if (Text != text) Text = text;
+            return;
+        }
+
+        // Leaving the plain path: the fast path above wrote the title into Text, and a
+        // TextBlock renders Text AND its Inlines when both are set — Favorites showed
+        // "VolvíVolví" for every explicit single until a later relayout
+        // (HighlightTextBlockExplicitTests pins it). Clear Text before the runs go in.
+        if (!string.IsNullOrEmpty(Text)) Text = string.Empty;
         Inlines?.Clear();
 
-        foreach (var segment in BuildSegments(DisplayText ?? string.Empty, HighlightText))
+        foreach (var segment in BuildSegments(text, query))
         {
             Inlines?.Add(new Run
             {
@@ -85,7 +111,7 @@ public class HighlightTextBlock : TextBlock
         var badgeText = new TextBlock
         {
             Text = "E",
-            FontSize = 9,
+            FontSize = 8,
             Opacity = 0.9
         };
         badgeText.Classes.Add("explicit-badge-text");

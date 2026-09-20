@@ -29,6 +29,7 @@ public partial class AlbumDetailViewModel : ViewModelBase, IDisposable
     private readonly EventHandler _libraryUpdatedHandler;
     private readonly EventHandler _favoritesChangedHandler;
     private readonly System.ComponentModel.PropertyChangedEventHandler? _settingsPropertyChangedHandler;
+    private readonly EventHandler<string>? _themeChangedHandler;
 
     /// <summary>Saved scroll offset for restoring position after navigation.</summary>
     public double SavedScrollOffset { get; set; }
@@ -216,8 +217,13 @@ public partial class AlbumDetailViewModel : ViewModelBase, IDisposable
                         OnPropertyChanged(nameof(IsCurrentAlbumPlaying));
                         OnPropertyChanged(nameof(ShowAnimatedCover));
                     });
+                else if (e.PropertyName == nameof(SettingsViewModel.AlbumPageTintEnabled))
+                    Dispatcher.UIThread.Post(RebuildBackgroundBrush);
             };
             _settings.PropertyChanged += _settingsPropertyChangedHandler;
+            // A theme switch flips the untinted page text between the variants' colours.
+            _themeChangedHandler = (_, _) => Dispatcher.UIThread.Post(RebuildBackgroundBrush);
+            _settings.ThemeChanged += _themeChangedHandler;
         }
 
         // Build related-album sections from the local library.
@@ -345,14 +351,77 @@ public partial class AlbumDetailViewModel : ViewModelBase, IDisposable
         RebuildBackgroundBrush();
     }
 
+    // The header art path is set synchronously in the ctor and again on library
+    // refresh; the tint follows it (the Bitmap-based AlbumArt is never assigned now).
+    partial void OnHeaderArtPathChanged(string? value) => RebuildBackgroundBrush();
+
     private void RebuildBackgroundBrush()
     {
-        BackgroundBrush = null;
-        IsLightTint = false;
-        PageForegroundBrush = Brushes.White;
-        PageSubtleForegroundBrush = new SolidColorBrush(Color.FromArgb(0xB0, 0xFF, 0xFF, 0xFF));
-        PageDividerBrush = new SolidColorBrush(Color.FromArgb(0x1F, 0xFF, 0xFF, 0xFF));
+        // Apple-Music-style page tint (docs/superpowers/specs/2026-05-04-album-page-tint-design.md):
+        // the cover's edge colour becomes the page background and the page text flips
+        // dark on light covers. Extraction is a Skia decode + ring histogram, so it runs
+        // on a worker and lands via the generation guard — a page that navigated on
+        // before its colour arrived never gets the previous album's tint.
+        var generation = ++_tintGeneration;
+        var artPath = HeaderArtPath;
+        if (artPath == null || _settings?.AlbumPageTintEnabled != true)
+        {
+            ApplyTint(null);
+            return;
+        }
+
+        _ = Task.Run(() =>
+        {
+            var color = DominantColorExtractor.ExtractEdgeBackgroundColorFromFile(artPath);
+            Dispatcher.UIThread.Post(() =>
+            {
+                if (generation != _tintGeneration) return;
+                ApplyTint(color);
+            });
+        });
     }
+
+    private int _tintGeneration;
+
+    /// <summary>True while the app runs a light-variant theme (Light); the page text is
+    /// dark on those surfaces whenever no cover tint overrides it.</summary>
+    private static bool IsLightThemeActive() =>
+        Avalonia.Application.Current?.ActualThemeVariant == Avalonia.Styling.ThemeVariant.Light;
+
+    /// <summary>Luminance above which the page text goes dark (spec §2).</summary>
+    public const double LightTintThreshold = 0.55;
+
+    /// <summary>Applies a tint colour (or clears it) and derives the page foreground family.
+    /// Public for tests; callers on the UI thread only.</summary>
+    public void ApplyTint(Color? tint)
+    {
+        bool light;
+        if (tint is not { } color)
+        {
+            // No tint: the page sits on the theme surface, so the text follows the theme
+            // variant (white text on the Light theme was invisible, 09-17).
+            BackgroundBrush = null;
+            IsLightTint = false;
+            light = IsLightThemeActive();
+        }
+        else
+        {
+            BackgroundBrush = BuildTintBrush(color);
+            light = DominantColorExtractor.GetRelativeLuminance(color) > LightTintThreshold;
+            IsLightTint = light;
+        }
+        PageForegroundBrush = light ? new SolidColorBrush(Color.FromRgb(0x11, 0x11, 0x11)) : Brushes.White;
+        PageSubtleForegroundBrush = new SolidColorBrush(light
+            ? Color.FromArgb(0x66, 0x00, 0x00, 0x00)
+            : Color.FromArgb(0xB0, 0xFF, 0xFF, 0xFF));
+        PageDividerBrush = new SolidColorBrush(light
+            ? Color.FromArgb(0x1F, 0x00, 0x00, 0x00)
+            : Color.FromArgb(0x1F, 0xFF, 0xFF, 0xFF));
+    }
+
+    /// <summary>The album block's fill for a tint: the cover's edge colour, flat, the way
+    /// iTunes' expanded album view painted it (user ask 2026-09-07: no gradient).</summary>
+    public static SolidColorBrush BuildTintBrush(Color color) => new(color);
 
     private void BuildRelatedSections()
     {
@@ -642,11 +711,47 @@ public partial class AlbumDetailViewModel : ViewModelBase, IDisposable
     [RelayCommand]
     private void SnoozeForMonth(Track track) => _player.SnoozeForMonthCommand.Execute(track);
 
+    /// <summary>Star click on a row or Rate ▸ in its menu.</summary>
+    public Task RateAsync(Track track, int stars) => _library.SetTracksRatingAsync(new[] { track }, stars);
+
     [RelayCommand]
-    private void AddAlbumToQueue()
+    private Task RateTrack(RateRequest request) => RateAsync(request.Track, request.Stars);
+
+    [RelayCommand]
+    private Task FetchLyrics(Track track) => MetadataHelper.OpenBulkLyricsDialog(new[] { track }, remove: false);
+
+    [RelayCommand]
+    private Task RemoveLyrics(Track track) => MetadataHelper.OpenBulkLyricsDialog(new[] { track }, remove: true);
+
+    [RelayCommand]
+    private Task OpenLyricsStudio(Track track) => MetadataHelper.OpenLyricsStudio(new[] { track });
+
+    [RelayCommand]
+    private Task SendToFolder(Track track) => MetadataHelper.OpenSendToFolderDialog(new[] { track });
+
+    /// <summary>Whole album → folder / Lyrics Studio (header menu).</summary>
+    [RelayCommand]
+    private Task SendAlbumToFolder() => Tracks.Count == 0 ? Task.CompletedTask : MetadataHelper.OpenSendToFolderDialog(Tracks.ToList());
+
+    [RelayCommand]
+    private Task OpenAlbumInLyricsStudio() => Tracks.Count == 0 ? Task.CompletedTask : MetadataHelper.OpenLyricsStudio(Tracks.ToList());
+
+    /// <summary>True for a moment after the header's Add to Queue: the button reads
+    /// "Added" so the click visibly did something (the queue panel may be closed).</summary>
+    [ObservableProperty] private bool _albumAddedToQueue;
+    private int _albumAddedGeneration;
+
+    [RelayCommand]
+    private async Task AddAlbumToQueue()
     {
         if (Tracks.Count == 0) return;
         _player.AddRangeToQueue(InAlbumOrder(Tracks));
+
+        var generation = ++_albumAddedGeneration;
+        AlbumAddedToQueue = true;
+        await Task.Delay(1500);
+        if (generation == _albumAddedGeneration)
+            AlbumAddedToQueue = false;
     }
 
     /// <summary>Tracks Ctrl-selected in the album track list. Set by the view's code-behind.</summary>
@@ -912,6 +1017,8 @@ public partial class AlbumDetailViewModel : ViewModelBase, IDisposable
         _library.FavoritesChanged -= _favoritesChangedHandler;
         if (_settings != null && _settingsPropertyChangedHandler != null)
             _settings.PropertyChanged -= _settingsPropertyChangedHandler;
+        if (_settings != null && _themeChangedHandler != null)
+            _settings.ThemeChanged -= _themeChangedHandler;
         AlbumArt?.Dispose();
         AlbumArt = null;
     }

@@ -16,9 +16,7 @@ dotnet publish src\Noctis\Noctis.csproj ^
     -c Release ^
     -r win-x64 ^
     --self-contained true ^
-    -p:PublishSingleFile=true ^
-    -p:IncludeNativeLibrariesForSelfExtract=false ^
-    -p:EnableCompressionInSingleFile=true ^
+    -p:PublishSingleFile=false ^
     -o publish\win-x64
 
 if %ERRORLEVEL% NEQ 0 (

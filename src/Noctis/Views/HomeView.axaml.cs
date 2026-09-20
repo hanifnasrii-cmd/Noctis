@@ -18,13 +18,55 @@ public partial class HomeView : UserControl
 
     private readonly HashSet<Button> _selectedTiles = new();
 
+    /// <summary>Below this width Last Played drops under Most Played.</summary>
+    private const double HeroTwoColumnMinWidth = 1100;
+    private bool _heroNarrow;
+
     public HomeView()
     {
         InitializeComponent();
         AddHandler(PointerPressedEvent, OnTilePointerPressed, RoutingStrategies.Tunnel);
+        SizeChanged += (_, e) => UpdateHeroLayout(e.NewSize.Width);
         // Forward Ctrl+A from the window so it works without first clicking a tile.
         _ = new WindowKeyForwarder(this, OnViewKeyDown);
     }
+
+    /// <summary>
+    /// Two equal columns (Most Played | Last Played) when there is room; one column with
+    /// Last Played underneath otherwise. Only touches the grid when the mode actually flips.
+    /// </summary>
+    private void UpdateHeroLayout(double width)
+    {
+        var narrow = width > 0 && width < HeroTwoColumnMinWidth;
+        if (narrow == _heroNarrow) return;
+        _heroNarrow = narrow;
+
+        if (narrow)
+        {
+            HeroGrid.ColumnDefinitions[1].Width = new GridLength(0);
+            HeroGrid.ColumnDefinitions[2].Width = new GridLength(0);
+            Grid.SetColumn(LastPlayedPanel, 0);
+            Grid.SetRow(LastPlayedPanel, 2);
+            LastPlayedPanel.Margin = new Thickness(0, 32, 0, 0);
+        }
+        else
+        {
+            HeroGrid.ColumnDefinitions[1].Width = new GridLength(28);
+            HeroGrid.ColumnDefinitions[2].Width = new GridLength(1, GridUnitType.Star);
+            Grid.SetColumn(LastPlayedPanel, 2);
+            Grid.SetRow(LastPlayedPanel, 1);
+            LastPlayedPanel.Margin = default;
+        }
+    }
+
+    /// <summary>
+    /// Albums row covers follow the Albums-page tile size for the row's own width. The
+    /// row measures itself rather than the page: the page width minus margins ignored the
+    /// scroll viewer's bar, so five tiles came out a few pixels too wide and the fifth
+    /// wrapped (09-13). The 2px slack absorbs layout rounding.
+    /// </summary>
+    private void OnAlbumsRowSizeChanged(object? sender, SizeChangedEventArgs e)
+        => (DataContext as HomeViewModel)?.UpdateAlbumTileSize(e.NewSize.Width - 2);
 
     private void OnTilePointerPressed(object? sender, PointerPressedEventArgs e)
     {
@@ -65,8 +107,29 @@ public partial class HomeView : UserControl
     private AlbumContextMenuBuilder? _albumMenuBuilder;
     private Control? _menuOwner;
 
-    private void OnTopSongContextRequested(object? sender, ContextRequestedEventArgs e)
-        => OpenTrackMenu(sender, e, static vm => vm.PlayTopSongCommand, static vm => vm.ShuffleTopSongsCommand);
+    // Most Played and Last Played share one row template; the row says which list it is in.
+    private static bool IsLastPlayedRow(Control? c) => c?.DataContext is TopSongRow { IsLastPlayed: true };
+
+    /// <summary>A chart row plays on DOUBLE click (user ask 09-14), like every flat track
+    /// list in the app; a single click leaves the row alone. Taps that land on a button
+    /// inside the row belong to that button.</summary>
+    private void OnChartRowDoubleTapped(object? sender, TappedEventArgs e)
+    {
+        if (sender is not Control row || row.DataContext is not TopSongRow item) return;
+        if (e.Source is Control source && source.FindAncestorOfType<Button>(true) is { } inner
+            && !ReferenceEquals(inner, row)) return;
+        if (DataContext is not HomeViewModel vm) return;
+        vm.PlayChartRowCommand.Execute(item);
+    }
+
+    private void OnChartRowContextRequested(object? sender, ContextRequestedEventArgs e)
+    {
+        if (IsLastPlayedRow(sender as Control))
+            OpenTrackMenu(sender, e, static vm => vm.PlayLastPlayedCommand, static vm => vm.ShuffleLastPlayedCommand);
+        else
+            OpenTrackMenu(sender, e, static vm => vm.PlayTopSongCommand, static vm => vm.ShuffleTopSongsCommand);
+    }
+
 
     private void OnTimeRotationContextRequested(object? sender, ContextRequestedEventArgs e)
         => OpenTrackMenu(sender, e, static vm => vm.PlayTimeRotationCommand, static vm => vm.ShuffleTimeRotationCommand);
@@ -80,7 +143,14 @@ public partial class HomeView : UserControl
     private void OpenTrackMenu(object? sender, ContextRequestedEventArgs e,
         Func<HomeViewModel, ICommand> playCommand, Func<HomeViewModel, ICommand> shuffleCommand)
     {
-        if (sender is not Control owner) return;
+        if (OpenTrackMenu(sender as Control, playCommand, shuffleCommand))
+            e.Handled = true;
+    }
+
+    private bool OpenTrackMenu(Control? owner,
+        Func<HomeViewModel, ICommand> playCommand, Func<HomeViewModel, ICommand> shuffleCommand)
+    {
+        if (owner == null) return false;
         // Top-song rows wrap their Track in a TopSongRow for rank/bar display.
         var track = owner.DataContext switch
         {
@@ -88,8 +158,8 @@ public partial class HomeView : UserControl
             TopSongRow r => r.Track,
             _ => null,
         };
-        if (track == null) return;
-        if (DataContext is not HomeViewModel vm) return;
+        if (track == null) return false;
+        if (DataContext is not HomeViewModel vm) return false;
 
         if (_trackMenuBuilder == null)
         {
@@ -115,12 +185,15 @@ public partial class HomeView : UserControl
             snoozeCommand: vm.SnoozeForMonthCommand);
 
         OpenMenu(_trackMenuBuilder.Menu, owner);
-        e.Handled = true;
+        return true;
     }
 
     private void OnRecentAlbumContextRequested(object? sender, ContextRequestedEventArgs e)
     {
-        if (sender is not Control owner || owner.DataContext is not Album album) return;
+        if (sender is not Control owner) return;
+        // The rail's featured card sits on the page VM and carries its Album in Tag.
+        var album = owner.DataContext as Album ?? owner.Tag as Album;
+        if (album == null) return;
         if (DataContext is not HomeViewModel vm) return;
 
         // Push ctrl-selected albums to ViewModel so commands can operate on all of them
@@ -227,5 +300,12 @@ public partial class HomeView : UserControl
 
             LayoutUpdated += _pendingScrollRestore;
         }
+    }
+
+    /// <summary>Tile hover dots: the same menu a right-click on the tile opens.</summary>
+    private void OnTileMoreClick(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        Helpers.AlbumTile.OpenMenu(sender);
+        e.Handled = true;
     }
 }

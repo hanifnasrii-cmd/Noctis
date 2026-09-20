@@ -1382,20 +1382,8 @@ public static class ShareCardRenderer
             // below ever runs, so a 20000×20000 cover next to a track — or embedded in a
             // downloaded one — meant a ~1.6 GB allocation and an OOM kill, on a path that
             // runs at every track change.
-            using var codec = SKCodec.Create(path);
-            if (codec == null) return null;
-
-            var info = codec.Info;
-            var longest = Math.Max(info.Width, info.Height);
-            var sample = 1;
-            while (longest / sample > MaxDecodeDimension) sample *= 2;
-
-            using var raw = sample > 1
-                ? SKBitmap.Decode(codec, new SKImageInfo(
-                    Math.Max(1, info.Width / sample),
-                    Math.Max(1, info.Height / sample),
-                    SKColorType.Bgra8888, SKAlphaType.Premul))
-                : SKBitmap.Decode(path);
+            using var raw = Helpers.SkiaArtworkDecoder.DecodeSubsampled(path, MaxDecodeDimension);
+            if (raw == null) return null;
 
             // Downscale once so the color passes and card drawing stay cheap. 1024px keeps
             // the artwork sharp on the 2× supersampled export (poster art draws at ~920px).

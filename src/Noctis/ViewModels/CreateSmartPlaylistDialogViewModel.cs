@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Noctis.Models;
@@ -16,6 +17,14 @@ public partial class SmartPlaylistRuleViewModel : ViewModelBase
     [ObservableProperty] private string _value = string.Empty;
     [ObservableProperty] private string _value2 = string.Empty;
     [ObservableProperty] private RuleOperator[] _availableOperators = [];
+
+    /// <summary>
+    /// Drives the row's <see cref="Noctis.Controls.CollapsibleContent"/> — the same glide
+    /// the Settings ▸ Integrations "Show Album on Discord" block uses. A new rule is built
+    /// shut and opened once its container has been laid out; removing one shuts it first
+    /// and drops it from the collection when the fold has played out.
+    /// </summary>
+    [ObservableProperty] private bool _isRevealed;
 
     public bool ShowValueInput => SelectedOperator is not RuleOperator.IsTrue
                                   and not RuleOperator.IsFalse;
@@ -94,29 +103,56 @@ public partial class CreateSmartPlaylistDialogViewModel : ViewModelBase
     public event EventHandler<Playlist>? SmartPlaylistCreated;
     public event EventHandler? CloseRequested;
 
+    /// <summary>
+    /// How long the row's fold takes to shut — CollapsibleContent's Glide close. A removed
+    /// rule leaves the collection only after this, so the row folds away instead of
+    /// vanishing under the pointer.
+    /// </summary>
+    private static readonly TimeSpan RuleCloseDuration = TimeSpan.FromMilliseconds(240);
+
     public CreateSmartPlaylistDialogViewModel(ILibraryService library)
     {
         _library = library;
-        AddRule();
+        // The dialog's own opening animation covers the first rule, so it starts open
+        // rather than gliding in behind the card's fade.
+        AddRule(revealed: true);
     }
 
     [RelayCommand]
-    private void AddRule()
+    private void AddRule() => AddRule(revealed: false);
+
+    private void AddRule(bool revealed)
     {
         var ruleVm = new SmartPlaylistRuleViewModel
         {
-            AvailableOperators = SmartPlaylistEvaluator.GetOperatorsForField(RuleField.Artist)
+            AvailableOperators = SmartPlaylistEvaluator.GetOperatorsForField(RuleField.Artist),
+            IsRevealed = revealed,
         };
         ruleVm.PropertyChanged += (_, _) => UpdatePreviewCount();
         Rules.Add(ruleVm);
         UpdatePreviewCount();
+
+        if (revealed) return;
+        // Opened after the container exists and CollapsibleContent has armed its
+        // transitions (it arms at Loaded priority on attach), so the row glides open
+        // instead of snapping to full height on its first layout pass.
+        Dispatcher.UIThread.Post(() => ruleVm.IsRevealed = true, DispatcherPriority.Background);
     }
 
     [RelayCommand]
     private void RemoveRule(SmartPlaylistRuleViewModel rule)
     {
-        Rules.Remove(rule);
-        UpdatePreviewCount();
+        if (!Rules.Contains(rule)) return;
+
+        // Drop it from the preview straight away — the count must not lag the click —
+        // but leave the row in place, folding, until the glide has finished.
+        rule.IsRevealed = false;
+        UpdatePreviewCount(Rules.Where(r => !ReferenceEquals(r, rule)));
+        DispatcherTimer.RunOnce(() =>
+        {
+            Rules.Remove(rule);
+            UpdatePreviewCount();
+        }, RuleCloseDuration);
     }
 
     [RelayCommand]
@@ -151,9 +187,17 @@ public partial class CreateSmartPlaylistDialogViewModel : ViewModelBase
         CloseRequested?.Invoke(this, EventArgs.Empty);
     }
 
-    private void UpdatePreviewCount()
+    private void UpdatePreviewCount() => UpdatePreviewCount(Rules);
+
+    /// <summary>
+    /// Counts matches for an explicit rule set. A rule being removed is still in
+    /// <see cref="Rules"/> while its row folds away, so the caller passes the set
+    /// WITHOUT it rather than waiting for the animation to finish.
+    /// </summary>
+    private void UpdatePreviewCount(IEnumerable<SmartPlaylistRuleViewModel> rules)
     {
-        if (Rules.Count == 0)
+        var active = rules as IReadOnlyList<SmartPlaylistRuleViewModel> ?? rules.ToList();
+        if (active.Count == 0)
         {
             MatchingTrackCount = 0;
             return;
@@ -162,7 +206,7 @@ public partial class CreateSmartPlaylistDialogViewModel : ViewModelBase
         var tempPlaylist = new Playlist
         {
             IsSmartPlaylist = true,
-            Rules = Rules.Select(r => r.ToModel()).ToList(),
+            Rules = active.Select(r => r.ToModel()).ToList(),
             MatchAll = MatchAll,
             LimitCount = HasLimit ? LimitCount : null,
             SortBy = HasLimit ? (SortBy ?? SmartPlaylistSortBy.MostPlayed) : null

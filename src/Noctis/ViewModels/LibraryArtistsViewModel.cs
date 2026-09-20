@@ -1,4 +1,4 @@
-using Avalonia.Threading;
+﻿using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Noctis.Helpers;
@@ -31,6 +31,43 @@ public partial class LibraryArtistsViewModel : ViewModelBase, ISearchable, IDisp
     [ObservableProperty] private bool _isSearchVisible = false;
     [ObservableProperty] private string _searchText = string.Empty;
     public bool HasActiveFilter => !string.IsNullOrWhiteSpace(_currentFilter);
+
+    // ── Sort (Name / Songs / Albums + direction) ──
+    // Mirrored into the top bar by MainWindowViewModel, persisted through SettingsViewModel
+    // (same pattern as the Albums grid sort). Favorites float to the top only for the
+    // name sort; a count sort is a ranking, so favorites take their real rank there.
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(SortLabel))]
+    private string _sortMode = "name";
+    [ObservableProperty] private bool _sortAscending = true;
+
+    public string SortLabel => SortMode switch
+    {
+        "songs" => "Song count",
+        "albums" => "Album count",
+        _ => "Name",
+    };
+
+    /// <summary>Top-bar sort menu: a mode ("name" / "songs" / "albums") or "Ascending" / "Descending".</summary>
+    [RelayCommand]
+    private void SetSort(string? parameter)
+    {
+        switch (parameter)
+        {
+            case "Ascending": SortAscending = true; break;
+            case "Descending": SortAscending = false; break;
+            case "name" or "songs" or "albums":
+                if (SortMode == parameter) return;
+                SortMode = parameter;
+                // Counts read naturally biggest-first; names A→Z.
+                SortAscending = parameter == "name";
+                break;
+            default: return;
+        }
+    }
+
+    partial void OnSortModeChanged(string value) => ApplyFilter(_currentFilter);
+    partial void OnSortAscendingChanged(bool value) => ApplyFilter(_currentFilter);
 
     /// <summary>Saved scroll offset for restoring position after navigation.</summary>
     public double SavedScrollOffset { get; set; }
@@ -88,7 +125,14 @@ public partial class LibraryArtistsViewModel : ViewModelBase, ISearchable, IDisp
     public void Refresh()
     {
         if (!_isDirty && ArtistRows.Count > 0)
+        {
+            // Nothing to rebuild, but cached portraits may be due for a re-check against
+            // the service (ArtistImageService.RefreshInterval). Kicking the sweep here is
+            // what lets a changed photo land without a library change; throttled so
+            // tab-hopping doesn't queue a full-library pass every time.
+            KickImageSweepIfDue();
             return;
+        }
         _isDirty = false;
 
         _allArtists = _library.Artists.ToList();
@@ -103,28 +147,45 @@ public partial class LibraryArtistsViewModel : ViewModelBase, ISearchable, IDisp
         _ = SweepMissingArtistImagesAsync(_allArtists);
 
         // Trigger background artist image fetch
-        if (_artistImageService != null && _allArtists.Count > 0)
-        {
-            if (_imageRefreshDebounce == null)
-            {
-                _imageRefreshDebounce = new DispatcherTimer { Interval = TimeSpan.FromSeconds(2) };
-                _imageRefreshDebounce.Tick += (_, _) =>
-                {
-                    _imageRefreshDebounce.Stop();
-                    ApplyFilter(_currentFilter);
-                };
-            }
+        KickImageSweep();
+    }
 
-            _ = _artistImageService.FetchAndCacheAsync(_allArtists, (artist, path) =>
+    /// <summary>Wall-clock of the last sweep kick; gates <see cref="KickImageSweepIfDue"/>.</summary>
+    private DateTime _lastImageSweepUtc = DateTime.MinValue;
+
+    /// <summary>Minimum spacing between sweeps kicked by a no-op Refresh (tab activation).</summary>
+    internal static readonly TimeSpan ImageSweepThrottle = TimeSpan.FromMinutes(10);
+
+    private void KickImageSweepIfDue()
+    {
+        if (DateTime.UtcNow - _lastImageSweepUtc < ImageSweepThrottle) return;
+        KickImageSweep();
+    }
+
+    private void KickImageSweep()
+    {
+        if (_artistImageService == null || _allArtists.Count == 0) return;
+        _lastImageSweepUtc = DateTime.UtcNow;
+
+        if (_imageRefreshDebounce == null)
+        {
+            _imageRefreshDebounce = new DispatcherTimer { Interval = TimeSpan.FromSeconds(2) };
+            _imageRefreshDebounce.Tick += (_, _) =>
             {
-                // Debounce list rebuild — batch image updates every 2 seconds
-                Dispatcher.UIThread.Post(() =>
-                {
-                    _imageRefreshDebounce.Stop();
-                    _imageRefreshDebounce.Start();
-                });
-            });
+                _imageRefreshDebounce.Stop();
+                ApplyFilter(_currentFilter);
+            };
         }
+
+        _ = _artistImageService.FetchAndCacheAsync(_allArtists, (artist, path) =>
+        {
+            // Debounce list rebuild — batch image updates every 2 seconds
+            Dispatcher.UIThread.Post(() =>
+            {
+                _imageRefreshDebounce.Stop();
+                _imageRefreshDebounce.Start();
+            });
+        });
     }
 
     private async Task SweepMissingArtistImagesAsync(List<Artist> artists)
@@ -170,9 +231,11 @@ public partial class LibraryArtistsViewModel : ViewModelBase, ISearchable, IDisp
         // keeps its previous rows for the few frames the fresh list takes.
         var generation = Interlocked.Increment(ref _rebuildGeneration);
         var artists = _allArtists;
+        var sortMode = SortMode;
+        var ascending = SortAscending;
         ThreadPool.QueueUserWorkItem(_ =>
         {
-            var rows = BuildRows(artists, query);
+            var rows = BuildRows(artists, query, sortMode, ascending);
             if (Volatile.Read(ref _rebuildGeneration) == generation)
                 Dispatcher.UIThread.Post(() =>
                 {
@@ -183,26 +246,27 @@ public partial class LibraryArtistsViewModel : ViewModelBase, ISearchable, IDisp
     }
 
     private static List<ArtistRow> BuildRows(List<Artist> allArtists, string query)
+        => BuildRows(allArtists, query, "name", ascending: true);
+
+    /// <summary>
+    /// Pure ordering logic (static for unit tests). Under a search the match rank stays
+    /// first and the chosen sort only breaks ties inside a rank, so relevance is intact.
+    /// </summary>
+    internal static List<ArtistRow> BuildRows(List<Artist> allArtists, string query, string sortMode, bool ascending)
     {
-        // Favorites float to the top, alphabetical among themselves (GitHub #41).
-        // Under a search they only break ties within the same match rank, so the
-        // relevance ordering stays intact.
         IEnumerable<Artist> filtered;
         if (!string.IsNullOrWhiteSpace(query))
         {
             var q = query.Trim();
             var qNoSpaces = RemoveWhitespace(q);
-            filtered = allArtists
-                .Where(a => MatchesSearch(a.Name, q, qNoSpaces))
-                .OrderBy(a => RankMatch(a.Name, q, qNoSpaces))
-                .ThenByDescending(a => a.IsFavorite)
-                .ThenBy(a => a.Name, StringComparer.OrdinalIgnoreCase);
+            filtered = ApplySort(
+                allArtists.Where(a => MatchesSearch(a.Name, q, qNoSpaces))
+                          .OrderBy(a => RankMatch(a.Name, q, qNoSpaces)),
+                sortMode, ascending);
         }
         else
         {
-            filtered = allArtists
-                .OrderByDescending(a => a.IsFavorite)
-                .ThenBy(a => a.Name, StringComparer.OrdinalIgnoreCase);
+            filtered = ApplySort(allArtists, sortMode, ascending);
         }
 
         // Chunk into fixed-width rows so the outer ListBox can virtualize
@@ -219,6 +283,32 @@ public partial class LibraryArtistsViewModel : ViewModelBase, ISearchable, IDisp
         }
 
         return rows;
+    }
+
+    /// <summary>
+    /// Applies the grid sort. Works on an already-ordered sequence too (search rank),
+    /// in which case it only orders within equal ranks. Favorites stay on top for the
+    /// name sort (GitHub #41); count sorts rank everyone by the number.
+    /// </summary>
+    private static IEnumerable<Artist> ApplySort(IEnumerable<Artist> source, string sortMode, bool ascending)
+    {
+        var ordered = source as IOrderedEnumerable<Artist> ?? source.OrderBy(_ => 0);
+        var nameCmp = StringComparer.OrdinalIgnoreCase;
+        switch (sortMode)
+        {
+            case "songs":
+                return ascending
+                    ? ordered.ThenBy(a => a.TrackCount).ThenBy(a => a.Name, nameCmp)
+                    : ordered.ThenByDescending(a => a.TrackCount).ThenBy(a => a.Name, nameCmp);
+            case "albums":
+                return ascending
+                    ? ordered.ThenBy(a => a.AlbumCount).ThenBy(a => a.Name, nameCmp)
+                    : ordered.ThenByDescending(a => a.AlbumCount).ThenBy(a => a.Name, nameCmp);
+            default:
+                return ascending
+                    ? ordered.ThenByDescending(a => a.IsFavorite).ThenBy(a => a.Name, nameCmp)
+                    : ordered.ThenByDescending(a => a.IsFavorite).ThenByDescending(a => a.Name, nameCmp);
+        }
     }
 
     partial void OnSearchTextChanged(string value)
@@ -267,6 +357,10 @@ public partial class LibraryArtistsViewModel : ViewModelBase, ISearchable, IDisp
         artist.IsFavorite = favorite;
         ApplyFilter(_currentFilter);
     }
+
+    /// <summary>Whether the artist is favourited — the artist page reads the same
+    /// in-memory set this grid stamps its tiles from, so the two never disagree.</summary>
+    public bool IsFavoriteArtist(string? artistName) => _favoriteArtists.IsFavorite(artistName);
 
     /// <summary>
     /// Sets a user-picked image as the artist's portrait. Evicts any stale cached
@@ -328,6 +422,9 @@ public partial class LibraryArtistsViewModel : ViewModelBase, ISearchable, IDisp
         if (source.Contains(query, StringComparison.OrdinalIgnoreCase))
             return true;
 
+        // Empty for a punctuation-only query ("&"): every key contains "", which matched everyone.
+        if (queryNoSpaces.Length == 0)
+            return false;
         return RemoveWhitespace(source).Contains(queryNoSpaces, StringComparison.OrdinalIgnoreCase);
     }
 
@@ -339,18 +436,20 @@ public partial class LibraryArtistsViewModel : ViewModelBase, ISearchable, IDisp
         var normalized = source.Trim();
         var normalizedNoSpaces = RemoveWhitespace(normalized);
 
+        var hasKey = queryNoSpaces.Length > 0; // empty for punctuation-only queries
+
         if (string.Equals(normalized, query, StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(normalizedNoSpaces, queryNoSpaces, StringComparison.OrdinalIgnoreCase))
+            (hasKey && string.Equals(normalizedNoSpaces, queryNoSpaces, StringComparison.OrdinalIgnoreCase)))
             return 0;
 
         if (normalized.StartsWith(query, StringComparison.OrdinalIgnoreCase) ||
-            normalizedNoSpaces.StartsWith(queryNoSpaces, StringComparison.OrdinalIgnoreCase))
+            (hasKey && normalizedNoSpaces.StartsWith(queryNoSpaces, StringComparison.OrdinalIgnoreCase)))
             return 1;
 
         if (normalized.Contains(query, StringComparison.OrdinalIgnoreCase))
             return 2;
 
-        if (normalizedNoSpaces.Contains(queryNoSpaces, StringComparison.OrdinalIgnoreCase))
+        if (hasKey && normalizedNoSpaces.Contains(queryNoSpaces, StringComparison.OrdinalIgnoreCase))
             return 3;
 
         return 1000;

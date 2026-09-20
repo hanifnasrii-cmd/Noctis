@@ -20,6 +20,7 @@ internal sealed class FakeAudioPlayer : IAudioPlayer
     public PlaybackState State { get; private set; } = PlaybackState.Stopped;
     public TimeSpan Duration => TimeSpan.FromMinutes(3);
     public TimeSpan Position => TimeSpan.Zero;
+    public TimeSpan OutputLatency => TimeSpan.Zero;
     public long CurrentSessionId { get; private set; }
     public int Volume { get; set; }
     public int VolumeAdjust { get; set; }
@@ -51,6 +52,12 @@ internal sealed class FakeAudioPlayer : IAudioPlayer
     public void ApplyReplayGain(string mode, double preampDb) { }
     public void SetCrossfade(bool enabled, int durationSeconds, AutoMixFadeCurve fadeCurve = AutoMixFadeCurve.SmoothEase, bool fadeOut = true, bool overlap = false) { }
     public void SetGapless(bool enabled) { }
+    public double PlaybackRate { get; private set; } = 1.0;
+    public void SetPlaybackRate(double rate) => PlaybackRate = rate;
+    public double PitchSemitones { get; private set; }
+    public void SetPitchSemitones(double semitones) => PitchSemitones = semitones;
+    public string UpmixMode { get; private set; } = "Off";
+    public void SetUpmixMode(string mode) => UpmixMode = mode;
     public void PrepareNext(string filePath, long startPositionMs = -1) => PreparedPaths.Add(filePath);
     public void CancelPreparedNext() { }
     public void SetAdvancedEqualizer(bool enabled, float[] bands, float preampDb) { }
@@ -74,11 +81,20 @@ internal sealed class FakeLibraryService : ILibraryService
     public event EventHandler<List<string>>? MusicFoldersChanged;
     public event EventHandler<string[]>? ScanAborted;
 
-    public Task ScanAsync(IEnumerable<string> folders, CancellationToken ct = default) => Task.CompletedTask;
+    /// <summary>When set, ScanAsync behaves like the real service meeting an offline
+    /// root: it raises ScanAborted with these roots and leaves the library untouched.</summary>
+    public string[]? AbortScanWithRoots { get; set; }
+
+    public Task ScanAsync(IEnumerable<string> folders, CancellationToken ct = default)
+    {
+        if (AbortScanWithRoots is { } roots)
+            ScanAborted?.Invoke(this, roots);
+        return Task.CompletedTask;
+    }
     public Task PauseActiveScanForShutdownAsync(TimeSpan timeout) => Task.CompletedTask;
     public Task ImportFilesAsync(IEnumerable<string> filePaths, CancellationToken ct = default, IProgress<int>? progress = null) => Task.CompletedTask;
     public Track? GetTrackById(Guid id) => TrackList.FirstOrDefault(t => t.Id == id);
-    public Album? GetAlbumById(Guid id) => null;
+    public Album? GetAlbumById(Guid id) => Albums.FirstOrDefault(a => a.Id == id);
     public IReadOnlyList<Album> GetAlbumsByArtist(string artistName) => Array.Empty<Album>();
     public Task RemoveTrackAsync(Guid id) => Task.CompletedTask;
     public Task RemoveTracksAsync(IEnumerable<Guid> ids) => Task.CompletedTask;
@@ -89,8 +105,12 @@ internal sealed class FakeLibraryService : ILibraryService
     public Task SaveTrackUserStateAsync(IReadOnlyCollection<Track> tracks) => Task.CompletedTask;
     public Task ClearAsync() => Task.CompletedTask;
     public Task RebuildIndexAsync(CancellationToken ct = default) => Task.CompletedTask;
-    public void NotifyFavoritesChanged() { }
-    public void NotifyFavoritesChanged(IReadOnlyCollection<Track>? changed) { }
+    public void NotifyFavoritesChanged() => NotifyFavoritesChanged(null);
+    public void NotifyFavoritesChanged(IReadOnlyCollection<Track>? changed)
+    {
+        foreach (var a in Albums) a.NotifyFavoriteStateChanged();
+        FavoritesChanged?.Invoke(this, EventArgs.Empty);
+    }
     public Task SetTracksRatingAsync(IReadOnlyList<Track> tracks, int rating) => Task.CompletedTask;
     public Task SetTracksDislikedAsync(IReadOnlyList<Track> tracks, bool isDisliked) => Task.CompletedTask;
     public Task SetTracksSnoozedAsync(IReadOnlyList<Track> tracks, DateTime? until) => Task.CompletedTask;

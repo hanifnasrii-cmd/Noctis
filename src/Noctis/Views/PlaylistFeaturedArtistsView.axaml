@@ -1,5 +1,6 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:loc="using:Noctis.Localization"
              xmlns:vm="using:Noctis.ViewModels"
              xmlns:controls="using:Noctis.Controls"
              x:Class="Noctis.Views.PlaylistFeaturedArtistsView"
@@ -48,7 +49,7 @@
                                         Height="220"
                                         CornerRadius="110"
                                         ClipToBounds="True"
-                                        Background="#2E2E2E"
+                                        Background="{DynamicResource ArtworkPlaceholderBackground}"
                                         HorizontalAlignment="Center">
                                     <Panel>
                                         <controls:CachedImage SourcePath="{Binding ImagePath}"
@@ -59,7 +60,7 @@
                                         <PathIcon Data="{StaticResource ArtistsIcon}"
                                                   Width="64"
                                                   Height="64"
-                                                  Foreground="#66FFFFFF"
+                                                  Foreground="{DynamicResource SecondaryTextBrush}"
                                                   HorizontalAlignment="Center"
                                                   VerticalAlignment="Center"
                                                   IsVisible="{Binding ImagePath, Converter={x:Static StringConverters.IsNullOrEmpty}}" />

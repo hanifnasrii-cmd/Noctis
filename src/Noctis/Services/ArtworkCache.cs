@@ -7,6 +7,15 @@ namespace Noctis.Services;
 /// Thread-safe LRU bitmap cache shared across the application.
 /// Uses ConcurrentDictionary for lock-free reads on cache hits.
 /// Decodes artwork at thumbnail size (512px) to balance sharpness and memory.
+///
+/// Lifetime: decoded pixels live in native Skia memory the GC cannot see, so an
+/// evicted bitmap that nobody disposes stays resident until its finalizer happens to
+/// run — under a fast grid scroll that put the real footprint far above the byte
+/// budget. Holders that keep a bitmap on screen (<see cref="Noctis.Controls.CachedImage"/>,
+/// the player's current cover) therefore <see cref="Acquire"/> it and
+/// <see cref="Release"/> it when they let go; an evicted or invalidated entry is
+/// disposed as soon as its last holder releases it (or right away when it has none),
+/// after a short grace period that covers a TryGet racing an eviction.
 /// </summary>
 public static class ArtworkCache
 {
@@ -15,13 +24,17 @@ public static class ArtworkCache
         public readonly Bitmap Bitmap;
         public readonly string Key;
         public readonly string Path;
+        public readonly int Width;
         public readonly long Bytes; // approximate decoded size (W*H*4)
         public long LastAccess; // atomic via Interlocked
+        public int Refs; // live holders, atomic via Interlocked
+        public int State; // 0 = cached, 1 = removed from the cache, 2 = disposed
 
-        public CacheEntry(string key, string path, Bitmap bitmap, long accessCounter)
+        public CacheEntry(string key, string path, int width, Bitmap bitmap, long accessCounter)
         {
             Key = key;
             Path = path;
+            Width = width;
             Bitmap = bitmap;
             LastAccess = accessCounter;
             try
@@ -36,6 +49,10 @@ public static class ArtworkCache
     private static readonly ConcurrentDictionary<string, CacheEntry> Cache =
         new(StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>Every live entry (cached or evicted-but-held) by its bitmap, for Acquire/Release.</summary>
+    private static readonly ConcurrentDictionary<Bitmap, CacheEntry> EntryByBitmap =
+        new(ReferenceEqualityComparer.Instance);
+
     private static long _accessCounter;
     private static long _totalBytes; // atomic via Interlocked — approximate resident size
     private static int _evictLock; // 0 = free, 1 = held — used with Monitor.TryEnter pattern via Interlocked
@@ -43,17 +60,39 @@ public static class ArtworkCache
     // Bound the cache by resident bytes (the dominant cost on large libraries:
     // a 512px RGBA bitmap is ~1 MB, so an entry-count cap alone let the cache
     // grow to >1 GB during a full grid scroll). Keep a generous entry-count
-    // backstop as well.
+    // backstop as well. 128 MB holds ~200 album tiles decoded for a 2x display
+    // (384px, 0.6 MB each) — several screens of the grid — now that controls ask
+    // for the size they draw at instead of a fixed 768.
     private const int MaxCacheSize = 2000;
-    private const long MaxCacheBytes = 256L * 1024 * 1024; // 256 MB
-    private const int EvictBatchSize = 200;
+    private const long DefaultMaxCacheBytes = 128L * 1024 * 1024;
     private const int DecodeWidth = 512;
+
+    /// <summary>Resident-byte budget. Internal so tests can shrink it.</summary>
+    internal static long MaxCacheBytes { get; set; } = DefaultMaxCacheBytes;
+
+    /// <summary>Grace period before an unreferenced evicted bitmap is disposed. Internal for tests.</summary>
+    internal static TimeSpan DisposeGrace { get; set; } = TimeSpan.FromSeconds(2);
+
+    /// <summary>
+    /// Test seam: replaces the file decode. Receives (path, decodeWidth) and returns the
+    /// bitmap to cache, or null. Production leaves it null.
+    /// </summary>
+    internal static Func<string, int, Bitmap?>? DecoderOverride { get; set; }
 
     /// <summary>Approximate resident bytes currently held by the cache (diagnostic).</summary>
     internal static long ResidentBytes => Interlocked.Read(ref _totalBytes);
 
     /// <summary>Number of cached bitmaps currently resident (diagnostic).</summary>
     internal static int Count => Cache.Count;
+
+    /// <summary>Bitmaps alive anywhere (cached or evicted-but-held). Internal for tests.</summary>
+    internal static int LiveBitmapCount => EntryByBitmap.Count;
+
+    /// <summary>
+    /// Decode-width buckets. Requests round UP to the next bucket so surfaces that draw
+    /// at similar sizes share one decode instead of each keying its own copy.
+    /// </summary>
+    private static readonly int[] Buckets = { 128, 256, 384, 512, 768, 1024, 1280, 2048 };
 
     /// <summary>
     /// Returns a cached bitmap if available, or null on cache miss. No I/O performed.
@@ -82,7 +121,17 @@ public static class ArtworkCache
     /// downscale), else the largest cached width (least-blurry upscale).
     /// </summary>
     public static Bitmap? TryGetAnyWidth(string path, int decodeWidth)
+        => TryGetAnyWidth(path, decodeWidth, out _);
+
+    /// <summary>
+    /// As <see cref="TryGetAnyWidth(string,int)"/>, and reports whether the returned bitmap
+    /// is good enough to keep: at least the requested width and no more than twice it.
+    /// A control that gets a "sufficient" bitmap skips its own decode, so one cover no
+    /// longer ends up resident once per surface that shows it.
+    /// </summary>
+    public static Bitmap? TryGetAnyWidth(string path, int decodeWidth, out bool sufficient)
     {
+        sufficient = false;
         var requested = NormalizeDecodeWidth(decodeWidth);
         CacheEntry? atLeast = null, below = null;
         int atLeastWidth = int.MaxValue, belowWidth = -1;
@@ -103,6 +152,7 @@ public static class ArtworkCache
         var chosen = atLeast ?? below;
         if (chosen == null)
             return null;
+        sufficient = chosen == atLeast && atLeastWidth <= requested * 2;
         Touch(chosen);
         return chosen.Bitmap;
     }
@@ -117,8 +167,31 @@ public static class ArtworkCache
         => Interlocked.Exchange(ref entry.LastAccess, Interlocked.Increment(ref _accessCounter));
 
     /// <summary>
+    /// Registers a live holder of a cache bitmap. Pair with <see cref="Release"/>.
+    /// Unknown bitmaps (already disposed, or not from this cache) are ignored.
+    /// </summary>
+    public static void Acquire(Bitmap? bitmap)
+    {
+        if (bitmap is null || !EntryByBitmap.TryGetValue(bitmap, out var entry)) return;
+        Interlocked.Increment(ref entry.Refs);
+    }
+
+    /// <summary>
+    /// Drops a holder registered with <see cref="Acquire"/>. The last release of an
+    /// evicted or invalidated bitmap disposes it (after the grace period).
+    /// </summary>
+    public static void Release(Bitmap? bitmap)
+    {
+        if (bitmap is null || !EntryByBitmap.TryGetValue(bitmap, out var entry)) return;
+        var refs = Interlocked.Decrement(ref entry.Refs);
+        if (refs < 0) Interlocked.Exchange(ref entry.Refs, 0);
+        if (refs <= 0 && Volatile.Read(ref entry.State) == 1)
+            ScheduleDispose(entry);
+    }
+
+    /// <summary>
     /// Removes a cached bitmap for the given path so the next load reads fresh data from disk.
-    /// Does not dispose the bitmap — existing UI controls may still reference it.
+    /// The bitmap is disposed once every holder has released it.
     /// </summary>
     public static void Invalidate(string path)
     {
@@ -156,7 +229,7 @@ public static class ArtworkCache
     {
         try
         {
-            if (!File.Exists(path))
+            if (DecoderOverride is null && !File.Exists(path))
                 return null;
 
             var width = NormalizeDecodeWidth(decodeWidth);
@@ -169,12 +242,22 @@ public static class ArtworkCache
                 return hit.Bitmap;
             }
 
-            Bitmap bitmap;
-            using (var stream = File.OpenRead(path))
-                bitmap = Bitmap.DecodeToWidth(stream, width, BitmapInterpolationMode.HighQuality);
+            Bitmap? bitmap;
+            if (DecoderOverride is { } decoder)
+                bitmap = decoder(path, width);
+            else
+            {
+                // Not Bitmap.DecodeToWidth(Stream): that path rents a file-sized buffer
+                // from ArrayPool<byte>.Shared per decode, and the pool kept 224 MB of
+                // them after one screen of covers. Skia reads the file itself here.
+                using var decoded = Helpers.SkiaArtworkDecoder.DecodeToWidth(path, width);
+                bitmap = decoded is null ? null : Helpers.SkiaArtworkDecoder.ToAvaloniaBitmap(decoded);
+            }
+            if (bitmap is null)
+                return null;
 
             var counter = Interlocked.Increment(ref _accessCounter);
-            var newEntry = new CacheEntry(key, path, bitmap, counter);
+            var newEntry = new CacheEntry(key, path, width, bitmap, counter);
 
             if (!Cache.TryAdd(key, newEntry))
             {
@@ -187,6 +270,7 @@ public static class ArtworkCache
                 }
                 return null;
             }
+            EntryByBitmap[bitmap] = newEntry;
             Interlocked.Add(ref _totalBytes, newEntry.Bytes);
             // The decoded pixels live in native (Skia) memory the GC can't see — the
             // managed Bitmap wrapper is tiny, so without this hint evicted bitmaps sit
@@ -213,55 +297,80 @@ public static class ArtworkCache
 
     private static void EvictOldest()
     {
-        // Evict oldest-accessed entries until both the entry-count and byte budgets
-        // are satisfied (always drop at least one batch so a single huge bitmap that
-        // blew the byte budget on its own still triggers cleanup of older entries).
+        // Evict oldest-accessed entries until both budgets sit at three quarters. The
+        // hysteresis keeps the next few decodes from re-triggering a sort of the whole
+        // cache. The old rule ("drop at least a batch of 200") never stopped early on
+        // a cache that held fewer than 200 entries, so at the byte budget every
+        // overflow flushed the entire cache, on-screen covers included, and the grid
+        // re-decoded what it was already showing.
+        var byteTarget = MaxCacheBytes / 4 * 3;
+        var countTarget = MaxCacheSize / 4 * 3;
         var ordered = Cache.Values.OrderBy(e => Interlocked.Read(ref e.LastAccess)).ToList();
-        var dropped = 0;
         foreach (var entry in ordered)
         {
-            if (dropped >= EvictBatchSize &&
-                Cache.Count <= MaxCacheSize &&
-                Interlocked.Read(ref _totalBytes) <= MaxCacheBytes)
+            if (Cache.Count <= countTarget && Interlocked.Read(ref _totalBytes) <= byteTarget)
                 break;
 
             if (Cache.TryRemove(entry.Key, out var removed))
-            {
                 OnEntryRemoved(removed);
-                dropped++;
-            }
         }
-        // We intentionally do not dispose bitmaps here; UI controls may still hold references.
     }
 
     private static void OnEntryRemoved(CacheEntry removed)
     {
         Interlocked.Add(ref _totalBytes, -removed.Bytes);
+        Volatile.Write(ref removed.State, 1);
+        // Held on screen: the last Release disposes it. Otherwise dispose after the
+        // grace period, which covers a TryGet that handed the bitmap out a moment ago
+        // and is about to Acquire it on the UI thread.
+        ScheduleDispose(removed);
+    }
 
-        // The pressure is withdrawn LATER, not here.
-        //
-        // The bitmap deliberately outlives eviction (a control can still be showing it)
-        // and its native pixels are only reclaimed when the finalizer runs. Dropping the
-        // pressure at eviction time removed the very hint that makes the GC keep pace —
-        // exactly when the native memory was still resident — so during a fast grid
-        // scroll the real footprint could sit well above the cache's byte budget with
-        // nothing pushing collection. Deferring keeps the accounting aligned with what
-        // is actually allocated.
-        SchedulePressureRelease(removed.Bytes);
+    private static void ScheduleDispose(CacheEntry entry)
+    {
+        var grace = DisposeGrace;
+        if (grace <= TimeSpan.Zero)
+        {
+            TryDispose(entry);
+            return;
+        }
+        _ = Task.Delay(grace).ContinueWith(_ => TryDispose(entry), TaskScheduler.Default);
+    }
+
+    /// <summary>Disposes the entry's bitmap when it has left the cache and nobody holds it.</summary>
+    private static void TryDispose(CacheEntry entry)
+    {
+        if (Volatile.Read(ref entry.Refs) > 0) return; // Release will reschedule
+        if (Interlocked.CompareExchange(ref entry.State, 2, 1) != 1) return; // still cached, or already disposed
+        EntryByBitmap.TryRemove(entry.Bitmap, out _);
+        try { entry.Bitmap.Dispose(); }
+        catch { /* a bitmap the platform already tore down */ }
+        try { GC.RemoveMemoryPressure(entry.Bytes); }
+        catch { /* mismatched pressure is non-fatal */ }
     }
 
     /// <summary>
-    /// Releases GC memory pressure for an evicted bitmap after a short delay, giving any
-    /// control still rendering it time to drop its reference first.
+    /// Test seam: drops every entry and disposes every live bitmap, held or not, so
+    /// one test's leftovers (a closed window still holding a cover) cannot leak into
+    /// the next test's counts.
     /// </summary>
-    private static void SchedulePressureRelease(long bytes)
+    internal static void ClearForTests()
     {
-        if (bytes <= 0) return;
-        _ = Task.Delay(TimeSpan.FromSeconds(2)).ContinueWith(_ =>
+        foreach (var key in Cache.Keys.ToList())
         {
-            try { GC.RemoveMemoryPressure(bytes); }
-            catch { /* mismatched pressure is non-fatal */ }
-        }, TaskScheduler.Default);
+            if (Cache.TryRemove(key, out var removed))
+            {
+                Interlocked.Add(ref _totalBytes, -removed.Bytes);
+                Volatile.Write(ref removed.State, 1);
+            }
+        }
+        foreach (var entry in EntryByBitmap.Values.ToList())
+        {
+            Interlocked.Exchange(ref entry.Refs, 0);
+            Volatile.Write(ref entry.State, 1);
+            TryDispose(entry);
+        }
+        Interlocked.Exchange(ref _totalBytes, 0);
     }
 
     private static string BuildKey(string path, int decodeWidth)
@@ -271,6 +380,18 @@ public static class ArtworkCache
         return $"{width}|{path}";
     }
 
-    private static int NormalizeDecodeWidth(int decodeWidth)
-        => decodeWidth <= 0 ? DecodeWidth : Math.Clamp(decodeWidth, 64, 1024);
+    /// <summary>
+    /// Rounds a requested decode width up to its bucket (64–2048). Grids and lists ask
+    /// for ≤ 1024; the artist hero (a portrait stretched across the window) asks for
+    /// 2048 so an 1800px photo is decoded at its own resolution instead of being halved
+    /// and re-enlarged. Public so controls can size their request the same way.
+    /// </summary>
+    public static int NormalizeDecodeWidth(int decodeWidth)
+    {
+        if (decodeWidth <= 0) return DecodeWidth;
+        var clamped = Math.Clamp(decodeWidth, 64, 2048);
+        foreach (var b in Buckets)
+            if (clamped <= b) return b;
+        return 2048;
+    }
 }

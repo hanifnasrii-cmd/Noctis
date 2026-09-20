@@ -1,0 +1,85 @@
+using Noctis.Models;
+
+namespace Noctis.Services;
+
+/// <summary>
+/// Reads audio file metadata (tags, artwork) using TagLib#.
+/// </summary>
+public interface IMetadataService
+{
+    /// <summary>
+    /// Reads all metadata tags from an audio file and returns a populated Track model.
+    /// Returns null if the file cannot be read or is not a supported audio format.
+    /// </summary>
+    Track? ReadTrackMetadata(string filePath);
+
+    /// <summary>
+    /// Reads metadata and, in the same file open, returns the best embedded cover
+    /// picture (already in memory from tag parsing — no extra I/O). Lets a scan
+    /// populate album art live without re-reading every file. <paramref name="embeddedArt"/>
+    /// is null when the file has no embedded picture.
+    /// </summary>
+    Track? ReadTrackMetadata(string filePath, out byte[]? embeddedArt);
+
+    /// <summary>
+    /// Extracts album artwork for an audio file: the embedded cover if there is one,
+    /// otherwise a cover image sitting next to it — the latter only when the file
+    /// names an album, since art for the shared "Unknown Album" bucket would be
+    /// applied to every untagged file in the library.
+    /// Returns the raw image bytes, or null when no artwork applies.
+    /// </summary>
+    byte[]? ExtractAlbumArt(string filePath);
+
+    /// <summary>
+    /// Writes metadata tags back to the audio file.
+    /// </summary>
+    bool WriteTrackMetadata(Track track);
+
+    /// <summary>
+    /// Writes <paramref name="track"/>'s tags to a specific file (which may differ from
+    /// the track's own path — e.g. a converted copy). When <paramref name="titleOverride"/>
+    /// is set it replaces the title (e.g. "Song (WAV)").
+    /// </summary>
+    bool WriteTrackMetadata(Track track, string targetFilePath, string? titleOverride = null);
+
+    /// <summary>
+    /// Sets the embedded album artwork on an audio file.
+    /// Pass null to remove artwork.
+    /// </summary>
+    bool WriteAlbumArt(string filePath, byte[]? imageData);
+
+    /// <summary>
+    /// Writes only the rating and "not liked" tags to an audio file
+    /// (ID3 POPM / Vorbis RATING) without touching other metadata.
+    /// </summary>
+    bool WriteRating(string filePath, int rating, bool isDisliked);
+
+    /// <summary>
+    /// Writes the Advanced Details field set (sort names, people, identifiers, custom
+    /// tags) through the same crash-safe temp-copy + atomic-rename path as the standard
+    /// tags. Returns false when the file could not be written.
+    /// </summary>
+    internal bool WriteAdvancedFields(string filePath, AdvancedTagIO.AdvancedFields fields,
+        AdvancedTagIO.AdvancedFields original);
+
+    /// <summary>
+    /// Writes only the iTunes advisory flag (0 = none, 1 = explicit, 2 = clean) through the
+    /// crash-safe atomic path. Used by the album-scoped editor's "Album is explicit" toggle.
+    /// Returns false when the file could not be written.
+    /// The default routes through <see cref="WriteAdvancedFields"/> (read the Advanced set,
+    /// flip the flag, write it back) so existing implementations and test stubs keep
+    /// working; <see cref="MetadataService"/> overrides it with a single-field write.
+    /// </summary>
+    bool WriteAdvisory(string filePath, int advisory)
+    {
+        var original = AdvancedTagIO.ReadAll(filePath);
+        var updated = AdvancedTagIO.ReadAll(filePath);
+        updated.ItunesAdvisory = advisory;
+        return WriteAdvancedFields(filePath, updated, original);
+    }
+
+    /// <summary>
+    /// Reads detailed technical file information from an audio file.
+    /// </summary>
+    AudioFileInfo? ReadFileInfo(string filePath);
+}

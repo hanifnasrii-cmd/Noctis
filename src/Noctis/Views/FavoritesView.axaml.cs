@@ -99,6 +99,10 @@ public partial class FavoritesView : UserControl
     private void OnFavoriteCardClick(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
     {
         if (sender is not Button button || button.Tag is not FavoriteItem item) return;
+        // Button.Click bubbles: the hover Play button inside the tile raises Click too and
+        // it lands here with the inner button as Source. Only the tile's own click counts,
+        // otherwise Play also opened the album / restarted the track.
+        if (!ReferenceEquals(e.Source, button)) return;
         if (DataContext is not FavoritesViewModel vm) return;
 
         // If there are ctrl-selected tiles, a normal click already cleared them in the tunnel handler
@@ -193,5 +197,12 @@ public partial class FavoritesView : UserControl
 
             FavoritesList.LayoutUpdated += _pendingScrollRestore;
         }
+    }
+
+    /// <summary>Tile hover dots: the same menu a right-click on the tile opens.</summary>
+    private void OnTileMoreClick(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        Helpers.AlbumTile.OpenMenu(sender);
+        e.Handled = true;
     }
 }

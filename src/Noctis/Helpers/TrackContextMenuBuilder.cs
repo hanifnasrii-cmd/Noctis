@@ -15,6 +15,9 @@ using Noctis.Services;
 
 namespace Noctis.Helpers;
 
+/// <summary>Parameter of the Rate ▸ menu: which row was clicked and the stars chosen (0 = clear).</summary>
+public sealed record RateRequest(Track Track, int Stars);
+
 /// <summary>
 /// Builds and binds a reusable track context menu shared across views.
 /// Stores named references to menu items to avoid fragile index-based access.
@@ -41,7 +44,20 @@ public sealed class TrackContextMenuBuilder
     public MenuItem Metadata { get; private set; } = null!;
     public MenuItem Convert { get; private set; } = null!;
     public MenuItem ScanReplayGain { get; private set; } = null!;
+    public MenuItem Spectrogram { get; private set; } = null!;
     public MenuItem SearchLyrics { get; private set; } = null!;
+    /// <summary>"Lyrics ▸" submenu: Search Lyrics plus the bulk actions (hidden until a view wires them).</summary>
+    public MenuItem Lyrics { get; private set; } = null!;
+    public MenuItem FetchLyrics { get; private set; } = null!;
+    public MenuItem LyricsStudio { get; private set; } = null!;
+    public MenuItem RemoveLyrics { get; private set; } = null!;
+    /// <summary>"Rate ▸" submenu: ★ … ★★★★★ and Clear rating. Hidden unless the view passes a rateCommand.</summary>
+    public MenuItem Rate { get; private set; } = null!;
+    private readonly MenuItem[] _rateItems = new MenuItem[6];
+    public MenuItem SendToFolder { get; private set; } = null!;
+    public MenuItem LyricsBackground { get; private set; } = null!;
+    public MenuItem LyricsBackgroundChoose { get; private set; } = null!;
+    public MenuItem LyricsBackgroundClear { get; private set; } = null!;
     public MenuItem ShowFolder { get; private set; } = null!;
     public MenuItem OpenWith { get; private set; } = null!;
     public MenuItem Remove { get; private set; } = null!;
@@ -107,6 +123,21 @@ public sealed class TrackContextMenuBuilder
         };
         items.Add(Unfavorite);
 
+        // Rate: ★ … ★★★★★ + Clear. Bulk-aware through the view's command (the whole
+        // Ctrl-selection is rated when the clicked row is part of it).
+        Rate = new MenuItem { Header = "Rate", IsVisible = false };
+        Rate.Icon = new PathIcon { Width = 14, Height = 14, Data = (Geometry)resourceHost.FindResource("StarIcon")! };
+        for (var stars = 1; stars <= 5; stars++)
+        {
+            var item = new MenuItem { Header = new string('★', stars) + new string('☆', 5 - stars) };
+            _rateItems[stars] = item;
+            Rate.Items.Add(item);
+        }
+        Rate.Items.Add(new Separator());
+        _rateItems[0] = new MenuItem { Header = "Clear rating" };
+        Rate.Items.Add(_rateItems[0]);
+        items.Add(Rate);
+
         Metadata = new MenuItem { Header = "Metadata" };
         Metadata.Icon = CreatePngIcon("avares://Noctis/Assets/Icons/Metadata%20ICON.png");
         items.Add(Metadata);
@@ -119,9 +150,42 @@ public sealed class TrackContextMenuBuilder
         ScanReplayGain.Icon = CreatePngIcon("avares://Noctis/Assets/Icons/Metadata%20ICON.png");
         items.Add(ScanReplayGain);
 
+        // Spek-style spectrum analysis of the file. Self-contained (shared static command),
+        // so every view that uses this builder gets it without wiring a command.
+        Spectrogram = new MenuItem { Header = "Spectrogram", Command = SpectrogramLauncher.OpenCommand };
+        Spectrogram.Icon = CreatePngIcon("avares://Noctis/Assets/Icons/Metadata%20ICON.png");
+        items.Add(Spectrogram);
+
+        // Lyrics ▸ — Search Lyrics stays where it always was, now with the bulk actions
+        // beneath it. The bulk entries stay hidden on views that don't wire them, so the
+        // submenu reads as "Search Lyrics" plus nothing extra there.
+        Lyrics = new MenuItem { Header = "Lyrics" };
+        Lyrics.Icon = CreatePngIcon("avares://Noctis/Assets/Icons/Lyrics%20ICON.png");
         SearchLyrics = new MenuItem { Header = "Search Lyrics" };
-        SearchLyrics.Icon = CreatePngIcon("avares://Noctis/Assets/Icons/Lyrics%20ICON.png");
-        items.Add(SearchLyrics);
+        Lyrics.Items.Add(SearchLyrics);
+        FetchLyrics = new MenuItem { Header = "Fetch & Save Lyrics", IsVisible = false };
+        Lyrics.Items.Add(FetchLyrics);
+        LyricsStudio = new MenuItem { Header = "Open in Lyrics Studio…", IsVisible = false };
+        Lyrics.Items.Add(LyricsStudio);
+        RemoveLyrics = new MenuItem { Header = "Remove Lyrics", IsVisible = false };
+        RemoveLyrics.Classes.Add("danger");
+        Lyrics.Items.Add(RemoveLyrics);
+        items.Add(Lyrics);
+
+        // Lyrics Background Video ▸ — this song's own clip behind the lyrics page (static
+        // commands, so no per-view wiring; "Use default" shows only when the song has one).
+        LyricsBackground = new MenuItem { Header = "Lyrics Background Video" };
+        LyricsBackground.Icon = CreatePngIcon("avares://Noctis/Assets/Icons/Lyrics%20ICON.png");
+        LyricsBackgroundChoose = new MenuItem { Header = "Choose video for this song…", Command = LyricsBackgroundOverrides.ChooseForTrackCommand };
+        LyricsBackground.Items.Add(LyricsBackgroundChoose);
+        LyricsBackgroundClear = new MenuItem { Header = "Use default video", Command = LyricsBackgroundOverrides.ClearForTrackCommand };
+        LyricsBackground.Items.Add(LyricsBackgroundClear);
+        items.Add(LyricsBackground);
+
+        // Send to Folder (MusicBee's Send To → Folder): copies the selection to a drive/folder.
+        SendToFolder = new MenuItem { Header = "Send to Folder…", IsVisible = false };
+        SendToFolder.Icon = CreatePngIcon("avares://Noctis/Assets/Icons/Folder%20ICON.png");
+        items.Add(SendToFolder);
 
         ShowFolder = new MenuItem { Header = "Show Folder" };
         ShowFolder.Icon = CreatePngIcon("avares://Noctis/Assets/Icons/Folder%20ICON.png");
@@ -172,9 +236,37 @@ public sealed class TrackContextMenuBuilder
         ICommand? convertCommand = null,
         ICommand? scanReplayGainCommand = null,
         ICommand? startRadioCommand = null,
-        ICommand? snoozeCommand = null)
+        ICommand? snoozeCommand = null,
+        ICommand? rateCommand = null,
+        ICommand? fetchLyricsCommand = null,
+        ICommand? lyricsStudioCommand = null,
+        ICommand? removeLyricsCommand = null,
+        ICommand? sendToFolderCommand = null)
     {
         Menu.DataContext = track;
+
+        // Rate ▸ (optional). Parameter carries the track so the same command serves every row.
+        Rate.IsVisible = rateCommand != null;
+        if (rateCommand != null)
+        {
+            for (var stars = 0; stars <= 5; stars++)
+            {
+                var item = _rateItems[stars];
+                item.Command = rateCommand;
+                item.CommandParameter = new RateRequest(track, stars);
+                item.FontWeight = stars != 0 && stars == track.Rating ? FontWeight.Bold : FontWeight.Normal;
+            }
+        }
+
+        // Lyrics ▸ bulk entries (optional).
+        BindOptional(FetchLyrics, fetchLyricsCommand, track);
+        BindOptional(LyricsStudio, lyricsStudioCommand, track);
+        BindOptional(RemoveLyrics, removeLyricsCommand, track);
+        BindOptional(SendToFolder, sendToFolderCommand, track);
+
+        LyricsBackgroundChoose.CommandParameter = track;
+        LyricsBackgroundClear.CommandParameter = track;
+        LyricsBackgroundClear.IsVisible = LyricsBackgroundOverrides.HasOverride(LyricsBackgroundOverrides.KeyForTrack(track));
 
         // Play
         Play.Header = "Play";
@@ -254,6 +346,8 @@ public sealed class TrackContextMenuBuilder
             ScanReplayGain.IsVisible = false;
         }
 
+        Spectrogram.CommandParameter = track;
+
         SearchLyrics.Command = searchLyricsCommand;
         SearchLyrics.CommandParameter = track;
 
@@ -269,6 +363,13 @@ public sealed class TrackContextMenuBuilder
 
         Remove.Command = removeCommand;
         Remove.CommandParameter = track;
+    }
+
+    private static void BindOptional(MenuItem item, ICommand? command, Track track)
+    {
+        item.IsVisible = command != null;
+        item.Command = command;
+        item.CommandParameter = track;
     }
 
     /// <summary>

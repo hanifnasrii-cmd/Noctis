@@ -23,27 +23,33 @@ public static partial class EnhancedLrcParser
 
     /// <summary>
     /// Strips an iTunes/Gramophone duet voice marker from a line body — the text directly
-    /// after the <c>[mm:ss.xx]</c> timestamp block. Matches Gramophone's accepted syntax
-    /// exactly: <c>v1:</c>, <c>v2:</c> or <c>v3:</c>, lowercase only, at most one leading
-    /// space, and before any inline word tag. Anything else (uppercase, "v4:", extra
-    /// spaces, mid-line) is plain lyric text. "v1:" maps to <see cref="LyricVoice.Default"/>:
-    /// voice 1 is the normal left-aligned layout either way.
+    /// after the <c>[mm:ss.xx]</c> timestamp block. Accepts <c>v&lt;digits&gt;:</c>,
+    /// lowercase only, at most one leading space, and before any inline word tag
+    /// (Gramophone's syntax, widened to any id: Apple TTML exports carry agents such as
+    /// "v1000"/"v2000" for sampled clips, and those must never surface as lyric text).
+    /// "v2:" is <see cref="LyricVoice.Voice2"/>, "v3:" <see cref="LyricVoice.Group"/>;
+    /// "v1:" and every other id map to <see cref="LyricVoice.Default"/> — the normal
+    /// left-aligned layout. Anything else (uppercase, extra spaces, mid-line) is lyric text.
     /// </summary>
     public static (string Body, LyricVoice Voice) StripVoiceMarker(string? body)
     {
         if (string.IsNullOrEmpty(body)) return (string.Empty, LyricVoice.Default);
 
         var i = body[0] == ' ' ? 1 : 0;
-        if (i + 2 < body.Length && body[i] == 'v' && body[i + 2] == ':'
-            && body[i + 1] is >= '1' and <= '3')
+        if (i < body.Length && body[i] == 'v')
         {
-            var voice = body[i + 1] switch
+            var j = i + 1;
+            while (j < body.Length && char.IsAsciiDigit(body[j])) j++;
+            if (j > i + 1 && j < body.Length && body[j] == ':')
             {
-                '2' => LyricVoice.Voice2,
-                '3' => LyricVoice.Group,
-                _ => LyricVoice.Default,
-            };
-            return (body[(i + 3)..], voice);
+                var voice = body[(i + 1)..j] switch
+                {
+                    "2" => LyricVoice.Voice2,
+                    "3" => LyricVoice.Group,
+                    _ => LyricVoice.Default,
+                };
+                return (body[(j + 1)..], voice);
+            }
         }
 
         return (body, LyricVoice.Default);
@@ -248,7 +254,11 @@ public static partial class EnhancedLrcParser
         }
     }
 
-    private static void AppendBackground(LyricLine target, IReadOnlyList<WordTiming> words, TimeSpan? bgEnd)
+    /// <summary>
+    /// Adds a word-timed background vocal to <paramref name="target"/>, joining onto an
+    /// existing one with a space seam. <paramref name="bgEnd"/> bounds the last word.
+    /// </summary>
+    public static void AppendBackground(LyricLine target, IReadOnlyList<WordTiming> words, TimeSpan? bgEnd)
     {
         if (target.HasBackgroundWords)
         {

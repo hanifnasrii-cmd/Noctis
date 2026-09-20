@@ -84,8 +84,8 @@ public partial class LottieToggle : UserControl
         }
         else
         {
-            Track.Background = new SolidColorBrush(Color.Parse("#484C54"));
-            Knob.Background = Brushes.White;
+            Track.Background = ResolveResourceBrush("ToggleTrackOffBrush", "#484C54");
+            Knob.Background = ResolveResourceBrush("ToggleKnobOffBrush", "#FFFFFF");
             Knob.Margin = new Thickness(3, 0, 0, 0);
         }
     }

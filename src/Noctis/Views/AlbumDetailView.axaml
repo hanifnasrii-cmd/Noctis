@@ -1,5 +1,6 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:loc="using:Noctis.Localization"
              xmlns:vm="using:Noctis.ViewModels"
              xmlns:m="using:Noctis.Models"
              xmlns:controls="using:Noctis.Controls"
@@ -64,6 +65,18 @@
         </Style>
         <Style Selector="Button.no-hover-scale:pressed /template/ ContentPresenter">
             <Setter Property="Background" Value="#33FFFFFF" />
+        </Style>
+        <!-- Header heart / dots: bare glyph buttons — no hover box, no scale; a
+             slight dim on press is the only feedback. -->
+        <Style Selector="Button.header-icon-btn:pointerover">
+            <Setter Property="RenderTransform" Value="scale(1)" />
+        </Style>
+        <Style Selector="Button.header-icon-btn:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="Transparent" />
+        </Style>
+        <Style Selector="Button.header-icon-btn:pressed /template/ ContentPresenter">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Opacity" Value="0.7" />
         </Style>
         <Style Selector="Button.related-album-tile:pointerover">
             <Setter Property="RenderTransform" Value="scale(1)" />
@@ -160,6 +173,19 @@
         <Style Selector="Border.row-body:pointerover">
             <Setter Property="Background" Value="{DynamicResource TrackListHoverBrush}" />
         </Style>
+        <!-- Row rating stars: hidden until hovered, always visible once rated (same idiom as the Songs page). -->
+        <Style Selector="controls|RatingStars.row-rating">
+            <Setter Property="Opacity" Value="0" />
+        </Style>
+        <Style Selector="controls|RatingStars.row-rating.rated">
+            <Setter Property="Opacity" Value="0.7" />
+        </Style>
+        <Style Selector="Border.row-body:pointerover controls|RatingStars.row-rating">
+            <Setter Property="Opacity" Value="0.45" />
+        </Style>
+        <Style Selector="Border.row-body:pointerover controls|RatingStars.row-rating.rated">
+            <Setter Property="Opacity" Value="1" />
+        </Style>
         <Style Selector="ListBoxItem.ctrl-selected Border.row-body">
             <Setter Property="Background" Value="#3FFFFFFF" />
         </Style>
@@ -171,29 +197,33 @@
     </UserControl.Styles>
 
     <Grid>
-    <!-- Dynamic gradient background from album dominant color -->
-    <Border x:Name="AlbumGradientBg"
-            Background="{Binding BackgroundBrush}"
-            IsHitTestVisible="False"
-            Opacity="0">
-        <Border.Transitions>
-            <Transitions>
-                <DoubleTransition Property="Opacity" Duration="0:0:0.16">
-                    <DoubleTransition.Easing><CubicEaseOut/></DoubleTransition.Easing>
-                </DoubleTransition>
-            </Transitions>
-        </Border.Transitions>
-    </Border>
-
     <ScrollViewer x:Name="TrackScrollViewer"
                   VerticalScrollBarVisibility="Auto"
                   HorizontalScrollBarVisibility="Disabled"
                   IsHitTestVisible="{Binding !IsAlbumDescriptionOpen}">
-    <StackPanel TextElement.Foreground="{Binding PageForegroundBrush}"
-                Margin="0,0,0,115">
+    <StackPanel Margin="0,0,0,115">
+
+        <!-- Album block: header, tracks and footer facts sit on one flat panel of the
+             cover's edge colour, the way iTunes' expanded album view did. Other Versions
+             and More By below stay on the app background with theme text. The fill is
+             its own layer (faded in from code-behind) so the fade never hides content. -->
+        <Grid>
+        <Border x:Name="AlbumTintBg"
+                Background="{Binding BackgroundBrush}"
+                IsHitTestVisible="False"
+                Opacity="0">
+            <Border.Transitions>
+                <Transitions>
+                    <DoubleTransition Property="Opacity" Duration="0:0:0.16">
+                        <DoubleTransition.Easing><CubicEaseOut/></DoubleTransition.Easing>
+                    </DoubleTransition>
+                </Transitions>
+            </Border.Transitions>
+        </Border>
+        <StackPanel TextElement.Foreground="{Binding PageForegroundBrush}">
 
         <!-- Album header -->
-        <Grid ColumnDefinitions="Auto,*,40"
+        <Grid ColumnDefinitions="Auto,*,Auto"
               Margin="16,12,28,20">
 
             <!-- Large album art -->
@@ -204,7 +234,7 @@
                     Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
                     Margin="0,0,32,0">
                 <Panel>
-                    <TextBlock Text="Album"
+                    <TextBlock Text="{loc:T AlbumDetail.Album}"
                                FontSize="24"
                                HorizontalAlignment="Center"
                                VerticalAlignment="Center"
@@ -235,43 +265,71 @@
                                Text="{Binding Album.Name}"
                                FontSize="36"
                                FontWeight="Bold"
-                               Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                               Foreground="{Binding PageForegroundBrush}"
                                HorizontalAlignment="Left"
                                MaxWidth="1320" />
+                    <!-- Anchored to the TOP of the title, not centred on it: the title's
+                         measured height grows with descender ink ("Single" vs "EP"), so a
+                         centred badge drifts per title. For 36px Inter the cap centre sits
+                         ~22px below the line top; 16px badge → 14px top margin. -->
                     <Border Grid.Column="1"
                             Classes="explicit-badge"
-                            Margin="8,5,0,0"
+                            VerticalAlignment="Top"
+                            RenderTransform="none"
+                            Margin="8,14,0,0"
                             IsVisible="{Binding Album.IsExplicit}"
-                            ToolTip.Tip="Explicit">
+                            ToolTip.Tip="{loc:T AlbumDetail.ExplicitTip}">
                         <TextBlock Text="E"
                                     Classes="explicit-badge-text"
                                     FontSize="10"
                                     Opacity="0.95" />
                     </Border>
                 </Grid>
-                <!-- Album artist: always a single clickable link (combined name for multi-artist) -->
-                <Button Classes="no-hover-scale"
-                        Background="Transparent"
-                        BorderThickness="0"
-                        Padding="0,1,0,2"
-                        MinHeight="0"
-                        Cursor="Hand"
-                        HorizontalAlignment="Left"
-                        HorizontalContentAlignment="Left"
-                        Command="{Binding ViewArtistCommand}">
-                    <TextBlock Text="{Binding Album.Artist}"
-                               FontSize="20"
-                               LineHeight="24"
-                               VerticalAlignment="Center"
-                               Foreground="{DynamicResource AccentTextExactBrush}" />
-                </Button>
+                <!-- Album artist: one link per credited artist ("Rihanna, Kanye West, Paul McCartney"
+                     used to be a single button that always opened the first name). -->
+                <ItemsControl ItemsSource="{Binding ArtistTokens}" HorizontalAlignment="Left">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <WrapPanel Orientation="Horizontal" />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:ArtistTokenItem">
+                            <StackPanel Orientation="Horizontal">
+                                <Button Classes="no-hover-scale artist-credit-link"
+                                        Background="Transparent"
+                                        BorderThickness="0"
+                                        Padding="0,1,0,2"
+                                        MinHeight="0"
+                                        Cursor="Hand"
+                                        Command="{Binding $parent[ItemsControl].((vm:AlbumDetailViewModel)DataContext).ViewArtistFromTrackCommand}"
+                                        CommandParameter="{Binding Name}">
+                                    <TextBlock Text="{Binding Name}"
+                                               FontSize="20"
+                                               LineHeight="24"
+                                               VerticalAlignment="Center"
+                                               Foreground="{DynamicResource AccentTextExactBrush}" />
+                                </Button>
+                                <TextBlock Text=", "
+                                           FontSize="20"
+                                           LineHeight="24"
+                                           VerticalAlignment="Center"
+                                           Opacity="0.6"
+                                           Foreground="{DynamicResource AccentTextExactBrush}"
+                                           IsVisible="{Binding !IsLast}" />
+                            </StackPanel>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
                 <StackPanel Orientation="Horizontal" Spacing="0" Margin="0,4,0,0"
-                            TextElement.Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}">
+                            TextElement.Foreground="{Binding PageForegroundBrush}">
                     <TextBlock FontSize="13" Opacity="0.5" VerticalAlignment="Center">
                         <TextBlock.Text>
                             <MultiBinding Converter="{StaticResource MetadataLine}">
                                 <Binding Path="Album.Genre" />
-                                <Binding Path="Album.Year" />
+                                <Binding Path="Album.ReleaseDateFormatted" />
+                                <Binding Path="Album.TrackCountText" />
+                                <Binding Path="Album.HeaderDurationFormatted" />
                             </MultiBinding>
                         </TextBlock.Text>
                     </TextBlock>
@@ -319,7 +377,7 @@
                         <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
                             <Viewbox Width="16" Height="11" VerticalAlignment="Center" Margin="0,1,0,0" Opacity="0.5">
                             <Path Data="M8.184,0.35C9.944,0.35 10.703,3.296 11.338,5.238C11.673,3.842 11.497,3.542 11.857,3.542C11.99,3.542 12.126,3.633 12.126,3.798C12.126,3.809 12.123,3.839 12.117,3.883L12.091,4.058C12.02,4.522 11.845,5.494 11.654,6.144C13.198,10.191 14.345,4.861 14.474,3.772C14.493,3.615 14.612,3.542 14.731,3.542C14.891,3.542 15.022,3.662 14.997,3.843C14.72,5.605 14.295,8.35 12.547,8.35C11.582,8.35 11.04,7.595 10.611,6.73C9.54,4.626 9.047,1.093 7.997,1.093C7.66,1.093 7.411,1.444 7.394,1.444C7.362,1.444 7.337,1.301 7.023,0.909C7.322,0.567 7.734,0.35 8.184,0.35ZM2.458,0.354C5.211,0.354 5.456,7.618 7.014,7.618C7.197,7.618 7.394,7.507 7.61,7.256C7.729,7.458 7.851,7.638 7.978,7.796C7.667,8.151 7.28,8.35 6.795,8.35C5.054,8.349 4.306,5.434 3.663,3.466C3.511,4.097 3.432,4.669 3.402,4.925C3.382,5.088 3.263,5.163 3.143,5.163C3.009,5.163 2.874,5.071 2.874,4.908L2.874,4.908L2.877,4.87C2.966,4.223 3.146,3.243 3.347,2.56C3.079,1.858 2.745,1.091 2.252,1.091C1.257,1.091 0.687,3.591 0.527,4.925C0.508,5.088 0.388,5.163 0.268,5.163C0.135,5.163 0,5.071 0,4.908C0,4.896 0.001,4.883 0.002,4.87C0.283,2.836 0.808,0.354 2.458,0.354ZM5.315,0.35C5.809,0.35 6.339,0.608 6.797,1.211C6.822,1.241 7.078,1.639 7.159,1.777C8.277,3.802 8.818,7.627 9.881,7.627C10.065,7.627 10.264,7.513 10.484,7.256C10.604,7.458 10.726,7.638 10.852,7.796C10.542,8.15 10.155,8.35 9.67,8.35C6.933,8.349 6.636,1.09 5.128,1.09C4.788,1.09 4.536,1.444 4.519,1.444C4.487,1.444 4.462,1.301 4.148,0.909C4.455,0.558 4.87,0.35 5.315,0.35Z"
-                                  Fill="{DynamicResource SystemControlForegroundBaseHighBrush}" />
+                                  Fill="{Binding PageForegroundBrush}" />
                             </Viewbox>
                             <TextBlock Text="{Binding Album.AudioQualityBadge}"
                                        FontSize="13"
@@ -336,13 +394,9 @@
                                Margin="3,0,4,0"
                                VerticalAlignment="Center"
                                IsVisible="{Binding IsAlbumFavorited}" />
-                    <PathIcon Data="{StaticResource HeartFillIcon}"
-                               Classes="heart-pop"
-                               Width="12" Height="12"
-                               Foreground="#E74856"
-                               Margin="0,2,0,0"
-                               VerticalAlignment="Center"
-                               IsVisible="{Binding IsAlbumFavorited}"/>
+                    <controls:HeartIcon Size="12" ShowWhenOff="False"
+                                    Margin="0,2,0,0" VerticalAlignment="Center"
+                                    IsFavorite="{Binding IsAlbumFavorited}"/>
                 </StackPanel>
 
                 <Button Classes="no-hover-scale"
@@ -356,9 +410,13 @@
                         MaxWidth="500"
                         Margin="0,8,24,0"
                         Command="{Binding OpenAlbumDescriptionCommand}"
-                        ToolTip.Tip="Open full album description"
+                        ToolTip.Tip="{loc:T AlbumDetail.OpenFullAlbumDescriptionTip}"
                         IsVisible="{Binding HasAlbumDescription}">
-                    <TextBlock Text="{Binding AlbumDescription}"
+                    <!-- Explicit Foreground: the Button's theme resets it to the theme text,
+                         which is white on a light cover's panel (Goodbye & Good Riddance). -->
+                    <TextBlock x:Name="AlbumDescriptionText"
+                               Text="{Binding AlbumDescription}"
+                               Foreground="{Binding PageForegroundBrush}"
                                FontSize="14"
                                Opacity="0.72"
                                TextWrapping="Wrap"
@@ -378,13 +436,13 @@
                             BorderThickness="1"
                             FontWeight="Bold"
                             Cursor="Hand"
-                            ToolTip.Tip="Play">
+                            ToolTip.Tip="{loc:T AlbumDetail.PlayTip}">
                         <StackPanel Orientation="Horizontal" Spacing="3">
                             <PathIcon Data="{StaticResource PlaySolidIcon}"
                                      Width="13" Height="13"
                                      Foreground="{DynamicResource AccentForegroundBrush}"
                                      VerticalAlignment="Center" />
-                            <TextBlock Text="Play"
+                            <TextBlock Text="{loc:T AlbumDetail.PlayTip}"
                                        FontSize="14"
                                        FontWeight="Bold"
                                        VerticalAlignment="Center" />
@@ -400,7 +458,7 @@
                             BorderThickness="1"
                             FontWeight="Bold"
                             Cursor="Hand"
-                            ToolTip.Tip="Shuffle">
+                            ToolTip.Tip="{loc:T AlbumDetail.ShuffleTip}">
                         <StackPanel Orientation="Horizontal" Spacing="6">
                             <Grid Width="16" Height="16" VerticalAlignment="Center">
                                 <PathIcon Data="{StaticResource ShuffleIcon}"
@@ -412,19 +470,78 @@
                                           Opacity="0.85"
                                           Margin="0.6,0,0,0" />
                             </Grid>
-                            <TextBlock Text="Shuffle"
+                            <TextBlock Text="{loc:T AlbumDetail.ShuffleTip}"
                                        FontSize="14"
                                        FontWeight="Bold"
                                        VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
+                    <Button Command="{Binding AddAlbumToQueueCommand}"
+                            Classes="accent-btn album-header-action"
+                            Padding="22,8"
+                            CornerRadius="999"
+                            Background="{DynamicResource AccentButtonBackground}"
+                            Foreground="{DynamicResource AccentForegroundBrush}"
+                            BorderBrush="{DynamicResource AccentBorderBrush}"
+                            BorderThickness="1"
+                            FontWeight="Bold"
+                            Cursor="Hand"
+                            ToolTip.Tip="{loc:T AlbumDetail.AddWholeAlbumEndTip}">
+                        <Panel>
+                            <StackPanel Orientation="Horizontal" Spacing="6"
+                                        IsVisible="{Binding !AlbumAddedToQueue}">
+                                <Border Width="16" Height="16" VerticalAlignment="Center"
+                                        Background="{DynamicResource AccentForegroundBrush}"
+                                        RenderOptions.BitmapInterpolationMode="HighQuality">
+                                    <Border.OpacityMask>
+                                        <ImageBrush Source="avares://Noctis/Assets/Icons/Queue%20ICON.png" Stretch="Uniform" />
+                                    </Border.OpacityMask>
+                                </Border>
+                                <TextBlock Text="{loc:T AlbumDetail.AddQueue}"
+                                           FontSize="14"
+                                           FontWeight="Bold"
+                                           VerticalAlignment="Center" />
+                            </StackPanel>
+                            <!-- Same width as the resting label so the pill doesn't jump. -->
+                            <StackPanel Orientation="Horizontal" Spacing="6"
+                                        HorizontalAlignment="Center"
+                                        IsVisible="{Binding AlbumAddedToQueue}">
+                                <PathIcon Data="{StaticResource CheckmarkIcon}"
+                                          Width="15" Height="15"
+                                          Foreground="{DynamicResource AccentForegroundBrush}"
+                                          VerticalAlignment="Center" />
+                                <TextBlock Text="{loc:T AlbumDetail.AddedQueue}"
+                                           FontSize="14"
+                                           FontWeight="Bold"
+                                           VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Panel>
+                    </Button>
                 </StackPanel>
 
             </StackPanel>
 
-            <!-- Album-level 3-dots menu (bottom, aligned with track dots) -->
-            <Button Grid.Column="2"
-                    x:Name="AlbumOptionsButton"
+            <!-- Album-level favorite heart + 3-dots menu (bottom, aligned with track dots) -->
+            <StackPanel Grid.Column="2"
+                        Orientation="Horizontal"
+                        Spacing="4"
+                        VerticalAlignment="Bottom">
+            <Button Classes="header-icon-btn"
+                    Background="Transparent"
+                    BorderThickness="0"
+                    Padding="0"
+                    Width="32" Height="32"
+                    Cursor="Hand"
+                    Command="{Binding ToggleAlbumFavoritesCommand}">
+                <ToolTip.Tip>
+                    <TextBlock Text="{loc:T AlbumDetail.FavoriteEverySongAlbum}" />
+                </ToolTip.Tip>
+                <controls:HeartIcon Size="15"
+                                    OffBrush="{Binding PageForegroundBrush}" OffOpacity="0.7"
+                                    IsFavorite="{Binding IsAlbumFavorited}" />
+            </Button>
+            <Button x:Name="AlbumOptionsButton"
+                    Classes="header-icon-btn"
                     Background="Transparent"
                     BorderThickness="0"
                     Padding="0"
@@ -433,7 +550,7 @@
                     HorizontalAlignment="Center"
                     Cursor="Hand"
                     Margin="0,0,0,0"
-                    ToolTip.Tip="Options">
+                    ToolTip.Tip="{loc:T AlbumDetail.OptionsTip}">
                 <PathIcon Data="{StaticResource MoreDotsIcon}"
                           Width="14" Height="14"
                           Foreground="{DynamicResource AccentTextExactBrush}"
@@ -447,78 +564,75 @@
                         <MenuItem MaxWidth="400"
                                   Command="{Binding PlayAllCommand}">
                             <MenuItem.Header>
-                                <TextBlock Text="Play" TextTrimming="CharacterEllipsis" FontWeight="Normal" FontSize="14" FontFamily="{Binding $parent[MenuItem].FontFamily}" />
+                                <TextBlock Text="{loc:T AlbumDetail.PlayTip}" TextTrimming="CharacterEllipsis" FontWeight="Normal" FontSize="14" FontFamily="{Binding $parent[MenuItem].FontFamily}" />
                             </MenuItem.Header>
                             <MenuItem.Icon>
                                 <Border Width="14" Height="14" Background="{DynamicResource SystemControlForegroundBaseHighBrush}" RenderOptions.BitmapInterpolationMode="HighQuality"><Border.OpacityMask><ImageBrush Source="avares://Noctis/Assets/Icons/Play%20ICON.png" Stretch="Uniform" /></Border.OpacityMask></Border>
                             </MenuItem.Icon>
                         </MenuItem>
-                        <MenuItem Header="Shuffle"
+                        <MenuItem Header="{loc:T AlbumDetail.ShuffleTip}"
                                   Command="{Binding ShufflePlayCommand}">
                             <MenuItem.Icon>
                                 <PathIcon Data="{StaticResource ShuffleIcon}" Width="14" Height="14" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" />
                             </MenuItem.Icon>
                         </MenuItem>
-                        <MenuItem Header="Add to Queue"
+                        <MenuItem Header="{loc:T AlbumDetail.AddQueue}"
                                   Command="{Binding AddAlbumToQueueCommand}">
                             <MenuItem.Icon>
                                 <Border Width="17" Height="17" Background="{DynamicResource SystemControlForegroundBaseHighBrush}" RenderOptions.BitmapInterpolationMode="HighQuality"><Border.OpacityMask><ImageBrush Source="avares://Noctis/Assets/Icons/Queue%20ICON.png" Stretch="Uniform" /></Border.OpacityMask></Border>
                             </MenuItem.Icon>
                         </MenuItem>
                         <Separator />
-                        <MenuItem Header="Add to Playlist"
+                        <MenuItem Header="{loc:T AlbumDetail.AddPlaylist}"
                                   Command="{Binding AddAlbumToNewPlaylistCommand}">
                             <MenuItem.Icon>
                                 <Border Width="14" Height="14" Background="{DynamicResource SystemControlForegroundBaseHighBrush}" RenderOptions.BitmapInterpolationMode="HighQuality"><Border.OpacityMask><ImageBrush Source="avares://Noctis/Assets/Icons/Playlist%20icon.png" Stretch="Uniform" /></Border.OpacityMask></Border>
                             </MenuItem.Icon>
                         </MenuItem>
                         <Separator />
-                        <MenuItem Header="Favorites"
-                                  Command="{Binding ToggleAlbumFavoritesCommand}"
-                                  IsVisible="{Binding !Album.IsAllTracksFavorite}">
-                            <MenuItem.Icon>
-                                <Border Width="14" Height="14" Background="{DynamicResource SystemControlForegroundBaseHighBrush}" RenderOptions.BitmapInterpolationMode="HighQuality"><Border.OpacityMask><ImageBrush Source="avares://Noctis/Assets/Icons/Favorites%20icon.png" Stretch="Uniform" /></Border.OpacityMask></Border>
-                            </MenuItem.Icon>
-                        </MenuItem>
-                        <MenuItem Header="Remove from Favorites"
-                                  Command="{Binding ToggleAlbumFavoritesCommand}"
-                                  IsVisible="{Binding Album.IsAllTracksFavorite}">
-                            <MenuItem.Icon>
-                                <PathIcon Data="{StaticResource HeartFillIcon}" Width="14" Height="14" Foreground="#E74856" />
-                            </MenuItem.Icon>
-                        </MenuItem>
-                        <MenuItem Header="Metadata"
+                        <MenuItem Header="{loc:T AlbumDetail.Metadata}"
                                   Command="{Binding OpenAlbumMetadataCommand}">
                             <MenuItem.Icon>
                                 <Border Width="14" Height="14" Background="{DynamicResource SystemControlForegroundBaseHighBrush}" RenderOptions.BitmapInterpolationMode="HighQuality"><Border.OpacityMask><ImageBrush Source="avares://Noctis/Assets/Icons/Metadata%20ICON.png" Stretch="Uniform" /></Border.OpacityMask></Border>
                             </MenuItem.Icon>
                         </MenuItem>
-                        <MenuItem Header="Edit Description"
+                        <MenuItem Header="{loc:T AlbumDetail.EditDescription}"
                                   Command="{Binding EditAlbumDescriptionCommand}">
                             <MenuItem.Icon>
                                 <PathIcon Data="{StaticResource EditIcon}" Width="14" Height="14" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" />
                             </MenuItem.Icon>
                         </MenuItem>
-                        <MenuItem Header="Convert Album"
+                        <MenuItem Header="{loc:T AlbumDetail.LyricsBackgroundVideo}">
+                            <MenuItem.Icon>
+                                <Border Width="14" Height="14" Background="{DynamicResource SystemControlForegroundBaseHighBrush}" RenderOptions.BitmapInterpolationMode="HighQuality"><Border.OpacityMask><ImageBrush Source="avares://Noctis/Assets/Icons/Lyrics%20ICON.png" Stretch="Uniform" /></Border.OpacityMask></Border>
+                            </MenuItem.Icon>
+                            <MenuItem Header="{loc:T AlbumDetail.ChooseAlbumVideo}"
+                                      Command="{x:Static helpers:LyricsBackgroundOverrides.ChooseForAlbumCommand}"
+                                      CommandParameter="{Binding Album}" />
+                            <MenuItem Header="{loc:T AlbumDetail.UseDefaultVideo}"
+                                      Command="{x:Static helpers:LyricsBackgroundOverrides.ClearForAlbumCommand}"
+                                      CommandParameter="{Binding Album}" />
+                        </MenuItem>
+                        <MenuItem Header="{loc:T AlbumDetail.ConvertAlbum}"
                                   Command="{Binding ConvertAlbumCommand}">
                             <MenuItem.Icon>
                                 <Border Width="14" Height="14" Background="{DynamicResource SystemControlForegroundBaseHighBrush}" RenderOptions.BitmapInterpolationMode="HighQuality"><Border.OpacityMask><ImageBrush Source="avares://Noctis/Assets/Icons/Metadata%20ICON.png" Stretch="Uniform" /></Border.OpacityMask></Border>
                             </MenuItem.Icon>
                         </MenuItem>
-                        <MenuItem Header="Scan ReplayGain"
+                        <MenuItem Header="{loc:T AlbumDetail.ScanReplayGain}"
                                   Command="{Binding ScanAlbumReplayGainCommand}">
                             <MenuItem.Icon>
                                 <Border Width="14" Height="14" Background="{DynamicResource SystemControlForegroundBaseHighBrush}" RenderOptions.BitmapInterpolationMode="HighQuality"><Border.OpacityMask><ImageBrush Source="avares://Noctis/Assets/Icons/Metadata%20ICON.png" Stretch="Uniform" /></Border.OpacityMask></Border>
                             </MenuItem.Icon>
                         </MenuItem>
-                        <MenuItem Header="Show Folder"
+                        <MenuItem Header="{loc:T AlbumDetail.ShowFolder}"
                                   Command="{Binding ShowAlbumInExplorerCommand}">
                             <MenuItem.Icon>
                                 <Border Width="14" Height="14" Background="{DynamicResource SystemControlForegroundBaseHighBrush}" RenderOptions.BitmapInterpolationMode="HighQuality"><Border.OpacityMask><ImageBrush Source="avares://Noctis/Assets/Icons/Folder%20ICON.png" Stretch="Uniform" /></Border.OpacityMask></Border>
                             </MenuItem.Icon>
                         </MenuItem>
                         <Separator />
-                        <MenuItem Header="Remove from Library" Classes="danger"
+                        <MenuItem Header="{loc:T AlbumDetail.RemoveFromLibrary}" Classes="danger"
                                   Command="{Binding RemoveAlbumFromLibraryCommand}">
                             <MenuItem.Icon>
                                 <PathIcon Data="{StaticResource TrashIcon}" Width="14" Height="14" />
@@ -527,6 +641,7 @@
                     </MenuFlyout>
                 </Button.Flyout>
             </Button>
+            </StackPanel>
         </Grid>
 
         <!-- Track list + related sections + album footer (all scroll with the header above) -->
@@ -542,6 +657,7 @@
                                    IsVisible="{Binding $parent[UserControl].((vm:AlbumDetailViewModel)DataContext).HasMultipleDiscs}" />
                         <ListBox Classes="track-list"
                                  ItemsSource="{Binding Tracks}"
+                                 Foreground="{Binding $parent[UserControl].((vm:AlbumDetailViewModel)DataContext).PageForegroundBrush}"
                                  ScrollViewer.VerticalScrollBarVisibility="Disabled">
             <!-- Non-virtualizing panel: this ListBox is nested inside an outer
                  ScrollViewer (TrackScrollViewer), so VirtualizingStackPanel can't
@@ -606,10 +722,10 @@
                                         Classes="explicit-badge compact"
                                         Margin="6,0,0,0"
                                         IsVisible="{Binding IsExplicit}"
-                                        ToolTip.Tip="Explicit">
+                                        ToolTip.Tip="{loc:T AlbumDetail.ExplicitTip}">
                                     <TextBlock Text="E"
                                                Classes="explicit-badge-text compact"
-                                               FontSize="9"
+                                               FontSize="8"
                                                Opacity="0.9" />
                                 </Border>
                             </Grid>
@@ -629,28 +745,27 @@
                               VerticalAlignment="Center"
                               Margin="0,0,10,0">
                             <!-- Col 0: rating stars (collapsed when unrated) -->
+                            <!-- Click-to-rate (see LibrarySongsView): revealed on row hover, always on once rated. -->
                             <controls:RatingStars Grid.Column="0"
                                                   Value="{Binding Rating}"
+                                                  Classes="row-rating"
+                                                  Classes.rated="{Binding !!Rating}"
                                                   StarSize="11"
                                                   StarSpacing="2"
-                                                  IsHitTestVisible="False"
-                                                  Opacity="0.7"
+                                                  IsInteractive="True"
+                                                  Cursor="Hand"
+                                                  UserRated="OnRowRated"
                                                   Margin="0,0,8,0"
-                                                  VerticalAlignment="Center"
-                                                  IsVisible="{Binding !!Rating}" />
+                                                  VerticalAlignment="Center" />
                             <!-- Col 1: heart — always 22px wide so duration never shifts.
                                  Shown for every track including a single's one track: the
                                  metadata-row heart was treated as covering that case, which
                                  left a favorited single as the only row in the app with no
                                  heart on it. -->
                             <Panel Grid.Column="1">
-                                <PathIcon Data="{StaticResource HeartFillIcon}"
-                                         Classes="heart-pop"
-                                         Width="14" Height="14"
-                                         Foreground="#E74856"
-                                         HorizontalAlignment="Center"
-                                         VerticalAlignment="Center"
-                                         IsVisible="{Binding IsFavorite}"/>
+                                <controls:HeartIcon Size="14" ShowWhenOff="False"
+                                    HorizontalAlignment="Center" VerticalAlignment="Center"
+                                    IsFavorite="{Binding IsFavorite}"/>
                             </Panel>
                             <!-- Col 2: duration — fixed 52px, right-aligned for perfect column -->
                             <TextBlock Grid.Column="2"
@@ -670,7 +785,7 @@
                                     HorizontalAlignment="Center"
                                     VerticalAlignment="Center"
                                     Cursor="Hand"
-                                    ToolTip.Tip="Options"
+                                    ToolTip.Tip="{loc:T AlbumDetail.OptionsTip}"
                                     Click="OnTrackOptionsButtonClick"
                                     Tag="{Binding}">
                                 <PathIcon Classes="row-dots-icon"
@@ -690,9 +805,10 @@
             </ItemsControl.ItemTemplate>
         </ItemsControl>
 
-        <!-- Album footer: release date, track count + duration, copyright (Apple Music style) -->
-        <StackPanel Margin="0,24,0,4" Spacing="3"
-                    TextElement.Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}">
+        <!-- Album footer: release date, track count + duration, copyright (Apple Music style).
+             The bottom margin is the coloured panel's breathing room under the facts. -->
+        <StackPanel Margin="0,24,0,28" Spacing="3"
+                    TextElement.Foreground="{Binding PageForegroundBrush}">
             <TextBlock Text="{Binding Album.ReleaseDateFormatted}"
                        FontSize="13"
                        Opacity="0.45"
@@ -712,13 +828,19 @@
                        IsVisible="{Binding Album.HasCopyright}" />
         </StackPanel>
 
+        </StackPanel>
+        </StackPanel>
+        </Grid>
+
+        <!-- Related sections: app background, theme foreground (not the tint's). -->
+        <StackPanel x:Name="RelatedSections" Margin="10,0,16,0">
+
         <!-- Other Versions: same artist, normalized base title (Deluxe/Explicit/Clean/Remaster/etc.) -->
         <StackPanel Margin="0,28,0,0" Spacing="10"
                     IsVisible="{Binding HasOtherVersions}">
-            <TextBlock Text="Other Versions"
+            <TextBlock Text="{loc:T AlbumDetail.OtherVersions}"
                        FontSize="20"
-                       FontWeight="Bold"
-                       Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" />
+                       FontWeight="Bold" />
             <Grid>
             <ScrollViewer x:Name="OtherVersionsScroll"
                           HorizontalScrollBarVisibility="Hidden"
@@ -748,27 +870,27 @@
                                                   Command="{Binding $parent[UserControl].((vm:AlbumDetailViewModel)DataContext).PlayRelatedAlbumCommand}"
                                                   CommandParameter="{Binding}">
                                             <MenuItem.Header>
-                                                <TextBlock Text="Play" TextTrimming="CharacterEllipsis" FontWeight="Normal" FontSize="14" FontFamily="{Binding $parent[MenuItem].FontFamily}" />
+                                                <TextBlock Text="{loc:T AlbumDetail.PlayTip}" TextTrimming="CharacterEllipsis" FontWeight="Normal" FontSize="14" FontFamily="{Binding $parent[MenuItem].FontFamily}" />
                                             </MenuItem.Header>
                                             <MenuItem.Icon>
                                                 <Border Width="14" Height="14" Background="{DynamicResource SystemControlForegroundBaseHighBrush}" RenderOptions.BitmapInterpolationMode="HighQuality"><Border.OpacityMask><ImageBrush Source="avares://Noctis/Assets/Icons/Play%20ICON.png" Stretch="Uniform" /></Border.OpacityMask></Border>
                                             </MenuItem.Icon>
                                         </MenuItem>
-                                        <MenuItem Header="Shuffle"
+                                        <MenuItem Header="{loc:T AlbumDetail.ShuffleTip}"
                                                   Command="{Binding $parent[UserControl].((vm:AlbumDetailViewModel)DataContext).ShuffleRelatedAlbumCommand}"
                                                   CommandParameter="{Binding}">
                                             <MenuItem.Icon>
                                                 <PathIcon Data="{StaticResource ShuffleIcon}" Width="14" Height="14" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" />
                                             </MenuItem.Icon>
                                         </MenuItem>
-                                        <MenuItem Header="Play Next"
+                                        <MenuItem Header="{loc:T AlbumDetail.PlayNext}"
                                                   Command="{Binding $parent[UserControl].((vm:AlbumDetailViewModel)DataContext).PlayNextRelatedAlbumCommand}"
                                                   CommandParameter="{Binding}">
                                             <MenuItem.Icon>
                                                 <Border Width="14" Height="14" Background="{DynamicResource SystemControlForegroundBaseHighBrush}" RenderOptions.BitmapInterpolationMode="HighQuality"><Border.OpacityMask><ImageBrush Source="avares://Noctis/Assets/Icons/Forward%20ICON.png" Stretch="Uniform" /></Border.OpacityMask></Border>
                                             </MenuItem.Icon>
                                         </MenuItem>
-                                        <MenuItem Header="Add to Queue"
+                                        <MenuItem Header="{loc:T AlbumDetail.AddQueue}"
                                                   Command="{Binding $parent[UserControl].((vm:AlbumDetailViewModel)DataContext).AddRelatedAlbumToQueueCommand}"
                                                   CommandParameter="{Binding}">
                                             <MenuItem.Icon>
@@ -776,7 +898,7 @@
                                             </MenuItem.Icon>
                                         </MenuItem>
                                         <Separator />
-                                        <MenuItem Header="Add to Playlist"
+                                        <MenuItem Header="{loc:T AlbumDetail.AddPlaylist}"
                                                   Command="{Binding $parent[UserControl].((vm:AlbumDetailViewModel)DataContext).AddRelatedAlbumToNewPlaylistCommand}"
                                                   CommandParameter="{Binding}">
                                             <MenuItem.Icon>
@@ -784,7 +906,7 @@
                                             </MenuItem.Icon>
                                         </MenuItem>
                                         <Separator />
-                                        <MenuItem Header="Favorites"
+                                        <MenuItem Header="{loc:T AlbumDetail.Favorites}"
                                                   Command="{Binding $parent[UserControl].((vm:AlbumDetailViewModel)DataContext).ToggleRelatedAlbumFavoritesCommand}"
                                                   CommandParameter="{Binding}"
                                                   IsVisible="{Binding !IsAllTracksFavorite}">
@@ -792,7 +914,7 @@
                                                 <Border Width="14" Height="14" Background="{DynamicResource SystemControlForegroundBaseHighBrush}" RenderOptions.BitmapInterpolationMode="HighQuality"><Border.OpacityMask><ImageBrush Source="avares://Noctis/Assets/Icons/Favorites%20icon.png" Stretch="Uniform" /></Border.OpacityMask></Border>
                                             </MenuItem.Icon>
                                         </MenuItem>
-                                        <MenuItem Header="Remove from Favorites"
+                                        <MenuItem Header="{loc:T AlbumDetail.RemoveFromFavorites}"
                                                   Command="{Binding $parent[UserControl].((vm:AlbumDetailViewModel)DataContext).ToggleRelatedAlbumFavoritesCommand}"
                                                   CommandParameter="{Binding}"
                                                   IsVisible="{Binding IsAllTracksFavorite}">
@@ -800,28 +922,28 @@
                                                 <PathIcon Data="{StaticResource HeartFillIcon}" Width="14" Height="14" Foreground="#E74856" />
                                             </MenuItem.Icon>
                                         </MenuItem>
-                                        <MenuItem Header="Metadata"
+                                        <MenuItem Header="{loc:T AlbumDetail.Metadata}"
                                                   Command="{Binding $parent[UserControl].((vm:AlbumDetailViewModel)DataContext).OpenRelatedAlbumMetadataCommand}"
                                                   CommandParameter="{Binding}">
                                             <MenuItem.Icon>
                                                 <Border Width="14" Height="14" Background="{DynamicResource SystemControlForegroundBaseHighBrush}" RenderOptions.BitmapInterpolationMode="HighQuality"><Border.OpacityMask><ImageBrush Source="avares://Noctis/Assets/Icons/Metadata%20ICON.png" Stretch="Uniform" /></Border.OpacityMask></Border>
                                             </MenuItem.Icon>
                                         </MenuItem>
-                                        <MenuItem Header="Convert Album"
+                                        <MenuItem Header="{loc:T AlbumDetail.ConvertAlbum}"
                                                   Command="{Binding $parent[UserControl].((vm:AlbumDetailViewModel)DataContext).ConvertRelatedAlbumCommand}"
                                                   CommandParameter="{Binding}">
                                             <MenuItem.Icon>
                                                 <Border Width="14" Height="14" Background="{DynamicResource SystemControlForegroundBaseHighBrush}" RenderOptions.BitmapInterpolationMode="HighQuality"><Border.OpacityMask><ImageBrush Source="avares://Noctis/Assets/Icons/Metadata%20ICON.png" Stretch="Uniform" /></Border.OpacityMask></Border>
                                             </MenuItem.Icon>
                                         </MenuItem>
-                                        <MenuItem Header="Scan ReplayGain"
+                                        <MenuItem Header="{loc:T AlbumDetail.ScanReplayGain}"
                                                   Command="{Binding $parent[UserControl].((vm:AlbumDetailViewModel)DataContext).ScanRelatedAlbumReplayGainCommand}"
                                                   CommandParameter="{Binding}">
                                             <MenuItem.Icon>
                                                 <Border Width="14" Height="14" Background="{DynamicResource SystemControlForegroundBaseHighBrush}" RenderOptions.BitmapInterpolationMode="HighQuality"><Border.OpacityMask><ImageBrush Source="avares://Noctis/Assets/Icons/Metadata%20ICON.png" Stretch="Uniform" /></Border.OpacityMask></Border>
                                             </MenuItem.Icon>
                                         </MenuItem>
-                                        <MenuItem Header="Show Folder"
+                                        <MenuItem Header="{loc:T AlbumDetail.ShowFolder}"
                                                   Command="{Binding $parent[UserControl].((vm:AlbumDetailViewModel)DataContext).ShowRelatedAlbumInExplorerCommand}"
                                                   CommandParameter="{Binding}">
                                             <MenuItem.Icon>
@@ -829,7 +951,7 @@
                                             </MenuItem.Icon>
                                         </MenuItem>
                                         <Separator />
-                                        <MenuItem Header="Remove from Library" Classes="danger"
+                                        <MenuItem Header="{loc:T AlbumDetail.RemoveFromLibrary}" Classes="danger"
                                                   Command="{Binding $parent[UserControl].((vm:AlbumDetailViewModel)DataContext).RemoveRelatedAlbumFromLibraryCommand}"
                                                   CommandParameter="{Binding}">
                                             <MenuItem.Icon>
@@ -844,7 +966,7 @@
                                             ClipToBounds="True"
                                             Background="#1AFFFFFF">
                                         <Panel>
-                                            <TextBlock Text="&#x266A;"
+                                            <TextBlock Text="{loc:T AlbumDetail.Text}"
                                                        FontSize="40"
                                                        HorizontalAlignment="Center"
                                                        VerticalAlignment="Center"
@@ -869,10 +991,10 @@
                                             <Border Classes="explicit-badge compact"
                                                     Margin="4,0,0,0"
                                                     IsVisible="{Binding IsExplicit}"
-                                                    ToolTip.Tip="Explicit">
+                                                    ToolTip.Tip="{loc:T AlbumDetail.ExplicitTip}">
                                                 <TextBlock Text="E"
                                                            Classes="explicit-badge-text compact"
-                                                           FontSize="9"
+                                                           FontSize="8"
                                                            Opacity="0.9" />
                                             </Border>
                                         </InlineUIContainer>
@@ -925,27 +1047,31 @@
         <!-- More By {Artist}: up to 20 random albums by the same artist (excludes self + Other Versions) -->
         <StackPanel Margin="0,28,0,64" Spacing="10"
                     IsVisible="{Binding HasMoreByArtist}">
-            <Button Classes="no-hover-scale"
-                    Background="Transparent"
-                    BorderThickness="0"
-                    Padding="0"
-                    MinHeight="0"
-                    HorizontalAlignment="Left"
-                    Cursor="Hand"
-                    Command="{Binding OpenMoreByArtistPageCommand}"
-                    ToolTip.Tip="See all">
-                <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-                    <TextBlock Text="{Binding MoreByArtistTitle}"
-                               FontSize="20"
-                               FontWeight="Bold"
-                               Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" />
-                    <TextBlock Text="&#xE76C;"
-                               FontFamily="Segoe Fluent Icons,Segoe MDL2 Assets"
-                               FontSize="14"
-                               Opacity="0.55"
-                               VerticalAlignment="Center" />
-                </StackPanel>
-            </Button>
+            <!-- Header is plain text; the only affordance is the "See discography" link on
+                 the right, which opens the artist page (Discord ask, 2026-09-03: the old
+                 chevron + clickable title read as a mystery button). -->
+            <Grid ColumnDefinitions="*,Auto" Margin="0,0,16,0">
+                <TextBlock Grid.Column="0"
+                           Text="{Binding MoreByArtistTitle}"
+                           FontSize="20"
+                           FontWeight="Bold"
+                           VerticalAlignment="Center" />
+                <Button Grid.Column="1"
+                        Classes="no-hover-scale see-discography"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        Padding="8,4"
+                        MinHeight="0"
+                        VerticalAlignment="Center"
+                        Cursor="Hand"
+                        Command="{Binding ViewArtistCommand}"
+                        ToolTip.Tip="{loc:T AlbumDetail.OpenArtistPageTip}">
+                    <TextBlock Text="{loc:T AlbumDetail.SeeDiscography}"
+                               FontSize="13"
+                               FontWeight="SemiBold"
+                               Opacity="0.7" />
+                </Button>
+            </Grid>
             <Grid>
             <ScrollViewer x:Name="MoreByArtistScroll"
                           HorizontalScrollBarVisibility="Hidden"
@@ -975,27 +1101,27 @@
                                                   Command="{Binding $parent[UserControl].((vm:AlbumDetailViewModel)DataContext).PlayRelatedAlbumCommand}"
                                                   CommandParameter="{Binding}">
                                             <MenuItem.Header>
-                                                <TextBlock Text="Play" TextTrimming="CharacterEllipsis" FontWeight="Normal" FontSize="14" FontFamily="{Binding $parent[MenuItem].FontFamily}" />
+                                                <TextBlock Text="{loc:T AlbumDetail.PlayTip}" TextTrimming="CharacterEllipsis" FontWeight="Normal" FontSize="14" FontFamily="{Binding $parent[MenuItem].FontFamily}" />
                                             </MenuItem.Header>
                                             <MenuItem.Icon>
                                                 <Border Width="14" Height="14" Background="{DynamicResource SystemControlForegroundBaseHighBrush}" RenderOptions.BitmapInterpolationMode="HighQuality"><Border.OpacityMask><ImageBrush Source="avares://Noctis/Assets/Icons/Play%20ICON.png" Stretch="Uniform" /></Border.OpacityMask></Border>
                                             </MenuItem.Icon>
                                         </MenuItem>
-                                        <MenuItem Header="Shuffle"
+                                        <MenuItem Header="{loc:T AlbumDetail.ShuffleTip}"
                                                   Command="{Binding $parent[UserControl].((vm:AlbumDetailViewModel)DataContext).ShuffleRelatedAlbumCommand}"
                                                   CommandParameter="{Binding}">
                                             <MenuItem.Icon>
                                                 <PathIcon Data="{StaticResource ShuffleIcon}" Width="14" Height="14" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" />
                                             </MenuItem.Icon>
                                         </MenuItem>
-                                        <MenuItem Header="Play Next"
+                                        <MenuItem Header="{loc:T AlbumDetail.PlayNext}"
                                                   Command="{Binding $parent[UserControl].((vm:AlbumDetailViewModel)DataContext).PlayNextRelatedAlbumCommand}"
                                                   CommandParameter="{Binding}">
                                             <MenuItem.Icon>
                                                 <Border Width="14" Height="14" Background="{DynamicResource SystemControlForegroundBaseHighBrush}" RenderOptions.BitmapInterpolationMode="HighQuality"><Border.OpacityMask><ImageBrush Source="avares://Noctis/Assets/Icons/Forward%20ICON.png" Stretch="Uniform" /></Border.OpacityMask></Border>
                                             </MenuItem.Icon>
                                         </MenuItem>
-                                        <MenuItem Header="Add to Queue"
+                                        <MenuItem Header="{loc:T AlbumDetail.AddQueue}"
                                                   Command="{Binding $parent[UserControl].((vm:AlbumDetailViewModel)DataContext).AddRelatedAlbumToQueueCommand}"
                                                   CommandParameter="{Binding}">
                                             <MenuItem.Icon>
@@ -1003,7 +1129,7 @@
                                             </MenuItem.Icon>
                                         </MenuItem>
                                         <Separator />
-                                        <MenuItem Header="Add to Playlist"
+                                        <MenuItem Header="{loc:T AlbumDetail.AddPlaylist}"
                                                   Command="{Binding $parent[UserControl].((vm:AlbumDetailViewModel)DataContext).AddRelatedAlbumToNewPlaylistCommand}"
                                                   CommandParameter="{Binding}">
                                             <MenuItem.Icon>
@@ -1011,7 +1137,7 @@
                                             </MenuItem.Icon>
                                         </MenuItem>
                                         <Separator />
-                                        <MenuItem Header="Favorites"
+                                        <MenuItem Header="{loc:T AlbumDetail.Favorites}"
                                                   Command="{Binding $parent[UserControl].((vm:AlbumDetailViewModel)DataContext).ToggleRelatedAlbumFavoritesCommand}"
                                                   CommandParameter="{Binding}"
                                                   IsVisible="{Binding !IsAllTracksFavorite}">
@@ -1019,7 +1145,7 @@
                                                 <Border Width="14" Height="14" Background="{DynamicResource SystemControlForegroundBaseHighBrush}" RenderOptions.BitmapInterpolationMode="HighQuality"><Border.OpacityMask><ImageBrush Source="avares://Noctis/Assets/Icons/Favorites%20icon.png" Stretch="Uniform" /></Border.OpacityMask></Border>
                                             </MenuItem.Icon>
                                         </MenuItem>
-                                        <MenuItem Header="Remove from Favorites"
+                                        <MenuItem Header="{loc:T AlbumDetail.RemoveFromFavorites}"
                                                   Command="{Binding $parent[UserControl].((vm:AlbumDetailViewModel)DataContext).ToggleRelatedAlbumFavoritesCommand}"
                                                   CommandParameter="{Binding}"
                                                   IsVisible="{Binding IsAllTracksFavorite}">
@@ -1027,28 +1153,28 @@
                                                 <PathIcon Data="{StaticResource HeartFillIcon}" Width="14" Height="14" Foreground="#E74856" />
                                             </MenuItem.Icon>
                                         </MenuItem>
-                                        <MenuItem Header="Metadata"
+                                        <MenuItem Header="{loc:T AlbumDetail.Metadata}"
                                                   Command="{Binding $parent[UserControl].((vm:AlbumDetailViewModel)DataContext).OpenRelatedAlbumMetadataCommand}"
                                                   CommandParameter="{Binding}">
                                             <MenuItem.Icon>
                                                 <Border Width="14" Height="14" Background="{DynamicResource SystemControlForegroundBaseHighBrush}" RenderOptions.BitmapInterpolationMode="HighQuality"><Border.OpacityMask><ImageBrush Source="avares://Noctis/Assets/Icons/Metadata%20ICON.png" Stretch="Uniform" /></Border.OpacityMask></Border>
                                             </MenuItem.Icon>
                                         </MenuItem>
-                                        <MenuItem Header="Convert Album"
+                                        <MenuItem Header="{loc:T AlbumDetail.ConvertAlbum}"
                                                   Command="{Binding $parent[UserControl].((vm:AlbumDetailViewModel)DataContext).ConvertRelatedAlbumCommand}"
                                                   CommandParameter="{Binding}">
                                             <MenuItem.Icon>
                                                 <Border Width="14" Height="14" Background="{DynamicResource SystemControlForegroundBaseHighBrush}" RenderOptions.BitmapInterpolationMode="HighQuality"><Border.OpacityMask><ImageBrush Source="avares://Noctis/Assets/Icons/Metadata%20ICON.png" Stretch="Uniform" /></Border.OpacityMask></Border>
                                             </MenuItem.Icon>
                                         </MenuItem>
-                                        <MenuItem Header="Scan ReplayGain"
+                                        <MenuItem Header="{loc:T AlbumDetail.ScanReplayGain}"
                                                   Command="{Binding $parent[UserControl].((vm:AlbumDetailViewModel)DataContext).ScanRelatedAlbumReplayGainCommand}"
                                                   CommandParameter="{Binding}">
                                             <MenuItem.Icon>
                                                 <Border Width="14" Height="14" Background="{DynamicResource SystemControlForegroundBaseHighBrush}" RenderOptions.BitmapInterpolationMode="HighQuality"><Border.OpacityMask><ImageBrush Source="avares://Noctis/Assets/Icons/Metadata%20ICON.png" Stretch="Uniform" /></Border.OpacityMask></Border>
                                             </MenuItem.Icon>
                                         </MenuItem>
-                                        <MenuItem Header="Show Folder"
+                                        <MenuItem Header="{loc:T AlbumDetail.ShowFolder}"
                                                   Command="{Binding $parent[UserControl].((vm:AlbumDetailViewModel)DataContext).ShowRelatedAlbumInExplorerCommand}"
                                                   CommandParameter="{Binding}">
                                             <MenuItem.Icon>
@@ -1056,7 +1182,7 @@
                                             </MenuItem.Icon>
                                         </MenuItem>
                                         <Separator />
-                                        <MenuItem Header="Remove from Library" Classes="danger"
+                                        <MenuItem Header="{loc:T AlbumDetail.RemoveFromLibrary}" Classes="danger"
                                                   Command="{Binding $parent[UserControl].((vm:AlbumDetailViewModel)DataContext).RemoveRelatedAlbumFromLibraryCommand}"
                                                   CommandParameter="{Binding}">
                                             <MenuItem.Icon>
@@ -1071,7 +1197,7 @@
                                             ClipToBounds="True"
                                             Background="#1AFFFFFF">
                                         <Panel>
-                                            <TextBlock Text="&#x266A;"
+                                            <TextBlock Text="{loc:T AlbumDetail.Text}"
                                                        FontSize="40"
                                                        HorizontalAlignment="Center"
                                                        VerticalAlignment="Center"
@@ -1096,10 +1222,10 @@
                                             <Border Classes="explicit-badge compact"
                                                     Margin="4,0,0,0"
                                                     IsVisible="{Binding IsExplicit}"
-                                                    ToolTip.Tip="Explicit">
+                                                    ToolTip.Tip="{loc:T AlbumDetail.ExplicitTip}">
                                                 <TextBlock Text="E"
                                                            Classes="explicit-badge-text compact"
-                                                           FontSize="9"
+                                                           FontSize="8"
                                                            Opacity="0.9" />
                                             </Border>
                                         </InlineUIContainer>

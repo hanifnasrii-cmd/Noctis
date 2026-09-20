@@ -1,0 +1,196 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="using:Noctis.Controls"
+             xmlns:loc="using:Noctis.Localization"
+             x:Class="Noctis.Controls.CoverFlowCard"
+             x:Name="Root"
+             ClipToBounds="False">
+
+    <UserControl.Styles>
+        <!-- Title / artist links in the caption: plain text look, no Fluent hover square, no
+             global zoom. Hover and press wash the text the way the player bar's title and
+             artist links do (PlaybackBarView Button.artist-link-btn + Border.artist-text-hover). -->
+        <Style Selector="Button.flow-card-link">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+        </Style>
+        <Style Selector="Button.flow-card-link:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+        </Style>
+        <Style Selector="Button.flow-card-link:pressed /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+        </Style>
+        <Style Selector="Button.flow-card-link:pointerover">
+            <Setter Property="RenderTransform" Value="scale(1)"/>
+        </Style>
+        <Style Selector="Button.flow-card-link:pressed">
+            <Setter Property="RenderTransform" Value="scale(1)"/>
+        </Style>
+        <Style Selector="Border.flow-link-wash">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="CornerRadius" Value="2"/>
+            <Setter Property="Padding" Value="1,0,2,0"/>
+        </Style>
+        <Style Selector="Button.flow-card-link:pointerover Border.flow-link-wash">
+            <Setter Property="Background" Value="#22FFFFFF"/>
+        </Style>
+        <Style Selector="Button.flow-card-link:pressed Border.flow-link-wash">
+            <Setter Property="Background" Value="#33FFFFFF"/>
+        </Style>
+    </UserControl.Styles>
+
+    <!-- Three rings, each doing ONE job:
+         Shadow  - unclipped, carries the BoxShadow (ClipToBounds would cut it).
+         Frame   - draws the 2px light rim only; NOT clipped, so the rim's rounded
+                   corners render at full strength (a clipped stroke loses its corner
+                   arcs, worse still under the side cards' 3D tilt + scale).
+         Clip    - clips the slab at radius - rim, inside the rim.
+         Inside: ONE glass slab (CardGlass) under everything - the artwork sits inset on
+         it with its own rounded corners and the caption rests on the same surface, the
+         way the reference cards read as a single piece of frosted LIGHT glass: a
+         translucent white-grey panel over the blurred cover, not a dark tile. -->
+    <Border x:Name="Shadow"
+            CornerRadius="{Binding #Root.CardCornerRadius}"
+            BoxShadow="0 14 36 0 #59000000"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Center">
+        <Border x:Name="Frame"
+                CornerRadius="{Binding #Root.CardCornerRadius}"
+                BorderThickness="1"
+                BorderBrush="#1FFFFFFF">
+          <Border x:Name="Clip"
+                  CornerRadius="{Binding #Root.InnerCornerRadius}"
+                  ClipToBounds="True">
+            <Panel>
+                <!-- The slab: REAL translucent frosted glass, always — it does not follow the
+                     app-wide Liquid Glass switch (UseAppGlass off, IsGlassActive on), because
+                     the reference is a see-through frosted card and a flat fill cannot read
+                     that way: a translucent flat slab showed the neighbours' rims and captions
+                     as hard shapes through the centre card, an opaque one looked like a grey
+                     tile. The blur dissolves what is behind into a soft tint instead. The tint
+                     is SMOKY GREY, not white: a white tint over a blurred cover reads milky
+                     and, under the light rim, as a white outline round every card. -->
+                <controls:GlassPanel x:Name="CardGlass"
+                                     UseAppGlass="False"
+                                     IsGlassActive="True"
+                                     GlassTint="#808080"
+                                     GlassTintOpacity="{Binding #Root.CardTintOpacity}"
+                                     BlurRadius="{Binding #Root.CardBlurRadius}"
+                                     EdgeThickness="0" />
+
+                <!-- Catch-light: a single 1px line along the TOP edge only (8% white),
+                     inside the rounded clip so it dies into the corners. This is the whole
+                     of the card's "lit edge" — the rim itself stays near-invisible. -->
+                <Border x:Name="TopHighlight"
+                        Height="1"
+                        VerticalAlignment="Top"
+                        Background="#14FFFFFF"
+                        IsHitTestVisible="False" />
+                <Grid RowDefinitions="Auto,Auto">
+                    <!-- Artwork: square, inset on the slab with its own rounded corners -->
+                    <Border Grid.Row="0" x:Name="ArtworkFrame"
+                            Margin="{Binding #Root.ArtworkMargin}"
+                            CornerRadius="{Binding #Root.ArtworkCornerRadius}"
+                            ClipToBounds="True">
+                    <Panel x:Name="ArtworkPanel"
+                           Width="{Binding #Root.ArtworkSize}"
+                           Height="{Binding #Root.ArtworkSize}">
+                        <Border Background="#2A2A31" />
+                        <TextBlock Text="{loc:T CoverFlow.Text}"
+                                   FontSize="{Binding #Root.PlaceholderFontSize}"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"
+                                   Opacity="0.15"
+                                   IsVisible="{Binding #Root.ArtworkPath, Converter={x:Static StringConverters.IsNullOrEmpty}}" />
+                        <controls:CachedImage SourcePath="{Binding #Root.ArtworkPath}"
+                                              DecodeWidth="{Binding #Root.DecodeWidth}"
+                                              Stretch="UniformToFill"
+                                              RenderOptions.BitmapInterpolationMode="HighQuality"
+                                              IsVisible="{Binding #Root.ArtworkPath, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                        <ContentPresenter Content="{Binding #Root.Overlay}" />
+                    </Panel>
+                    </Border>
+
+                    <!-- Frosted caption strip: title + artist, every card carries its own -->
+                    <!-- Caption: title + artist resting on the slab under the artwork -->
+                    <Border Grid.Row="1" x:Name="Caption"
+                            Padding="14,10,14,16">
+                        <StackPanel Spacing="2">
+                            <!-- Auto columns, not a horizontal StackPanel: that measures the
+                                 title at infinite width and CharacterEllipsis never trims. -->
+                            <Grid ColumnDefinitions="Auto,Auto" HorizontalAlignment="Center">
+                                <!-- Title is a link (09-17): clicking it is what clicking the
+                                     artwork used to do; the host decides via TitleClicked. -->
+                                <Button x:Name="TitleLinkButton"
+                                        Grid.Column="0"
+                                        Classes="flow-card-link"
+                                        Click="OnTitleClick"
+                                        ToolTip.Tip="{Binding #Root.TitleToolTip}"
+                                        VerticalAlignment="Center">
+                                    <Border Classes="flow-link-wash">
+                                        <TextBlock x:Name="TitleText"
+                                                   Text="{Binding #Root.Title}"
+                                                   FontSize="{Binding #Root.TitleFontSize}"
+                                                   FontWeight="SemiBold"
+                                                   Foreground="White"
+                                                   TextTrimming="CharacterEllipsis"
+                                                   TextAlignment="Center"
+                                                   MaxWidth="{Binding #Root.TitleMaxWidth}"
+                                                   VerticalAlignment="Center" />
+                                    </Border>
+                                </Button>
+                                <Border Grid.Column="1"
+                                        Classes="explicit-badge compact"
+                                        Margin="6,0,0,0"
+                                        VerticalAlignment="Center"
+                                        IsVisible="{Binding #Root.IsExplicit}">
+                                    <TextBlock Text="E"
+                                               Classes="explicit-badge-text compact"
+                                               FontSize="10"
+                                               Opacity="0.9" />
+                                </Border>
+                            </Grid>
+                            <!-- Artist: a link when the host gives a command, plain text otherwise -->
+                            <TextBlock x:Name="ArtistText"
+                                       Text="{Binding #Root.Artist}"
+                                       FontSize="{Binding #Root.ArtistFontSize}"
+                                       Foreground="{DynamicResource AccentColorBrush}"
+                                       TextTrimming="CharacterEllipsis"
+                                       TextAlignment="Center"
+                                       MaxWidth="{Binding #Root.TitleMaxWidth}"
+                                       HorizontalAlignment="Center"
+                                       IsVisible="{Binding #Root.ArtistCommand, Converter={x:Static ObjectConverters.IsNull}}" />
+                            <Button x:Name="ArtistLinkButton"
+                                    Classes="flow-card-link"
+                                    Command="{Binding #Root.ArtistCommand}"
+                                    ToolTip.Tip="{loc:T PlaybackBar.ViewArtistTip}"
+                                    IsVisible="{Binding #Root.ArtistCommand, Converter={x:Static ObjectConverters.IsNotNull}}">
+                                <Border Classes="flow-link-wash">
+                                    <TextBlock Text="{Binding #Root.Artist}"
+                                               FontSize="{Binding #Root.ArtistFontSize}"
+                                               Foreground="{DynamicResource AccentColorBrush}"
+                                               TextTrimming="CharacterEllipsis"
+                                               TextAlignment="Center"
+                                               MaxWidth="{Binding #Root.TitleMaxWidth}" />
+                                </Border>
+                            </Button>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+
+                <!-- Depth dimming for cards away from the centre -->
+                <Border x:Name="DimOverlay"
+                        Background="#000"
+                        Opacity="{Binding #Root.Dim}"
+                        IsHitTestVisible="False" />
+            </Panel>
+          </Border>
+        </Border>
+    </Border>
+
+</UserControl>

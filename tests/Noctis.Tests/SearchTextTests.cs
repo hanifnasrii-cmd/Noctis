@@ -1,4 +1,4 @@
-using Noctis.Helpers;
+﻿using Noctis.Helpers;
 using Xunit;
 
 namespace Noctis.Tests;
@@ -24,6 +24,10 @@ public class SearchTextTests
     [InlineData("Cruel Summer", "reputation", false)]
     [InlineData("Anything", "", true)]                 // blank query matches everything
     [InlineData("", "x", false)]                       // blank source, real query
+    [InlineData("Anything", "&", false)]               // punctuation-only query must NOT match everything
+    [InlineData("Rock & Roll", "&", true)]             // ...but still matches the raw character
+    [InlineData("Mr. Mr.", "**", false)]
+    [InlineData("Baby ***", "**", true)]
     public void Matches_PunctuationAndAccentInsensitive(string? source, string query, bool expected)
         => Assert.Equal(expected, SearchText.Matches(source, query));
 }

@@ -1,0 +1,37 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- The UI-free heart of Noctis: models, persistence, the library scanner and
+         index, tag metadata, the OpenSubsonic server and device sync. The desktop app
+         references it; so does the headless noctis-server host, which is why nothing
+         in here may depend on Avalonia, LibVLC, NAudio, Skia or Whisper. Plain net10.0
+         on every OS (the app's Windows TFM exists only for WinRT projections). -->
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>Noctis</RootNamespace>
+    <AssemblyName>Noctis.Core</AssemblyName>
+    <NoWarn>CS0067;MVVMTK0039;CA1416</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Noctis" />
+    <InternalsVisibleTo Include="Noctis.Tests" />
+    <InternalsVisibleTo Include="noctis-server" />
+  </ItemGroup>
+
+  <!-- Built-in Noctis server: OpenSubsonic API over Kestrel. -->
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Models are ObservableObjects (bindable in the app; inert on the server). -->
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+    <PackageReference Include="TagLibSharp" Version="2.3.0" />
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="8.0.29" />
+    <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="2.1.12" />
+    <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="8.0.0" />
+  </ItemGroup>
+
+</Project>

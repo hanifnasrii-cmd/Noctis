@@ -103,8 +103,6 @@ public partial class LibraryPlaylistsViewModel : ViewModelBase, ISearchable
 
         _currentFilter = query;
 
-        FilteredPlaylists.Clear();
-
         var filtered = PlaylistItems.AsEnumerable();
         if (!string.IsNullOrWhiteSpace(query))
         {
@@ -121,8 +119,24 @@ public partial class LibraryPlaylistsViewModel : ViewModelBase, ISearchable
             _ => filtered,
         };
 
-        foreach (var item in filtered)
-            FilteredPlaylists.Add(item);
+        // Sync the collection in place instead of Clear+refill — the same reason
+        // RebuildSidebarRows does. Navigating to the Playlists section calls
+        // ApplyFilter("") directly (MainWindowViewModel, "Clear it directly here"), and a
+        // Clear raises a Reset that drops EVERY tile's container. The rebuilt CachedImages
+        // start at Source = null and only repaint once the cache hit lands, so the whole
+        // grid of artwork blinked on every click of the section. When the result is
+        // unchanged this loop mutates nothing at all, so the containers — and their
+        // already-decoded covers — survive untouched.
+        var desired = filtered.ToList();
+        for (int i = 0; i < desired.Count; i++)
+        {
+            var at = FilteredPlaylists.IndexOf(desired[i]);
+            if (at == i) continue;
+            if (at > i) FilteredPlaylists.Move(at, i);
+            else FilteredPlaylists.Insert(i, desired[i]);
+        }
+        while (FilteredPlaylists.Count > desired.Count)
+            FilteredPlaylists.RemoveAt(FilteredPlaylists.Count - 1);
 
         ShowNoPlaylists = PlaylistItems.Count == 0;
         ShowNoResults = PlaylistItems.Count > 0 && FilteredPlaylists.Count == 0;

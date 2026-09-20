@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Threading;
+using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Microsoft.Extensions.DependencyInjection;
 using Avalonia.Threading;
@@ -19,6 +20,10 @@ namespace Noctis.ViewModels;
 public partial class PlayerViewModel : ViewModelBase
 {
     private readonly IAudioPlayer _audioPlayer;
+
+    /// <summary>Lead of <see cref="Position"/> over the speaker (output buffer depth);
+    /// the lyrics clock subtracts it. See <see cref="IAudioPlayer.OutputLatency"/>.</summary>
+    public TimeSpan OutputLatency => _audioPlayer.OutputLatency;
     private readonly ILibraryService _library;
     private readonly IPersistenceService _persistence;
     private readonly IAnimatedCoverService _animatedCovers;
@@ -47,6 +52,7 @@ public partial class PlayerViewModel : ViewModelBase
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(PlayPauseTooltip))]
     [NotifyPropertyChangedFor(nameof(IsPlaying))]
+    [NotifyPropertyChangedFor(nameof(LyricsBackgroundHoldsWhilePaused))]
     private PlaybackState _state = PlaybackState.Stopped;
     [ObservableProperty] private TimeSpan _position;
     [ObservableProperty] private TimeSpan _duration;
@@ -54,7 +60,37 @@ public partial class PlayerViewModel : ViewModelBase
     [ObservableProperty] private int _volume = 75;
     [ObservableProperty] private bool _isMuted;
     [ObservableProperty] private Bitmap? _albumArt;
+
+    /// <summary>
+    /// The cover is a shared <see cref="ArtworkCache"/> bitmap. Registering this
+    /// holder is what keeps the cache from disposing it under the lyrics backdrops
+    /// while it is the current track, and releasing the old one lets an evicted
+    /// cover actually go away on the next track change.
+    /// </summary>
+    partial void OnAlbumArtChanged(Bitmap? oldValue, Bitmap? newValue)
+    {
+        ArtworkCache.Acquire(newValue);
+        ArtworkCache.Release(oldValue);
+    }
     [ObservableProperty] private string? _currentAnimatedCoverPath;
+
+    // ── Music video (Discord, aaron 09-15): a clip next to the song replaces the cover
+    // on the lyrics page and follows playback. Video only — the song's own audio plays.
+    [ObservableProperty] private string? _currentMusicVideoPath;
+    [ObservableProperty] private bool _musicVideosEnabled;
+    /// <summary>0 = flat, otherwise the rounded corner radius of the video frame.</summary>
+    [ObservableProperty] private double _musicVideoCornerRadius = 18;
+    public bool HasMusicVideo => !string.IsNullOrEmpty(CurrentMusicVideoPath);
+    partial void OnCurrentMusicVideoPathChanged(string? value) => OnPropertyChanged(nameof(HasMusicVideo));
+    partial void OnMusicVideosEnabledChanged(bool value) => ResolveMusicVideo();
+
+    private void ResolveMusicVideo()
+    {
+        var track = CurrentTrack;
+        CurrentMusicVideoPath = MusicVideosEnabled && track != null && !track.IsRemoteStream
+            ? Helpers.MusicVideoLocator.Find(track.FilePath)
+            : null;
+    }
     [ObservableProperty] private string _positionText = "0:00";
     [ObservableProperty] private string _durationText = "0:00";
     [ObservableProperty] private string _remainingTimeText = "0:00";
@@ -85,19 +121,153 @@ public partial class PlayerViewModel : ViewModelBase
     [ObservableProperty] private bool _autoMixBeatMatch = true;
     [ObservableProperty] private bool _trackTitleMarqueeEnabled = true;
     [ObservableProperty] private bool _artistMarqueeEnabled = true;
+
+    // ── Player island extras (Settings → Appearance → Player Island Buttons) ──
+    // Podcast/audiobook transport (Discord, Luwi, 08-26): skip back/forward,
+    // playback speed and a sleep-timer button, each opt-in. Mirrored from
+    // SettingsViewModel like the marquee flags — the bar's DataContext is this VM.
+    [ObservableProperty] private bool _islandShowSkipButtons;
+    [ObservableProperty] private bool _islandShowPlaybackSpeed;
+    [ObservableProperty] private bool _islandShowSleepTimer;
+    /// <summary>GitHub #59: shuffle on the island, after Repeat.</summary>
+    [ObservableProperty] private bool _islandShowShuffle;
+    /// <summary>Repeat after Next, and the favorite heart on the right: opt-in since the
+    /// track-box layout, so the stock bar is transport + box + lyrics/queue/volume.</summary>
+    [ObservableProperty] private bool _islandShowRepeat;
+    [ObservableProperty] private bool _islandShowFavorite;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IslandSkipLabel))]
+    [NotifyPropertyChangedFor(nameof(SkipBackTooltip))]
+    [NotifyPropertyChangedFor(nameof(SkipForwardTooltip))]
+    private int _islandSkipSeconds = 15;
+
+    public string IslandSkipLabel => IslandSkipSeconds.ToString(System.Globalization.CultureInfo.InvariantCulture);
+    public string SkipBackTooltip => $"Back {IslandSkipSeconds} seconds";
+    public string SkipForwardTooltip => $"Forward {IslandSkipSeconds} seconds";
+
+    /// <summary>Playback speed as a percent (75 … 200); 100 = normal. Session-only on
+    /// purpose: a forgotten 1.5× would make every album sound wrong on the next launch.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(PlaybackRate))]
+    [NotifyPropertyChangedFor(nameof(PlaybackRateText))]
+    [NotifyPropertyChangedFor(nameof(IsPlaybackRateChanged))]
+    [NotifyPropertyChangedFor(nameof(IsSpeedOrPitchChanged))]
+    private int _playbackRatePercent = 100;
+
+    public double PlaybackRate => PlaybackRatePercent / 100.0;
+    public string PlaybackRateText => (PlaybackRatePercent / 100.0).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture) + "×";
+    public bool IsPlaybackRateChanged => PlaybackRatePercent != 100;
+
+    partial void OnPlaybackRatePercentChanged(int value)
+    {
+        _audioPlayer.SetPlaybackRate(value / 100.0);
+        DebugLogger.Info(DebugLogger.Category.Playback, "PlaybackRate", $"percent={value}");
+    }
+
+    /// <summary>Pitch shift in semitones (−12 … +12), independent of speed. Session-only like the speed.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(PitchText))]
+    [NotifyPropertyChangedFor(nameof(IsPitchChanged))]
+    [NotifyPropertyChangedFor(nameof(IsSpeedOrPitchChanged))]
+    private int _pitchSemitones;
+
+    public string PitchText => PitchSemitones == 0 ? "±0" : (PitchSemitones > 0 ? "+" : "") + PitchSemitones.ToString(System.Globalization.CultureInfo.InvariantCulture);
+    public bool IsPitchChanged => PitchSemitones != 0;
+    /// <summary>Lights the island speed button when either control is off its default.</summary>
+    public bool IsSpeedOrPitchChanged => IsPlaybackRateChanged || IsPitchChanged;
+
+    partial void OnPitchSemitonesChanged(int value)
+    {
+        _audioPlayer.SetPitchSemitones(value);
+        DebugLogger.Info(DebugLogger.Category.Playback, "Pitch", $"semitones={value}");
+    }
+
+    /// <summary>Island pitch menu; parameter is a semitone offset ("-3" … "3") or "0" to reset.</summary>
+    [RelayCommand]
+    private void SetPitch(string? semitones)
+    {
+        if (int.TryParse(semitones, out var st) && st is >= -12 and <= 12)
+            PitchSemitones = st;
+    }
     /// <summary>Opacity of the playback bar's glass fill (0–1). Driven by Settings; default
     /// 0.4 matches the original #66 alpha. Background only — controls/text stay opaque.</summary>
     [ObservableProperty] private double _islandBackgroundOpacity = 0.4;
+    /// <summary>Opacity of the white track box (song-info card) inside the bar (0–1).
+    /// Driven by Settings; 0 removes the card, leaving art/text straight on the pill.</summary>
+    [ObservableProperty] private double _islandTrackBoxOpacity = 0.07;
     /// <summary>User-resized width of the persistent playback bar island. Hydrated from
     /// AppSettings.PlaybackBarWidth at startup and updated by the bar's edge-drag; the
-    /// 590 default mirrors both the settings default and the XAML base width.</summary>
-    [ObservableProperty] private double _playbackBarIslandWidth = 590;
+    /// 626 default mirrors both the settings default and the XAML base width.</summary>
+    [ObservableProperty] private double _playbackBarIslandWidth = 536;
     /// <summary>Whether the lyrics page's flowing-light blobs are shown in artwork
     /// background mode (issue #22). Driven by Settings like the marquee flags.</summary>
     [ObservableProperty] private bool _lyricsFlowingLightEnabled;
+    /// <summary>See <see cref="AppSettings.LyricsFlowingStyle"/>; the lyrics page picks the layer from it.</summary>
+    [ObservableProperty] private string _lyricsFlowingStyle = FlowingStyles.Drift;
+    [ObservableProperty] private double _lyricsKawarpWarp = 1.0;
+    [ObservableProperty] private int _lyricsKawarpBlur = 6;
+    /// <summary>Live spectrum visualizer behind the lyrics page. Driven by Settings.</summary>
+    [ObservableProperty] private bool _lyricsVisualizerEnabled;
+    /// <summary>Visualizer look (a VisualizerStyle name). Driven by Settings.</summary>
+    [ObservableProperty] private string _lyricsVisualizerStyle = VisualizerStyles.DefaultSetting;
+    /// <summary>Visualizer paints with the artwork's colour (else white/accent). Driven by Settings.</summary>
+    [ObservableProperty] private bool _lyricsVisualizerArtworkColor = true;
+    /// <summary>The current cover's vibrant colour (ShareCardRenderer's path-cached hue-bucket
+    /// vote, computed off the UI thread when the track changes); null without artwork.
+    /// The visualizer surfaces tint their bars with it.</summary>
+    [ObservableProperty] private Color? _artworkAccentColor;
+    /// <summary>Looping video/GIF the lyrics page paints behind the lyrics (empty = none).
+    /// Driven by Settings like the flags above; the page's VideoBackdrop binds it.</summary>
+    [ObservableProperty] private string _lyricsBackgroundMediaPath = string.Empty;
+    private string _lyricsBackgroundDefaultPath = string.Empty;
+    private IReadOnlyDictionary<string, string> _lyricsBackgroundOverrides = new Dictionary<string, string>();
+    /// <summary>Settings: freeze the background video while playback is paused.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(LyricsBackgroundHoldsWhilePaused))]
+    private bool _lyricsBackgroundPausesWithPlayback;
+    /// <summary>What the lyrics page's VideoBackdrop binds as IsPaused.</summary>
+    public bool LyricsBackgroundHoldsWhilePaused => LyricsBackgroundPausesWithPlayback && !IsPlaying;
+
+    /// <summary>Settings hands over the default clip and the per-song/per-album overrides;
+    /// <see cref="LyricsBackgroundMediaPath"/> is re-resolved for the current track.</summary>
+    public void SetLyricsBackgroundSources(string defaultPath, IReadOnlyDictionary<string, string> overrides)
+    {
+        _lyricsBackgroundDefaultPath = defaultPath ?? string.Empty;
+        _lyricsBackgroundOverrides = overrides ?? new Dictionary<string, string>();
+        ResolveLyricsBackground();
+    }
+
+    /// <summary>The song's own clip, else its album's, else the default; a recorded clip whose
+    /// file is gone is skipped so the page never binds a dead path.</summary>
+    public string ResolveLyricsBackgroundFor(Track? track)
+    {
+        if (track != null)
+        {
+            if (TryOverride(Helpers.LyricsBackgroundOverrides.KeyForTrack(track), out var own)) return own;
+            if (TryOverride(Helpers.LyricsBackgroundOverrides.KeyForAlbumId(track.AlbumId), out var album)) return album;
+        }
+        return _lyricsBackgroundDefaultPath;
+
+        bool TryOverride(string key, out string path)
+        {
+            if (_lyricsBackgroundOverrides.TryGetValue(key, out var p) && !string.IsNullOrEmpty(p) && File.Exists(p))
+            {
+                path = p;
+                return true;
+            }
+            path = string.Empty;
+            return false;
+        }
+    }
+
+    private void ResolveLyricsBackground() => LyricsBackgroundMediaPath = ResolveLyricsBackgroundFor(CurrentTrack);
     /// <summary>Opt-in fullscreen lyrics focus — dims all but the active line and its
     /// closest neighbors while the lyrics page is fullscreen. Driven by Settings.</summary>
     [ObservableProperty] private bool _lyricsFullScreenFocusEnabled;
+    /// <summary>Percent floor (0–60) under the dimmed lyric lines; above 0 every line
+    /// stays faintly visible and clickable. Driven by Settings.</summary>
+    [ObservableProperty] private int _lyricsMinLineOpacity;
     /// <summary>Whether TTML words split across several timed spans render unbroken
     /// (issue #32). Driven by Settings; the lyrics VM re-parses when it flips.</summary>
     [ObservableProperty] private bool _lyricsJoinSplitWords;
@@ -275,7 +445,8 @@ public partial class PlayerViewModel : ViewModelBase
                 else if (_library.Tracks.Count > 0)
                 {
                     // No track loaded — shuffle entire library.
-                    var allTracks = Helpers.ShuffleHelper.WeightedShuffle(_library.Tracks, recentlyPlayed: _recentlyPlayed);
+                    var allTracks = Helpers.ShuffleHelper.WeightedShuffle(
+                        _library.Tracks, recentlyPlayed: _recentlyPlayed, allowExplicit: _allowExplicitContent);
                     ReplaceQueueAndPlay(allTracks, 0);
                     // Set AFTER the call: ReplaceQueueAndPlay clears the flag (a new queue
                     // isn't shuffled by definition), so setting it first left the queue
@@ -345,6 +516,40 @@ public partial class PlayerViewModel : ViewModelBase
             CancelAutoMixTransition("user skipped");
             GoBackInQueue(QueueAdvanceReason.Previous);
         }
+    }
+
+    /// <summary>Island speed menu; parameter is a percent ("75" … "200").</summary>
+    [RelayCommand]
+    private void SetPlaybackRate(string? percent)
+    {
+        if (int.TryParse(percent, out var p) && p is >= 50 and <= 200)
+            PlaybackRatePercent = p;
+    }
+
+    [RelayCommand]
+    private void SkipBack() => SeekBy(TimeSpan.FromSeconds(-IslandSkipSeconds));
+
+    [RelayCommand]
+    private void SkipForward() => SeekBy(TimeSpan.FromSeconds(IslandSkipSeconds));
+
+    /// <summary>Relative seek, clamped to the track; rides the absolute seek so the
+    /// AutoMix cancel, seek bookkeeping and Seeked event all stay in one place.</summary>
+    internal void SeekBy(TimeSpan delta)
+    {
+        if (CurrentTrack == null || Duration <= TimeSpan.Zero) return;
+        var target = Position + delta;
+        if (target < TimeSpan.Zero) target = TimeSpan.Zero;
+        if (target > Duration) target = Duration;
+        SeekToPosition(target.Ticks / (double)Duration.Ticks);
+    }
+
+    /// <summary>Absolute seek, clamped to the track; rides the fraction seek so its bookkeeping stays in one place.</summary>
+    internal void SeekTo(TimeSpan target)
+    {
+        if (CurrentTrack == null || Duration <= TimeSpan.Zero) return;
+        if (target < TimeSpan.Zero) target = TimeSpan.Zero;
+        if (target > Duration) target = Duration;
+        SeekToPosition(target.Ticks / (double)Duration.Ticks);
     }
 
     [RelayCommand]
@@ -470,9 +675,13 @@ public partial class PlayerViewModel : ViewModelBase
                 _originalQueue = UpNext.ToList();
                 // Shuffle the queue, respecting SkipWhenShuffling and
                 // down-weighting "not liked" + recently-played tracks.
+                // Explicit tracks are NOT filtered here: with the filter off they are parked
+                // out of the new order by PruneBlockedExplicit below, so turning the filter
+                // back on can return them (WeightedShuffle dropping them would lose them).
                 var shuffled = Helpers.ShuffleHelper.WeightedShuffle(
                     UpNext.Where(t => !t.SkipWhenShuffling), recentlyPlayed: _recentlyPlayed);
                 UpNext.ReplaceAll(shuffled);
+                PruneBlockedExplicit(wholeQueue: true);
             }
             else if (_originalQueue.Count > 0)
             {
@@ -489,7 +698,11 @@ public partial class PlayerViewModel : ViewModelBase
                     // come back: they were never played, they're just absent from UpNext.
                     // SkipWhenShuffling was handled; snoozed tracks were not — WeightedShuffle
                     // drops those too, so they satisfied neither branch and a shuffle
-                    // on/off round trip silently deleted them from the queue.
+                    // on/off round trip silently deleted them from the queue. Blocked
+                    // explicit tracks are NOT restored here: they sit in _parkedExplicit
+                    // and only the Explicit Content switch brings them back.
+                    if (IsBlockedExplicit(t))
+                        continue;
                     if (t.SkipWhenShuffling || t.IsSnoozed)
                     {
                         restored.Add(t);
@@ -689,7 +902,8 @@ public partial class PlayerViewModel : ViewModelBase
         if (album?.Tracks == null || album.Tracks.Count == 0) return;
         // No recency weighting here: the user explicitly chose to shuffle this one album,
         // so every track on it should stay equally likely even if just played.
-        var shuffled = Helpers.ShuffleHelper.WeightedShuffle(album.Tracks);
+        var shuffled = Helpers.ShuffleHelper.WeightedShuffle(album.Tracks, allowExplicit: _allowExplicitContent);
+        if (shuffled.Count == 0) return; // every track on the album is blocked explicit
         ReplaceQueueAndPlay(shuffled, 0);
     }
 
@@ -703,7 +917,7 @@ public partial class PlayerViewModel : ViewModelBase
     {
         if (seed == null) return;
         var exclude = new HashSet<Guid> { seed.Id };
-        var batch = _radioService.BuildSimilar(seed, _library.Tracks, RadioBatchSize, exclude);
+        var batch = _radioService.BuildSimilar(seed, PlayableLibraryTracks(), RadioBatchSize, exclude);
         var queue = new List<Track> { seed };
         queue.AddRange(batch);
         // ReplaceQueueAndPlay clears IsRadioActive/_radioSeed; re-arm radio afterward.
@@ -855,6 +1069,7 @@ public partial class PlayerViewModel : ViewModelBase
 
         // Clear stale shuffle state — a new queue replaces whatever was shuffled.
         _originalQueue.Clear();
+        _parkedExplicit.Clear(); // parked explicit tracks belonged to the old queue
         IsShuffleEnabled = false;
 
         // Record the full cycle for Repeat All, starting at the track being played so a
@@ -924,6 +1139,7 @@ public partial class PlayerViewModel : ViewModelBase
         CancelAutoMixTransition("queue changed");
         MarkQueueChanged();
         UpNext.Clear();
+        _parkedExplicit.Clear();
     }
 
     /// <summary>Stops playback and clears all queue data.</summary>
@@ -944,6 +1160,7 @@ public partial class PlayerViewModel : ViewModelBase
         UpNext.Clear();
         History.Clear();
         _originalQueue.Clear();
+        _parkedExplicit.Clear();
         Position = TimeSpan.Zero;
         Duration = TimeSpan.Zero;
         PositionFraction = 0;
@@ -979,6 +1196,33 @@ public partial class PlayerViewModel : ViewModelBase
         MarkQueueChanged();
         var remaining = UpNext.Skip(index).ToList();
         ReplaceQueueAndPlay(remaining, 0);
+    }
+
+    /// <summary>
+    /// Plays the track <paramref name="index"/> steps back in History (0 = most recent).
+    /// The current track and every history entry skipped over go to the FRONT of UpNext
+    /// in their original order, so after the jump the queue replays them in sequence —
+    /// the same bookkeeping as <see cref="GoBackInQueue"/>, applied N deep at once
+    /// (Cover Flow: clicking the −2 card).
+    /// </summary>
+    public void PlayFromHistoryAt(int index)
+    {
+        if (index < 0 || index >= History.Count) return;
+        DebugLogger.Info(DebugLogger.Category.Playback, "PlayFromHistoryAt", $"index={index}, historyLen={History.Count}");
+        CancelAutoMixTransition("user skipped");
+        MarkQueueChanged();
+
+        if (CurrentTrack != null)
+            UpNext.Insert(0, CurrentTrack);
+        // History[0] is the most recent, so it plays soonest after the target: insert in
+        // order at 0,1,2… → [h0, h1, …, current, rest].
+        for (var i = 0; i < index; i++)
+            UpNext.Insert(i, History[i]);
+
+        var target = History[index];
+        for (var i = index; i >= 0; i--)
+            History.RemoveAt(i);
+        PlayTrack(target);
     }
 
     /// <summary>
@@ -1186,6 +1430,8 @@ public partial class PlayerViewModel : ViewModelBase
     partial void OnCurrentTrackChanged(Track? value)
     {
         OnPropertyChanged(nameof(HasContent));
+        ResolveLyricsBackground();
+        ResolveMusicVideo();
         // Re-apply ReplayGain so the new track's RG tags take effect. The
         // player already reads tags at Play() time, but settings or playback
         // path changes can leave us here without a Play() call.
@@ -1203,10 +1449,45 @@ public partial class PlayerViewModel : ViewModelBase
     // lists (Folders/Songs) can highlight the current row via a style class.
     partial void OnCurrentTrackChanged(Track? oldValue, Track? newValue)
     {
-        if (oldValue != null) oldValue.IsNowPlaying = false;
+        if (oldValue != null)
+        {
+            oldValue.IsNowPlaying = false;
+            oldValue.IsCurrentlyPlaying = false;
+        }
         if (newValue != null) newValue.IsNowPlaying = true;
+        SyncNowPlayingFlags();
         DebugLogger.Info(DebugLogger.Category.Playback, "CurrentTrack.Changed",
             $"old={oldValue?.Title ?? "<null>"} new={newValue?.Title ?? "<null>"}");
+    }
+
+    partial void OnStateChanged(PlaybackState value) => SyncNowPlayingFlags();
+
+    private Album? _flaggedAlbum;
+
+    /// <summary>
+    /// Album/single tiles (Albums grid, Home, Favorites, Artist page) show Pause on the
+    /// item that is audibly playing and Play otherwise. The flags live on the shared
+    /// model instances: Track.IsCurrentlyPlaying and the loaded track's Album
+    /// (IsCurrent = loaded, IsNowPlaying = loaded and playing).
+    /// </summary>
+    private void SyncNowPlayingFlags()
+    {
+        var current = CurrentTrack;
+        var playing = State == PlaybackState.Playing;
+        if (current != null) current.IsCurrentlyPlaying = playing;
+
+        var album = current != null && current.AlbumId != Guid.Empty ? _library.GetAlbumById(current.AlbumId) : null;
+        if (_flaggedAlbum != null && !ReferenceEquals(_flaggedAlbum, album))
+        {
+            _flaggedAlbum.IsCurrent = false;
+            _flaggedAlbum.IsNowPlaying = false;
+        }
+        if (album != null)
+        {
+            album.IsCurrent = true;
+            album.IsNowPlaying = playing;
+        }
+        _flaggedAlbum = album;
     }
 
     /// <summary>
@@ -1541,6 +1822,130 @@ public partial class PlayerViewModel : ViewModelBase
         }
     }
 
+    private bool _allowExplicitContent = true;
+
+    /// <summary>
+    /// Explicit tracks taken OUT of UpNext while the filter is off, each with the track
+    /// that followed it at the time, so turning the filter back on can put them back where
+    /// they were (or at the end if that neighbour has since played). Removing without
+    /// parking made the toggle one-way: off pruned the queue, on brought nothing back.
+    /// Cleared whenever the queue is replaced or cleared — parked tracks belong to the
+    /// queue they were parked from.
+    /// </summary>
+    private readonly List<(Track Track, Track? Successor)> _parkedExplicit = new();
+
+    /// <summary>
+    /// Settings → Explicit Content. On (default): no effect. Off: explicit tracks are a
+    /// PLAYBACK filter — parked out of the queue the moment the switch flips (and restored
+    /// when it flips back), skipped on queue advance, left out of shuffle / Autoplay /
+    /// Radio, never pre-rolled for a gapless or AutoMix handoff. Not a library filter: a
+    /// track the user plays directly (click, Play Now) still plays, since that is a
+    /// deliberate act.
+    /// </summary>
+    public bool AllowExplicitContent
+    {
+        get => _allowExplicitContent;
+        set
+        {
+            if (_allowExplicitContent == value) return;
+            _allowExplicitContent = value;
+            if (value) RestoreParkedExplicit();
+            else PruneBlockedExplicit(wholeQueue: true);
+        }
+    }
+
+    /// <summary>True when the filter is on and this track must not start on its own.</summary>
+    private bool IsBlockedExplicit(Track track) => track.IsExplicit && !_allowExplicitContent;
+
+    /// <summary>Library tracks eligible for automatic selection (Autoplay, Radio, library shuffle).</summary>
+    private IEnumerable<Track> PlayableLibraryTracks()
+        => _allowExplicitContent ? _library.Tracks : _library.Tracks.Where(t => !t.IsExplicit);
+
+    /// <summary>
+    /// Takes blocked explicit tracks out of UpNext. <paramref name="wholeQueue"/> (the
+    /// switch flipping off, or a fresh shuffle order) PARKS every explicit track with its
+    /// following non-explicit neighbour so <see cref="RestoreParkedExplicit"/> can undo it.
+    /// The head-only form (an advance or pre-roll about to pick UpNext[0]) drops the
+    /// leading run outright: those are tracks the queue is moving past, exactly like a
+    /// played track, so they do not come back. Nothing removed here plays or enters History.
+    /// </summary>
+    private void PruneBlockedExplicit(bool wholeQueue = false)
+    {
+        if (_allowExplicitContent || UpNext.Count == 0) return;
+
+        int removed = 0;
+        if (wholeQueue)
+        {
+            var kept = new List<Track>(UpNext.Count);
+            var pendingParked = new List<Track>();
+            foreach (var t in UpNext)
+            {
+                if (t.IsExplicit)
+                {
+                    pendingParked.Add(t);
+                    continue;
+                }
+                // The first clean track after a run of explicit ones is the anchor for all of them.
+                foreach (var p in pendingParked) _parkedExplicit.Add((p, t));
+                pendingParked.Clear();
+                kept.Add(t);
+            }
+            foreach (var p in pendingParked) _parkedExplicit.Add((p, null)); // trailing: restore at the end
+            removed = UpNext.Count - kept.Count;
+            if (removed > 0) UpNext.ReplaceAll(kept);
+        }
+        else
+        {
+            while (UpNext.Count > 0 && UpNext[0].IsExplicit)
+            {
+                UpNext.RemoveAt(0);
+                removed++;
+            }
+        }
+
+        if (removed > 0)
+        {
+            MarkQueueChanged();
+            DebugLogger.Info(DebugLogger.Category.Queue, "ExplicitFilter.Pruned",
+                $"removed={removed}, wholeQueue={wholeQueue}, parked={_parkedExplicit.Count}, queueCount={UpNext.Count}");
+        }
+    }
+
+    /// <summary>
+    /// Puts parked explicit tracks back: in front of their remembered neighbour when it is
+    /// still queued, otherwise at the end (the neighbour has played, so the slot is gone).
+    /// A parked track the user has meanwhile re-queued by hand is not added twice.
+    /// </summary>
+    private void RestoreParkedExplicit()
+    {
+        if (_parkedExplicit.Count == 0) return;
+
+        int restored = 0;
+        foreach (var (track, successor) in _parkedExplicit)
+        {
+            if (UpNext.Any(t => t.Id == track.Id)) continue;
+            var index = successor == null ? -1 : IndexOfTrack(successor);
+            if (index < 0) UpNext.Add(track);
+            else UpNext.Insert(index, track);
+            restored++;
+        }
+        _parkedExplicit.Clear();
+
+        if (restored > 0)
+        {
+            MarkQueueChanged();
+            DebugLogger.Info(DebugLogger.Category.Queue, "ExplicitFilter.Restored",
+                $"restored={restored}, queueCount={UpNext.Count}");
+        }
+
+        int IndexOfTrack(Track t)
+        {
+            for (int i = 0; i < UpNext.Count; i++)
+                if (UpNext[i].Id == t.Id) return i;
+            return -1;
+        }
+    }
+
     private void AdvanceQueueCore(QueueAdvanceReason reason)
     {
         if (reason is QueueAdvanceReason.UserSkip or QueueAdvanceReason.Previous or QueueAdvanceReason.Error)
@@ -1588,6 +1993,11 @@ public partial class PlayerViewModel : ViewModelBase
             TrimHistory();
         }
 
+        // Explicit Content off: whatever explicit tracks sit at the head of the queue are
+        // dropped here, so the advance below lands on the first playable one (or falls
+        // through to repeat / autoplay / stop when nothing playable is left).
+        PruneBlockedExplicit();
+
         if (UpNext.Count > 0)
         {
             DebugLogger.Info(
@@ -1607,6 +2017,8 @@ public partial class PlayerViewModel : ViewModelBase
             var allTracks = _repeatCycleTracks.Count > 0
                 ? new List<Track>(_repeatCycleTracks)
                 : History.Reverse().ToList();
+            if (!_allowExplicitContent)
+                allTracks.RemoveAll(IsBlockedExplicit);
 
             History.Clear();
             _originalQueue.Clear(); // clear stale shuffle state to prevent wrong restore
@@ -1666,14 +2078,16 @@ public partial class PlayerViewModel : ViewModelBase
         foreach (var t in History)
             exclude.Add(t.Id);
 
-        var picks = _autoplayService.PickSimilar(seed, _library.Tracks, AutoplayBatchSize, exclude);
+        // Materialize once: the fall-back call below scans the same pool again.
+        var pool = _allowExplicitContent ? _library.Tracks : PlayableLibraryTracks().ToList();
+        var picks = _autoplayService.PickSimilar(seed, pool, AutoplayBatchSize, exclude);
         if (picks.Count == 0)
         {
             // Candidate pool exhausted for this run — allow reuse: start a fresh cycle
             // that only refuses to replay the seed itself back-to-back.
             _autoplayPickedIds.Clear();
             picks = _autoplayService.PickSimilar(
-                seed, _library.Tracks, AutoplayBatchSize, new HashSet<Guid> { seed.Id });
+                seed, pool, AutoplayBatchSize, new HashSet<Guid> { seed.Id });
             if (picks.Count == 0)
                 return false;
         }
@@ -1728,7 +2142,7 @@ public partial class PlayerViewModel : ViewModelBase
         // Snapshot on the UI thread so the background scan can't race library mutations
         // or live queue collections.
         var seed = _radioSeed;
-        var snapshot = _library.Tracks.ToList();
+        var snapshot = PlayableLibraryTracks().ToList();
         var exclude = new HashSet<Guid>(History.Select(t => t.Id));
         foreach (var t in UpNext) exclude.Add(t.Id);
         if (CurrentTrack != null) exclude.Add(CurrentTrack.Id);
@@ -1776,7 +2190,7 @@ public partial class PlayerViewModel : ViewModelBase
     /// decoding the same cover at a player-only size. Mismatched sizes caused
     /// visible cache-miss decodes — the artwork "flicker" on track switch.
     /// </summary>
-    private const int PlayerArtDecodeWidth = 768;
+    private const int PlayerArtDecodeWidth = 512;
 
     /// <summary>Bumped on every <see cref="LoadAlbumArt"/> call so a slow background
     /// decode that finishes after the track changed again is discarded.</summary>
@@ -1802,9 +2216,24 @@ public partial class PlayerViewModel : ViewModelBase
         if (!hasArtFile)
         {
             AlbumArt = null;
+            ArtworkAccentColor = null;
             CurrentAnimatedCoverPath = _animatedCovers.Resolve(track);
             return;
         }
+
+        // Vibrant colour for the visualizer tint: SkiaSharp file decode, path-cached after
+        // the first call, so it runs off the UI thread and lands only if still current.
+        _ = Task.Run(() =>
+        {
+            Color? accent = null;
+            try { accent = Color.Parse(ShareCardRenderer.GetVibrantColorHex(artPath)); }
+            catch { /* no tint for this cover */ }
+            Dispatcher.UIThread.Post(() =>
+            {
+                if (generation == Volatile.Read(ref _albumArtGeneration))
+                    ArtworkAccentColor = accent;
+            });
+        });
 
         // Fast path: a cache hit returns synchronously — no I/O or decode on the UI thread.
         var cached = ArtworkCache.TryGet(artPath, PlayerArtDecodeWidth);
@@ -2053,6 +2482,11 @@ public partial class PlayerViewModel : ViewModelBase
         if (State != PlaybackState.Playing || DateTime.UtcNow < _autoMixCommitGuardUntilUtc)
             return false;
 
+        // Never pre-roll a track the explicit filter is about to skip.
+        PruneBlockedExplicit();
+        if (UpNext.Count == 0)
+            return false;
+
         var nextTrack = UpNext[0];
         var plan = AutoMixTransitionPlanner.CreateTransitionPlan(CurrentTrack, nextTrack, CreateAutoMixOptions());
         LogAutoMixPlan(CurrentTrack, nextTrack, plan);
@@ -2211,6 +2645,11 @@ public partial class PlayerViewModel : ViewModelBase
         if (duration <= TimeSpan.Zero)
             return false;
 
+        // Never pre-roll a track the explicit filter is about to skip.
+        PruneBlockedExplicit();
+        if (UpNext.Count == 0)
+            return false;
+
         var nextTrack = UpNext[0];
         var remaining = duration - position;
 
@@ -2355,6 +2794,11 @@ public partial class PlayerViewModel : ViewModelBase
                     $"{_consecutivePlaybackErrors} consecutive playback errors — stopping instead of skipping");
                 DebugLog.Write("Audio",
                     $"{_consecutivePlaybackErrors} consecutive playback errors — stopping playback");
+                // A whole queue of dead paths almost always means the volume itself is
+                // gone (drive offline, letter changed, partition remounted), not five
+                // deleted files. Say so once per cascade so the log tells the story.
+                if (UnreachableRootHint(CurrentTrack?.FilePath, Directory.Exists) is { } hint)
+                    DebugLog.Write("Audio", hint);
                 _consecutivePlaybackErrors = 0;
                 StopAndClear();
                 return;
@@ -2366,6 +2810,29 @@ public partial class PlayerViewModel : ViewModelBase
             else
                 StopAndClear();
         });
+    }
+
+    /// <summary>
+    /// When a local track's drive/share root cannot be reached at all, a one-line
+    /// explanation for the session log; null when the root is there (so the files
+    /// themselves are missing) or the path has no file-system root.
+    /// </summary>
+    /// <remarks>Internal for tests (InternalsVisibleTo Noctis.Tests).</remarks>
+    internal static string? UnreachableRootHint(string? filePath, Func<string, bool> rootExists)
+    {
+        if (string.IsNullOrWhiteSpace(filePath) || VlcAudioPlayer.IsPathlessMedia(filePath))
+            return null;
+        string? root;
+        try { root = Path.GetPathRoot(filePath); }
+        catch { return null; }
+        if (string.IsNullOrEmpty(root)) return null;
+        bool exists;
+        try { exists = rootExists(root); }
+        catch { exists = false; }
+        return exists
+            ? null
+            : $"{root} is not reachable right now — every track stored there will fail until the drive is back " +
+              "(or the music folder is re-added under its new drive letter).";
     }
 
     private void OnLibraryUpdated(object? sender, EventArgs e)

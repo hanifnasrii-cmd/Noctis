@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Globalization;
@@ -30,9 +30,17 @@ public class IconKeyToGeometryConverter : IValueConverter
             ["FavoritesIcon"] = "avares://Noctis/Assets/Icons/Favorites%20icon.png",
             ["SettingsIcon"] = "avares://Noctis/Assets/Icons/Settings%20ICON.png",
             ["ServerIcon"] = "avares://Noctis/Assets/Icons/Server%20ICON.png",
+            ["CdIcon"] = "avares://Noctis/Assets/Icons/Albums%20ICON.png",
+            // The player island's lyrics bubble, reused by the Settings rail for the Lyrics page.
+            ["LyricsBubbleIcon"] = "avares://Noctis/Assets/Icons/Lyrics%20ICON.png",
+            // Sidebar Lyrics Studio entry: lyric sheet + note, same stroke as the other rail masks.
+            ["LyricsStudioIcon"] = "avares://Noctis/Assets/Icons/Lyrics%20Panel%20ICON.png",
             // Fallback for smart playlist rows in sidebar.
             ["SmartPlaylistIcon"] = "avares://Noctis/Assets/Icons/Playlist%20icon.png"
         };
+
+    /// <summary>True when <paramref name="key"/> names one of the bitmap sidebar icons (the Settings rail mixes these with geometry icons).</summary>
+    public static bool HasKey(string? key) => !string.IsNullOrWhiteSpace(key) && IconMap.ContainsKey(key);
 
     private static readonly ConcurrentDictionary<string, Bitmap?> BitmapCache = new();
     private const string FallbackUri = "avares://Noctis/Assets/Icons/Playlist%20icon.png";

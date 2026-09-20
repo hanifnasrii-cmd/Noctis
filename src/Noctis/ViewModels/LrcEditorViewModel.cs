@@ -291,7 +291,7 @@ public partial class LrcEditorViewModel : ViewModelBase
                 try { _metadata.WriteTrackMetadata(_track); } catch { }
             });
 
-            StatusText = "Saved";
+            Noctis.Helpers.TransientStatus.Show(nameof(StatusText), v => StatusText = v, "Saved");
             Saved?.Invoke(this, EventArgs.Empty);
         }
         catch (Exception ex)

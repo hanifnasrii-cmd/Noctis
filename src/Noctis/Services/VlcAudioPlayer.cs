@@ -617,6 +617,7 @@ public class VlcAudioPlayer : IAudioPlayer
             }
         }
         _wasapiOut = wasapi;
+        ApplyMuteToOwner(); // the sink now owns mute; VLC must be unmuted behind it
 
         // Volume is driven through the Windows audio session as a FLOAT level via
         // a fine click-free ramp (see the NOCTIS_VOL_RAMP_* notes above). When
@@ -757,6 +758,17 @@ public class VlcAudioPlayer : IAudioPlayer
         }
     }
 
+    /// <summary>
+    /// Engine path: the reported position is the sink segment's consumed-frame count,
+    /// i.e. how far WasapiOut has been FED — the output buffer's worth of audio is
+    /// still ahead of the speaker. The legacy VLC path reports VLC's own clock,
+    /// which already accounts for its output latency.
+    /// </summary>
+    public TimeSpan OutputLatency =>
+        _gaplessEngine && _gaplessSink != null
+            ? TimeSpan.FromMilliseconds(GaplessSink.OutputLatencyMs)
+            : TimeSpan.Zero;
+
     public long CurrentSessionId => Interlocked.Read(ref _playbackSessionId);
 
     // Store the user-facing volume (0–100) separately from VLC's internal volume,
@@ -874,15 +886,66 @@ public class VlcAudioPlayer : IAudioPlayer
 
     public bool IsMuted
     {
-        get => !_disposed && _player.Mute;
+        // On a sink path LibVLC is deliberately left unmuted (see ApplyMuteToOwner), so
+        // the user's intent is the truth there; the native path can read the player.
+        get => !_disposed && (SinkOwnsMute ? _userMuted : _player.Mute);
         set
         {
             if (_disposed) return;
             _userMuted = value;
-            _player.Mute = value;
-            if (_standbyPrepared)
-                _standbyPlayer.Mute = value;
+            ApplyMuteToOwner();
         }
+    }
+
+    /// <summary>True when a post-buffer stage — the gapless engine's gate or a WASAPI
+    /// callback sink's gain — applies the user's mute, so LibVLC must stay unmuted.</summary>
+    private bool SinkOwnsMute => ActiveCallbackSink != null || (_gaplessEngine && _gaplessSink != null);
+
+    /// <summary>
+    /// Routes the user's mute to whatever currently renders the audio. Discord "Mute
+    /// button unresponsive on Windows" (2026-08-17): the gapless engine stages seconds of
+    /// PCM ahead of the device, and LibVLC's mute is software gain applied BEFORE that
+    /// ring, so it was heard ~2 s late — and unmute ~2 s late again, the ring being full
+    /// of zeros by then. Post-buffer owners (engine gate, sink gain) mute within the
+    /// device buffer instead, and on those paths VLC is kept unmuted so the ring never
+    /// fills with silence. The native output path (macOS/Linux, or Windows with the
+    /// engine off) still mutes the player itself. Idempotent — also called whenever the
+    /// owner changes (sink opened/closed, engine disabled).
+    /// </summary>
+    private void ApplyMuteToOwner()
+    {
+        if (_disposed) return;
+        var muted = _userMuted;
+        var callbackSink = ActiveCallbackSink;
+        var engineOwns = callbackSink == null && _gaplessEngine && _gaplessSink != null;
+
+        if (_gaplessSink is { } engineSink)
+            engineSink.IsMuted = muted && engineOwns;
+
+        if (callbackSink != null || engineOwns)
+        {
+            callbackSink?.SetGainTarget(WasapiGainLevel()); // 0 while muted
+            ClearVlcMute();
+            return;
+        }
+
+        try
+        {
+            if (_player.Mute != muted) _player.Mute = muted;
+            if (_standbyPrepared && _standbyPlayer.Mute != muted) _standbyPlayer.Mute = muted;
+        }
+        catch { /* player transitioning */ }
+    }
+
+    /// <summary>LibVLC must never software-mute on a sink path: its zeros would sit in the staged ring.</summary>
+    private void ClearVlcMute()
+    {
+        try
+        {
+            if (_player.Mute) _player.Mute = false;
+            if (_standbyPrepared && _standbyPlayer.Mute) _standbyPlayer.Mute = false;
+        }
+        catch { /* player transitioning */ }
     }
 
     /// <summary>
@@ -1577,6 +1640,8 @@ public class VlcAudioPlayer : IAudioPlayer
             try { _gaplessSink?.Dispose(); } catch { }
             _gaplessSink = null;
             DebugLogger.Warn(DebugLogger.Category.Playback, "GaplessEngine.Disabled", "output mode rebuilt");
+            ApplyMuteToOwner(); // mute moves back to the player (or the exclusive sink)
+            ApplyPlaybackRateToOwner(); // and so does the playback speed
         }
 
         // Loaded media counts as active even when IsPlaying is still false:
@@ -1668,6 +1733,8 @@ public class VlcAudioPlayer : IAudioPlayer
                 _exclusiveOut?.Dispose();
                 _exclusiveOut = null;
             }
+            ApplyMuteToOwner(); // exclusive sink gone: the engine gate or the player owns mute again
+            ApplyPlaybackRateToOwner();
             _keepAlive?.SetSuspended(false);
             if (_sessionVolume != null)
             {
@@ -1777,7 +1844,8 @@ public class VlcAudioPlayer : IAudioPlayer
                     }
 
                     _exclusiveOut = sink;
-                    sink.SetGainTarget(WasapiGainLevel());
+                    // Sets the sink's gain (0 while muted) and clears any VLC-side mute.
+                    ApplyMuteToOwner();
 
                     // A device that disappears mid-track (USB DAC unplugged, Bluetooth
                     // drop, default device switched) otherwise leaves this sink wedged
@@ -1979,7 +2047,10 @@ public class VlcAudioPlayer : IAudioPlayer
     {
         try
         {
-            using var file = TagLib.File.Create(filePath);
+            // PictureLazy: this runs on every track start and only wants two text
+            // frames. The default read style materialises every embedded picture
+            // (a 16 MB cover PNG became a 16 MB dead array per track change).
+            using var file = TagLib.File.Create(filePath, TagLib.ReadStyle.Average | TagLib.ReadStyle.PictureLazy);
             double? track = null, album = null;
 
             if (file.GetTag(TagLib.TagTypes.Id3v2, false) is TagLib.Id3v2.Tag id3)
@@ -2035,6 +2106,59 @@ public class VlcAudioPlayer : IAudioPlayer
         _crossfadeOverlap = overlap;
     }
 
+    // ── Playback speed (podcast/audiobook island) ──
+    private double _playbackRate = 1.0;
+    private double _pitchRatio = 1.0;
+
+    public void SetPlaybackRate(double rate)
+    {
+        if (_disposed) return;
+        Volatile.Write(ref _playbackRate, TempoStretchProvider.ClampRate(rate));
+        ApplyPlaybackRateToOwner();
+    }
+
+    /// <summary>Pitch shift (engine only). Applied with the rate so both reach the sink together.</summary>
+    public void SetPitchSemitones(double semitones)
+    {
+        if (_disposed) return;
+        Volatile.Write(ref _pitchRatio, PitchShiftProvider.RatioFromSemitones(semitones));
+        ApplyPlaybackRateToOwner();
+    }
+
+    /// <summary>Speaker-fill upmix for multi-channel devices; a live engine sink is rebuilt in place.</summary>
+    public void SetUpmixMode(string mode)
+    {
+        if (_disposed) return;
+        var parsed = GaplessSink.ParseUpmixMode(mode);
+        if (GaplessSink.UpmixMode == parsed) return;
+        GaplessSink.UpmixMode = parsed;
+        DebugLogger.Info(DebugLogger.Category.Playback, "Upmix.Mode", parsed.ToString());
+        _gaplessSink?.RequestRebuild();
+    }
+
+    /// <summary>
+    /// Engine: the speed is a pitch-preserving stretch in the sink's render path
+    /// (LibVLC stays at 1× — it was started with --no-audio-time-stretch, so its
+    /// own rate change would shift pitch). Other outputs: LibVLC's rate, which is
+    /// pitch-preserving only because those media are opened with
+    /// ":audio-time-stretch" (see the AddOption sites). Re-applied whenever the
+    /// output owner changes, like mute.
+    /// </summary>
+    private void ApplyPlaybackRateToOwner()
+    {
+        var rate = Volatile.Read(ref _playbackRate);
+        if (_gaplessEngine && _gaplessSink is { } sink)
+        {
+            sink.Provider.PlaybackRate = rate;
+            sink.Provider.PitchRatio = Volatile.Read(ref _pitchRatio);
+            try { _player.SetRate(1f); } catch { }
+            try { _standbyPlayer.SetRate(1f); } catch { }
+            return;
+        }
+        try { _player.SetRate((float)rate); } catch { }
+        try { _standbyPlayer.SetRate((float)rate); } catch { }
+    }
+
     public void SetGapless(bool enabled)
     {
         if (_disposed) return;
@@ -2088,6 +2212,10 @@ public class VlcAudioPlayer : IAudioPlayer
             try
             {
                 media = new Media(_libVlc, normalizedPath, FromType.FromPath);
+                // Off the engine the playback-speed button is LibVLC's rate; only
+                // media opened with time-stretch keep their pitch at ≠ 1×.
+                if (!_gaplessEngine)
+                    media.AddOption(":audio-time-stretch");
             }
             catch (Exception ex)
             {
@@ -2286,18 +2414,38 @@ public class VlcAudioPlayer : IAudioPlayer
         path.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
         path.StartsWith("https://", StringComparison.OrdinalIgnoreCase);
 
+    /// <summary>An audio-CD track path (<c>cdda:///D:/#3</c>); see <see cref="AudioCd.AudioCdPaths"/>.</summary>
+    internal static bool IsAudioCdPath(string path) => AudioCd.AudioCdPaths.IsAudioCdPath(path);
+
+    /// <summary>Paths that are not files: no File.Exists, no Path.GetFullPath, no standby pre-roll.</summary>
+    internal static bool IsPathlessMedia(string path) => IsRemoteStreamPath(path) || IsAudioCdPath(path);
+
+    /// <summary>
+    /// libvlc opens the whole disc from <c>cdda:///D:/</c> and picks the track through
+    /// the <c>cdda-track</c> option (the same option its own sub-items carry), so the
+    /// track number travels as a media option rather than in the MRL.
+    /// </summary>
+    internal static Media CreateAudioCdMedia(LibVLC libVlc, string path)
+    {
+        if (!AudioCd.AudioCdPaths.TryParseTrackPath(path, out var discMrl, out var trackNumber))
+            throw new ArgumentException("Not an audio-CD track path.", nameof(path));
+        var media = new Media(libVlc, discMrl, FromType.FromLocation);
+        media.AddOption($":cdda-track={trackNumber}");
+        return media;
+    }
+
     public void Play(string filePath)
     {
         if (_disposed || string.IsNullOrWhiteSpace(filePath)) return;
 
-        if (!IsRemoteStreamPath(filePath) && !File.Exists(filePath))
+        if (!IsPathlessMedia(filePath) && !File.Exists(filePath))
         {
             PlaybackError?.Invoke(this, $"File not found: {filePath}");
             return;
         }
 
         DebugLogger.Info(DebugLogger.Category.Playback, "VLC.Play",
-            $"path={(IsRemoteStreamPath(filePath) ? "<remote stream>" : Path.GetFileName(filePath))}");
+            $"path={(IsRemoteStreamPath(filePath) ? "<remote stream>" : IsAudioCdPath(filePath) ? filePath : Path.GetFileName(filePath))}");
         _keepAlive?.NotifyActivity();
         _currentMediaPath = filePath;
 
@@ -2372,11 +2520,16 @@ public class VlcAudioPlayer : IAudioPlayer
             // compare Path.GetFullPath-normalized local paths and the standby player
             // is never prepared for URLs (PrepareNext rejects them).
             var isRemote = IsRemoteStreamPath(filePath);
+            var isCd = IsAudioCdPath(filePath);
+            // Neither a stream nor a disc track is a file: the standby/crossfade helpers
+            // compare Path.GetFullPath-normalized local paths and PrepareNext never
+            // stages them, so both take the plain open path.
+            var isPathless = isRemote || isCd;
             // Crossfade needs two simultaneous streams; the WASAPI callback sinks
             // are single-stream, so disable the transition fade on those paths.
-            var canTransitionFade = _crossfadeEnabled && hadPreviousMedia && !_player.Mute &&
+            var canTransitionFade = _crossfadeEnabled && hadPreviousMedia && !IsMuted &&
                                     _wasapiOut == null && !_exclusiveModeEnabled && !_gaplessEngine &&
-                                    !startPaused && !isRemote;
+                                    !startPaused && !isPathless;
             var fadeOutMs = canTransitionFade && _player.IsPlaying
                 ? Math.Clamp(_crossfadeDurationMs / 2, 100, 6000)
                 : 0;
@@ -2413,7 +2566,7 @@ public class VlcAudioPlayer : IAudioPlayer
             // behind the active segment, so the audible boundary needs NOTHING
             // from us. This "track change" is pure bookkeeping: swap the player
             // roles and let the outgoing segment play its tail out of the ring.
-            if (_gaplessEngine && !startPaused && !isRemote && hadPreviousMedia &&
+            if (_gaplessEngine && !startPaused && !isPathless && hadPreviousMedia &&
                 _engineStagedPath != null && _standbyMedia != null &&
                 string.Equals(_engineStagedPath, Path.GetFullPath(filePath), StringComparison.OrdinalIgnoreCase))
             {
@@ -2426,7 +2579,21 @@ public class VlcAudioPlayer : IAudioPlayer
                 // outgoing segment over to the staged one instead (Abandon also
                 // unblocks its writer before that Stop joins the decoder).
                 var outgoingSeg = Volatile.Read(ref _engineSegments[EngineSlotOf(_player)]);
-                if (outgoingSeg != null && !outgoingSeg.EndOfStream)
+                // Transition-mode advance (Crossfade / AutoMix): the queue moved on
+                // fade-length seconds BEFORE the outgoing's end, so a plain cut here
+                // dropped that tail dead — "the last 5 seconds skip" (Discord, 08-19).
+                // The engine is single-stream, so the blend is rendered by the sink
+                // itself: the outgoing keeps decoding into its ring as a fading tail
+                // mixed under the staged track. Cleanup of its player waits it out.
+                var engineFadeMs = 0;
+                if (_crossfadeEnabled && outgoingSeg != null && !outgoingSeg.IsFinished &&
+                    _gaplessSink is { } fadeSink)
+                {
+                    var wantMs = Math.Clamp(_crossfadeDurationMs, 250, 12000);
+                    if (fadeSink.Provider.BeginCrossfade(wantMs, _crossfadeFadeCurve))
+                        engineFadeMs = wantMs;
+                }
+                if (engineFadeMs == 0 && outgoingSeg != null && !outgoingSeg.EndOfStream)
                     outgoingSeg.Abandon();
                 var outgoingPlayer = _player;
                 var outgoingMedia = _currentMedia;
@@ -2448,11 +2615,14 @@ public class VlcAudioPlayer : IAudioPlayer
                 _gaplessSink?.Resume();
                 Interlocked.Exchange(ref _pendingSeekMs, -1);
                 _positionTimer.Start();
-                DebugLogger.Info(DebugLogger.Category.Playback, "GaplessEngine.Spliced", $"path={Path.GetFileName(filePath)}");
+                DebugLogger.Info(DebugLogger.Category.Playback, "GaplessEngine.Spliced",
+                    $"path={Path.GetFileName(filePath)}, crossfadeMs={engineFadeMs}");
                 // Outgoing input already hit EOF (decode-ahead) — the deferred
                 // Stop() cannot block on a writer, and its segment keeps playing
-                // from the ring untouched.
-                QueueInactivePlayerCleanup(_standbyPlayer, outgoingMedia, sessionId);
+                // from the ring untouched. A crossfading tail must keep its decoder
+                // alive for the whole fade, so the stop waits that long extra.
+                QueueInactivePlayerCleanup(_standbyPlayer, outgoingMedia, sessionId,
+                    extraDelayMs: engineFadeMs > 0 ? engineFadeMs + 500 : 0);
                 return;
             }
             if (_gaplessEngine)
@@ -2465,14 +2635,14 @@ public class VlcAudioPlayer : IAudioPlayer
             // Gapless: no crossfade, but the next track was prepared on the
             // standby player — hand off to it instantly at full volume instead
             // of the audible stop/parse/start path.
-            if (!canTransitionFade && !startPaused && !isRemote && _gaplessEnabled && hadPreviousMedia && !_standbyPrepared)
+            if (!canTransitionFade && !startPaused && !isPathless && _gaplessEnabled && hadPreviousMedia && !_standbyPrepared)
             {
                 // No standby to hand off to — the audible cold open below is the
                 // seam. Logged so a "gapless still gaps" report can be tied to a
                 // dead prepare (see AutoMix.DualPrepareCancelled) from the log.
                 DebugLogger.Info(DebugLogger.Category.Playback, "Gapless.ColdFallback", "no prepared standby");
             }
-            if (!canTransitionFade && !startPaused && !isRemote && _gaplessEnabled && _standbyPrepared && hadPreviousMedia &&
+            if (!canTransitionFade && !startPaused && !isPathless && _gaplessEnabled && _standbyPrepared && hadPreviousMedia &&
                 TryStartPreparedAutoMix(filePath, targetVolume, sessionId, cancel, instantHandoff: true))
             {
                 Interlocked.Exchange(ref _pendingSeekMs, -1);
@@ -2487,7 +2657,14 @@ public class VlcAudioPlayer : IAudioPlayer
             // and decoder-ready before the audible handoff starts.
             // Remote media-server streams are locations, not paths, and their
             // headers must be parsed over the network.
-            var media = new Media(_libVlc, filePath, isRemote ? FromType.FromLocation : FromType.FromPath);
+            var media = isCd
+                ? CreateAudioCdMedia(_libVlc, filePath)
+                : new Media(_libVlc, filePath, isRemote ? FromType.FromLocation : FromType.FromPath);
+            // Off the engine the playback-speed button is LibVLC's rate; only media
+            // opened with time-stretch keep their pitch at ≠ 1× (scaletempo is a
+            // pass-through at 1×, and it is VLC's own default filter).
+            if (!_gaplessEngine)
+                media.AddOption(":audio-time-stretch");
 
             // Parse the file header synchronously. This reads container
             // metadata (codec, sample rate, duration, channel layout).
@@ -2699,7 +2876,7 @@ public class VlcAudioPlayer : IAudioPlayer
     /// </summary>
     private bool TryStartPreparedAutoMix(string filePath, int targetVolume, long sessionId, CancellationToken cancel, bool instantHandoff)
     {
-        var normalizedPath = Path.GetFullPath(filePath);
+        var normalizedPath = IsPathlessMedia(filePath) ? filePath : Path.GetFullPath(filePath);
         if (!_standbyPrepared ||
             _standbyMedia == null ||
             string.IsNullOrWhiteSpace(_standbyPath) ||
@@ -3333,14 +3510,14 @@ public class VlcAudioPlayer : IAudioPlayer
             $"waitedMs={Environment.TickCount64 - start}");
     }
 
-    private void QueueInactivePlayerCleanup(MediaPlayer inactivePlayer, Media? inactiveMedia, long sessionId)
+    private void QueueInactivePlayerCleanup(MediaPlayer inactivePlayer, Media? inactiveMedia, long sessionId, int extraDelayMs = 0)
     {
         ThreadPool.QueueUserWorkItem(_ =>
         {
             var cleanupStart = Environment.TickCount64;
             try
             {
-                Thread.Sleep(DeferredCleanupDelayMs);
+                Thread.Sleep(DeferredCleanupDelayMs + Math.Max(0, extraDelayMs));
                 if (_disposed) return;
                 DebugLogger.Info(DebugLogger.Category.Playback, "AutoMix.CleanupStart", $"session={sessionId}");
 
@@ -3490,8 +3667,12 @@ public class VlcAudioPlayer : IAudioPlayer
     // curve (with the ReplayGain scalar folded in, matching the session path)
     // cubed to the same taper the OS-session path used, so all paths sound
     // identical at a given slider position.
-    private float WasapiGainLevel() =>
-        CurvedVolumeToLevelMilli(ApplyReplayGainScalar(ApplyVolumeCurve(Math.Clamp(_userVolume + _volumeAdjust, 0, 100)))) / 1000f;
+    // Mute is folded in: on the callback-sink paths the sink's per-sample gain IS the
+    // mute (see ApplyMuteToOwner), so every re-apply — volume drag, commit, sink
+    // (re)open, exclusive fallback — keeps a muted player muted.
+    private float WasapiGainLevel() => _userMuted
+        ? 0f
+        : CurvedVolumeToLevelMilli(ApplyReplayGainScalar(ApplyVolumeCurve(Math.Clamp(_userVolume + _volumeAdjust, 0, 100)))) / 1000f;
 
     // The callback sink currently receiving LibVLC's decoded PCM: the
     // experimental env-gated one, or the settings-driven exclusive-mode one.
@@ -3721,7 +3902,9 @@ public class VlcAudioPlayer : IAudioPlayer
     // write also heals the OS-side restore entry for future streams.
     private void ScheduleMuteIntentReassert(long sessionId)
     {
-        if (_sessionVolume != null || ActiveCallbackSink != null) return;
+        // Sink paths keep VLC unmuted on purpose — re-asserting _userMuted onto the
+        // player there would recreate the buffered-mute lag this fixes.
+        if (_sessionVolume != null || SinkOwnsMute) return;
         ThreadPool.QueueUserWorkItem(_ =>
         {
             for (var waited = 0; waited < 2000; waited += 50)
@@ -4482,7 +4665,7 @@ public class VlcAudioPlayer : IAudioPlayer
                     //   • Native integer volume (macOS/Linux): dip/restore _player.Volume.
                     //   • WASAPI callback sink (exclusive mode): the sink owns gain — seek.
                     // Paused/muted is already silent, so just seek.
-                    if (_isPaused || _player.Mute)
+                    if (_isPaused || IsMuted)
                     {
                         _player.Time = targetMs;
                     }

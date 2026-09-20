@@ -10,6 +10,7 @@ using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
+using Noctis.Controls;
 using Noctis.ViewModels;
 using Avalonia.LogicalTree;
 using Noctis.Helpers;
@@ -31,11 +32,14 @@ public partial class PlaybackBarView : UserControl
     }
 
     private const double TrackTitleOverflowThreshold = 1.0;
-    private const double TrackTitleScrollSpeed = 26.0;
+    private const double TrackTitleScrollSpeed = 30.0;
     private const double TrackTitleBadgeSpacing = 6.0;
-    private const double TrackTitleBadgeTrailingPadding = 8.0;
-    /// <summary>Rest at the start position between laps — full loop out the left edge and
-    /// back in from the right, matching MarqueeTextBlock's behavior app-wide.</summary>
+    /// <summary>The hover border round the title / artist text adds 1 + 2 px of padding; the
+    /// loop copy sits after that border, so one lap is text + padding + gap.</summary>
+    private const double MarqueeTextPadding = 3.0;
+    /// <summary>Rest at the start position between laps. A lap is a ticker pass: the text and
+    /// its loop copy travel left until the copy stands where the text started, matching
+    /// MarqueeTextBlock's behavior app-wide (the viewport is never blank mid-lap).</summary>
     private static readonly TimeSpan TrackTitleRestPause = TimeSpan.FromSeconds(7);
     // Frame-clock driven (TopLevel.RequestAnimationFrame), NOT a DispatcherTimer: a 16 ms
     // timer defaults to Background priority (starved by layout/render work) and beats
@@ -47,8 +51,8 @@ public partial class PlaybackBarView : UserControl
     private int _marqueeResumeGeneration;
     private PlayerViewModel? _observedPlayerViewModel;
     private double _trackTitleOverflow;
-    private double _trackTitleTextWidth;
-    private double _trackTitleViewportWidth;
+    /// <summary>Distance from the title's start to its loop copy's start.</summary>
+    private double _trackTitleLapDistance;
     private double _trackTitleOffset;
     private double _trackTitlePauseRemainingMs = TrackTitleRestPause.TotalMilliseconds;
     private bool _trackTitleUpdateScheduled;
@@ -58,8 +62,7 @@ public partial class PlaybackBarView : UserControl
 
     // Artist name marquee state (syncs with title marquee via same timer)
     private double _artistNameOverflow;
-    private double _artistNameTextWidth;
-    private double _artistNameViewportWidth;
+    private double _artistNameLapDistance;
     private double _artistNameOffset;
     private double _artistNamePauseRemainingMs = TrackTitleRestPause.TotalMilliseconds;
     private bool _artistNameUpdateScheduled;
@@ -225,7 +228,13 @@ public partial class PlaybackBarView : UserControl
         }
 
         if (e.PropertyName == nameof(PlayerViewModel.IsLyricsPageActive) ||
-            e.PropertyName == nameof(PlayerViewModel.PlaybackBarIslandWidth))
+            e.PropertyName == nameof(PlayerViewModel.PlaybackBarIslandWidth) ||
+            e.PropertyName == nameof(PlayerViewModel.IslandShowSkipButtons) ||
+            e.PropertyName == nameof(PlayerViewModel.IslandShowPlaybackSpeed) ||
+            e.PropertyName == nameof(PlayerViewModel.IslandShowSleepTimer) ||
+            e.PropertyName == nameof(PlayerViewModel.IslandShowShuffle) ||
+            e.PropertyName == nameof(PlayerViewModel.IslandShowRepeat) ||
+            e.PropertyName == nameof(PlayerViewModel.IslandShowFavorite))
         {
             UpdateIslandWidth();
         }
@@ -279,6 +288,7 @@ public partial class PlaybackBarView : UserControl
         {
             SetTrackTitleWidth(double.NaN);
             ResetTrackTitleMarquee();
+            TrackTitleViewport.Classes.Set("overflow", false);
             return;
         }
 
@@ -290,18 +300,16 @@ public partial class PlaybackBarView : UserControl
         if (textWidth <= 0)
             return;
 
-        var measuredOverflow = Math.Max(0, textWidth - viewportWidth);
-        var hasOverflow = measuredOverflow > TrackTitleOverflowThreshold;
-        _trackTitleOverflow = hasOverflow && ExplicitBadge.IsVisible
-            ? measuredOverflow + TrackTitleBadgeTrailingPadding
-            : measuredOverflow;
-        // Loop geometry: the badge's trailing pad must clear the edge before the wrap,
-        // same reason it's added to the overflow above.
-        _trackTitleTextWidth = hasOverflow && ExplicitBadge.IsVisible
-            ? textWidth + TrackTitleBadgeTrailingPadding
-            : textWidth;
-        _trackTitleViewportWidth = viewportWidth;
+        _trackTitleOverflow = Math.Max(0, textWidth - viewportWidth);
+        var hasOverflow = _trackTitleOverflow > TrackTitleOverflowThreshold;
+        // Loop geometry: the copy's panel sits after the hover border (text + 3px padding),
+        // the badge (already inside textWidth) and its own 42px margin + 6px spacing = 48.
+        _trackTitleLapDistance = textWidth + MarqueeTextPadding + MarqueeTextBlock.LoopGap;
         var shouldAnimate = vm.TrackTitleMarqueeEnabled && hasOverflow;
+        // Edge fade only while the marquee owns the title: the static path ellipsizes
+        // inside the viewport and never cuts a glyph.
+        TrackTitleViewport.Classes.Set("overflow", shouldAnimate);
+        TrackTitleLoopCopy.IsVisible = shouldAnimate;
         if (!shouldAnimate)
         {
             ApplyTrackTitleStaticPresentation(hasOverflow, viewportWidth);
@@ -311,8 +319,8 @@ public partial class PlaybackBarView : UserControl
         SetTrackTitleWidth(double.NaN);
 
         // Keep the phase across benign re-measures; reset when asked or out of the
-        // loop's valid range (-textWidth, viewportWidth].
-        if (resetAnimation || _trackTitleOffset < -_trackTitleTextWidth || _trackTitleOffset > _trackTitleViewportWidth)
+        // lap's valid range (-lap, 0].
+        if (resetAnimation || _trackTitleOffset < -_trackTitleLapDistance || _trackTitleOffset > 0)
         {
             _trackTitlePauseRemainingMs = TrackTitleRestPause.TotalMilliseconds;
             SetTrackTitleOffset(0);
@@ -459,12 +467,12 @@ public partial class PlaybackBarView : UserControl
             // Tick title marquee
             if (titleActive)
                 TickMarquee(elapsedMs, _trackTitleOffset, ref _trackTitlePauseRemainingMs,
-                    _trackTitleTextWidth, _trackTitleViewportWidth, SetTrackTitleOffset);
+                    _trackTitleLapDistance, SetTrackTitleOffset);
 
             // Tick artist marquee (same speed, independent phase)
             if (artistActive)
                 TickMarquee(elapsedMs, _artistNameOffset, ref _artistNamePauseRemainingMs,
-                    _artistNameTextWidth, _artistNameViewportWidth, SetArtistNameOffset);
+                    _artistNameLapDistance, SetArtistNameOffset);
         }
 
         // While anything is mid-lap, ride the frame clock. When every active marquee is
@@ -493,11 +501,12 @@ public partial class PlaybackBarView : UserControl
         }, TimeSpan.FromMilliseconds(wait));
     }
 
-    /// <summary>Full-loop marquee step, matching MarqueeTextBlock: the text always travels
-    /// left; once its tail clears the viewport's left edge it wraps to just past the right
-    /// edge and slides back in; landing on the start position rests for RestPause.</summary>
-    private static void TickMarquee(double elapsedMs, double offset, ref double pauseRemainingMs,
-        double textWidth, double viewportWidth, Action<double> setOffset)
+    /// <summary>Ticker step, matching MarqueeTextBlock: the text and its loop copy travel
+    /// left together; when the copy reaches the start position the offset snaps back to
+    /// zero (the original now stands exactly where the copy was, so nothing visibly moves)
+    /// and the marquee rests for RestPause.</summary>
+    internal static void TickMarquee(double elapsedMs, double offset, ref double pauseRemainingMs,
+        double lapDistance, Action<double> setOffset)
     {
         if (pauseRemainingMs > 0)
         {
@@ -506,14 +515,8 @@ public partial class PlaybackBarView : UserControl
         }
 
         var nextOffset = offset - TrackTitleScrollSpeed * elapsedMs / 1000.0;
-        if (nextOffset <= -textWidth)
+        if (nextOffset <= -lapDistance)
         {
-            nextOffset += textWidth + viewportWidth;
-        }
-        else if (offset > 0 && nextOffset <= 0)
-        {
-            // Only a wrapped (incoming-from-the-right) pass crosses zero downward —
-            // the outbound pass STARTS at zero, so this never fires on the way out.
             nextOffset = 0;
             pauseRemainingMs = TrackTitleRestPause.TotalMilliseconds;
         }
@@ -527,6 +530,10 @@ public partial class PlaybackBarView : UserControl
 
         if (TrackTitleContent.RenderTransform is TranslateTransform transform)
             transform.X = offset;
+
+        // Leading-edge fade once the text has moved under the left edge (Classes.Set is
+        // a no-op when unchanged, so this is free per frame).
+        TrackTitleViewport.Classes.Set("scrolled", offset < -0.5);
     }
 
     // ── Artist name marquee (mirrors title marquee, synced via same timer) ──
@@ -585,10 +592,11 @@ public partial class PlaybackBarView : UserControl
             return;
 
         _artistNameOverflow = Math.Max(0, textWidth - viewportWidth);
-        _artistNameTextWidth = textWidth;
-        _artistNameViewportWidth = viewportWidth;
+        // Copy sits after the hover border (text + 3px) with a 45px margin = one 48px gap.
+        _artistNameLapDistance = textWidth + MarqueeTextPadding + MarqueeTextBlock.LoopGap;
         var hasOverflow = _artistNameOverflow > TrackTitleOverflowThreshold;
         var shouldAnimate = vm.ArtistMarqueeEnabled && hasOverflow;
+        ArtistNameLoopCopy.IsVisible = shouldAnimate;
         if (!shouldAnimate)
         {
             ApplyArtistNameStaticPresentation(hasOverflow, viewportWidth);
@@ -598,8 +606,8 @@ public partial class PlaybackBarView : UserControl
         SetArtistNameWidth(double.NaN);
 
         // Keep the phase across benign re-measures; reset when asked or out of the
-        // loop's valid range (-textWidth, viewportWidth].
-        if (resetAnimation || _artistNameOffset < -_artistNameTextWidth || _artistNameOffset > _artistNameViewportWidth)
+        // lap's valid range (-lap, 0].
+        if (resetAnimation || _artistNameOffset < -_artistNameLapDistance || _artistNameOffset > 0)
         {
             _artistNamePauseRemainingMs = TrackTitleRestPause.TotalMilliseconds;
             SetArtistNameOffset(0);
@@ -668,6 +676,8 @@ public partial class PlaybackBarView : UserControl
 
         if (ArtistNameTextBlock.RenderTransform is TranslateTransform transform)
             transform.X = offset;
+        if (ArtistNameLoopCopy.RenderTransform is TranslateTransform copyTransform)
+            copyTransform.X = offset;
     }
 
     private void OnVolumeSliderPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
@@ -924,21 +934,30 @@ public partial class PlaybackBarView : UserControl
         return PillSliderVisualHelper.GetValueFromPointer(slider, position, VolumeThumbSize);
     }
 
-    // Slim bar (3 transport, 4 right icons) — narrower than the old 5+5 layout.
-    private const double IslandBaseWidth = 590;
+    // Stock width: 3 transport + the track box + 3 right icons. Repeat and the favorite
+    // heart became opt-in extras when the box arrived; the box itself is kept short
+    // (160px title/artist viewports) so it reads as the reference LCD, not a long bar.
+    // Was 626 (192px viewports + heart + dots) — AppSettings migrates that stored value.
+    private const double IslandBaseWidth = 536;
     // Lyrics page hides the center track-info, so the pill only holds transport + right icons.
     private const double IslandLyricsPageWidth = 340;
 
     // ── User resize (persistent bar only) ──
     // Shape thresholds derived from the clusters' natural widths as declared in the
-    // XAML: transport 148 + 14 margin = 162; right icons 142 − 16 margin = 126;
-    // track info 36 art + 12 + 192 viewport + 8 + 6 margins = 254; island chrome
-    // 24 padding + 3 border = 27. Full layout therefore needs 569px; with the
-    // viewports narrowed to 120 ("bar-mid") it needs 497px; transport + icons alone
-    // need 315px — 340 is the proven compact layout the lyrics page already uses.
-    private const double IslandFullShapeMinWidth = 570; // below: viewports narrow to 120
-    private const double IslandMidShapeMinWidth = 500;  // below: track info hidden (compact pill)
+    // XAML: transport 34 + 2 + 40 + 2 + 34 = 112, + 14 margin = 126; right icons
+    // 3 × 34 + 2 × 2 spacing = 106 (the options fallback only shows in the compact
+    // shape, where the box is gone); the track box 3 + 34 art + 8 + 160 viewport + 8 +
+    // 22 eq + 28 dots + 3 = 266, + 8 margin = 274; island chrome 24 padding + 3 border
+    // = 27. Full layout therefore needs 533px; with the viewports narrowed to 110
+    // ("bar-mid") it needs 483px; transport + 4 icons alone need 295px — 340 is the
+    // compact layout the lyrics page already uses. Repeat / favorite / the podcast
+    // extras add ExtraTransportButtonWidth each on top (see ExtraTransportWidth).
+    private const double IslandFullShapeMinWidth = 534; // below: viewports narrow to 110
+    private const double IslandMidShapeMinWidth = 484;  // below: track info hidden (compact pill)
     private const double IslandMinUserWidth = IslandLyricsPageWidth;
+    // Each optional island button (repeat / favorite / speed / skip back / skip forward /
+    // sleep / shuffle) is a 34px button plus its row's 2px spacing.
+    private const double ExtraTransportButtonWidth = 36;
     // Breathing room to the host's edges, matching the 8px margins the side panels use.
     private const double IslandEdgeMargin = 8;
     private static readonly TimeSpan VolumeFlyoutCloseDelay = TimeSpan.FromMilliseconds(140);
@@ -1112,17 +1131,53 @@ public partial class PlaybackBarView : UserControl
     {
         if (_isResizeDragging) return; // the live drag owns the width until release
 
+        // The podcast/audiobook extras widen the transport cluster; the stock width
+        // (and the fixed lyrics-page pill) grow with them so the layout budget holds.
+        // A width the user chose themselves is left alone — the shape thresholds
+        // below account for the extras instead.
+        var extra = ExtraTransportWidth;
         if (CompactWhenLyricsPageActive && _observedPlayerViewModel?.IsLyricsPageActive == true)
-            IslandBorder.Width = IslandLyricsPageWidth;
+        {
+            IslandBorder.Width = IslandLyricsPageWidth + extra;
+            // The lyrics page hosts this copy in its info column, whose width follows the
+            // cover (height − 370, floored at 300) — on a short window (a 720p/768p TV,
+            // or any window under ~710px tall) that column is narrower than the pill.
+            // This control clips to its bounds, so being arranged at the column's width
+            // chopped the pill's rounded ends straight (Discord report, 2026-09-10).
+            // Carrying the pill's width as the bar's minimum lets it overflow the column
+            // symmetrically (Stretch centres an oversized child) with its ends intact.
+            MinWidth = IslandBorder.Width;
+        }
         else if (!CompactWhenLyricsPageActive && _observedPlayerViewModel is { } vm)
-            IslandBorder.Width = ClampUserIslandWidth(vm.PlaybackBarIslandWidth);
+        {
+            var width = ClampUserIslandWidth(vm.PlaybackBarIslandWidth);
+            if (Math.Abs(width - IslandBaseWidth) < 0.5)
+                width += extra;
+            IslandBorder.Width = width;
+        }
         else
-            IslandBorder.Width = IslandBaseWidth;
+            IslandBorder.Width = IslandBaseWidth + extra;
 
         // SizeChanged only fires when the arranged size actually changes, so re-apply
         // here too: a lyrics-page flip must refresh the track-info visibility even
         // when the width stays put.
         ApplyIslandShape(IslandBorder.Width);
+    }
+
+    /// <summary>Width the visible island extras add to the transport cluster.</summary>
+    private double ExtraTransportWidth
+    {
+        get
+        {
+            if (_observedPlayerViewModel is not { } vm) return 0;
+            var buttons = (vm.IslandShowSkipButtons ? 2 : 0)
+                        + (vm.IslandShowPlaybackSpeed ? 1 : 0)
+                        + (vm.IslandShowSleepTimer ? 1 : 0)
+                        + (vm.IslandShowShuffle ? 1 : 0)
+                        + (vm.IslandShowRepeat ? 1 : 0)
+                        + (vm.IslandShowFavorite ? 1 : 0);
+            return buttons * ExtraTransportButtonWidth;
+        }
     }
 
     /// <summary>Lower bound + garbage guard for a stored width; the upper bound is the
@@ -1138,8 +1193,9 @@ public partial class PlaybackBarView : UserControl
     {
         if (!CompactWhenLyricsPageActive && width > 0)
         {
-            _isWidthCompact = width < IslandMidShapeMinWidth;
-            var mid = !_isWidthCompact && width < IslandFullShapeMinWidth;
+            var extra = ExtraTransportWidth;
+            _isWidthCompact = width < IslandMidShapeMinWidth + extra;
+            var mid = !_isWidthCompact && width < IslandFullShapeMinWidth + extra;
             if (IslandBorder.Classes.Contains("bar-mid") != mid)
             {
                 if (mid) IslandBorder.Classes.Add("bar-mid");
@@ -1156,6 +1212,9 @@ public partial class PlaybackBarView : UserControl
     private void UpdateTrackInfoVisibility()
     {
         var visible = _observedPlayerViewModel?.IsLyricsPageActive != true && !_isWidthCompact;
+        // The "…" normally sits inside the track box; while the box is hidden the right
+        // cluster's OptionsButton (which owns the MenuFlyout) stands in for it.
+        OptionsButton.IsVisible = !visible;
         if (TrackInfoPanel.IsVisible == visible)
             return;
 
@@ -1275,9 +1334,15 @@ public partial class PlaybackBarView : UserControl
         if (e.InitialPressMouseButton != MouseButton.Right) return;
         if (DataContext is not PlayerViewModel { CurrentTrack: not null }) return;
 
-        OptionsButton.Flyout?.ShowAt(OptionsButton);
+        OptionsButton.Flyout?.ShowAt(BoxOptionsButton);
         e.Handled = true;
     }
+
+    /// <summary>The track box's "…" opens the options MenuFlyout declared on the right
+    /// cluster's OptionsButton (the compact/lyrics fallback), anchored to itself. One
+    /// flyout, two anchors — the menu's bindings resolve through the shared DataContext.</summary>
+    private void OnBoxOptionsClick(object? sender, RoutedEventArgs e) =>
+        OptionsButton.Flyout?.ShowAt(BoxOptionsButton);
 
     // Expands a submenu the instant the pointer enters its parent item, skipping the
     // default hover delay. Shared by the Sleep Timer and Lyrics Display menu items.

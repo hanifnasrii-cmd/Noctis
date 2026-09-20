@@ -1,0 +1,316 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:loc="using:Noctis.Localization"
+        xmlns:vm="using:Noctis.ViewModels"
+        xmlns:controls="using:Noctis.Controls"
+        x:Class="Noctis.Views.LyricsBackgroundPickerDialog"
+        x:DataType="vm:LyricsBackgroundPickerViewModel"
+        Title="{loc:T LyricsBackground.Title}"
+        CanResize="False"
+        SystemDecorations="None"
+        TransparencyLevelHint="Transparent"
+        Background="Transparent"
+        ShowInTaskbar="False"
+        WindowStartupLocation="CenterOwner">
+
+    <Window.Styles>
+        <!-- Settings and its pop-ups never zoom on hover (user ask 09-07). -->
+        <Style Selector="Button:pointerover">
+            <Setter Property="RenderTransform" Value="scale(1)" />
+        </Style>
+        <Style Selector="Border.pick-row">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="CornerRadius" Value="10" />
+            <Setter Property="Padding" Value="8,6" />
+        </Style>
+        <Style Selector="Border.pick-row:pointerover">
+            <Setter Property="Background" Value="#18FFFFFF" />
+        </Style>
+        <Style Selector="Button.row-action">
+            <Setter Property="Padding" Value="12,4" />
+            <Setter Property="MinHeight" Value="0" />
+            <Setter Property="CornerRadius" Value="999" />
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Cursor" Value="Hand" />
+        </Style>
+        <!-- Same close control as the Settings header. -->
+        <Style Selector="Button.dialog-close">
+            <Setter Property="Width" Value="34" />
+            <Setter Property="Height" Value="34" />
+            <Setter Property="CornerRadius" Value="17" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundListMediumBrush}" />
+        </Style>
+        <!-- Quality pill: the same rim and fill as the link box beside it (TextBox's Fluent
+             brushes), in every state (user ask 09-19). -->
+        <Style Selector="ComboBox.pill">
+            <Setter Property="CornerRadius" Value="999" />
+            <Setter Property="Padding" Value="14,6" />
+            <Setter Property="MinHeight" Value="0" />
+            <Setter Property="BorderThickness" Value="1.5" />
+            <Setter Property="BorderBrush" Value="{DynamicResource TextControlBorderBrush}" />
+            <Setter Property="Background" Value="{DynamicResource TextControlBackground}" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="UseLayoutRounding" Value="True" />
+        </Style>
+        <Style Selector="ComboBox.pill /template/ Border#Background">
+            <Setter Property="CornerRadius" Value="999" />
+        </Style>
+        <Style Selector="ComboBox.pill:pointerover /template/ Border#Background">
+            <Setter Property="BorderBrush" Value="{DynamicResource TextControlBorderBrushPointerOver}" />
+            <Setter Property="Background" Value="{DynamicResource TextControlBackgroundPointerOver}" />
+        </Style>
+        <Style Selector="ComboBox.pill:focus /template/ Border#Background, ComboBox.pill:dropdownopen /template/ Border#Background">
+            <Setter Property="BorderBrush" Value="{DynamicResource TextControlBorderBrushFocused}" />
+        </Style>
+        <Style Selector="ComboBox.pill /template/ Border#HighlightBackground">
+            <Setter Property="CornerRadius" Value="999" />
+        </Style>
+        <Style Selector="ComboBoxItem">
+            <Setter Property="Margin" Value="4,1" />
+            <Setter Property="Padding" Value="12,6" />
+            <Setter Property="MinHeight" Value="30" />
+            <Setter Property="CornerRadius" Value="999" />
+        </Style>
+        <Style Selector="ComboBoxItem /template/ ContentPresenter">
+            <Setter Property="CornerRadius" Value="999" />
+        </Style>
+    </Window.Styles>
+
+    <!-- Full-window dimmed overlay with the fade/scale open-close of the other dialogs. -->
+    <Border x:Name="DialogOverlay"
+            Background="#50000000"
+            Opacity="0"
+            PointerPressed="OnOverlayPointerPressed"
+            PointerWheelChanged="OnOverlayWheel">
+        <Border.Transitions>
+            <Transitions>
+                <DoubleTransition Property="Opacity" Duration="0:0:0.18">
+                    <DoubleTransition.Easing>
+                        <CubicEaseOut/>
+                    </DoubleTransition.Easing>
+                </DoubleTransition>
+            </Transitions>
+        </Border.Transitions>
+
+        <Border x:Name="DialogCard"
+                CornerRadius="24"
+                ClipToBounds="True"
+                Background="{DynamicResource AppMainBackground}"
+                Width="560" Height="660"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                RenderTransformOrigin="50%,50%"
+                RenderTransform="scale(0.96)"
+                BoxShadow="0 8 32 0 #80000000, 0 0 0 1 #33FFFFFF">
+            <Border.Transitions>
+                <Transitions>
+                    <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.18">
+                        <TransformOperationsTransition.Easing>
+                            <CubicEaseOut/>
+                        </TransformOperationsTransition.Easing>
+                    </TransformOperationsTransition>
+                </Transitions>
+            </Border.Transitions>
+            <DockPanel>
+
+                <!-- Header: title, default clip row, search -->
+                <StackPanel DockPanel.Dock="Top" Margin="24,20,24,8" Spacing="12">
+                    <!-- Title centred on the card (user ask 09-17); the X keeps its corner. -->
+                    <Panel>
+                        <StackPanel Spacing="2" Margin="40,4,40,0" HorizontalAlignment="Center">
+                            <TextBlock Text="{loc:T LyricsBackground.Title}"
+                                       FontSize="20" FontWeight="Bold" TextAlignment="Center" />
+                            <TextBlock Text="{loc:T LyricsBackground.Subtitle}"
+                                       FontSize="12" Opacity="0.5" TextWrapping="Wrap" TextAlignment="Center" />
+                        </StackPanel>
+                        <Button Classes="dialog-close"
+                                ToolTip.Tip="{loc:T Settings.CloseTip}"
+                                Command="{Binding CloseCommand}"
+                                HorizontalAlignment="Right" VerticalAlignment="Top">
+                            <PathIcon Data="{StaticResource DismissIcon}" Width="12" Height="12" />
+                        </Button>
+                    </Panel>
+
+                    <!-- Default clip: every song without its own video plays this one -->
+                    <Border Background="#14FFFFFF" CornerRadius="14" Padding="14,10">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <StackPanel Grid.Column="0" Spacing="1" VerticalAlignment="Center" Margin="0,0,12,0">
+                                <TextBlock Text="{loc:T LyricsBackground.DefaultVideo}" FontSize="13" FontWeight="SemiBold" />
+                                <TextBlock Text="{Binding DefaultVideoName}" FontSize="11" Opacity="0.6"
+                                           TextTrimming="CharacterEllipsis" MaxLines="1"
+                                           IsVisible="{Binding HasDefaultVideo}" />
+                                <TextBlock Text="{loc:T LyricsBackground.NoDefaultVideo}" FontSize="11" Opacity="0.45"
+                                           TextWrapping="Wrap"
+                                           IsVisible="{Binding !HasDefaultVideo}" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                <Button Classes="row-action accent-btn"
+                                        Content="{loc:T LyricsBackground.ChooseVideo}"
+                                        Background="{DynamicResource AccentButtonBackground}"
+                                        Foreground="{DynamicResource AccentForegroundBrush}"
+                                        Command="{Binding ChooseDefaultCommand}" />
+                                <Button Classes="row-action"
+                                        Content="{loc:T LyricsBackground.FromYouTube}"
+                                        Command="{Binding YouTubeForDefaultCommand}"
+                                        IsVisible="{Binding CanUseYouTube}" />
+                                <Button Classes="row-action"
+                                        Content="{loc:T LyricsBackground.Remove}"
+                                        Command="{Binding ClearDefaultCommand}"
+                                        IsVisible="{Binding HasDefaultVideo}" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <!-- From YouTube: link + resolution cap, downloaded video-only (the backdrop is
+                         muted) and stored like a picked file, for the default or for one row. -->
+                    <controls:CollapsibleContent IsOpen="{Binding ShowYouTube}" Lift="8" Motion="Glide">
+                        <Border Background="#14FFFFFF" CornerRadius="14" Padding="14,10">
+                            <StackPanel Spacing="8">
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <TextBlock Grid.Column="0" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center" TextTrimming="CharacterEllipsis">
+                                        <Run Text="{loc:T LyricsBackground.FromYouTube}" /><Run Text=" · " /><Run Text="{Binding YouTubeTargetLabel}" Foreground="{DynamicResource AccentTextBrush}" />
+                                    </TextBlock>
+                                    <Button Grid.Column="1" Classes="row-action" Content="{loc:T LyricsBackground.YouTubeClose}"
+                                            Command="{Binding CloseYouTubeCommand}" />
+                                </Grid>
+                                <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8" IsVisible="{Binding ToolInstalled}">
+                                    <TextBox Grid.Column="0" Text="{Binding YouTubeUrl}"
+                                             Watermark="{loc:T LyricsBackground.YouTubeWatermark}"
+                                             CornerRadius="999" Padding="14,6" BorderThickness="1.5" MinHeight="0"
+                                             IsEnabled="{Binding !IsDownloading}" />
+                                    <ComboBox Grid.Column="1" Classes="pill" MinWidth="130"
+                                              ItemsSource="{Binding QualityOptions}" SelectedItem="{Binding SelectedQuality}"
+                                              IsEnabled="{Binding !IsDownloading}" />
+                                    <Button Grid.Column="2" Classes="row-action accent-btn"
+                                            Content="{loc:T LyricsBackground.Download}"
+                                            Background="{DynamicResource AccentButtonBackground}"
+                                            Foreground="{DynamicResource AccentForegroundBrush}"
+                                            Command="{Binding DownloadFromYouTubeCommand}"
+                                            IsEnabled="{Binding !IsDownloading}" />
+                                </Grid>
+                                <Grid ColumnDefinitions="*,Auto" IsVisible="{Binding !ToolInstalled}">
+                                    <TextBlock Grid.Column="0" Text="{loc:T LyricsBackground.NeedsYtDlp}" FontSize="11" Opacity="0.6" VerticalAlignment="Center" TextWrapping="Wrap" />
+                                    <Button Grid.Column="1" Classes="row-action accent-btn"
+                                            Content="{loc:T LyricsBackground.InstallYtDlp}"
+                                            Background="{DynamicResource AccentButtonBackground}"
+                                            Foreground="{DynamicResource AccentForegroundBrush}"
+                                            Command="{Binding InstallToolCommand}"
+                                            IsEnabled="{Binding !IsInstallingTool}" />
+                                </Grid>
+                                <ProgressBar Value="{Binding DownloadProgress}" Minimum="0" Maximum="1" Height="3" CornerRadius="2"
+                                             IsVisible="{Binding IsDownloading}" />
+                                <ProgressBar Value="{Binding DownloadProgress}" Minimum="0" Maximum="1" Height="3" CornerRadius="2"
+                                             IsVisible="{Binding IsInstallingTool}" />
+                                <TextBlock Text="{Binding YouTubeStatus}" FontSize="11" Opacity="0.65" TextWrapping="Wrap"
+                                           IsVisible="{Binding YouTubeStatus, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                            </StackPanel>
+                        </Border>
+                    </controls:CollapsibleContent>
+
+                    <!-- Same outline as the Settings path boxes (ffmpeg "(auto-detect)"). -->
+                    <TextBox Text="{Binding SearchText}"
+                             Watermark="{loc:T LyricsBackground.SearchWatermark}"
+                             CornerRadius="999"
+                             Padding="14,8"
+                             BorderThickness="1.5"
+                             MinHeight="0"
+                             x:Name="SearchBox" />
+
+                    <TextBlock Text="{loc:T LyricsBackground.WithOwnVideo}"
+                               IsVisible="{Binding ShowOverridesHeader}"
+                               FontSize="11"
+                               FontWeight="Bold"
+                               Opacity="0.55"
+                               LetterSpacing="0.5" />
+                </StackPanel>
+
+                <!-- Body: rows / prompt / no-results -->
+                <Panel Margin="12,4,12,16">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto"
+                                  HorizontalScrollBarVisibility="Disabled">
+                        <ItemsControl ItemsSource="{Binding Results}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="vm:LyricsBackgroundPickItem">
+                                    <Border Classes="pick-row">
+                                        <Grid ColumnDefinitions="40,*,Auto">
+                                            <Border Grid.Column="0"
+                                                    Width="36" Height="36"
+                                                    CornerRadius="5"
+                                                    ClipToBounds="True"
+                                                    VerticalAlignment="Center"
+                                                    Background="#18FFFFFF">
+                                                <controls:CachedImage SourcePath="{Binding ArtworkPath}"
+                                                                      DecodeWidth="128"
+                                                                      Stretch="UniformToFill" />
+                                            </Border>
+                                            <StackPanel Grid.Column="1" Margin="12,0" VerticalAlignment="Center" Spacing="1">
+                                                <TextBlock Text="{Binding Title}"
+                                                           FontSize="13" FontWeight="SemiBold"
+                                                           TextTrimming="CharacterEllipsis" MaxLines="1" />
+                                                <TextBlock Text="{Binding Subtitle}"
+                                                           FontSize="11" Opacity="0.6"
+                                                           TextTrimming="CharacterEllipsis" MaxLines="1" />
+                                                <TextBlock Text="{Binding StatusText}"
+                                                           FontSize="11" Opacity="0.45"
+                                                           Foreground="{DynamicResource AccentTextBrush}"
+                                                           TextTrimming="CharacterEllipsis" MaxLines="1" />
+                                            </StackPanel>
+                                            <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                                <Button Classes="row-action accent-btn"
+                                                        Content="{loc:T LyricsBackground.ChooseVideo}"
+                                                        Background="{DynamicResource AccentButtonBackground}"
+                                                        Foreground="{DynamicResource AccentForegroundBrush}"
+                                                        Command="{Binding $parent[ItemsControl].((vm:LyricsBackgroundPickerViewModel)DataContext).ChooseForItemCommand}"
+                                                        CommandParameter="{Binding}" />
+                                                <Button Classes="row-action"
+                                                        Content="{loc:T LyricsBackground.FromYouTube}"
+                                                        Command="{Binding $parent[ItemsControl].((vm:LyricsBackgroundPickerViewModel)DataContext).YouTubeForItemCommand}"
+                                                        CommandParameter="{Binding}"
+                                                        IsVisible="{Binding $parent[ItemsControl].((vm:LyricsBackgroundPickerViewModel)DataContext).CanUseYouTube}" />
+                                                <!-- Same word as the default row: drops this row's own clip
+                                                     so it falls back to the default. -->
+                                                <Button Classes="row-action"
+                                                        Content="{loc:T LyricsBackground.Remove}"
+                                                        Command="{Binding $parent[ItemsControl].((vm:LyricsBackgroundPickerViewModel)DataContext).ClearForItemCommand}"
+                                                        CommandParameter="{Binding}"
+                                                        IsVisible="{Binding HasOwnVideo}" />
+                                            </StackPanel>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+
+                    <!-- Prompt (no search, nothing has its own video yet) -->
+                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center"
+                                Spacing="6" IsVisible="{Binding ShowPrompt}">
+                        <TextBlock Text="{loc:T LyricsBackground.PromptTitle}"
+                                   FontSize="15" Opacity="0.5"
+                                   HorizontalAlignment="Center" TextAlignment="Center" />
+                        <TextBlock Text="{loc:T LyricsBackground.PromptBody}"
+                                   FontSize="12" Opacity="0.3"
+                                   HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" MaxWidth="360" />
+                    </StackPanel>
+
+                    <!-- No results -->
+                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center"
+                                Spacing="6" IsVisible="{Binding ShowNoResults}">
+                        <TextBlock Text="{loc:T AddSongs.NoMatches}"
+                                   FontSize="15" Opacity="0.5"
+                                   HorizontalAlignment="Center" TextAlignment="Center" />
+                        <TextBlock Text="{loc:T AddSongs.NothingLibraryMatchesSearch}"
+                                   FontSize="12" Opacity="0.3"
+                                   HorizontalAlignment="Center" TextAlignment="Center" />
+                    </StackPanel>
+                </Panel>
+
+            </DockPanel>
+        </Border>
+    </Border>
+</Window>

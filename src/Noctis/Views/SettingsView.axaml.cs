@@ -1,6 +1,7 @@
 using System;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Media;
@@ -9,7 +10,11 @@ using Avalonia.Threading;
 using Avalonia.VisualTree;
 using System.ComponentModel;
 using Noctis.Helpers;
+using System.Collections.Generic;
+using System.Linq;
 using Noctis.ViewModels;
+using Noctis.Services;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Noctis.Views;
 
@@ -31,6 +36,15 @@ public partial class SettingsView : UserControl
 
         // Wire up the Add Folder button to open a native folder picker
         AddFolderButton.Click += OnAddFolderClicked;
+
+        // Settings search: the card index is built lazily on the first keystroke (all tab
+        // panels exist by then) and applied on every change. Watch the property, not
+        // TextChanged: the latter does not fire for a programmatic/bound Text set.
+        SettingsSearchBox.PropertyChanged += (_, e) =>
+        {
+            if (e.Property == TextBox.TextProperty) ApplySearch();
+        };
+        SettingsSearchBox.KeyDown += OnSearchBoxKeyDown;
         DataContextChanged += OnSettingsDataContextChanged;
 
         // Pre-amp pill slider: the visible track/fill/thumb are drawn on a Canvas and
@@ -41,6 +55,15 @@ public partial class SettingsView : UserControl
         PreampSlider.AddHandler(InputElement.PointerMovedEvent, OnPreampPointerMoved, RoutingStrategies.Tunnel);
         PreampSlider.AddHandler(InputElement.PointerReleasedEvent, OnPreampPointerReleased, RoutingStrategies.Tunnel);
         PreampSlider.PointerCaptureLost += OnPreampCaptureLost;
+
+        // Double-clicking a slider's knob snaps it back to the shipped default (the
+        // island width and both opacity sliders). Defaults come from a fresh AppSettings
+        // so this can never drift from what a new install gets.
+        var defaults = new Noctis.Models.AppSettings();
+        AttachThumbDoubleTapReset(IslandWidthSlider, defaults.PlaybackBarWidth);
+        AttachThumbDoubleTapReset(PlayerBarOpacitySlider, defaults.PlaybackBarBackgroundOpacity);
+        AttachThumbDoubleTapReset(TrackBoxOpacitySlider, defaults.PlaybackBarTrackBoxOpacity);
+        AttachThumbDoubleTapReset(MiniPlayerOpacitySlider, defaults.MiniPlayerBackgroundOpacity);
         PreampSlider.PropertyChanged += OnPreampSliderPropertyChanged;
         PreampSlider.SizeChanged += (_, _) => UpdatePreampVisual();
         DispatcherTimer.RunOnce(UpdatePreampVisual, TimeSpan.FromMilliseconds(10));
@@ -58,6 +81,97 @@ public partial class SettingsView : UserControl
         {
             eqCombo.DropDownOpened += OnEqPresetDropDownOpened;
             eqCombo.DropDownClosed += OnEqPresetDropDownClosed;
+        }
+    }
+
+    // ── Settings search ──
+
+    private SettingsSearchIndex? _searchIndex;
+
+    /// <summary>Test hook: the index as built so far (null until the first query).</summary>
+    internal SettingsSearchIndex? SearchIndexForTests => _searchIndex;
+    internal void ApplySearchForTests() => ApplySearch();
+
+    /// <summary>
+    /// Section key → x:Name of its page panel. The index is keyed by the section key so the
+    /// rail badge counts line up (they never did for "Account &amp; Sync", whose panel name
+    /// differed from its key).
+    /// </summary>
+    internal static readonly (string Tab, string PanelName)[] TabPanels =
+    {
+        (SettingsViewModel.TabGeneral, "GeneralTabPanel"),
+        (SettingsViewModel.TabAppearance, "AppearanceTabPanel"),
+        (SettingsViewModel.TabPlayer, "PlayerTabPanel"),
+        (SettingsViewModel.TabLyrics, "LyricsTabPanel"),
+        (SettingsViewModel.TabShortcuts, "ShortcutsTabPanel"),
+        (SettingsViewModel.TabAudio, "AudioTabPanel"),
+        (SettingsViewModel.TabLibrary, "LibraryTabPanel"),
+        (SettingsViewModel.TabAdvanced, "AdvancedTabPanel"),
+        (SettingsViewModel.TabAccountDevices, "AccountSyncTabPanel"),
+        (SettingsViewModel.TabIntegrations, "IntegrationsTabPanel"),
+        (SettingsViewModel.TabPlugins, "PluginsTabPanel"),
+        (SettingsViewModel.TabStatistics, "StatisticsTabPanel"),
+        (SettingsViewModel.TabAbout, "AboutTabPanel"),
+    };
+
+    private SettingsSearchIndex EnsureSearchIndex()
+    {
+        if (_searchIndex is not null) return _searchIndex;
+        var panels = new List<(string Tab, Control Panel)>();
+        foreach (var (tab, name) in TabPanels)
+        {
+            if (this.FindControl<Control>(name) is { } panel)
+                panels.Add((tab, panel));
+        }
+        return _searchIndex = SettingsSearchIndex.Build(panels);
+    }
+
+    /// <summary>Focus the rail's search box (Ctrl+F while the modal is open).</summary>
+    public void FocusSearch()
+    {
+        SettingsSearchBox.Focus();
+        SettingsSearchBox.SelectAll();
+    }
+
+    private void ApplySearch()
+    {
+        var query = SettingsSearchBox.Text ?? string.Empty;
+        // Nothing to restore and nothing to hide: don't walk the tree for an empty box.
+        if (_searchIndex is null && query.Trim().Length == 0) return;
+        var index = EnsureSearchIndex();
+        index.Apply(query);
+
+        if (DataContext is not SettingsViewModel vm) return;
+        var counts = index.CountByTab(query);
+        foreach (var section in vm.Sections)
+            section.MatchCount = counts.TryGetValue(section.Key, out var n) ? n : 0;
+
+        // Typing something the current section doesn't contain jumps to the first section
+        // that does, so the user never stares at an empty page.
+        if (query.Trim().Length > 0 && !counts.ContainsKey(vm.SelectedSettingsTab))
+        {
+            var first = vm.Sections.FirstOrDefault(sct => sct.MatchCount > 0);
+            if (first is not null) vm.SelectedSettingsTab = first.Key;
+        }
+    }
+
+    private void OnSearchBoxKeyDown(object? sender, KeyEventArgs e)
+    {
+        switch (e.Key)
+        {
+            case Key.Escape when !string.IsNullOrEmpty(SettingsSearchBox.Text):
+                // First Escape clears the query; the next one closes Settings as usual.
+                SettingsSearchBox.Text = string.Empty;
+                e.Handled = true;
+                break;
+            case Key.Return when DataContext is SettingsViewModel vm:
+                if (_searchIndex?.FirstMatch(SettingsSearchBox.Text ?? string.Empty, vm.SelectedSettingsTab) is { } hit)
+                {
+                    if (hit.Tab != vm.SelectedSettingsTab) vm.SelectedSettingsTab = hit.Tab;
+                    hit.Card.BringIntoView();
+                }
+                e.Handled = true;
+                break;
         }
     }
 
@@ -199,36 +313,44 @@ public partial class SettingsView : UserControl
             if (files.Count == 0) return;
 
             var sourcePath = files[0].Path.LocalPath;
-            if (string.IsNullOrWhiteSpace(sourcePath) || !System.IO.File.Exists(sourcePath))
+            if (string.IsNullOrWhiteSpace(sourcePath))
                 return;
 
-            // Copy the picked image into the data root's profile dir so the avatar
-            // survives the source being moved or deleted later.
-            var dir = System.IO.Path.Combine(Helpers.AppPaths.DataRoot, "profile");
-            System.IO.Directory.CreateDirectory(dir);
-            var ext = System.IO.Path.GetExtension(sourcePath);
-            var target = System.IO.Path.Combine(dir, "avatar" + ext);
-
-            // Task.Run: the filter admits large animated GIFs/WebPs (no size cap) and
-            // the source may sit on a slow share — a synchronous copy froze the window.
-            await Task.Run(() =>
-            {
-                // Remove stale avatars with a different extension so only one file is kept.
-                foreach (var existing in System.IO.Directory.EnumerateFiles(dir, "avatar.*"))
-                {
-                    if (!string.Equals(existing, target, StringComparison.OrdinalIgnoreCase))
-                    {
-                        try { System.IO.File.Delete(existing); } catch { }
-                    }
-                }
-
-                System.IO.File.Copy(sourcePath, target, overwrite: true);
-            });
-            vm.ProfileAvatarPath = target;
+            // The view model copies the picture into its profile folder under a unique
+            // name (see SetProfileAvatarAsync for why the name must change per pick).
+            await vm.SetProfileAvatarAsync(sourcePath);
         }
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"[SettingsView] Avatar pick failed: {ex.Message}");
+        }
+    }
+
+    private async void OnModifyLyricsBackgroundClick(object? sender, RoutedEventArgs e)
+    {
+        // async void: an escaped exception would crash the app.
+        try
+        {
+            if (DataContext is not SettingsViewModel vm) return;
+            var library = App.Services?.GetService<ILibraryService>();
+            if (library == null) return;
+
+            var ytDlp = App.Services?.GetService<Services.YouTube.YtDlpTool>();
+            var ffmpeg = App.Services?.GetService<IAudioConverterService>();
+            var dialog = new LyricsBackgroundPickerDialog
+            {
+                DataContext = new LyricsBackgroundPickerViewModel(vm, library, ytDlp, () => ffmpeg?.GetFfmpegPath())
+            };
+            if (TopLevel.GetTopLevel(this) is Window owner)
+            {
+                DialogHelper.SizeToOwner(dialog, owner);
+                await dialog.ShowDialog(owner);
+            }
+            else dialog.Show();
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[SettingsView] Lyrics background picker failed: {ex.Message}");
         }
     }
 
@@ -265,6 +387,17 @@ public partial class SettingsView : UserControl
         if (DataContext is SettingsViewModel vm)
         {
             vm.EqPreampDb = 0;
+            e.Handled = true;
+        }
+    }
+
+    // Double-tapping the lyrics minimum-line-opacity slider restores the fresh-install
+    // value (same affordance as the pre-amp and crossfade sliders).
+    private void OnLyricsMinLineOpacitySliderDoubleTapped(object? sender, TappedEventArgs e)
+    {
+        if (DataContext is SettingsViewModel vm)
+        {
+            vm.LyricsMinLineOpacity = Models.AppSettings.LyricsMinLineOpacityDefault;
             e.Handled = true;
         }
     }
@@ -338,6 +471,23 @@ public partial class SettingsView : UserControl
         _isPreampDragging = false;
         e.Pointer.Capture(null);
         e.Handled = true;
+    }
+
+    /// <summary>
+    /// Resets <paramref name="slider"/> to <paramref name="defaultValue"/> on a
+    /// double-click of its thumb. The track is excluded on purpose: a double-click there
+    /// is two ordinary jumps, and turning it into a reset would surprise anyone clicking
+    /// quickly to fine-tune. The two-way binding carries the value to the view model.
+    /// </summary>
+    private static void AttachThumbDoubleTapReset(Slider slider, double defaultValue)
+    {
+        slider.DoubleTapped += (_, e) =>
+        {
+            if (e.Source is not Visual source) return;
+            if (source.FindAncestorOfType<Thumb>(includeSelf: true) == null) return;
+            slider.Value = defaultValue;
+            e.Handled = true;
+        };
     }
 
     private void OnPreampCaptureLost(object? sender, PointerCaptureLostEventArgs e)

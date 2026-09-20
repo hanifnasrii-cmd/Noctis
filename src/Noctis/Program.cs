@@ -19,6 +19,8 @@ internal class Program
     public static void Main(string[] args)
     {
         Services.StartupTrace.Begin();
+        // The core's log header must name this app, not the core assembly.
+        Services.DebugLog.DescribeBuild = Services.UpdateService.DescribeBuild;
         try
         {
             // Explicit STA setup required for Windows OLE drag-and-drop from external apps
@@ -155,9 +157,12 @@ internal class Program
             // The default (~64 MB) is small for an image-heavy music library —
             // when album-art textures exceed it during scroll, the GPU evicts
             // older textures and we re-upload them on the next frame, which is
-            // what causes scroll stutter on the album grid. 256 MB comfortably
-            // holds the visible+nearby cover textures for a 10K-track library.
-            .With(new SkiaOptions { MaxGpuResourceSizeBytes = 256L * 1024 * 1024 })
+            // what causes scroll stutter on the album grid. Covers are now decoded
+            // at the size they draw at (a 2x album tile is ~0.6 MB, not 2.4 MB), so
+            // 128 MB holds the visible+nearby textures for a 10K-track library with
+            // room to spare; on integrated GPUs and the software path this cache is
+            // host RAM, which is why it is not larger.
+            .With(new SkiaOptions { MaxGpuResourceSizeBytes = 128L * 1024 * 1024 })
             .LogToTrace();
 
         // LogToTrace installed its sink; wrap it so Avalonia's own warnings and
@@ -254,6 +259,9 @@ internal class Program
         services.AddSingleton<IMediaSourceConnector, NavidromeMediaSourceConnector>();
         // On-demand media-server browsing/streaming (the "Server" section).
         services.AddSingleton<Services.MediaServer.IMediaServerService, Services.MediaServer.MediaServerService>();
+        services.AddSingleton<Services.AudioCd.IAudioCdService>(_ =>
+            new Services.AudioCd.AudioCdService(new Services.AudioCd.SystemDriveProbe(), new Services.AudioCd.LibVlcAudioCdReader(),
+                probeOnConstruct: false));
         services.AddSingleton<LoonClient>(sp =>
         {
             var persistence = sp.GetRequiredService<IPersistenceService>();
@@ -264,8 +272,11 @@ internal class Program
         services.AddSingleton<ILastFmService, LastFmService>();
         services.AddSingleton<IListenBrainzService, ListenBrainzService>();
         services.AddSingleton<ArtistImageService>();
+        services.AddSingleton<ArtistInfoService>();
+        services.AddSingleton<SimilarArtistsService>();
         services.AddSingleton<ITunesArtworkService>();
         services.AddSingleton<UpdateService>();
+        services.AddSingleton<ShortcutService>();
         services.AddSingleton<ILrcLibService, LrcLibService>();
         services.AddSingleton<INetEaseService, NetEaseService>();
         services.AddSingleton<IPlayHistoryService, PlayHistoryService>();
@@ -297,7 +308,58 @@ internal class Program
                 () => App.Services?.GetService<MainWindowViewModel>()?.Settings.GetSettings()
                       ?? new Noctis.Models.AppSettings(),
                 sp.GetRequiredService<DeezerMetadataService>()));
+        services.AddSingleton<ITidalAuthService>(sp => new TidalAuthService(
+            sp.GetRequiredService<HttpClient>(),
+            sp.GetRequiredService<IPersistenceService>().DataDirectory));
         services.AddSingleton<IPlaylistImportService, PlaylistImportService>();
+
+        // Deferred file-tag writes: star clicks and bulk lyrics saves touch each file once,
+        // after the user goes quiet and never while that file is playing. Flushed at shutdown.
+        services.AddSingleton<IDeferredTagWriter>(_ => new DeferredTagWriter());
+
+        // Account & Sync ledger (state-based, last-writer-wins) served by the Noctis server.
+        services.AddSingleton<Services.Sync.ILibrarySyncService>(sp =>
+            new Services.Sync.LibrarySyncService(
+                () => App.Services?.GetService<MainWindowViewModel>()?.Settings.GetSettings()
+                      ?? new Noctis.Models.AppSettings(),
+                sp.GetRequiredService<IPersistenceService>()));
+        services.AddSingleton<Services.Sync.ITrackStateRecorder>(sp => sp.GetRequiredService<Services.Sync.ILibrarySyncService>());
+
+        // Bulk lyrics (fetch / remove) and Lyrics Studio share one writer so every path
+        // follows the lyrics page's sidecar + registry rules.
+        services.AddSingleton<Services.Lyrics.LyricsWriter>(sp =>
+            new Services.Lyrics.LyricsWriter(sp.GetRequiredService<IMetadataService>(), sp.GetRequiredService<IDeferredTagWriter>()));
+        services.AddSingleton<Services.Lyrics.ILyricsBulkService>(sp =>
+            new Services.Lyrics.LyricsBulkService(
+                sp.GetRequiredService<ILrcLibService>(),
+                sp.GetRequiredService<Services.Lyrics.LyricsWriter>(),
+                sp.GetRequiredService<ILibraryService>(),
+                () => App.Services?.GetService<MainWindowViewModel>()?.Settings.GetSettings()
+                      ?? new Noctis.Models.AppSettings()));
+        services.AddSingleton<Services.LyricsStudio.ILyricsStudioEngine>(sp =>
+            new Services.LyricsStudio.LyricsStudioEngine(
+                sp.GetRequiredService<IAudioConverterService>(),
+                sp.GetRequiredService<ILrcLibService>(),
+                sp.GetRequiredService<IPersistenceService>()));
+
+        // Send to Folder (MusicBee-style copy to a drive/folder).
+        services.AddSingleton<ISendToFolderService, SendToFolderService>();
+
+        // YouTube → library: yt-dlp as an external tool, tagged with TagLib, imported like a drop.
+        services.AddSingleton<Services.YouTube.YtDlpTool>(sp =>
+            new Services.YouTube.YtDlpTool(
+                sp.GetRequiredService<HttpClient>(),
+                sp.GetRequiredService<IPersistenceService>().DataDirectory,
+                () => App.Services?.GetService<MainWindowViewModel>()?.Settings.GetSettings().YtDlpPath ?? string.Empty));
+        services.AddSingleton<Services.YouTube.IYouTubeImportService>(sp =>
+            new Services.YouTube.YouTubeImportService(
+                sp.GetRequiredService<Services.YouTube.YtDlpTool>(),
+                sp.GetRequiredService<IAudioConverterService>(),
+                sp.GetRequiredService<IMetadataService>(),
+                sp.GetRequiredService<ILibraryService>(),
+                sp.GetRequiredService<HttpClient>(),
+                () => App.Services?.GetService<MainWindowViewModel>()?.Settings.GetSettings()
+                      ?? new Noctis.Models.AppSettings()));
 
         // Background BPM/key analysis pipeline. Decodes via ffmpeg out-of-process
         // (reusing AudioConverterService for ffmpeg discovery) and runs managed DSP;

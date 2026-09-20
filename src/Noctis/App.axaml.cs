@@ -54,6 +54,9 @@ public partial class App : Application
             [typeof(SettingsViewModel)] = () => new SettingsView(),
             [typeof(LyricsViewModel)] = () => new LyricsView(),
             [typeof(ServerViewModel)] = () => new ServerView(),
+            [typeof(AudioCdViewModel)] = () => new AudioCdView(),
+            [typeof(VisualizerViewModel)] = () => new VisualizerView(),
+            [typeof(LyricsStudioPageViewModel)] = () => new LyricsStudioView(),
         });
         DataTemplates.Insert(0, cachedLocator);
         CachedLocator = cachedLocator;
@@ -93,10 +96,15 @@ public partial class App : Application
                 }
             },
             Avalonia.Interactivity.RoutingStrategies.Tunnel);
+
+        // Every ComboBox drop-down eases open (fade + glide), matching the Settings folds.
+        Noctis.Helpers.ComboBoxDropDownAnimator.Install();
     }
 
     public override void OnFrameworkInitializationCompleted()
     {
+        // The core rewrites cover files without knowing about the UI's bitmap cache.
+        global::Noctis.Services.LibraryService.ArtworkFileReplaced += global::Noctis.Services.ArtworkCache.Invalidate;
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
             Noctis.Services.StartupTrace.Mark("avalonia-initialized");
@@ -197,6 +205,17 @@ public partial class App : Application
     public const string ThemeDark = "Dark";
     public const string ThemeLight = "Light";
     public const string ThemeMidnight = "Midnight";
+    public const string ThemeInk = "Ink";
+    public const string ThemeSmoke = "Smoke";
+
+    /// <summary>Built-in themes that run on the Light variant; every other name runs on Dark.</summary>
+    private static readonly HashSet<string> LightVariantThemes = new(StringComparer.Ordinal)
+    {
+        ThemeLight,
+    };
+
+    public static bool IsLightVariantTheme(string? themeName) =>
+        themeName != null && LightVariantThemes.Contains(themeName);
 
     private ResourceInclude? _activeThemeOverlay;
     private Avalonia.Controls.ResourceDictionary? _activeCustomOverlay;
@@ -209,11 +228,46 @@ public partial class App : Application
     public Func<string, Noctis.Models.CustomThemeDefinition?>? CustomThemeResolver { get; set; }
 
     /// <summary>
-    /// Switches the application theme at runtime. Light maps to the Light variant;
-    /// every other theme runs on the Dark variant with an optional overlay merged on top
-    /// (Gray uses the base Dark dictionary as-is).
+    /// Switches the application theme at runtime. Light-variant themes (see
+    /// <see cref="IsLightVariantTheme"/>) run on the Light dictionary, every other theme on
+    /// Dark, with an optional overlay merged on top (Gray / Light use the base dictionary as-is).
     /// </summary>
     public void SetTheme(string themeName)
+    {
+        var mainWindow = (ApplicationLifetime as Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime)?.MainWindow;
+        RunWithTransitionsSuppressed(mainWindow, () => SetThemeCore(themeName));
+    }
+
+    /// <summary>Class the main window carries while a theme switch is in flight. Styles that
+    /// animate a themed brush for hover (Home chart rows / rail cards) drop their transitions
+    /// under it, so the DynamicResource swap lands in one frame instead of lerping through a
+    /// lighter semi-opaque grey (HomeTileThemeSwitchTests).</summary>
+    public const string ThemeSwitchingClass = "theme-switching";
+
+    /// <summary>Runs <paramref name="body"/> with <see cref="ThemeSwitchingClass"/> on
+    /// <paramref name="root"/>; the class comes off once the resource change has been
+    /// rendered, so the next hover animates again.</summary>
+    public static void RunWithTransitionsSuppressed(StyledElement? root, Action body)
+    {
+        if (root == null || root.Classes.Contains(ThemeSwitchingClass))
+        {
+            body();
+            return;
+        }
+        root.Classes.Add(ThemeSwitchingClass);
+        try
+        {
+            body();
+        }
+        finally
+        {
+            Avalonia.Threading.Dispatcher.UIThread.Post(
+                () => root.Classes.Remove(ThemeSwitchingClass),
+                Avalonia.Threading.DispatcherPriority.Background);
+        }
+    }
+
+    private void SetThemeCore(string themeName)
     {
         if (_activeThemeOverlay != null)
         {
@@ -259,7 +313,7 @@ public partial class App : Application
             themeName = ThemeGray;
         }
 
-        RequestedThemeVariant = themeName == ThemeLight
+        RequestedThemeVariant = IsLightVariantTheme(themeName)
             ? Avalonia.Styling.ThemeVariant.Light
             : Avalonia.Styling.ThemeVariant.Dark;
 
@@ -267,6 +321,8 @@ public partial class App : Application
         {
             ThemeDark => "avares://Noctis/Assets/Themes/Dark.axaml",
             ThemeMidnight => "avares://Noctis/Assets/Themes/Midnight.axaml",
+            ThemeInk => "avares://Noctis/Assets/Themes/Ink.axaml",
+            ThemeSmoke => "avares://Noctis/Assets/Themes/Smoke.axaml",
             _ => null
         };
 
@@ -294,42 +350,43 @@ public partial class App : Application
     {
         // Row 1 — reds, pinks, purples
         new AccentPreset("Crimson",    "#E74856"),
-        new AccentPreset("Red",        "#FF4F57"),
+        new AccentPreset("Scarlet",    "#FF3B30"),
         new AccentPreset("Coral",      "#FF6F61"),
         new AccentPreset("Salmon",     "#FF8FA3"),
-        new AccentPreset("Pink",       "#FF7BAC"),
+        new AccentPreset("Bubblegum",  "#FF7BAC"),
         new AccentPreset("Rose",       "#E754B5"),
         new AccentPreset("Magenta",    "#C724B1"),
-        new AccentPreset("Plum",       "#9B59B6"),
         new AccentPreset("Orchid",     "#C45CE0"),
-        new AccentPreset("Lavender",   "#D89BE8"),
+        new AccentPreset("Lilac",      "#B39DDB"),
         new AccentPreset("Violet",     "#874CF2"),
-        new AccentPreset("Purple",     "#5917E8"),
-        // Row 2 — blues, cyans, teals
-        new AccentPreset("Navy",       "#1800A8"),
         new AccentPreset("Indigo",     "#4338CA"),
+        new AccentPreset("Navy",       "#1F2A7A"),
+        // Row 2 — blues, teals, greens
         new AccentPreset("Cobalt",     "#0D56B3"),
-        new AccentPreset("Azure",      "#4C6EF5"),
-        new AccentPreset("Periwinkle", "#7C83FD"),
-        new AccentPreset("Ocean",      "#0E86D4"),
+        new AccentPreset("Cerulean",   "#2A7FCF"),
         new AccentPreset("Sky",        "#39B5F0"),
         new AccentPreset("Arctic",     "#8ED6F8"),
-        new AccentPreset("Cyan",       "#19C2C2"),
-        new AccentPreset("Turquoise",  "#2DD4BF"),
-        new AccentPreset("Aqua",       "#55D4D9"),
         new AccentPreset("Teal",       "#0FA3B1"),
-        // Row 3 — greens, yellows, oranges (last cell is the custom picker)
-        new AccentPreset("Forest",     "#1F9D55"),
-        new AccentPreset("Emerald",    "#12C76F"),
+        new AccentPreset("Turquoise",  "#2DD4BF"),
         new AccentPreset("Jade",       "#00C49A"),
+        new AccentPreset("Emerald",    "#12C76F"),
         new AccentPreset("Lime",       "#7ED957"),
-        new AccentPreset("Mint",       "#B8FF66"),
+        new AccentPreset("Olive",      "#8A9A2B"),
+        new AccentPreset("Moss",       "#5C7A3A"),
         new AccentPreset("Lemon",      "#FFE45C"),
+        // Row 3 — golds, oranges, earth tones, neutrals
         new AccentPreset("Gold",       "#F4D24B"),
         new AccentPreset("Amber",      "#FDB84D"),
-        new AccentPreset("Peach",      "#FFA06B"),
         new AccentPreset("Tangerine",  "#FF8547"),
         new AccentPreset("Rust",       "#E2613B"),
+        new AccentPreset("Terracotta", "#C8643E"),
+        new AccentPreset("Brick",      "#B7412E"),
+        new AccentPreset("Wine",       "#8E1B3A"),
+        new AccentPreset("Rose Gold",  "#B76E79"),
+        new AccentPreset("Mocha",      "#8B5E3C"),
+        new AccentPreset("Sand",       "#D8B384"),
+        new AccentPreset("Slate",      "#5B6C8F"),
+        new AccentPreset("Silver",     "#B8BCC4"),
     };
 
     private ResourceDictionary? _activeAccentOverlay;
@@ -380,9 +437,13 @@ public partial class App : Application
         // whichever of black/white actually contrasts. Every accent that reads either way
         // keeps the theme colour, so this changes nothing for the common ones.
         var themeRowForeground = isLightTheme ? Colors.Black : Colors.White;
-        var nowPlayingRowForeground = ContrastRatio(themeRowForeground, color) >= 3.0
+        // The now-playing row is the accent on every theme (Ink's pinned blue row read as
+        // "the theme changes my accent", 09-17).
+        var rowColor = color;
+        var nowPlayingRowForeground = ContrastRatio(themeRowForeground, rowColor) >= 3.0
             ? themeRowForeground
-            : HighestContrastForeground(color);
+            : HighestContrastForeground(rowColor);
+        IBrush accentButtonBackground = new SolidColorBrush(color);
         // Outline around accent-filled pills. Only meaningful when the accent fill
         // would be indistinguishable from the page background — in practice that's
         // a white / very-light accent on the Light theme. In every other case the
@@ -420,7 +481,7 @@ public partial class App : Application
             // it exists as its own key so MainWindow's Liquid Glass overlay can frost the
             // buttons without making every accent surface (sliders, now-playing row,
             // sidebar selection, drag preview) translucent too.
-            ["AccentButtonBackground"]             = new SolidColorBrush(color),
+            ["AccentButtonBackground"]             = accentButtonBackground,
             ["AccentForegroundBrush"]              = new SolidColorBrush(accentForeground),
             ["AccentBorderBrush"]                  = new SolidColorBrush(accentBorder),
             ["AccentTextBrush"]                    = new SolidColorBrush(accentText),
@@ -431,7 +492,7 @@ public partial class App : Application
             // Now-playing track row box. Previously retinted at runtime from the current
             // artwork's vibrant colour, which ignored the user's accent; it now follows the
             // accent like every other accent-filled surface.
-            ["NowPlayingRowBrush"]           = new SolidColorBrush(color),
+            ["NowPlayingRowBrush"]           = new SolidColorBrush(rowColor),
             ["NowPlayingRowForegroundBrush"] = new SolidColorBrush(nowPlayingRowForeground),
             ["ToggleSwitchFillOn"]                 = new SolidColorBrush(color),
             ["ToggleSwitchFillOnPointerOver"]      = new SolidColorBrush(light1),

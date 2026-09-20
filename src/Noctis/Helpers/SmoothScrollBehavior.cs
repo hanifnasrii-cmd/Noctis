@@ -131,10 +131,18 @@ public static class SmoothScrollBehavior
         if (state == null || scrollViewer == null || scrollViewer.Extent.Height <= scrollViewer.Viewport.Height)
             return;
 
-        // Wheel over a nested scrollable region: leave the event alone so the inner
-        // ScrollViewer scrolls instead of the page.
         if (e.Source is Visual source)
         {
+            // Wheel over a popup (a ComboBox drop-down, a flyout): its events bubble through
+            // the owner into this page, but the pointer is over the popup, not the page.
+            // Scrolling the page here moved the Settings content out from under an open
+            // Language list while the popup stayed put (09-19 report).
+            if (!ReferenceEquals(source.GetVisualRoot(), element.GetVisualRoot())
+                || source.FindAncestorOfType<OverlayPopupHost>() != null)
+                return;
+
+            // Wheel over a nested scrollable region: leave the event alone so the inner
+            // ScrollViewer scrolls instead of the page.
             var inner = source as ScrollViewer ?? source.FindAncestorOfType<ScrollViewer>();
             if (inner != null && inner != scrollViewer && inner.Extent.Height > inner.Viewport.Height)
                 return;
@@ -170,12 +178,42 @@ public static class SmoothScrollBehavior
     /// </summary>
     internal static double Advance(
         double current, double target, double dt, double settleMs, ref double velocity)
+        => Advance(current, target, dt, settleMs, double.PositiveInfinity, ref velocity);
+
+    /// <summary>
+    /// How far the content may fall behind the wheel, in notches, before the spring stiffens.
+    /// A fixed-stiffness spring settles in the same TIME whatever the distance, so a fast flick
+    /// that ran the target 2000px ahead coasted all 2000px after the wheel stopped — the "loose
+    /// automatic scroll" (user, 09-12, Artists grid). Apple Music keeps each notch visible as its
+    /// own step and stops soon after the wheel does. Above this lag the stiffness scales with the
+    /// distance, so a burst tracks the wheel at roughly this lag; when the wheel stops only this
+    /// much is left, and it lands on the ordinary single-notch curve.
+    /// </summary>
+    internal const double LagCapNotches = 1.5;
+
+    /// <inheritdoc cref="Advance(double,double,double,double,ref double)"/>
+    /// <param name="step">Pixels per notch; sizes the lag cap. Infinity disables it.</param>
+    internal static double Advance(
+        double current, double target, double dt, double settleMs, double step, ref double velocity)
     {
         // (1 + w*t) * e^(-w*t) falls to 0.01 at w*t ≈ 6.64, so SettleMs keeps its old meaning:
         // "how long a notch takes to land (~99%)".
         var w = 6.64 / (Math.Max(1, settleMs) / 1000.0);
-        var decay = Math.Exp(-w * dt);
         var d0 = current - target;
+
+        var lagCap = LagCapNotches * step;
+        var lag = Math.Abs(d0);
+        if (lag > lagCap)
+            w *= lag / lagCap;
+
+        // A stiffness that just DROPPED (the lag shrinking back under the cap) can leave the
+        // velocity carried over from the stiffer frames above what this w can absorb, and a
+        // critically damped solution with b opposite in sign to d0 crosses the target once. Raise
+        // w to the point where b = 0: a pure exponential landing, no overshoot, still continuous.
+        if (lag > 1e-6 && Math.Sign(velocity) == -Math.Sign(d0))
+            w = Math.Max(w, Math.Abs(velocity) / lag);
+
+        var decay = Math.Exp(-w * dt);
         var b = velocity + w * d0;
         var d = (d0 + b * dt) * decay;
 
@@ -192,6 +230,7 @@ public static class SmoothScrollBehavior
         private double _velocityY;
         private double _appliedY = double.NaN;
         private double _settleMs = 1;
+        private double _step = double.PositiveInfinity;
         private long _lastFrameTimestamp;
         private bool _isRunning;
         private bool _isFrameQueued;
@@ -238,6 +277,7 @@ public static class SmoothScrollBehavior
             // is what reads as stutter while the wheel keeps turning).
             _targetY = Math.Clamp(_targetY - deltaY * Math.Max(1, step), 0, maxY);
             _settleMs = Math.Max(1, settleMs);
+            _step = Math.Max(1, step);
             _isRunning = true;
             QueueNextFrame();
         }
@@ -271,7 +311,7 @@ public static class SmoothScrollBehavior
             var dt = Math.Min((now - _lastFrameTimestamp) / (double)Stopwatch.Frequency, 0.1);
             _lastFrameTimestamp = now;
 
-            _currentY = Advance(_currentY, targetY, dt, _settleMs, ref _velocityY);
+            _currentY = Advance(_currentY, targetY, dt, _settleMs, _step, ref _velocityY);
 
             // Velocity has to be near zero as well as the distance: the spring carries momentum
             // across notches, so distance alone would snap-and-stop mid-flight at the moment a

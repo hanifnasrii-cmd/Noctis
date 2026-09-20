@@ -1,4 +1,5 @@
 using Avalonia.Controls;
+using Avalonia.Input;
 using Noctis.ViewModels;
 
 namespace Noctis.Views;
@@ -14,5 +15,17 @@ public partial class MetadataFinderDialog : Window
     {
         DataContext = vm;
         vm.Closed += (_, _) => Close();
+    }
+
+    protected override void OnKeyDown(KeyEventArgs e)
+    {
+        // Escape closes the same way the header X does (Cancel: stops any running identify).
+        if (e.Key == Key.Escape && DataContext is MetadataFinderViewModel vm)
+        {
+            e.Handled = true;
+            vm.CancelCommand.Execute(null);
+            return;
+        }
+        base.OnKeyDown(e);
     }
 }

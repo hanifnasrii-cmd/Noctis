@@ -29,6 +29,9 @@ public class FreshInstallDefaultsTests
         // Autoplay keeps playing past the end of the queue — continuing playback
         // the user didn't queue is opt-in.
         Assert.False(Fresh.AutoplayEnabled);
+
+        // Taskbar progress (GitHub #53) changes what the Windows taskbar shows — opt-in.
+        Assert.False(Fresh.TaskbarProgressEnabled);
     }
 
     [Fact]
@@ -94,6 +97,10 @@ public class FreshInstallDefaultsTests
         Assert.False(Fresh.LyricsFlowingLightEnabled);
         Assert.False(Fresh.LyricsFullScreenFocusEnabled);
         Assert.False(Fresh.LyricsJoinSplitWords);
+        // Minimum line opacity ships ON (15%) so every lyric line can be clicked to seek
+        // (Discord, Mistery 09-20); the constant is what the slider's double-tap restores.
+        Assert.Equal(15, AppSettings.LyricsMinLineOpacityDefault);
+        Assert.Equal(AppSettings.LyricsMinLineOpacityDefault, Fresh.LyricsMinLineOpacity);
         Assert.Equal(0.4, Fresh.PlaybackBarBackgroundOpacity);
         Assert.True(Fresh.GaplessPlaybackEnabled);
         // Songs rows ship with album art thumbnails (issue #23); the column chooser

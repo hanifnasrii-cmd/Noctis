@@ -284,6 +284,16 @@ public partial class LibrarySongsViewModel : ViewModelBase, ISearchable, IDispos
         if (_settings != null && !_adoptingPersistedState) _settings.SongsShowOnlyFavorites = value;
     }
 
+    /// <summary>Row artwork hover button (09-14): Play from this row, or Pause/Resume when
+    /// the row is the loaded track — the album tile's TogglePlayAlbum for a single row.</summary>
+    [RelayCommand]
+    private void TogglePlayTrack(Track track)
+    {
+        if (track == null) return;
+        if (track.IsNowPlaying) { _player.PlayPauseCommand.Execute(null); return; }
+        PlayFromHere(track);
+    }
+
     [RelayCommand]
     private void PlayFromHere(Track track)
     {
@@ -388,6 +398,48 @@ public partial class LibrarySongsViewModel : ViewModelBase, ISearchable, IDispos
     {
         if (track == null || !File.Exists(track.FilePath)) return;
         Helpers.PlatformHelper.ShowInFileManager(track.FilePath);
+    }
+
+    /// <summary>The Ctrl-selection when the acted-on row is part of it, else just that row.</summary>
+    private List<Track> SelectionOr(Track track) =>
+        CtrlSelectedTracks.Count > 0 && CtrlSelectedTracks.Contains(track) ? CtrlSelectedTracks.ToList() : new List<Track> { track };
+
+    /// <summary>Star click on a row, or Rate ▸ in the context menu. Rates the whole selection when the row is in it.</summary>
+    public Task RateAsync(Track track, int stars) => _library.SetTracksRatingAsync(SelectionOr(track), stars);
+
+    [RelayCommand]
+    private Task RateTrack(RateRequest request) => RateAsync(request.Track, request.Stars);
+
+    [RelayCommand]
+    private async Task FetchLyrics(Track track)
+    {
+        var tracks = SelectionOr(track);
+        CtrlSelectedTracks.Clear();
+        await MetadataHelper.OpenBulkLyricsDialog(tracks, remove: false);
+    }
+
+    [RelayCommand]
+    private async Task RemoveLyrics(Track track)
+    {
+        var tracks = SelectionOr(track);
+        CtrlSelectedTracks.Clear();
+        await MetadataHelper.OpenBulkLyricsDialog(tracks, remove: true);
+    }
+
+    [RelayCommand]
+    private async Task OpenLyricsStudio(Track track)
+    {
+        var tracks = SelectionOr(track);
+        CtrlSelectedTracks.Clear();
+        await MetadataHelper.OpenLyricsStudio(tracks);
+    }
+
+    [RelayCommand]
+    private async Task SendToFolder(Track track)
+    {
+        var tracks = SelectionOr(track);
+        CtrlSelectedTracks.Clear();
+        await MetadataHelper.OpenSendToFolderDialog(tracks);
     }
 
     private Action<Track>? _searchLyricsAction;
@@ -590,7 +642,9 @@ public partial class LibrarySongsViewModel : ViewModelBase, ISearchable, IDispos
         if (source.Contains(query, StringComparison.OrdinalIgnoreCase))
             return true;
 
-        if (sourceKey.Contains(queryNoSpaces, StringComparison.OrdinalIgnoreCase))
+        // queryNoSpaces is empty for a punctuation-only query ("&", "**"); every key
+        // contains "" so that matched the whole library. Only the raw check above counts then.
+        if (queryNoSpaces.Length > 0 && sourceKey.Contains(queryNoSpaces, StringComparison.OrdinalIgnoreCase))
             return true;
 
         // Word-level match: every word in the query must appear somewhere in the source
@@ -629,18 +683,20 @@ public partial class LibrarySongsViewModel : ViewModelBase, ISearchable, IDispos
         // RemoveWhitespace(source.Trim()) result without the per-call allocations.
         var normalized = source.Trim();
 
+        var hasKey = queryNoSpaces.Length > 0; // empty for punctuation-only queries
+
         if (string.Equals(normalized, query, StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(sourceKey, queryNoSpaces, StringComparison.OrdinalIgnoreCase))
+            (hasKey && string.Equals(sourceKey, queryNoSpaces, StringComparison.OrdinalIgnoreCase)))
             return 0;
 
         if (normalized.StartsWith(query, StringComparison.OrdinalIgnoreCase) ||
-            sourceKey.StartsWith(queryNoSpaces, StringComparison.OrdinalIgnoreCase))
+            (hasKey && sourceKey.StartsWith(queryNoSpaces, StringComparison.OrdinalIgnoreCase)))
             return 1;
 
         if (normalized.Contains(query, StringComparison.OrdinalIgnoreCase))
             return 2;
 
-        if (sourceKey.Contains(queryNoSpaces, StringComparison.OrdinalIgnoreCase))
+        if (hasKey && sourceKey.Contains(queryNoSpaces, StringComparison.OrdinalIgnoreCase))
             return 3;
 
         // Word-level match: all query words found in source

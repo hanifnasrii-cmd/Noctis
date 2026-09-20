@@ -10,14 +10,14 @@ namespace Noctis.Tests;
 /// <summary>
 /// The player-bar island carries a 200ms Width transition, and the lyrics page mounts its
 /// own copy of the bar in the compact (340px) state while the XAML declares the base width
-/// (590px). Avalonia leaves transitions enabled on a control that has never been detached,
-/// so the mount-time write used to play as a visible 590→340 shrink the first time the
+/// (626px). Avalonia leaves transitions enabled on a control that has never been detached,
+/// so the mount-time write used to play as a visible full→340 shrink the first time the
 /// lyrics page opened. Establishing writes must land instantly; only live state changes
 /// may animate.
 /// </summary>
 public class PlaybackBarIslandWidthTests
 {
-    private const double IslandBaseWidth = 590;
+    private const double IslandBaseWidth = 536; // 626 with the long track info, 590 before the favorite heart
     private const double IslandLyricsPageWidth = 340;
 
     private static PlayerViewModel MakePlayer() => new(
@@ -145,6 +145,78 @@ public class PlaybackBarIslandWidthTests
 
             Assert.Equal(IslandBaseWidth, Island(bar).Width);
             Assert.True(trackInfo.IsVisible);
+        }
+        finally
+        {
+            win.Close();
+        }
+    }
+
+    /// <summary>The "…" lives inside the track box; the right cluster's OptionsButton
+    /// (which owns the MenuFlyout) only stands in while the box is hidden — the compact
+    /// resize shape and the lyrics page — so the lyrics-only menu entries stay reachable.</summary>
+    [AvaloniaFact]
+    public void OptionsFallback_ShowsOnlyWhileTheTrackBoxIsHidden()
+    {
+        var player = MakePlayer();
+
+        var bar = new PlaybackBarView { DataContext = player, CompactWhenLyricsPageActive = false };
+        var win = new Window { Width = 900, Height = 200, Content = bar };
+        try
+        {
+            win.Show();
+            Dispatcher.UIThread.RunJobs();
+
+            var trackInfo = bar.FindControl<Grid>("TrackInfoPanel")!;
+            var boxDots = bar.FindControl<Button>("BoxOptionsButton")!;
+            var fallbackDots = bar.FindControl<Button>("OptionsButton")!;
+
+            Assert.True(trackInfo.IsVisible);
+            Assert.True(boxDots.IsVisible);
+            Assert.False(fallbackDots.IsVisible);
+
+            player.PlaybackBarIslandWidth = 420; // compact shape: box gone, fallback in
+            Dispatcher.UIThread.RunJobs();
+
+            Assert.False(trackInfo.IsVisible);
+            Assert.True(fallbackDots.IsVisible);
+
+            player.PlaybackBarIslandWidth = IslandBaseWidth;
+            Dispatcher.UIThread.RunJobs();
+
+            Assert.True(trackInfo.IsVisible);
+            Assert.False(fallbackDots.IsVisible);
+        }
+        finally
+        {
+            win.Close();
+        }
+    }
+
+    [AvaloniaFact]
+    public void RepeatAndFavorite_AreHiddenUntilTheirSettingsTurnThemOn()
+    {
+        var player = MakePlayer();
+
+        var bar = new PlaybackBarView { DataContext = player, CompactWhenLyricsPageActive = false };
+        var win = new Window { Width = 900, Height = 200, Content = bar };
+        try
+        {
+            win.Show();
+            Dispatcher.UIThread.RunJobs();
+
+            var heart = bar.FindControl<Button>("FavoriteButton")!;
+            Assert.False(heart.IsVisible);
+            Assert.Equal(IslandBaseWidth, Island(bar).Width);
+
+            // Each extra widens the stock pill by one 34px button + 2px spacing,
+            // exactly like shuffle / sleep / speed already do.
+            player.IslandShowFavorite = true;
+            player.IslandShowRepeat = true;
+            Dispatcher.UIThread.RunJobs();
+
+            Assert.True(heart.IsVisible);
+            Assert.Equal(IslandBaseWidth + 2 * 36, Island(bar).Width);
         }
         finally
         {
