@@ -6296,4 +6296,58 @@
     <value>3色を選択してください。プレビューはライブで更新されます。</value>
     <comment>Dialog subtitle</comment>
   </data>
+  <data name="Settings.Tab.General" xml:space="preserve">
+    <value>一般</value>
+  </data>
+  <data name="Settings.Tab.Appearance" xml:space="preserve">
+    <value>外観</value>
+  </data>
+  <data name="Settings.Tab.Player" xml:space="preserve">
+    <value>プレーヤー</value>
+  </data>
+  <data name="Settings.Tab.Lyrics" xml:space="preserve">
+    <value>歌詞</value>
+  </data>
+  <data name="Settings.Tab.Shortcuts" xml:space="preserve">
+    <value>ショートカット</value>
+  </data>
+  <data name="Settings.Tab.Audio" xml:space="preserve">
+    <value>オーディオ</value>
+  </data>
+  <data name="Settings.Tab.Library" xml:space="preserve">
+    <value>ライブラリ</value>
+  </data>
+  <data name="Settings.Tab.Advanced" xml:space="preserve">
+    <value>詳細</value>
+  </data>
+  <data name="Settings.Tab.AccountDevices" xml:space="preserve">
+    <value>アカウントとデバイス</value>
+  </data>
+  <data name="Settings.Tab.Integrations" xml:space="preserve">
+    <value>連携</value>
+  </data>
+  <data name="Settings.Tab.Plugins" xml:space="preserve">
+    <value>プラグイン</value>
+  </data>
+  <data name="Settings.Tab.Statistics" xml:space="preserve">
+    <value>統計</value>
+  </data>
+  <data name="Settings.Tab.About" xml:space="preserve">
+    <value>情報</value>
+  </data>
+  <data name="Settings.Group.App" xml:space="preserve">
+    <value>アプリ</value>
+  </data>
+  <data name="Settings.Group.Playback" xml:space="preserve">
+    <value>再生</value>
+  </data>
+  <data name="Settings.Group.Library" xml:space="preserve">
+    <value>ライブラリ</value>
+  </data>
+  <data name="Settings.Group.Connect" xml:space="preserve">
+    <value>接続</value>
+  </data>
+  <data name="Settings.Group.More" xml:space="preserve">
+    <value>その他</value>
+  </data>
 </root>

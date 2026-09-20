@@ -6296,4 +6296,58 @@
     <value>Choisissez trois couleurs. La mise à jour de l'aperçu en direct.</value>
     <comment>Dialog subtitle</comment>
   </data>
+  <data name="Settings.Tab.General" xml:space="preserve">
+    <value>Général</value>
+  </data>
+  <data name="Settings.Tab.Appearance" xml:space="preserve">
+    <value>Apparence</value>
+  </data>
+  <data name="Settings.Tab.Player" xml:space="preserve">
+    <value>Lecteur</value>
+  </data>
+  <data name="Settings.Tab.Lyrics" xml:space="preserve">
+    <value>Paroles</value>
+  </data>
+  <data name="Settings.Tab.Shortcuts" xml:space="preserve">
+    <value>Raccourcis</value>
+  </data>
+  <data name="Settings.Tab.Audio" xml:space="preserve">
+    <value>Audio</value>
+  </data>
+  <data name="Settings.Tab.Library" xml:space="preserve">
+    <value>Bibliothèque</value>
+  </data>
+  <data name="Settings.Tab.Advanced" xml:space="preserve">
+    <value>Avancé</value>
+  </data>
+  <data name="Settings.Tab.AccountDevices" xml:space="preserve">
+    <value>Compte et appareils</value>
+  </data>
+  <data name="Settings.Tab.Integrations" xml:space="preserve">
+    <value>Intégrations</value>
+  </data>
+  <data name="Settings.Tab.Plugins" xml:space="preserve">
+    <value>Extensions</value>
+  </data>
+  <data name="Settings.Tab.Statistics" xml:space="preserve">
+    <value>Statistiques</value>
+  </data>
+  <data name="Settings.Tab.About" xml:space="preserve">
+    <value>À propos</value>
+  </data>
+  <data name="Settings.Group.App" xml:space="preserve">
+    <value>Application</value>
+  </data>
+  <data name="Settings.Group.Playback" xml:space="preserve">
+    <value>Lecture</value>
+  </data>
+  <data name="Settings.Group.Library" xml:space="preserve">
+    <value>Bibliothèque</value>
+  </data>
+  <data name="Settings.Group.Connect" xml:space="preserve">
+    <value>Connexion</value>
+  </data>
+  <data name="Settings.Group.More" xml:space="preserve">
+    <value>Plus</value>
+  </data>
 </root>

@@ -1224,7 +1224,7 @@
                 <ItemsControl.ItemTemplate>
                     <DataTemplate x:DataType="vm:SettingsSectionGroup">
                         <StackPanel Spacing="2">
-                            <TextBlock Classes="rail-group" Text="{Binding Name}"/>
+                            <TextBlock Classes="rail-group" Text="{Binding Label}"/>
                             <ItemsControl ItemsSource="{Binding Sections}">
                                 <ItemsControl.ItemsPanel>
                                     <ItemsPanelTemplate>
@@ -1287,7 +1287,7 @@
     <Grid Grid.Column="1" RowDefinitions="Auto,*">
     <Grid Grid.Row="0" ColumnDefinitions="*,Auto" Margin="28,20,20,6">
         <StackPanel Grid.Column="0" Spacing="3" VerticalAlignment="Center">
-            <TextBlock Text="{Binding SelectedSettingsTab}" FontSize="24" FontWeight="Bold"/>
+            <TextBlock Text="{Binding SelectedTabTitle}" FontSize="24" FontWeight="Bold"/>
             <TextBlock Text="{Binding SelectedTabDescription}" FontSize="12.5" Opacity="0.55" TextWrapping="Wrap"/>
         </StackPanel>
         <!-- Close: the modal's only close control now that MainWindow has no footer. -->

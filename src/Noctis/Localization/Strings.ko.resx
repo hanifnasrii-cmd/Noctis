@@ -6296,4 +6296,58 @@
     <value>색 세 가지를 고르세요. 미리보기가 실시간으로 바뀝니다.</value>
     <comment>Dialog subtitle</comment>
   </data>
+  <data name="Settings.Tab.General" xml:space="preserve">
+    <value>일반</value>
+  </data>
+  <data name="Settings.Tab.Appearance" xml:space="preserve">
+    <value>모양</value>
+  </data>
+  <data name="Settings.Tab.Player" xml:space="preserve">
+    <value>플레이어</value>
+  </data>
+  <data name="Settings.Tab.Lyrics" xml:space="preserve">
+    <value>가사</value>
+  </data>
+  <data name="Settings.Tab.Shortcuts" xml:space="preserve">
+    <value>단축키</value>
+  </data>
+  <data name="Settings.Tab.Audio" xml:space="preserve">
+    <value>오디오</value>
+  </data>
+  <data name="Settings.Tab.Library" xml:space="preserve">
+    <value>라이브러리</value>
+  </data>
+  <data name="Settings.Tab.Advanced" xml:space="preserve">
+    <value>고급</value>
+  </data>
+  <data name="Settings.Tab.AccountDevices" xml:space="preserve">
+    <value>계정 및 기기</value>
+  </data>
+  <data name="Settings.Tab.Integrations" xml:space="preserve">
+    <value>연동</value>
+  </data>
+  <data name="Settings.Tab.Plugins" xml:space="preserve">
+    <value>플러그인</value>
+  </data>
+  <data name="Settings.Tab.Statistics" xml:space="preserve">
+    <value>통계</value>
+  </data>
+  <data name="Settings.Tab.About" xml:space="preserve">
+    <value>정보</value>
+  </data>
+  <data name="Settings.Group.App" xml:space="preserve">
+    <value>앱</value>
+  </data>
+  <data name="Settings.Group.Playback" xml:space="preserve">
+    <value>재생</value>
+  </data>
+  <data name="Settings.Group.Library" xml:space="preserve">
+    <value>라이브러리</value>
+  </data>
+  <data name="Settings.Group.Connect" xml:space="preserve">
+    <value>연결</value>
+  </data>
+  <data name="Settings.Group.More" xml:space="preserve">
+    <value>더 보기</value>
+  </data>
 </root>

@@ -6296,4 +6296,58 @@
     <value>选择三种颜色。预览更新。</value>
     <comment>Dialog subtitle</comment>
   </data>
+  <data name="Settings.Tab.General" xml:space="preserve">
+    <value>常规</value>
+  </data>
+  <data name="Settings.Tab.Appearance" xml:space="preserve">
+    <value>外观</value>
+  </data>
+  <data name="Settings.Tab.Player" xml:space="preserve">
+    <value>播放器</value>
+  </data>
+  <data name="Settings.Tab.Lyrics" xml:space="preserve">
+    <value>歌词</value>
+  </data>
+  <data name="Settings.Tab.Shortcuts" xml:space="preserve">
+    <value>快捷键</value>
+  </data>
+  <data name="Settings.Tab.Audio" xml:space="preserve">
+    <value>音频</value>
+  </data>
+  <data name="Settings.Tab.Library" xml:space="preserve">
+    <value>媒体库</value>
+  </data>
+  <data name="Settings.Tab.Advanced" xml:space="preserve">
+    <value>高级</value>
+  </data>
+  <data name="Settings.Tab.AccountDevices" xml:space="preserve">
+    <value>账户与设备</value>
+  </data>
+  <data name="Settings.Tab.Integrations" xml:space="preserve">
+    <value>集成</value>
+  </data>
+  <data name="Settings.Tab.Plugins" xml:space="preserve">
+    <value>插件</value>
+  </data>
+  <data name="Settings.Tab.Statistics" xml:space="preserve">
+    <value>统计</value>
+  </data>
+  <data name="Settings.Tab.About" xml:space="preserve">
+    <value>关于</value>
+  </data>
+  <data name="Settings.Group.App" xml:space="preserve">
+    <value>应用</value>
+  </data>
+  <data name="Settings.Group.Playback" xml:space="preserve">
+    <value>播放</value>
+  </data>
+  <data name="Settings.Group.Library" xml:space="preserve">
+    <value>媒体库</value>
+  </data>
+  <data name="Settings.Group.Connect" xml:space="preserve">
+    <value>连接</value>
+  </data>
+  <data name="Settings.Group.More" xml:space="preserve">
+    <value>更多</value>
+  </data>
 </root>

@@ -1708,4 +1708,22 @@
   <data name="Settings.YourListening" xml:space="preserve"><value>Listening</value><comment>Statistics card label</comment></data>
   <data name="Settings.RemovePictureTip" xml:space="preserve"><value>Remove picture</value><comment>Profile avatar X tooltip</comment></data>
   <data name="ThemeEditor.Subtitle" xml:space="preserve"><value>Pick three colours. The preview updates live.</value><comment>Dialog subtitle</comment></data>
+  <data name="Settings.Tab.General" xml:space="preserve"><value>General</value><comment>Settings rail</comment></data>
+  <data name="Settings.Tab.Appearance" xml:space="preserve"><value>Appearance</value><comment>Settings rail</comment></data>
+  <data name="Settings.Tab.Player" xml:space="preserve"><value>Player</value><comment>Settings rail</comment></data>
+  <data name="Settings.Tab.Lyrics" xml:space="preserve"><value>Lyrics</value><comment>Settings rail</comment></data>
+  <data name="Settings.Tab.Shortcuts" xml:space="preserve"><value>Shortcuts</value><comment>Settings rail</comment></data>
+  <data name="Settings.Tab.Audio" xml:space="preserve"><value>Audio</value><comment>Settings rail</comment></data>
+  <data name="Settings.Tab.Library" xml:space="preserve"><value>Library</value><comment>Settings rail</comment></data>
+  <data name="Settings.Tab.Advanced" xml:space="preserve"><value>Advanced</value><comment>Settings rail</comment></data>
+  <data name="Settings.Tab.AccountDevices" xml:space="preserve"><value>Account &amp; Devices</value><comment>Settings rail</comment></data>
+  <data name="Settings.Tab.Integrations" xml:space="preserve"><value>Integrations</value><comment>Settings rail</comment></data>
+  <data name="Settings.Tab.Plugins" xml:space="preserve"><value>Plugins</value><comment>Settings rail</comment></data>
+  <data name="Settings.Tab.Statistics" xml:space="preserve"><value>Statistics</value><comment>Settings rail</comment></data>
+  <data name="Settings.Tab.About" xml:space="preserve"><value>About</value><comment>Settings rail</comment></data>
+  <data name="Settings.Group.App" xml:space="preserve"><value>App</value><comment>Settings rail</comment></data>
+  <data name="Settings.Group.Playback" xml:space="preserve"><value>Playback</value><comment>Settings rail</comment></data>
+  <data name="Settings.Group.Library" xml:space="preserve"><value>Library</value><comment>Settings rail</comment></data>
+  <data name="Settings.Group.Connect" xml:space="preserve"><value>Connect</value><comment>Settings rail</comment></data>
+  <data name="Settings.Group.More" xml:space="preserve"><value>More</value><comment>Settings rail</comment></data>
 </root>

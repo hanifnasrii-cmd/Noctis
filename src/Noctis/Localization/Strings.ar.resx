@@ -6296,4 +6296,58 @@
     <value>اختر ثلاثة ألوان. تحديث المعاينة المباشرة.</value>
     <comment>Dialog subtitle</comment>
   </data>
+  <data name="Settings.Tab.General" xml:space="preserve">
+    <value>عام</value>
+  </data>
+  <data name="Settings.Tab.Appearance" xml:space="preserve">
+    <value>المظهر</value>
+  </data>
+  <data name="Settings.Tab.Player" xml:space="preserve">
+    <value>المشغّل</value>
+  </data>
+  <data name="Settings.Tab.Lyrics" xml:space="preserve">
+    <value>كلمات الأغاني</value>
+  </data>
+  <data name="Settings.Tab.Shortcuts" xml:space="preserve">
+    <value>الاختصارات</value>
+  </data>
+  <data name="Settings.Tab.Audio" xml:space="preserve">
+    <value>الصوت</value>
+  </data>
+  <data name="Settings.Tab.Library" xml:space="preserve">
+    <value>المكتبة</value>
+  </data>
+  <data name="Settings.Tab.Advanced" xml:space="preserve">
+    <value>متقدم</value>
+  </data>
+  <data name="Settings.Tab.AccountDevices" xml:space="preserve">
+    <value>الحساب والأجهزة</value>
+  </data>
+  <data name="Settings.Tab.Integrations" xml:space="preserve">
+    <value>التكاملات</value>
+  </data>
+  <data name="Settings.Tab.Plugins" xml:space="preserve">
+    <value>الإضافات</value>
+  </data>
+  <data name="Settings.Tab.Statistics" xml:space="preserve">
+    <value>الإحصائيات</value>
+  </data>
+  <data name="Settings.Tab.About" xml:space="preserve">
+    <value>حول</value>
+  </data>
+  <data name="Settings.Group.App" xml:space="preserve">
+    <value>التطبيق</value>
+  </data>
+  <data name="Settings.Group.Playback" xml:space="preserve">
+    <value>التشغيل</value>
+  </data>
+  <data name="Settings.Group.Library" xml:space="preserve">
+    <value>المكتبة</value>
+  </data>
+  <data name="Settings.Group.Connect" xml:space="preserve">
+    <value>الاتصال</value>
+  </data>
+  <data name="Settings.Group.More" xml:space="preserve">
+    <value>المزيد</value>
+  </data>
 </root>

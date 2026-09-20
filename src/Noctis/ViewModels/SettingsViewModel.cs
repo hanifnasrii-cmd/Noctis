@@ -100,9 +100,17 @@ public partial class SettingsViewModel : ViewModelBase
         return groups;
     }
 
+    /// <summary>"Account &amp; Devices" → "AccountDevices": the resx suffix for a tab's title and description.</summary>
+    internal static string TabResxSuffix(string tab) => tab.Replace(" & ", "").Replace(" ", "");
+
+    /// <summary>Resx key of a tab's localized title (rail entry and page heading).</summary>
+    internal static string TabLabelKey(string tab) => "Settings.Tab." + TabResxSuffix(tab);
+
+    /// <summary>The page heading: the selected tab's localized title.</summary>
+    public string SelectedTabTitle => Loc.T(TabLabelKey(SelectedSettingsTab));
+
     /// <summary>One line under the page title. Resx key: Settings.Desc.&lt;tab without spaces/ampersand&gt;.</summary>
-    public string SelectedTabDescription =>
-        Loc.T("Settings.Desc." + SelectedSettingsTab.Replace(" & ", "").Replace(" ", ""));
+    public string SelectedTabDescription => Loc.T("Settings.Desc." + TabResxSuffix(SelectedSettingsTab));
 
     /// <summary>Text in the rail's search box. The view applies it to the card index.</summary>
     [ObservableProperty] private string _searchQuery = string.Empty;
@@ -197,6 +205,7 @@ public partial class SettingsViewModel : ViewModelBase
         OnPropertyChanged(nameof(IsLyricsTabVisible));
         OnPropertyChanged(nameof(IsAdvancedTabSelected));
         OnPropertyChanged(nameof(IsAdvancedTabVisible));
+        OnPropertyChanged(nameof(SelectedTabTitle));
         OnPropertyChanged(nameof(SelectedTabDescription));
         OnFeatureTabOpened(value);
 
@@ -584,8 +593,10 @@ public partial class SettingsViewModel : ViewModelBase
             LanguageChoice = LanguageOptions.FirstOrDefault(o => o.Code == code) ?? LanguageOptions[0];
         }
         finally { _relabelingLanguages = false; }
+        OnPropertyChanged(nameof(SelectedTabTitle));
         OnPropertyChanged(nameof(SelectedTabDescription));
         OnPropertyChanged(nameof(ShowOlderVersionsLabel));
+        foreach (var group in SectionGroups) group.Relabel();
         RefreshFlowingStyleOptions();
     }
 
