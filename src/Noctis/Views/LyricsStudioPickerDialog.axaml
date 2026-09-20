@@ -1,0 +1,290 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:loc="using:Noctis.Localization"
+        xmlns:vm="using:Noctis.ViewModels"
+        xmlns:controls="using:Noctis.Controls"
+        x:Class="Noctis.Views.LyricsStudioPickerDialog"
+        x:DataType="vm:LyricsStudioPickerViewModel"
+        Title="{loc:T LyricsStudioPicker.Title}"
+        CanResize="False"
+        SystemDecorations="None"
+        TransparencyLevelHint="Transparent"
+        Background="Transparent"
+        ShowInTaskbar="False"
+        WindowStartupLocation="CenterOwner">
+
+    <Window.Styles>
+        <!-- Rows highlight, never zoom (same as Add Songs). -->
+        <Style Selector="Button:pointerover">
+            <Setter Property="RenderTransform" Value="scale(1)" />
+        </Style>
+        <Style Selector="Button.pick-row">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="CornerRadius" Value="10" />
+            <Setter Property="Padding" Value="8,6" />
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="Cursor" Value="Hand" />
+        </Style>
+        <Style Selector="Button.pick-row:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="#18FFFFFF" />
+        </Style>
+        <!-- Selection circle: the Add Songs recipe (brushes in styles so .selected wins). -->
+        <Style Selector="Border.selection-circle">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
+        </Style>
+        <Style Selector="Border.selection-circle.selected">
+            <Setter Property="Background" Value="{DynamicResource AccentColorBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentColorBrush}" />
+        </Style>
+        <Style Selector="Border.state-pill">
+            <Setter Property="Background" Value="{DynamicResource ChipBackground}" />
+            <Setter Property="CornerRadius" Value="999" />
+            <Setter Property="Padding" Value="8,2" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+        <!-- Format chips: the studio header's disclosure chip, accent while chosen. -->
+        <Style Selector="ToggleButton.format-chip">
+            <Setter Property="CornerRadius" Value="999" />
+            <Setter Property="Padding" Value="14,6" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Cursor" Value="Hand" />
+        </Style>
+        <Style Selector="ToggleButton.format-chip /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource ChipBackground}" />
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}" />
+            <Setter Property="CornerRadius" Value="999" />
+        </Style>
+        <Style Selector="ToggleButton.format-chip:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource ChipHoverBackground}" />
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}" />
+        </Style>
+        <Style Selector="ToggleButton.format-chip:checked /template/ ContentPresenter,
+                         ToggleButton.format-chip:checked:pointerover /template/ ContentPresenter,
+                         ToggleButton.format-chip:checked:pressed /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource AccentColorBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource AccentForegroundBrush}" />
+        </Style>
+        <Style Selector="ToggleButton.format-chip:pointerover">
+            <Setter Property="RenderTransform" Value="scale(1)" />
+        </Style>
+        <Style Selector="Button.dialog-close">
+            <Setter Property="Width" Value="34" />
+            <Setter Property="Height" Value="34" />
+            <Setter Property="CornerRadius" Value="17" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundListMediumBrush}" />
+        </Style>
+    </Window.Styles>
+
+    <Border x:Name="DialogOverlay"
+            Background="#50000000"
+            Opacity="0"
+            PointerPressed="OnOverlayPointerPressed"
+            PointerWheelChanged="OnOverlayWheel">
+        <Border.Transitions>
+            <Transitions>
+                <DoubleTransition Property="Opacity" Duration="0:0:0.18">
+                    <DoubleTransition.Easing>
+                        <CubicEaseOut/>
+                    </DoubleTransition.Easing>
+                </DoubleTransition>
+            </Transitions>
+        </Border.Transitions>
+
+        <Border x:Name="DialogCard"
+                CornerRadius="24"
+                ClipToBounds="True"
+                Background="{DynamicResource AppMainBackground}"
+                Width="560" Height="660"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                RenderTransformOrigin="50%,50%"
+                RenderTransform="scale(0.96)"
+                BoxShadow="0 8 32 0 #80000000, 0 0 0 1 #33FFFFFF">
+            <Border.Transitions>
+                <Transitions>
+                    <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.18">
+                        <TransformOperationsTransition.Easing>
+                            <CubicEaseOut/>
+                        </TransformOperationsTransition.Easing>
+                    </TransformOperationsTransition>
+                </Transitions>
+            </Border.Transitions>
+            <DockPanel>
+
+                <!-- Header: title, format, search -->
+                <StackPanel DockPanel.Dock="Top" Margin="24,20,24,8" Spacing="12">
+                    <Panel>
+                        <StackPanel Spacing="2" Margin="40,4,40,0" HorizontalAlignment="Center">
+                            <TextBlock Text="{loc:T LyricsStudioPicker.Title}"
+                                       FontSize="20" FontWeight="Bold" TextAlignment="Center" />
+                            <TextBlock Text="{loc:T LyricsStudioPicker.Subtitle}"
+                                       FontSize="12" Opacity="0.5" TextWrapping="Wrap" TextAlignment="Center" />
+                        </StackPanel>
+                        <Button Classes="dialog-close"
+                                ToolTip.Tip="{loc:T Settings.CloseTip}"
+                                Command="{Binding CancelCommand}"
+                                HorizontalAlignment="Right" VerticalAlignment="Top">
+                            <PathIcon Data="{StaticResource DismissIcon}" Width="12" Height="12" />
+                        </Button>
+                    </Panel>
+
+                    <!-- Format: one of the two, the same setting as the Studio's "Word timings". -->
+                    <Border Background="#14FFFFFF" CornerRadius="14" Padding="14,10">
+                        <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="6">
+                            <StackPanel Grid.Column="0" Spacing="1" VerticalAlignment="Center" Margin="0,0,12,0">
+                                <TextBlock Text="{loc:T LyricsStudioPicker.Format}" FontSize="13" FontWeight="SemiBold" />
+                                <TextBlock Text="{loc:T LyricsStudioPicker.FormatHint}" FontSize="11" Opacity="0.55" TextWrapping="Wrap" />
+                            </StackPanel>
+                            <ToggleButton Grid.Column="1" Classes="format-chip"
+                                          Content="{loc:T LyricsStudioPicker.WordTimings}"
+                                          IsChecked="{Binding WordTimings}" />
+                            <ToggleButton Grid.Column="2" Classes="format-chip"
+                                          Content="{loc:T LyricsStudioPicker.LineTimings}"
+                                          IsChecked="{Binding LineTimings}" />
+                        </Grid>
+                    </Border>
+
+                    <TextBox Text="{Binding SearchText}"
+                             Watermark="{loc:T LyricsStudioPicker.Search}"
+                             CornerRadius="999"
+                             Padding="14,8"
+                             BorderThickness="1.5"
+                             MinHeight="0"
+                             x:Name="SearchBox" />
+                </StackPanel>
+
+                <!-- Footer: count / Cancel / Add -->
+                <Border DockPanel.Dock="Bottom" Padding="24,12,24,16">
+                    <Grid ColumnDefinitions="*,Auto,Auto">
+                        <TextBlock Grid.Column="0" Text="{Binding SelectionText}"
+                                   FontSize="12" FontWeight="SemiBold" Opacity="0.6"
+                                   VerticalAlignment="Center"
+                                   IsVisible="{Binding HasSelection}" />
+                        <Button Grid.Column="1"
+                                Content="{loc:T AddSongs.Cancel}"
+                                Command="{Binding CancelCommand}"
+                                Width="100" Padding="0,8"
+                                FontWeight="Bold"
+                                HorizontalContentAlignment="Center"
+                                CornerRadius="999"
+                                Margin="0,0,8,0"
+                                Cursor="Hand" />
+                        <Button Grid.Column="2"
+                                Content="{Binding AddButtonText}"
+                                Command="{Binding ConfirmCommand}"
+                                IsEnabled="{Binding HasSelection}"
+                                MinWidth="120" Padding="16,8"
+                                Classes="accent-btn"
+                                Background="{DynamicResource AccentButtonBackground}"
+                                Foreground="{DynamicResource AccentForegroundBrush}"
+                                FontWeight="Bold"
+                                HorizontalContentAlignment="Center"
+                                CornerRadius="999"
+                                Cursor="Hand" />
+                    </Grid>
+                </Border>
+
+                <!-- Body: rows / prompt / no results -->
+                <Panel Margin="12,4,12,4">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto"
+                                  HorizontalScrollBarVisibility="Disabled">
+                        <ItemsControl ItemsSource="{Binding Results}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="vm:LyricsStudioPickRow">
+                                    <Button Classes="pick-row"
+                                            Command="{Binding $parent[ItemsControl].((vm:LyricsStudioPickerViewModel)DataContext).ToggleSelectCommand}"
+                                            CommandParameter="{Binding}">
+                                        <Grid ColumnDefinitions="40,*,Auto,Auto">
+                                            <Border Grid.Column="0"
+                                                    Width="36" Height="36"
+                                                    CornerRadius="5"
+                                                    ClipToBounds="True"
+                                                    VerticalAlignment="Center"
+                                                    Background="#18FFFFFF">
+                                                <controls:CachedImage SourcePath="{Binding ArtworkPath}"
+                                                                      DecodeWidth="128"
+                                                                      Stretch="UniformToFill" />
+                                            </Border>
+                                            <StackPanel Grid.Column="1" Margin="12,0" VerticalAlignment="Center" Spacing="1">
+                                                <TextBlock Text="{Binding Title}"
+                                                           FontSize="13" FontWeight="SemiBold"
+                                                           TextTrimming="CharacterEllipsis" MaxLines="1" />
+                                                <TextBlock Text="{Binding Subtitle}"
+                                                           FontSize="11" Opacity="0.6"
+                                                           TextTrimming="CharacterEllipsis" MaxLines="1" />
+                                            </StackPanel>
+                                            <!-- Song rows: what the song has now. Album rows: how many songs it adds. -->
+                                            <Border Grid.Column="2" Classes="state-pill" Margin="0,0,12,0"
+                                                    IsVisible="{Binding StateText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                                                <TextBlock Text="{Binding StateText}" FontSize="10.5" FontWeight="SemiBold" Opacity="0.7" />
+                                            </Border>
+                                            <Border Grid.Column="3"
+                                                    Classes="selection-circle"
+                                                    Classes.selected="{Binding IsSelected}"
+                                                    Width="22" Height="22"
+                                                    CornerRadius="11"
+                                                    BorderThickness="1.5"
+                                                    UseLayoutRounding="True"
+                                                    VerticalAlignment="Center">
+                                                <Border.Transitions>
+                                                    <Transitions>
+                                                        <BrushTransition Property="Background" Duration="0:0:0.18">
+                                                            <BrushTransition.Easing>
+                                                                <CubicEaseOut />
+                                                            </BrushTransition.Easing>
+                                                        </BrushTransition>
+                                                        <BrushTransition Property="BorderBrush" Duration="0:0:0.18">
+                                                            <BrushTransition.Easing>
+                                                                <CubicEaseOut />
+                                                            </BrushTransition.Easing>
+                                                        </BrushTransition>
+                                                    </Transitions>
+                                                </Border.Transitions>
+                                                <Path Data="M 0 3.5 L 3 7 L 9 0"
+                                                      Stroke="{DynamicResource AccentForegroundBrush}"
+                                                      StrokeThickness="1.5"
+                                                      StrokeLineCap="Round"
+                                                      HorizontalAlignment="Center"
+                                                      VerticalAlignment="Center"
+                                                      IsVisible="{Binding IsSelected}" />
+                                            </Border>
+                                        </Grid>
+                                    </Button>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+
+                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center"
+                                Spacing="6" IsVisible="{Binding ShowPrompt}">
+                        <TextBlock Text="{loc:T LyricsStudioPicker.PromptTitle}"
+                                   FontSize="15" Opacity="0.5"
+                                   HorizontalAlignment="Center" TextAlignment="Center" />
+                        <TextBlock Text="{loc:T LyricsStudioPicker.PromptBody}"
+                                   FontSize="12" Opacity="0.3"
+                                   HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" MaxWidth="360" />
+                    </StackPanel>
+
+                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center"
+                                Spacing="6" IsVisible="{Binding ShowNoResults}">
+                        <TextBlock Text="{loc:T AddSongs.NoMatches}"
+                                   FontSize="15" Opacity="0.5"
+                                   HorizontalAlignment="Center" TextAlignment="Center" />
+                        <TextBlock Text="{loc:T AddSongs.NothingLibraryMatchesSearch}"
+                                   FontSize="12" Opacity="0.3"
+                                   HorizontalAlignment="Center" TextAlignment="Center" />
+                    </StackPanel>
+                </Panel>
+
+            </DockPanel>
+        </Border>
+    </Border>
+</Window>

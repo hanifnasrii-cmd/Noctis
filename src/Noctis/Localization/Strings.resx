@@ -1593,7 +1593,10 @@
   <data name="LyricsStudio.WordTimings" xml:space="preserve"><value>Word timings</value><comment>Footer checkbox</comment></data>
   <data name="LyricsStudio.SkipAlreadyTimed" xml:space="preserve"><value>Skip songs already in this format</value><comment>Footer checkbox</comment></data>
   <data name="LyricsStudio.SkipAlreadyTimedTip" xml:space="preserve"><value>Word timings (ELRC) and line timings (LRC) are different formats. Songs that only have line timings are still processed.</value><comment>Footer checkbox tooltip</comment></data>
-  <data name="LyricsStudio.TranscribeOnly" xml:space="preserve"><value>Transcribe from scratch</value><comment>Footer checkbox</comment></data>
+  <data name="LyricsStudio.TranscribeOnly" xml:space="preserve"><value>Transcribe by ear (ignore existing lyrics)</value><comment>Footer checkbox</comment></data>
+  <data name="LyricsStudio.TranscribeOnlyTip" xml:space="preserve"><value>The speech model listens to the song and writes the words itself, even when the song already has lyrics. Songs with no lyrics are always transcribed.</value><comment>Footer checkbox tooltip</comment></data>
+  <data name="LyricsStudio.OnlineLyrics" xml:space="preserve"><value>Look up lyrics online when a song has none</value><comment>Footer checkbox</comment></data>
+  <data name="LyricsStudio.OnlineLyricsTip" xml:space="preserve"><value>Plain lyrics are fetched from LRCLIB first, so the model only has to time them. Off, the model writes the words by ear.</value><comment>Footer checkbox tooltip</comment></data>
   <data name="LyricsStudio.DownloadModel" xml:space="preserve"><value>Download model</value><comment>Footer button</comment></data>
   <data name="LyricsStudio.Start" xml:space="preserve"><value>Start</value><comment>Footer button</comment></data>
   <data name="LyricsStudio.Stop" xml:space="preserve"><value>Stop</value><comment>Footer button</comment></data>
@@ -1602,6 +1605,18 @@
   <data name="LyricsStudio.Options" xml:space="preserve"><value>Options</value><comment>Footer dropdown holding the run options</comment></data>
   <data name="LyricsStudio.Loading" xml:space="preserve"><value>Loading</value><comment>Page scan in progress</comment></data>
   <data name="LyricsStudio.BackdropsTip" xml:space="preserve"><value>The looping video behind the lyrics, and music videos in the cover slot</value><comment>Tooltip in LyricsStudioView.axaml</comment></data>
+  <data name="LyricsStudio.ChooseSongs" xml:space="preserve"><value>Choose songs</value><comment>Header chip in LyricsStudioView.axaml: opens the song/album picker</comment></data>
+  <data name="LyricsStudio.ChooseSongsTip" xml:space="preserve"><value>Pick songs or whole albums for the Studio, and whether to write word or line timings</value><comment>Tooltip in LyricsStudioView.axaml</comment></data>
+  <data name="LyricsStudioPicker.Title" xml:space="preserve"><value>Choose songs &amp; albums</value><comment>Picker dialog title</comment></data>
+  <data name="LyricsStudioPicker.Subtitle" xml:space="preserve"><value>What the Studio times next, and the format it writes.</value><comment>Picker dialog subtitle</comment></data>
+  <data name="LyricsStudioPicker.Format" xml:space="preserve"><value>Format</value><comment>Picker: format card title</comment></data>
+  <data name="LyricsStudioPicker.FormatHint" xml:space="preserve"><value>Word timings move word by word (ELRC); line timings move line by line (LRC).</value><comment>Picker: format card hint</comment></data>
+  <data name="LyricsStudioPicker.WordTimings" xml:space="preserve"><value>Word timings · ELRC</value><comment>Picker: format chip</comment></data>
+  <data name="LyricsStudioPicker.LineTimings" xml:space="preserve"><value>Line timings · LRC</value><comment>Picker: format chip</comment></data>
+  <data name="LyricsStudioPicker.Search" xml:space="preserve"><value>Search songs and albums…</value><comment>Picker search box</comment></data>
+  <data name="LyricsStudioPicker.PromptTitle" xml:space="preserve"><value>Search for a song or an album</value><comment>Picker empty state</comment></data>
+  <data name="LyricsStudioPicker.PromptBody" xml:space="preserve"><value>An album adds every song in it. The pill on a song shows what it has now.</value><comment>Picker empty state</comment></data>
+  <data name="LyricsStudioPicker.Add" xml:space="preserve"><value>Add to Studio</value><comment>Picker confirm button</comment></data>
   <data name="LyricsStudio.Queue" xml:space="preserve"><value>SONGS</value><comment>Queue column header</comment></data>
   <data name="LyricsStudio.ReviewEmptyTitle" xml:space="preserve"><value>Nothing to review yet</value><comment>Review pane empty state</comment></data>
   <data name="LyricsStudio.ReviewEmptyBody" xml:space="preserve"><value>Pick a song and press Start.</value><comment>Review pane empty state</comment></data>

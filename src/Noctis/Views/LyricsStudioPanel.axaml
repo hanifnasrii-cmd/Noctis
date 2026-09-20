@@ -273,7 +273,10 @@
                                         <CheckBox Classes="metadata-pill-checkbox studio-option" IsChecked="{Binding WordTimings}" Content="{loc:T LyricsStudio.WordTimings}" />
                                         <CheckBox Classes="metadata-pill-checkbox studio-option" IsChecked="{Binding SkipAlreadyTimed}" Content="{loc:T LyricsStudio.SkipAlreadyTimed}"
                                                   ToolTip.Tip="{loc:T LyricsStudio.SkipAlreadyTimedTip}" />
-                                        <CheckBox Classes="metadata-pill-checkbox studio-option" IsChecked="{Binding TranscribeOnly}" Content="{loc:T LyricsStudio.TranscribeOnly}" />
+                                        <CheckBox Classes="metadata-pill-checkbox studio-option" IsChecked="{Binding OnlineLyrics}" Content="{loc:T LyricsStudio.OnlineLyrics}"
+                                                  ToolTip.Tip="{loc:T LyricsStudio.OnlineLyricsTip}" />
+                                        <CheckBox Classes="metadata-pill-checkbox studio-option" IsChecked="{Binding TranscribeOnly}" Content="{loc:T LyricsStudio.TranscribeOnly}"
+                                                  ToolTip.Tip="{loc:T LyricsStudio.TranscribeOnlyTip}" />
                                         <CheckBox Classes="metadata-pill-checkbox studio-option" IsChecked="{Binding EmbedTags}" Content="{loc:T LyricsStudioSettings.EmbedTags}"
                                                   ToolTip.Tip="{loc:T LyricsStudioSettings.EmbedTagsHint}" />
                                     </StackPanel>

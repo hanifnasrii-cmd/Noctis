@@ -22,6 +22,29 @@
             <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
         </Style>
 
+        <!-- Choose songs: the same quiet chip as Backdrops, as a plain button (09-19). -->
+        <Style Selector="Button.studio-chip">
+            <Setter Property="CornerRadius" Value="999"/>
+            <Setter Property="Padding" Value="14,5"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Margin" Value="0,0,8,0"/>
+        </Style>
+        <Style Selector="Button.studio-chip /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource ChipBackground}"/>
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+            <Setter Property="CornerRadius" Value="999"/>
+        </Style>
+        <Style Selector="Button.studio-chip:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource ChipHoverBackground}"/>
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+        </Style>
+        <Style Selector="Button.studio-chip:pointerover">
+            <Setter Property="RenderTransform" Value="scale(1)"/>
+        </Style>
         <!-- Backdrops disclosure: same quiet chip as Add Rule, and it takes the accent only
              while the section is open so the header shows what is folded out. -->
         <Style Selector="ToggleButton.studio-disclosure">
@@ -76,7 +99,7 @@
     <DockPanel Margin="24,20,24,0">
         <!-- Header: library counts on the left, the Backdrops disclosure on the right (09-17:
              the title went, so the readout takes the left edge instead of leaving it empty). -->
-        <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto" Margin="0,0,0,12">
+        <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto,Auto" Margin="0,0,0,12">
             <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
                 <ItemsControl ItemsSource="{Binding Counts}" IsVisible="{Binding HasCounts}" VerticalAlignment="Center">
                     <ItemsControl.ItemsPanel>
@@ -99,7 +122,11 @@
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
             </StackPanel>
-            <ToggleButton Grid.Column="1" Classes="studio-disclosure"
+            <Button Grid.Column="1" Classes="studio-chip"
+                    Content="{loc:T LyricsStudio.ChooseSongs}"
+                    ToolTip.Tip="{loc:T LyricsStudio.ChooseSongsTip}"
+                    Click="OnChooseSongsClick"/>
+            <ToggleButton Grid.Column="2" Classes="studio-disclosure"
                           Content="{loc:T LyricsStudio.Backdrops}"
                           ToolTip.Tip="{loc:T LyricsStudio.BackdropsTip}"
                           IsChecked="{Binding ShowBackdrops}"/>

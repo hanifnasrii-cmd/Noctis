@@ -16,6 +16,31 @@ public partial class LyricsStudioView : UserControl
         InitializeComponent();
     }
 
+    /// <summary>Choose songs: search the library, tick songs or albums, pick ELRC or LRC, and
+    /// the page runs the Studio over exactly those (user ask 09-19).</summary>
+    private async void OnChooseSongsClick(object? sender, RoutedEventArgs e)
+    {
+        // async void: an escaped exception would crash the app.
+        try
+        {
+            if (TopLevel.GetTopLevel(this) is not Window owner) return;
+            if (DataContext is not LyricsStudioPageViewModel page) return;
+            if (owner.DataContext is not MainWindowViewModel main) return;
+            var library = App.Services?.GetService<ILibraryService>();
+            if (library == null) return;
+
+            var vm = new LyricsStudioPickerViewModel(library, main.Settings.GetSettings().LyricsStudioWordTimings);
+            vm.Confirmed += (_, pick) => page.UsePicked(pick.Tracks, pick.WordTimings);
+            var dialog = new LyricsStudioPickerDialog { DataContext = vm };
+            DialogHelper.SizeToOwner(dialog, owner);
+            await dialog.ShowDialog(owner);
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[LyricsStudioView] Choose songs failed: {ex.Message}");
+        }
+    }
+
     /// <summary>Opens the Lyrics Background Video picker (the same dialog Settings used to host).</summary>
     private async void OnModifyLyricsBackgroundClick(object? sender, RoutedEventArgs e)
     {

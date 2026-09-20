@@ -63,9 +63,48 @@ public partial class LyricsStudioPageViewModel : ViewModelBase
     /// <summary>True when the open Studio must not be replaced by a rescan.</summary>
     public bool IsBusy => Studio is { IsRunning: true } or { HasReview: true };
 
+    /// <summary>The queue was hand-picked (Choose songs): a visit keeps it until every pick is saved, skipped or failed.</summary>
+    private bool _customQueue;
+
+    /// <summary>
+    /// Choose songs (user ask 09-19): run the Studio over exactly these songs, writing the
+    /// chosen format. A Studio mid-run or mid-review keeps its work and takes the picks on
+    /// the end of its queue; otherwise the page's auto pick is replaced.
+    /// </summary>
+    public void UsePicked(IReadOnlyList<Track> tracks, bool wordTimings)
+    {
+        var local = tracks.Where(t => t.SourceType == SourceType.Local)
+            .GroupBy(t => t.Id).Select(g => g.First()).ToList();
+        if (local.Count == 0) return;
+        if (Studio is { } current && IsBusy)
+        {
+            current.AddTracks(local);
+            current.WordTimings = wordTimings;
+        }
+        else
+        {
+            var studio = _createStudio(local);
+            studio.WordTimings = wordTimings;
+            Studio = studio;
+        }
+        _customQueue = true;
+        StatusText = string.Empty;
+    }
+
+    private bool KeepsCustomQueue()
+    {
+        if (!_customQueue) return false;
+        if (Studio is { } s && s.Queue.Any(i => i.Status is LyricsStudioViewModel.StudioStatus.Waiting
+                or LyricsStudioViewModel.StudioStatus.Working or LyricsStudioViewModel.StudioStatus.Ready
+                or LyricsStudioViewModel.StudioStatus.Loaded))
+            return true;
+        _customQueue = false;
+        return false;
+    }
+
     public async Task RefreshAsync()
     {
-        if (IsBusy) return;
+        if (IsBusy || KeepsCustomQueue()) return;
         var generation = ++_generation;
         var wordTimings = _wordTimings();
         if (Studio is { SavedCount: > 0 }) _scanDirty = true;

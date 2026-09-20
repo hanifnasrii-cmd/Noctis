@@ -10,7 +10,7 @@ using Noctis.Services.LyricsStudio;
 namespace Noctis.ViewModels;
 
 /// <summary>Lyrics Studio choices the user changes inside the dialog; persisted by Settings.</summary>
-public sealed record LyricsStudioPrefs(string Model, string Language, bool WordTimings, bool SkipAlreadyTimed, bool EmbedTags);
+public sealed record LyricsStudioPrefs(string Model, string Language, bool WordTimings, bool SkipAlreadyTimed, bool EmbedTags, bool OnlineLyrics = true);
 
 public sealed record SpeechLanguageOption(string Code, string Name)
 {
@@ -63,6 +63,8 @@ public partial class LyricsStudioViewModel : ViewModelBase
     [ObservableProperty] private bool _skipAlreadyTimed;
     /// <summary>Also write the plain lyrics into the audio file's tags on save (was a Settings toggle).</summary>
     [ObservableProperty] private bool _embedTags;
+    /// <summary>Songs with no lyrics: fetch the plain text online (LRCLIB) so the model only has to time it.</summary>
+    [ObservableProperty] private bool _onlineLyrics;
 
     // ── Model state ──
     [ObservableProperty] private bool _isModelInstalled;
@@ -110,6 +112,35 @@ public partial class LyricsStudioViewModel : ViewModelBase
 
     public event EventHandler? Closed;
 
+    /// <summary>
+    /// Appends songs the user picked (Choose songs) to a Studio that is mid-run or mid-review,
+    /// so the work on screen is kept. Non-local songs and songs already queued are skipped;
+    /// an unfinished review of a picked song comes back as it was, like at open.
+    /// </summary>
+    public int AddTracks(IEnumerable<Track> tracks)
+    {
+        var added = 0;
+        foreach (var t in tracks)
+        {
+            if (t.SourceType != SourceType.Local || Queue.Any(i => i.Track.Id == t.Id)) continue;
+            var item = new StudioItem(t);
+            if (_drafts is not null && _drafts.TryLoad(t.Id, out var draft))
+            {
+                item.Result = draft.ToResult(t);
+                item.Status = StudioStatus.Ready;
+                item.StatusText = "Restored · review";
+            }
+            Queue.Add(item);
+            added++;
+        }
+        if (added > 0)
+        {
+            var queued = Queue.Count(i => i.Status == StudioStatus.Waiting);
+            RunStatusText = $"{added} added · {queued} queued";
+        }
+        return added;
+    }
+
     /// <summary>Set by the dialog: asks the user before a re-sync replaces loaded timings. Null = no prompt.</summary>
     public Func<string, Task<bool>>? Confirm { get; set; }
 
@@ -138,6 +169,7 @@ public partial class LyricsStudioViewModel : ViewModelBase
         _wordTimings = s.LyricsStudioWordTimings;
         _skipAlreadyTimed = s.LyricsStudioSkipAlreadyTimed;
         _embedTags = s.LyricsStudioEmbedTags;
+        _onlineLyrics = s.LyricsStudioOnlineLyrics;
         _loadingPrefs = false;
 
         var restored = 0;
@@ -196,6 +228,7 @@ public partial class LyricsStudioViewModel : ViewModelBase
     partial void OnWordTimingsChanged(bool value) { PersistPrefs(); OnPropertyChanged(nameof(ReviewConfidenceText)); }
     partial void OnSkipAlreadyTimedChanged(bool value) => PersistPrefs();
     partial void OnEmbedTagsChanged(bool value) => PersistPrefs();
+    partial void OnOnlineLyricsChanged(bool value) => PersistPrefs();
     partial void OnIsRunningChanged(bool value) { RaiseStartState(); OnPropertyChanged(nameof(ReviewCanUpgrade)); }
     partial void OnIsModelInstalledChanged(bool value) { RaiseStartState(); OnPropertyChanged(nameof(ShowModelDownload)); }
     partial void OnIsDownloadingModelChanged(bool value) => OnPropertyChanged(nameof(ShowModelDownload));
@@ -267,7 +300,7 @@ public partial class LyricsStudioViewModel : ViewModelBase
     private void PersistPrefs()
     {
         if (_loadingPrefs) return;
-        try { _savePrefs(new LyricsStudioPrefs(SelectedModel.Size.ToString(), SelectedLanguage.Code, WordTimings, SkipAlreadyTimed, EmbedTags)); }
+        try { _savePrefs(new LyricsStudioPrefs(SelectedModel.Size.ToString(), SelectedLanguage.Code, WordTimings, SkipAlreadyTimed, EmbedTags, OnlineLyrics)); }
         catch { /* preferences are a convenience */ }
     }
 
@@ -376,7 +409,7 @@ public partial class LyricsStudioViewModel : ViewModelBase
                 // Loaded lyrics (sidecar or embedded) are the text to time; the engine only
                 // looks online when the song has nothing at all.
                 // Loaded line-level lyrics keep their line starts as anchors: words are placed inside each line's own window.
-                var options = new LyricsStudioOptions(SelectedModel.Size, SelectedLanguage.Code, AllowOnlineLyrics: true, ForceTranscription: TranscribeOnly,
+                var options = new LyricsStudioOptions(SelectedModel.Size, SelectedLanguage.Code, AllowOnlineLyrics: OnlineLyrics, ForceTranscription: TranscribeOnly,
                     SourceLines: TranscribeOnly ? null : item.Existing?.Lines.Select(l => l.Text).ToList(),
                     SourceLineStarts: TranscribeOnly ? null : item.Existing?.Lines.Select(l => l.Start).ToList());
                 if (!forced && SkipAlreadyTimed && !TranscribeOnly && LyricsFormatDetector.AlreadyHas(item.ExistingFormat, WordTimings))

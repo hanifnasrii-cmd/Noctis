@@ -268,6 +268,7 @@ public partial class SettingsViewModel
     [ObservableProperty] private SpeechLanguageOption _lyricsStudioLanguage = LyricsStudioViewModel.Languages[0];
     [ObservableProperty] private bool _lyricsStudioWordTimings = true;
     [ObservableProperty] private bool _lyricsStudioEmbedTags;
+    [ObservableProperty] private bool _lyricsStudioOnlineLyrics = true;
     /// <summary>Skip songs that already carry the format being written.</summary>
     [ObservableProperty] private bool _lyricsStudioSkipAlreadyTimed = true;
     [ObservableProperty] private string _lyricsModelStatus = string.Empty;
@@ -317,6 +318,13 @@ public partial class SettingsViewModel
         QueueSettingsSave();
     }
 
+    partial void OnLyricsStudioOnlineLyricsChanged(bool value)
+    {
+        if (!_settingsLoaded) return;
+        _settings.LyricsStudioOnlineLyrics = value;
+        QueueSettingsSave();
+    }
+
     /// <summary>The dialog changed model/language/format: mirror it here and persist.</summary>
     public void ApplyLyricsStudioSettings(LyricsStudioPrefs prefs)
     {
@@ -325,6 +333,7 @@ public partial class SettingsViewModel
         LyricsStudioWordTimings = prefs.WordTimings;
         LyricsStudioSkipAlreadyTimed = prefs.SkipAlreadyTimed;
         LyricsStudioEmbedTags = prefs.EmbedTags;
+        LyricsStudioOnlineLyrics = prefs.OnlineLyrics;
     }
 
     private void RefreshLyricsModelStatus()
@@ -467,6 +476,7 @@ public partial class SettingsViewModel
         LyricsStudioWordTimings = _settings.LyricsStudioWordTimings;
         LyricsStudioSkipAlreadyTimed = _settings.LyricsStudioSkipAlreadyTimed;
         LyricsStudioEmbedTags = _settings.LyricsStudioEmbedTags;
+        LyricsStudioOnlineLyrics = _settings.LyricsStudioOnlineLyrics;
     }
 
     private void SaveFeatureSettings()
@@ -481,6 +491,7 @@ public partial class SettingsViewModel
         _settings.LyricsStudioWordTimings = LyricsStudioWordTimings;
         _settings.LyricsStudioSkipAlreadyTimed = LyricsStudioSkipAlreadyTimed;
         _settings.LyricsStudioEmbedTags = LyricsStudioEmbedTags;
+        _settings.LyricsStudioOnlineLyrics = LyricsStudioOnlineLyrics;
     }
 
     /// <summary>Tab opened: refresh what the tab shows.</summary>

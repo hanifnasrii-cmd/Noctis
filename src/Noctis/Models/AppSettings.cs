@@ -233,6 +233,9 @@ public class AppSettings
     /// <summary>Also embed the plain lyrics in the audio file's tags when saving.</summary>
     public bool LyricsStudioEmbedTags { get; set; }
 
+    /// <summary>Songs with no lyrics at all: look the plain text up online (LRCLIB) before falling back to transcription.</summary>
+    public bool LyricsStudioOnlineLyrics { get; set; } = true;
+
     // ── Songs page optional columns ──
     // All six were the original set, chosen from the column-header dropdown.
     public bool ShowArtworkColumn { get; set; } = true;
