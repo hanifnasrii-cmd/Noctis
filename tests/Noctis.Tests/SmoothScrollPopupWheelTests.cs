@@ -4,6 +4,7 @@ using System.Threading;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
+using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Input;
 using Avalonia.Threading;
@@ -76,8 +77,8 @@ public class SmoothScrollPopupWheelTests
     }
 
     /// <summary>The complement: a wheel on the page (pointer outside the list) scrolls the
-    /// content out from under the popup, which on Windows stays put. That closes the list,
-    /// through the animated path, the same as a press outside would.</summary>
+    /// content out from under the popup, which on Windows stays put. The list closes as soon
+    /// as the box moves, plainly (a fading ghost over the wrong card was the 09-19 glitch).</summary>
     [AvaloniaFact]
     public void WheelOverThePage_ClosesTheOpenDropDown()
     {
@@ -118,10 +119,68 @@ public class SmoothScrollPopupWheelTests
             filler.RaiseEvent(wheel);
 
             Assert.True(wheel.Handled, "the page still scrolls");
-            Tick(TimeSpan.FromMilliseconds(700));
+            // The first glide frame moves the box; the popup must be gone on that same pass,
+            // not 220ms of fade later.
+            Tick(() => scroller.Offset.Y > 0, TimeSpan.FromSeconds(2));
             Assert.True(scroller.Offset.Y > 0, $"offset {scroller.Offset.Y} should have moved");
             Assert.False(box.IsDropDownOpen, "the list must close when the page scrolls under it");
+            Assert.False(popup.IsOpen, "closed plainly on the frame the box moved, no fade");
+        }
+        finally
+        {
+            win.Close();
+        }
+    }
+
+    /// <summary>Any page movement counts, not only the wheel: a scrollbar drag or a key sets
+    /// Offset directly. And a fade already in flight (press outside, then drag) is cut short
+    /// the moment the box moves.</summary>
+    [AvaloniaFact]
+    public void PageScrollsByOffset_ClosesTheOpenDropDown_EvenMidFade()
+    {
+        ComboBoxDropDownAnimator.Install();
+        var box = new ComboBox
+        {
+            ItemsSource = new[] { "System language", "English", "Espanol" }, SelectedIndex = 0,
+            Width = 200, HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Left,
+        };
+        var content = new StackPanel();
+        content.Children.Add(box);
+        content.Children.Add(new Border { Height = 2000 });
+        var scroller = new ScrollViewer { Content = content };
+        var win = new Window { Width = 400, Height = 300, Content = scroller };
+        try
+        {
+            win.Show();
+            Dispatcher.UIThread.RunJobs();
+
+            // Plain scroll: no press, no wheel.
+            box.IsDropDownOpen = true;
+            Dispatcher.UIThread.RunJobs();
+            var popup = box.GetVisualDescendants().OfType<Popup>().First(p => p.Name == "PART_Popup");
+            Tick(() => ((Control)popup.Child!).Opacity >= 1, TimeSpan.FromSeconds(2));
+            var closed = 0;
+            popup.Closed += (_, _) => closed++;
+            scroller.Offset = new Vector(0, 120);
+            Dispatcher.UIThread.RunJobs();
+            Assert.False(box.IsDropDownOpen);
             Assert.False(popup.IsOpen);
+            Assert.Equal(1, closed);
+
+            // Mid-fade: a press outside starts the fade, then the page moves under it.
+            scroller.Offset = default;
+            Dispatcher.UIThread.RunJobs();
+            box.IsDropDownOpen = true;
+            Dispatcher.UIThread.RunJobs();
+            Tick(() => ((Control)popup.Child!).Opacity >= 1, TimeSpan.FromSeconds(2));
+            win.MouseDown(new Point(350, 250), MouseButton.Left);
+            Dispatcher.UIThread.RunJobs();
+            Assert.True(box.IsDropDownOpen, "held open for the fade");
+            scroller.Offset = new Vector(0, 120);
+            Dispatcher.UIThread.RunJobs();
+            Assert.False(box.IsDropDownOpen);
+            Assert.False(popup.IsOpen);
+            Assert.Equal(2, closed);
         }
         finally
         {
@@ -164,10 +223,12 @@ public class SmoothScrollPopupWheelTests
         }
     }
 
-    private static void Tick(TimeSpan span)
+    private static void Tick(TimeSpan span) => Tick(() => false, span);
+
+    private static void Tick(Func<bool> done, TimeSpan timeout)
     {
-        var deadline = DateTime.UtcNow + span;
-        while (DateTime.UtcNow < deadline)
+        var deadline = DateTime.UtcNow + timeout;
+        while (!done() && DateTime.UtcNow < deadline)
         {
             Thread.Sleep(20);
             Avalonia.Headless.AvaloniaHeadlessPlatform.ForceRenderTimerTick();

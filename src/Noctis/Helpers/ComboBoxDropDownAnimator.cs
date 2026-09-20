@@ -35,8 +35,8 @@ namespace Noctis.Helpers;
 /// closes. That works for every close the ComboBox itself initiates (item click, Escape,
 /// clicking the box). Light dismiss is the exception: there the popup closes itself first,
 /// and the property flips afterwards. So the popup's own light dismiss is switched off and
-/// re-implemented here (a press or a wheel notch on the owner window outside the box, or
-/// the window deactivating), routed through IsDropDownOpen so it takes the animated path too. A close
+/// re-implemented here (a press on the owner window outside the box, the box moving under
+/// the popup because the page scrolled, or the window deactivating), routed through IsDropDownOpen so it takes the animated path too. A close
 /// that still arrives from the popup itself (owner detached, etc.) is left alone.
 /// </remarks>
 public static class ComboBoxDropDownAnimator
@@ -66,8 +66,10 @@ public static class ComboBoxDropDownAnimator
         /// <summary>Our light-dismiss: owner top level + the handlers on it, while open.</summary>
         public TopLevel? Owner;
         public EventHandler<PointerPressedEventArgs>? PressHandler;
-        public EventHandler<PointerWheelEventArgs>? WheelHandler;
+        public EventHandler? LayoutHandler;
         public EventHandler? DeactivatedHandler;
+        /// <summary>Where the box sat in the owner when the list opened.</summary>
+        public Point Anchor;
     }
 
     public static void Install()
@@ -139,21 +141,21 @@ public static class ComboBoxDropDownAnimator
         };
         owner.AddHandler(InputElement.PointerPressedEvent, state.PressHandler, RoutingStrategies.Tunnel, handledEventsToo: true);
 
-        // A wheel on the page (not over the box or its list) scrolls the content out from
-        // under the popup: on Windows the popup is its own window and stays put (09-19,
-        // Settings > Language). Treat it like a press outside: fade the list away. The
-        // wheel itself is left alone so the page still scrolls.
-        state.WheelHandler = (_, e) =>
+        // The popup never follows its box: on Windows it is its own window, and when the
+        // page scrolls under it (wheel, scrollbar drag, keys) it stays where it opened,
+        // detached from the box (09-19, Settings > Language). So the list closes the moment
+        // the box moves in the owner. Plain, not faded: a fading ghost over the wrong card
+        // is the glitch, and a fade already in flight is cut short for the same reason.
+        state.Anchor = box.TranslatePoint(default, owner) ?? default;
+        state.LayoutHandler = (_, _) =>
         {
-            if (!box.IsDropDownOpen || state.ClosingHeld) return;
-            if (e.Source is Visual source)
-            {
-                if (source == box || box.IsVisualAncestorOf(source)) return;
-                if (popup.Child is Visual body && (source == body || body.IsVisualAncestorOf(source))) return;
-            }
+            if (!box.IsDropDownOpen) return;
+            if (box.TranslatePoint(default, owner) is not { } now) return;
+            if (Math.Abs(now.X - state.Anchor.X) < 0.5 && Math.Abs(now.Y - state.Anchor.Y) < 0.5) return;
+            if (!state.ClosingHeld) state.Plain = true;
             box.SetCurrentValue(ComboBox.IsDropDownOpenProperty, false);
         };
-        owner.AddHandler(InputElement.PointerWheelChangedEvent, state.WheelHandler, RoutingStrategies.Tunnel, handledEventsToo: true);
+        owner.LayoutUpdated += state.LayoutHandler;
 
         if (owner is Window window)
         {
@@ -172,13 +174,13 @@ public static class ComboBoxDropDownAnimator
         if (state.Owner is not { } owner) return;
         if (state.PressHandler != null)
             owner.RemoveHandler(InputElement.PointerPressedEvent, state.PressHandler);
-        if (state.WheelHandler != null)
-            owner.RemoveHandler(InputElement.PointerWheelChangedEvent, state.WheelHandler);
+        if (state.LayoutHandler != null)
+            owner.LayoutUpdated -= state.LayoutHandler;
         if (owner is Window window && state.DeactivatedHandler != null)
             window.Deactivated -= state.DeactivatedHandler;
         state.Owner = null;
         state.PressHandler = null;
-        state.WheelHandler = null;
+        state.LayoutHandler = null;
         state.DeactivatedHandler = null;
     }
 
