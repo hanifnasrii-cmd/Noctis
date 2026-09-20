@@ -25,13 +25,15 @@ public class SidebarNavTests
             Assert.True(visualizer >= 0 && studio == visualizer + 1 && settings == studio + 1,
                 $"expected visualizer, lyricsstudio, settings in order; got {string.Join(",", keys)}");
 
-            // Visualizer draws as a StreamGeometry (PathIcon); Lyrics Studio is a PNG mask
-            // (lyric sheet + note, 09-17) and MUST be registered — the sidebar template
-            // switches on HasKey, and an unregistered bitmap key shows the fallback playlist icon.
+            // Visualizer and Lyrics Studio draw as StreamGeometry (PathIcon): the sidebar
+            // template switches on HasKey, so a geometry key must NOT be in the bitmap map
+            // (a bitmap key that isn't registered shows the fallback playlist icon instead).
+            // Lyrics Studio = Fluent pen_sparkle (09-19), and the key must resolve to a geometry.
             Assert.False(IconKeyToGeometryConverter.HasKey(vm.NavItems.First(i => i.Key == "visualizer").IconGlyph),
                 "visualizer must use a geometry icon");
-            Assert.True(IconKeyToGeometryConverter.HasKey(vm.NavItems.First(i => i.Key == "lyricsstudio").IconGlyph),
-                "lyricsstudio must use a registered PNG mask");
+            var studioGlyph = vm.NavItems.First(i => i.Key == "lyricsstudio").IconGlyph;
+            Assert.False(IconKeyToGeometryConverter.HasKey(studioGlyph), "lyricsstudio must use a geometry icon");
+            Assert.Equal("SidebarLyricsStudioIcon", studioGlyph);
 
             Assert.Equal("Nav.LyricsStudio", SidebarViewModel.LabelKey("lyricsstudio"));
             // The Settings rail's Lyrics page borrows the island's lyrics bubble (a PNG mask).
