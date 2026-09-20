@@ -402,9 +402,14 @@ public partial class LyricsStudioViewModel : ViewModelBase
         var ct = _runCts.Token;
         var done = 0;
         var total = items.Count;
+        // Session-log breadcrumbs (Settings > Advanced > Copy Logs): a native crash inside the
+        // speech model leaves no managed trace, so the run's own steps are the only record.
+        DebugLogger.Info(DebugLogger.Category.Lyrics, "LyricsStudio.RunStart",
+            $"songs={total}, model={SelectedModel.Size}, language={SelectedLanguage.Code}, wordTimings={WordTimings}, transcribeOnly={TranscribeOnly}, online={OnlineLyrics}, skipDone={SkipAlreadyTimed}");
         try
         {
             using var session = _engine.OpenSession(SelectedModel.Size);
+            DebugLogger.Info(DebugLogger.Category.Lyrics, "LyricsStudio.SessionOpen", SelectedModel.Size.ToString());
             foreach (var item in items)
             {
                 if (ct.IsCancellationRequested) break;
@@ -421,12 +426,15 @@ public partial class LyricsStudioViewModel : ViewModelBase
                 {
                     item.Status = StudioStatus.Skipped;
                     item.StatusText = $"Skipped · already {LyricsFormatDetector.Label(item.ExistingFormat)}";
+                    DebugLogger.Info(DebugLogger.Category.Lyrics, "LyricsStudio.ItemSkipped", $"{item.Title} | {item.ExistingFormat}");
                     done++;
                     continue;
                 }
                 item.Status = StudioStatus.Working;
                 item.StatusText = "Starting…";
                 RunStatusText = $"Working on {item.Title} ({done + 1} of {total})";
+                DebugLogger.Info(DebugLogger.Category.Lyrics, "LyricsStudio.ItemStart",
+                    $"{item.Title} ({done + 1}/{total}) | existing={item.ExistingFormat}, sourceLines={(options.SourceLines?.Count.ToString() ?? "none")}");
                 var progress = new Progress<LyricsStudioProgress>(p => Dispatcher.UIThread.Post(() =>
                 {
                     item.Progress = p.Fraction;
@@ -439,6 +447,8 @@ public partial class LyricsStudioViewModel : ViewModelBase
                     item.Status = StudioStatus.Ready;
                     _drafts?.Save(item.Track.Id, LyricsStudioDraft.From(result));
                     item.StatusText = result.Source == LyricsStudioSource.Transcription ? "Transcribed · review" : $"{Math.Round(result.Confidence * 100)}% matched · review";
+                    DebugLogger.Info(DebugLogger.Category.Lyrics, "LyricsStudio.ItemReady",
+                        $"{item.Title} | source={result.Source}, lines={result.Lines.Count}, confidence={result.Confidence:0.00}, heard={result.HeardWords}");
                     if (Selected is null || Selected.Status is not (StudioStatus.Ready))
                         Selected = item;
                     else if (ReferenceEquals(Selected, item))
@@ -448,30 +458,41 @@ public partial class LyricsStudioViewModel : ViewModelBase
                 {
                     item.Status = StudioStatus.Waiting;
                     item.StatusText = "Stopped";
+                    DebugLogger.Info(DebugLogger.Category.Lyrics, "LyricsStudio.ItemStopped", item.Title);
                     break;
                 }
                 catch (Exception ex)
                 {
                     item.Status = StudioStatus.Failed;
                     item.StatusText = ex.Message;
+                    DebugLogger.Warn(DebugLogger.Category.Lyrics, "LyricsStudio.ItemFailed", $"{item.Title} | {ex.GetType().Name}: {ex.Message}");
                 }
                 done++;
             }
             RunStatusText = ct.IsCancellationRequested ? "Stopped." : $"Finished · {Queue.Count(i => i.Status == StudioStatus.Ready)} ready for review";
+            DebugLogger.Info(DebugLogger.Category.Lyrics, ct.IsCancellationRequested ? "LyricsStudio.RunStopped" : "LyricsStudio.RunFinished",
+                $"done={done}/{total}, ready={Queue.Count(i => i.Status == StudioStatus.Ready)}");
+            DebugLogger.Info(DebugLogger.Category.Lyrics, "LyricsStudio.SessionClosing", "disposing the speech model");
         }
         catch (Exception ex)
         {
             RunStatusText = $"Couldn't start — {ex.Message}";
+            DebugLogger.Error(DebugLogger.Category.Lyrics, "LyricsStudio.RunFailed", $"{ex.GetType().Name}: {ex.Message}");
         }
         finally
         {
             IsRunning = false;
             RaiseStartState();
+            DebugLogger.Info(DebugLogger.Category.Lyrics, "LyricsStudio.RunEnd", "session disposed");
         }
     }
 
     [RelayCommand]
-    private void Stop() => _runCts?.Cancel();
+    private void Stop()
+    {
+        DebugLogger.Info(DebugLogger.Category.Lyrics, "LyricsStudio.StopRequested", RunStatusText);
+        _runCts?.Cancel();
+    }
 
     [RelayCommand]
     private void Save()
