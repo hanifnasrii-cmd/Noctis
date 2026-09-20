@@ -73,7 +73,7 @@
     <value>Langue</value>
   </data>
   <data name="Settings.Language.Description" xml:space="preserve">
-    <value>Menus and labels. Translations are made by the community.</value>
+    <value>Menus et étiquettes. Les traductions sont faites par la communauté.</value>
   </data>
   <data name="Settings.Language.System" xml:space="preserve">
     <value>Langue du système</value>
@@ -87,7 +87,7 @@
     <value>Lancez la lecture pour le voir bouger.</value>
   </data>
   <data name="Visualizer.NowPlaying" xml:space="preserve">
-    <value>NOW PLAYING</value>
+    <value>MAINTENANT DE JOUER</value>
     <comment>Text in VisualizerView.axaml</comment>
   </data>
   <data name="Visualizer.Style.Bars" xml:space="preserve">
@@ -104,7 +104,7 @@
     <value>Importer une liste de lecture</value>
   </data>
   <data name="Import.Subtitle" xml:space="preserve">
-    <value>Bring a playlist from a file or a Deezer/TIDAL link.</value>
+    <value>Apportez une playlist à partir d'un fichier ou d'un lien Deezer/TIDAL.</value>
   </data>
   <data name="Import.ChooseFile" xml:space="preserve">
     <value>Choisir un fichier…</value>
@@ -113,7 +113,7 @@
     <value>ou déposez un fichier .csv / .json / .m3u n'importe où dans cette fenêtre</value>
   </data>
   <data name="Import.LinkLabel" xml:space="preserve">
-    <value>Or paste a playlist link (Deezer and TIDAL import directly)</value>
+    <value>Ou collez un lien de liste de lecture (l'importation directe de Deezer et de TIDAL)</value>
   </data>
   <data name="Import.LinkButton" xml:space="preserve">
     <value>Importer le lien</value>
@@ -173,7 +173,7 @@
     <comment>ToolTip.Tip in SettingsView.axaml</comment>
   </data>
   <data name="Settings.Name" xml:space="preserve">
-    <value>Username</value>
+    <value>Nom d'utilisateur</value>
     <comment>Watermark in SettingsView.axaml</comment>
   </data>
   <data name="Settings.ClickEditNameTip" xml:space="preserve">
@@ -189,7 +189,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.AddNoctisWindowsOpen" xml:space="preserve">
-    <value>Add Noctis to Windows' Open-with list and Default apps for the formats it plays.</value>
+    <value>Ajouter des Noctis à la liste Open-with de Windows et aux applications par défaut pour les formats qu'il joue.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.Register" xml:space="preserve">
@@ -205,7 +205,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.ControlHowNoctisStarts" xml:space="preserve">
-    <value>How Noctis starts and what minimize and close do.</value>
+    <value>Comment commence le Noctis et ce qui minimise et se rapproche.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.OpenNoctisWhenComputer" xml:space="preserve">
@@ -229,7 +229,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.ReopenLastTrackPlaybar" xml:space="preserve">
-    <value>Reopen with your last track loaded and paused.</value>
+    <value>Réouvrir avec votre dernière piste chargée et mise en pause.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.TextAnimation" xml:space="preserve">
@@ -237,7 +237,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.ControlHowLongText" xml:space="preserve">
-    <value>Scroll long titles that do not fit.</value>
+    <value>Faites défiler les titres longs qui ne correspondent pas.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.PLAYERBAR" xml:space="preserve">
@@ -297,7 +297,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.ShowOneTilePer" xml:space="preserve">
-    <value>One tile per release. Other editions appear under &quot;Other Versions&quot;.</value>
+    <value>Une tuile par version. Les autres éditions apparaissent sous &quot;Autres Versions&quot;.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.MergeFeaturedArtistsFrom" xml:space="preserve">
@@ -305,7 +305,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.TurnFeatXTrack" xml:space="preserve">
-    <value>Turn &quot;(feat. X)&quot; in titles into artist credits.</value>
+    <value>Transformez &quot;(don. X)&quot; en titres en crédits d'artiste.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.GroupArtistsBy" xml:space="preserve">
@@ -313,7 +313,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.WhichTagArtistsSection" xml:space="preserve">
-    <value>Album Artist keeps compilations together and ignores per-track features.</value>
+    <value>Artiste de l'album garde les compilations ensemble et ignore les fonctionnalités par piste.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.FirstCreditedArtistEachTip" xml:space="preserve">
@@ -345,7 +345,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.TextSplitsOneArtist" xml:space="preserve">
-    <value>Text that splits one artist tag into several. Remove one to keep names like &quot;Simon &amp; Garfunkel&quot; whole.</value>
+    <value>Texte qui divise un tag artiste en plusieurs. Retirez-en un pour garder des noms comme &quot;Simon &amp; Garfunkel&quot; tout.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.Reset" xml:space="preserve">
@@ -393,31 +393,31 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.ShowRecentReleasesOnly" xml:space="preserve">
-    <value>See recent releases</value>
+    <value>Voir les versions récentes</value>
     <comment>Advanced: collapses the release history</comment>
   </data>
   <data name="Settings.LyricsBackgroundPerSongHint" xml:space="preserve">
-    <value>Right-click a song or album to give it its own video.</value>
+    <value>Cliquez avec le bouton droit sur une chanson ou un album pour lui donner sa propre vidéo.</value>
     <comment>Appearance: under Lyrics Background Video</comment>
   </data>
   <data name="Settings.PauseVideoWithPlayback" xml:space="preserve">
-    <value>Pause Video With Playback</value>
+    <value>Mettre en pause la vidéo avec la lecture</value>
     <comment>Appearance toggle title</comment>
   </data>
   <data name="Settings.PauseVideoWithPlaybackDesc" xml:space="preserve">
-    <value>Freeze the background video while the song is paused.</value>
+    <value>Geler la vidéo en arrière-plan pendant que la chanson est en pause.</value>
     <comment>Appearance toggle description</comment>
   </data>
   <data name="AlbumDetail.LyricsBackgroundVideo" xml:space="preserve">
-    <value>Lyrics Background Video</value>
+    <value>Vidéo de fond des paroles</value>
     <comment>Album page menu</comment>
   </data>
   <data name="AlbumDetail.ChooseAlbumVideo" xml:space="preserve">
-    <value>Choose video for this album…</value>
+    <value>Choisissez une vidéo pour cet album…</value>
     <comment>Album page menu</comment>
   </data>
   <data name="AlbumDetail.UseDefaultVideo" xml:space="preserve">
-    <value>Use default video</value>
+    <value>Utiliser la vidéo par défaut</value>
     <comment>Album page menu</comment>
   </data>
   <data name="Settings.StarGitHub" xml:space="preserve">
@@ -433,7 +433,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.About.GitHubCaption" xml:space="preserve">
-    <value>Star the repo</value>
+    <value>Mettre le dépôt en vedette</value>
     <comment>About tile caption in SettingsView.axaml</comment>
   </data>
   <data name="Settings.About.DiscordCaption" xml:space="preserve">
@@ -441,7 +441,7 @@
     <comment>About tile caption in SettingsView.axaml</comment>
   </data>
   <data name="Settings.About.WebsiteCaption" xml:space="preserve">
-    <value>Docs &amp; downloads</value>
+    <value>Documents &amp; téléchargements</value>
     <comment>About tile caption in SettingsView.axaml</comment>
   </data>
   <data name="Settings.IncludePreReleaseUpdates" xml:space="preserve">
@@ -449,7 +449,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.OfferBetaBuildsUpdater" xml:space="preserve">
-    <value>Offer beta builds in the updater.</value>
+    <value>Proposer des versions bêta dans la mise à jour.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.YoursTrulyHeartached" xml:space="preserve">
@@ -465,7 +465,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.DownloadInstallAnyRelease" xml:space="preserve">
-    <value>Install any release from GitHub. Installing closes the app.</value>
+    <value>Installez n'importe quelle version depuis GitHub. L'installation ferme l'application.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.NoReleasesFound" xml:space="preserve">
@@ -485,11 +485,11 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.ComingSoon" xml:space="preserve">
-    <value>Coming soon</value>
+    <value>Bientôt disponible</value>
     <comment>Badge on parked Account &amp; Sync cards in SettingsView.axaml</comment>
   </data>
   <data name="Settings.SessionLogTroubleshootingShare" xml:space="preserve">
-    <value>Session log for bug reports.</value>
+    <value>Journal de session pour les rapports de bogue.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.CopyLogs" xml:space="preserve">
@@ -533,11 +533,11 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.Ink" xml:space="preserve">
-    <value>Ink</value>
+    <value>Encre</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.Smoke" xml:space="preserve">
-    <value>Smoke</value>
+    <value>Fumée</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.Edit" xml:space="preserve">
@@ -557,11 +557,11 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.AccentFollowsArtwork" xml:space="preserve">
-    <value>Accent follows album art</value>
+    <value>L'accent suit les pochettes d'album</value>
     <comment>Appearance toggle in SettingsView.axaml</comment>
   </data>
   <data name="Settings.AccentFollowsArtworkHint" xml:space="preserve">
-    <value>Recolour the accent from the playing cover. Your chosen accent returns when nothing is playing.</value>
+    <value>Rappelez l'accent de la couverture de jeu. Votre accent choisi revient lorsque rien ne joue.</value>
     <comment>Appearance toggle hint in SettingsView.axaml</comment>
   </data>
   <data name="Settings.AccentColor" xml:space="preserve">
@@ -585,7 +585,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.FrostWindowTranslucentBlurred" xml:space="preserve">
-    <value>Frost the window, sidebar, settings and playback bar with translucent, blurred glass surfaces.</value>
+    <value>Geler la fenêtre, la barre latérale, les paramètres et la barre de lecture avec des surfaces de verre transparentes et floues.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.AnimatedArtwork" xml:space="preserve">
@@ -601,7 +601,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.TintEachAlbumS" xml:space="preserve">
-    <value>Tint each album page with its cover colour.</value>
+    <value>Tint chaque page de l'album avec sa couleur de couverture.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.NowPlayingArtwork" xml:space="preserve">
@@ -609,7 +609,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.HowCoverAppearsLyrics" xml:space="preserve">
-    <value>How the cover appears on the Lyrics page. Discs spin while playing.</value>
+    <value>Comment la couverture apparaît sur la page des paroles. Les disques tournent pendant la lecture.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.AlbumCoverAsTip" xml:space="preserve">
@@ -677,7 +677,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.HowMiniPlayerLooks" xml:space="preserve">
-    <value>Classic follows its size. Pill and Sleeve are fixed designs.</value>
+    <value>Le classique suit sa taille. La pilule et la manche sont des modèles fixes.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.ResizableGlassCardIconTip" xml:space="preserve">
@@ -709,7 +709,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.AddExtraControlsPlayer" xml:space="preserve">
-    <value>Extra buttons on the player island.</value>
+    <value>Boutons supplémentaires sur l'île du joueur.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.SkipBackForward" xml:space="preserve">
@@ -737,7 +737,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.1ButtonOpensSpeed" xml:space="preserve">
-    <value>A speed menu from 0.75× to 2×. Resets on the next launch.</value>
+    <value>Un menu de vitesse de 0,75× à 2×. Réinitialise au lancement suivant.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.SleepTimer" xml:space="preserve">
@@ -745,7 +745,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.SleepTimerOneClick" xml:space="preserve">
-    <value>Sleep timer one click away.</value>
+    <value>Une minuterie de sommeil est à portée d'un clic.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.Shuffle" xml:space="preserve">
@@ -753,31 +753,31 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.ShuffleButtonAfterRepeat" xml:space="preserve">
-    <value>A shuffle button next to Repeat.</value>
+    <value>Un bouton aléatoire à côté de Répéter.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.TrackBoxOpacity" xml:space="preserve">
-    <value>Track Box Opacity</value>
+    <value>Opacité de la boîte de suivi</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.HowSolidTrackBox" xml:space="preserve">
-    <value>How solid the box around the song info in the player bar is. 0% hides it.</value>
+    <value>La boite autour des infos de la chanson dans la barre de lecture est si solide que 0% la cache.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.RepeatButton" xml:space="preserve">
-    <value>Repeat</value>
+    <value>Répéter</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.RepeatButtonNextToForward" xml:space="preserve">
-    <value>A repeat button after Next: cycles Off → All → One.</value>
+    <value>Un bouton de répétition après le suivant : cycle Off → All → One.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.FavoriteButton" xml:space="preserve">
-    <value>Favorite</value>
+    <value>Favoris</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.FavoriteButtonHeart" xml:space="preserve">
-    <value>A heart on the right to favorite the playing song in one click.</value>
+    <value>Un cœur à droite pour mettre en favori la chanson en un clic.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.PlayerIslandWidth" xml:space="preserve">
@@ -785,7 +785,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.HowWidePlayerIsland" xml:space="preserve">
-    <value>Wider gives the seek bar more room. You can also drag the island's edges. Double-click the knob to reset.</value>
+    <value>Plus large donne à la barre de recherche plus de place. Vous pouvez également faire glisser les bords de l'île. Double-cliquez sur le bouton pour réinitialiser.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.Narrower" xml:space="preserve">
@@ -801,7 +801,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.ShowHowFarAlong" xml:space="preserve">
-    <value>Show song progress on the taskbar button. Amber while paused.</value>
+    <value>Afficher la progression de la chanson sur le bouton de la barre des tâches. Ambre en pause.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.AutomaticAlbumCoverSize" xml:space="preserve">
@@ -825,7 +825,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.BlurredAlbumArtworkDrifts" xml:space="preserve">
-    <value>Drift moves the cover and pulses with the beat. Kawarp melts it into a slow liquid flow. Plugin styles appear here too.</value>
+    <value>La dérive déplace le couvercle et les impulsions avec le rythme. Kawarp le fait fondre dans un flux liquide lent. Les styles de plugin apparaissent également ici.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.AudioVisualizer" xml:space="preserve">
@@ -833,7 +833,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.DrawLiveSpectrumMusic" xml:space="preserve">
-    <value>A live spectrum along the bottom of the lyrics page.</value>
+    <value>Un spectre en direct en bas de la page des paroles.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.ArtworkColour" xml:space="preserve">
@@ -841,7 +841,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.TintBarsCurrentCover" xml:space="preserve">
-    <value>Tint the bars with the cover colour. Off paints them white.</value>
+    <value>Teignez les barres avec la couleur de couverture.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.FrequencyBarsRisingFromTip" xml:space="preserve">
@@ -869,23 +869,23 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.MusicVideos" xml:space="preserve">
-    <value>Music videos</value>
+    <value>Vidéos musicales</value>
     <comment>Lyrics Studio card in LyricsStudioView.axaml</comment>
   </data>
   <data name="Settings.MusicVideosHint" xml:space="preserve">
-    <value>A video named like the song, next to it or in a videos folder, replaces the cover on the lyrics page.</value>
+    <value>Une vidéo nommée comme la chanson, à côté ou dans un dossier vidéo, remplace la couverture sur la page des paroles.</value>
     <comment>Lyrics Studio card hint</comment>
   </data>
   <data name="Settings.MusicVideoRounded" xml:space="preserve">
-    <value>Rounded</value>
+    <value>Arrondi</value>
     <comment>Lyrics Studio card toggle</comment>
   </data>
   <data name="Settings.MusicVideoRoundedHint" xml:space="preserve">
-    <value>Rounded corners like the cover, or a flat frame</value>
+    <value>Coins arrondis comme le couvercle, ou un cadre plat</value>
     <comment>Lyrics Studio card toggle tooltip</comment>
   </data>
   <data name="PlaybackBar.MusicVideo" xml:space="preserve">
-    <value>Music video</value>
+    <value>Vidéo musicale</value>
     <comment>Options menu toggle in PlaybackBarView.axaml</comment>
   </data>
   <data name="Settings.LyricsBackgroundVideo" xml:space="preserve">
@@ -893,7 +893,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.LoopVideoGIFBehind" xml:space="preserve">
-    <value>A looping video or GIF behind the lyrics.</value>
+    <value>Une vidéo en boucle ou GIF derrière les paroles.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.Choose" xml:space="preserve">
@@ -901,51 +901,51 @@
     <comment>Content in SettingsView.axaml</comment>
   </data>
   <data name="LyricsBackground.Title" xml:space="preserve">
-    <value>Lyrics Background Video</value>
+    <value>Vidéo de fond des paroles</value>
     <comment>Picker dialog title</comment>
   </data>
   <data name="LyricsBackground.Subtitle" xml:space="preserve">
-    <value>One default clip, or a clip of their own for songs and albums.</value>
+    <value>Un clip par défaut ou un clip propre pour les chansons et les albums.</value>
     <comment>Picker dialog subtitle</comment>
   </data>
   <data name="LyricsBackground.DefaultVideo" xml:space="preserve">
-    <value>Default video</value>
+    <value>Vidéo par défaut</value>
     <comment>Picker: the clip every song without its own uses</comment>
   </data>
   <data name="LyricsBackground.NoDefaultVideo" xml:space="preserve">
-    <value>None. Songs without their own video show the blurred cover.</value>
+    <value>Les chansons sans leur propre vidéo montrent la couverture floue.</value>
     <comment>Picker: no default clip</comment>
   </data>
   <data name="LyricsBackground.ChooseVideo" xml:space="preserve">
-    <value>Choose video</value>
+    <value>Choisir une vidéo</value>
     <comment>Picker: pick a file</comment>
   </data>
   <data name="LyricsBackground.Remove" xml:space="preserve">
-    <value>Remove</value>
+    <value>Retirer</value>
     <comment>Picker: drop the default clip</comment>
   </data>
   <data name="LyricsBackground.SearchWatermark" xml:space="preserve">
-    <value>Search songs and albums…</value>
+    <value>Rechercher des chansons et des albums…</value>
     <comment>Picker search box</comment>
   </data>
   <data name="LyricsBackground.WithOwnVideo" xml:space="preserve">
-    <value>WITH THEIR OWN VIDEO</value>
+    <value>AVEC LEURS PROPRES VIDÉO</value>
     <comment>Picker: header over the list when not searching</comment>
   </data>
   <data name="LyricsBackground.PromptTitle" xml:space="preserve">
-    <value>No song or album has its own video yet</value>
+    <value>Aucune chanson ou album n'a encore sa propre vidéo</value>
     <comment>Picker: empty state</comment>
   </data>
   <data name="LyricsBackground.PromptBody" xml:space="preserve">
-    <value>Search above and choose a video for any song or album. Everything else plays the default.</value>
+    <value>Recherchez ci-dessus et choisissez une vidéo pour n'importe quelle chanson ou album. Tout le reste joue par défaut.</value>
     <comment>Picker: empty state body</comment>
   </data>
   <data name="LyricsBackground.UsesDefault" xml:space="preserve">
-    <value>Uses the default video</value>
+    <value>Utilise la vidéo par défaut</value>
     <comment>Picker row status</comment>
   </data>
   <data name="LyricsBackground.OwnVideo" xml:space="preserve">
-    <value>Has its own video</value>
+    <value>A sa propre vidéo</value>
     <comment>Picker row status</comment>
   </data>
   <data name="LyricsBackground.FromYouTube" xml:space="preserve">
@@ -953,31 +953,31 @@
     <comment>Button: download the backdrop from a YouTube link</comment>
   </data>
   <data name="LyricsBackground.YouTubeWatermark" xml:space="preserve">
-    <value>Paste a YouTube link</value>
+    <value>Coller un lien YouTube</value>
     <comment>Watermark</comment>
   </data>
   <data name="LyricsBackground.Download" xml:space="preserve">
-    <value>Download</value>
+    <value>Télécharger</value>
     <comment>Button</comment>
   </data>
   <data name="LyricsBackground.YouTubeClose" xml:space="preserve">
-    <value>Cancel</value>
+    <value>Abandonner</value>
     <comment>Button: fold the YouTube panel / stop the download</comment>
   </data>
   <data name="LyricsBackground.NeedsYtDlp" xml:space="preserve">
-    <value>Downloading from YouTube needs yt-dlp.</value>
+    <value>Le téléchargement à partir de YouTube nécessite yt-dlp.</value>
     <comment>Shown when the tool is missing</comment>
   </data>
   <data name="LyricsBackground.InstallYtDlp" xml:space="preserve">
-    <value>Install yt-dlp</value>
+    <value>Installer yt-dlp</value>
     <comment>Button</comment>
   </data>
   <data name="Settings.Modify" xml:space="preserve">
-    <value>Modify</value>
+    <value>Modifier</value>
     <comment>Appearance: opens the lyrics background video picker</comment>
   </data>
   <data name="Settings.SeeMoreReleases" xml:space="preserve">
-    <value>See more releases</value>
+    <value>Voir plus de publications</value>
     <comment>Advanced: expands the release history</comment>
   </data>
   <data name="Settings.Remove" xml:space="preserve">
@@ -989,15 +989,15 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.DimAllButCurrent" xml:space="preserve">
-    <value>Dim every line except the current one and its neighbours.</value>
+    <value>Diminuer chaque ligne à l'exception de la ligne courante et de ses voisins.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.LyricsMinLineOpacity" xml:space="preserve">
-    <value>Minimum Line Opacity</value>
+    <value>Opacité minimale de la ligne</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.LyricsMinLineOpacityHint" xml:space="preserve">
-    <value>Keep every lyric line faintly visible so you can click any line to jump there. 0% hides lines far from the current one.</value>
+    <value>Gardez toutes les lignes lyriques légèrement visibles afin que vous puissiez cliquer sur n'importe quelle ligne pour y sauter. 0% de lignes cachées loin de la ligne actuelle.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.JoinSplitWords" xml:space="preserve">
@@ -1021,7 +1021,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.HowMuchDesktopShows" xml:space="preserve">
-    <value>How much of the desktop shows through the glass.</value>
+    <value>La grande partie du bureau montre à travers le verre.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.PLAYBACK" xml:space="preserve">
@@ -1033,7 +1033,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.SongsBlendSmoothlyInto" xml:space="preserve">
-    <value>Songs blend into each other. Albums play without transitions.</value>
+    <value>Les chansons se fondent entre elles. Les albums sont joués sans transitions.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.UnavailableWhileExclusiveMode" xml:space="preserve">
@@ -1089,7 +1089,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.WhenQueueEndsKeep" xml:space="preserve">
-    <value>When the queue ends, keep playing similar songs.</value>
+    <value>À la fin de la file d'attente, continuez à jouer des chansons similaires.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.ExplicitContent" xml:space="preserve">
@@ -1097,7 +1097,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.AllowExplicitSongsWhen" xml:space="preserve">
-    <value>Off skips explicit songs unless you play them directly.</value>
+    <value>Désactivé, saute les chansons explicites à moins que vous ne les écoutiez directement.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.ExclusiveMode" xml:space="preserve">
@@ -1105,7 +1105,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.BitPerfectOutputBypasses" xml:space="preserve">
-    <value>Bit-perfect output that bypasses the Windows mixer. Other apps go silent and transitions are off.</value>
+    <value>Sortie Bit-perfect qui contourne le mixeur Windows. Les autres applications sont silencieuses et les transitions sont désactivées.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.AnalyzeTempoKey" xml:space="preserve">
@@ -1121,7 +1121,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.WriteBPMKeyInto" xml:space="preserve">
-    <value>Write BPM and key into the file's tags. This modifies your files.</value>
+    <value>Écrit le BPM et la clé dans les balises du fichier. Cela modifie vos fichiers.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.Equalizer" xml:space="preserve">
@@ -1129,7 +1129,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.ParametricEQTuneEach" xml:space="preserve">
-    <value>Tune each band's frequency, gain and width.</value>
+    <value>Régler la fréquence, le gain et la largeur de chaque groupe.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.Preamp" xml:space="preserve">
@@ -1173,7 +1173,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.UsedByAudioConverter" xml:space="preserve">
-    <value>Used by the converter, spectrogram and Lyrics Studio. Blank auto-detects.</value>
+    <value>Utilisé par le convertisseur, le spectrogramme et le studio de Lyrics. Auto-détection vide.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.AutoDetect" xml:space="preserve">
@@ -1189,7 +1189,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.RightClickSongOpen" xml:space="preserve">
-    <value>Right-click a song to open its file in this program. Blank asks each time.</value>
+    <value>Cliquez avec le bouton droit sur une chanson pour ouvrir son fichier dans ce programme. Vide le demande à chaque fois.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.NotSet" xml:space="preserve">
@@ -1201,7 +1201,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.AdjustVolumeUsingReplayGain" xml:space="preserve">
-    <value>Adjust volume from ReplayGain tags. Scan tracks via right-click.</value>
+    <value>Ajustez le volume à partir des tags ReplayGain. Scannez les pistes par clic droit.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.Mode" xml:space="preserve">
@@ -1221,7 +1221,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.ControlPlaybackFromPhone" xml:space="preserve">
-    <value>Control playback from your phone on the local network. Unencrypted, so avoid untrusted Wi-Fi.</value>
+    <value>Contrôlez la lecture de votre téléphone sur le réseau local. Non chiffré, donc évitez les accès Wi-Fi non approuvés.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.TapEnlargeTip" xml:space="preserve">
@@ -1229,7 +1229,7 @@
     <comment>ToolTip.Tip in SettingsView.axaml</comment>
   </data>
   <data name="Settings.IfPhoneBlocksLink" xml:space="preserve">
-    <value>If your phone flags the link as insecure, choose Continue. The remote uses plain HTTP.</value>
+    <value>Si votre téléphone marque le lien comme non sécurisé, choisissez Continuer. La télécommande utilise en clair HTTP.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.OPENPHONE" xml:space="preserve">
@@ -1269,7 +1269,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.AddAlbumNameUnder" xml:space="preserve">
-    <value>Show the album name under the artist on your Discord card.</value>
+    <value>Affiche le nom de l'album sous l'artiste sur votre carte Discord.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.LastFmScrobbling" xml:space="preserve">
@@ -1317,7 +1317,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.StreamLibraryFromJellyfin" xml:space="preserve">
-    <value>Stream from Jellyfin, Navidrome, Airsonic, Gonic or any Subsonic server.</value>
+    <value>Stream depuis Jellyfin, Navidrome, Airsonic, Gonic ou tout autre serveur Subsonic.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.TYPE" xml:space="preserve">
@@ -1345,7 +1345,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.UsernameWatermark" xml:space="preserve">
-    <value>Username</value>
+    <value>Nom d'utilisateur</value>
     <comment>Watermark in SettingsView.axaml</comment>
   </data>
   <data name="Settings.PASSWORD" xml:space="preserve">
@@ -1353,7 +1353,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.PasswordWatermark" xml:space="preserve">
-    <value>Password</value>
+    <value>Mot de passe</value>
     <comment>Watermark in SettingsView.axaml</comment>
   </data>
   <data name="Settings.Connecting" xml:space="preserve">
@@ -1441,7 +1441,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.RenameMoveFilesInto" xml:space="preserve">
-    <value>Sort files into folders by tag.</value>
+    <value>Trier les fichiers dans des dossiers par tag.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.Organize" xml:space="preserve">
@@ -1453,7 +1453,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.FindDuplicateTracksRemove" xml:space="preserve">
-    <value>Find and remove duplicate songs.</value>
+    <value>Rechercher et supprimer les chansons dupliquées.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.Find" xml:space="preserve">
@@ -1465,7 +1465,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.IdentifyPoorlyTaggedTracks" xml:space="preserve">
-    <value>Fix missing or wrong tags.</value>
+    <value>Corriger les balises manquantes ou incorrectes.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.ImportPlaylist" xml:space="preserve">
@@ -1473,7 +1473,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.ImportM3UExportifyCSV" xml:space="preserve">
-    <value>From a file or a Deezer/TIDAL link.</value>
+    <value>À partir d'un fichier ou d'un lien Deezer/TIDAL.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.Import" xml:space="preserve">
@@ -1525,7 +1525,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.RemovedFromLibraryTheir" xml:space="preserve">
-    <value>Removed from the library, files kept on disk. Restore adds them back.</value>
+    <value>Supprimé de la bibliothèque, les fichiers conservés sur le disque. La restauration les rajoute.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.NoRemovedTracks" xml:space="preserve">
@@ -1617,7 +1617,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.ClickKeyChangePress" xml:space="preserve">
-    <value>Click a key to change it. Esc cancels, Backspace unbinds. Media keys always work.</value>
+    <value>Cliquez sur une touche pour la modifier. Esc annule, Backspace unbinds. Les touches Media fonctionnent toujours.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.ResetAll" xml:space="preserve">
@@ -1713,7 +1713,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.ViewAllStats" xml:space="preserve">
-    <value>View all stats</value>
+    <value>Voir toutes les statistiques</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <!-- AddSongsDialog.axaml (auto-migrated) -->
@@ -1901,7 +1901,7 @@
     <comment>Header in AlbumDetailView.axaml</comment>
   </data>
   <data name="AlbumDetail.EditDescription" xml:space="preserve">
-    <value>Update Description</value>
+    <value>Description de la mise à jour</value>
     <comment>Header in AlbumDetailView.axaml</comment>
   </data>
   <data name="AlbumDetail.ConvertAlbum" xml:space="preserve">
@@ -2014,7 +2014,7 @@
     <comment>ToolTip.Tip in ArtistDetailView.axaml</comment>
   </data>
   <data name="ArtistDetail.ShufflePopular" xml:space="preserve">
-    <value>Shuffle Top Songs</value>
+    <value>Lecture aléatoire des chansons les plus populaires</value>
     <comment>Header in ArtistDetailView.axaml</comment>
   </data>
   <data name="ArtistDetail.ShuffleFavorites" xml:space="preserve">
@@ -2046,7 +2046,7 @@
     <comment>Text in ArtistDetailView.axaml</comment>
   </data>
   <data name="ArtistDetail.Popular" xml:space="preserve">
-    <value>Top Songs</value>
+    <value>Meilleurs titres</value>
     <comment>Text in ArtistDetailView.axaml</comment>
   </data>
   <data name="ArtistDetail.Albums" xml:space="preserve">
@@ -2066,31 +2066,31 @@
     <comment>Text in ArtistDetailView.axaml</comment>
   </data>
   <data name="ArtistDetail.Overview" xml:space="preserve">
-    <value>Overview</value>
+    <value>Aperçu</value>
     <comment>Tab in ArtistDetailView.axaml</comment>
   </data>
   <data name="ArtistDetail.Songs" xml:space="preserve">
-    <value>Songs</value>
+    <value>Chansons</value>
     <comment>Tab in ArtistDetailView.axaml</comment>
   </data>
   <data name="ArtistDetail.SimilarArtists" xml:space="preserve">
-    <value>Similar Artists</value>
+    <value>Artistes similaires</value>
     <comment>Tab in ArtistDetailView.axaml</comment>
   </data>
   <data name="ArtistDetail.SeeAll" xml:space="preserve">
-    <value>See all</value>
+    <value>Tout voir</value>
     <comment>Content in ArtistDetailView.axaml</comment>
   </data>
   <data name="ArtistDetail.NoSongsMatch" xml:space="preserve">
-    <value>No songs match.</value>
+    <value>Aucune chanson ne correspond.</value>
     <comment>Text in ArtistDetailView.axaml</comment>
   </data>
   <data name="ArtistDetail.AboutTitle" xml:space="preserve">
-    <value>About </value>
+    <value>À propos de </value>
     <comment>Text in ArtistDetailView.axaml</comment>
   </data>
   <data name="ArtistDetail.Links" xml:space="preserve">
-    <value>Links</value>
+    <value>Liens</value>
     <comment>Text in ArtistDetailView.axaml</comment>
   </data>
   <data name="ArtistDetail.FROM" xml:space="preserve">
@@ -2102,27 +2102,27 @@
     <comment>Text in ArtistDetailView.axaml</comment>
   </data>
   <data name="ArtistDetail.ReleasesTile" xml:space="preserve">
-    <value>Releases</value>
+    <value>Versions</value>
     <comment>Text in ArtistDetailView.axaml</comment>
   </data>
   <data name="ArtistDetail.SongsTile" xml:space="preserve">
-    <value>Songs</value>
+    <value>Chansons</value>
     <comment>Text in ArtistDetailView.axaml</comment>
   </data>
   <data name="ArtistDetail.TotalLengthTile" xml:space="preserve">
-    <value>Total length</value>
+    <value>Longueur totale</value>
     <comment>Text in ArtistDetailView.axaml</comment>
   </data>
   <data name="ArtistDetail.MostPlayedTile" xml:space="preserve">
-    <value>Most played</value>
+    <value>Les plus joués</value>
     <comment>Text in ArtistDetailView.axaml</comment>
   </data>
   <data name="ArtistDetail.SinceTile" xml:space="preserve">
-    <value>In library since</value>
+    <value>Dans la bibliothèque depuis</value>
     <comment>Text in ArtistDetailView.axaml</comment>
   </data>
   <data name="ArtistDetail.NotInLibrary" xml:space="preserve">
-    <value>Not in your library</value>
+    <value>Pas dans votre bibliothèque</value>
     <comment>Text in ArtistDetailView.axaml</comment>
   </data>
   <data name="ArtistDetail.FansCount" xml:space="preserve">
@@ -2130,15 +2130,15 @@
     <comment>Hero line under the artist name; {0} = Deezer fan count</comment>
   </data>
   <data name="ArtistDetail.FindingSimilar" xml:space="preserve">
-    <value>Finding similar artists…</value>
+    <value>Recherche d'artistes similaires…</value>
     <comment>Text in ArtistDetailView.axaml</comment>
   </data>
   <data name="ArtistDetail.NoSimilar" xml:space="preserve">
-    <value>No similar artists found.</value>
+    <value>Aucun artiste similaire trouvé.</value>
     <comment>Text in ArtistDetailView.axaml</comment>
   </data>
   <data name="ArtistDetail.LookingUp" xml:space="preserve">
-    <value>Looking up the artist…</value>
+    <value>Recherche de l'artiste…</value>
     <comment>Text in ArtistDetailView.axaml</comment>
   </data>
   <data name="ArtistDetail.NoBiographyFoundArtist" xml:space="preserve">
@@ -2341,7 +2341,7 @@
     <comment>Text in CreateSmartPlaylistDialog.axaml</comment>
   </data>
   <data name="CreateSmartPlaylist.Value" xml:space="preserve">
-    <value>Value</value>
+    <value>Valeur</value>
     <comment>Watermark in CreateSmartPlaylistDialog.axaml</comment>
   </data>
   <data name="CreateSmartPlaylist.To" xml:space="preserve">
@@ -2366,7 +2366,7 @@
     <comment>Title in DuplicateFinderDialog.axaml</comment>
   </data>
   <data name="DuplicateFinder.GroupedByArtistTitle" xml:space="preserve">
-    <value>Same song, more than once. Keep the best copy.</value>
+    <value>Même chanson, plus d'une fois. Gardez la meilleure copie.</value>
     <comment>Text in DuplicateFinderDialog.axaml</comment>
   </data>
   <data name="DuplicateFinder.Rescan" xml:space="preserve">
@@ -2529,11 +2529,11 @@
     <comment>ToolTip.Tip in HomeView.axaml</comment>
   </data>
   <data name="Home.MostPlayed" xml:space="preserve">
-    <value>Most Played</value>
+    <value>Les plus joués</value>
     <comment>Home chart header</comment>
   </data>
   <data name="Home.LastPlayed" xml:space="preserve">
-    <value>Last Played</value>
+    <value>Dernier jeu</value>
     <comment>Home chart header</comment>
   </data>
   <data name="Home.Text" xml:space="preserve">
@@ -2581,7 +2581,7 @@
     <comment>Text in HomeView.axaml</comment>
   </data>
   <data name="Home.Songs" xml:space="preserve">
-    <value>songs</value>
+    <value>chansons</value>
     <comment>Recently Played rail card: "2017 | 9 songs"</comment>
   </data>
   <data name="Home.OptionsTip" xml:space="preserve">
@@ -2589,19 +2589,19 @@
     <comment>Most Listened To row dots button</comment>
   </data>
   <data name="Home.ContinueListening" xml:space="preserve">
-    <value>Continue listening</value>
+    <value>Continuer à écouter</value>
     <comment>Home hero kicker above the last played track</comment>
   </data>
   <data name="Home.Resume" xml:space="preserve">
-    <value>Resume</value>
+    <value>Reprendre</value>
     <comment>Home hero primary button</comment>
   </data>
   <data name="Home.Pause" xml:space="preserve">
-    <value>Pause</value>
+    <value>Mettre en pause</value>
     <comment>Home hero primary button while its track is playing</comment>
   </data>
   <data name="Home.PlayAlbum" xml:space="preserve">
-    <value>Play album</value>
+    <value>Jouer l'album</value>
     <comment>Home hero secondary button</comment>
   </data>
   <data name="Home.TimeLeft" xml:space="preserve">
@@ -2826,7 +2826,7 @@
     <comment>ToolTip.Tip in LibrarySongsView.axaml</comment>
   </data>
   <data name="LibrarySongs.PlayFromHereTip" xml:space="preserve">
-    <value>Play from here</value>
+    <value>Jouer depuis ici</value>
     <comment>ToolTip.Tip in LibrarySongsView.axaml</comment>
   </data>
   <data name="LibrarySongs.OptionsTip" xml:space="preserve">
@@ -2988,11 +2988,11 @@
     <comment>Content in LyricShareDialog.axaml</comment>
   </data>
   <data name="LyricShare.Copy" xml:space="preserve">
-    <value>Copy</value>
+    <value>Copie</value>
     <comment>Content in LyricShareDialog.axaml</comment>
   </data>
   <data name="LyricShare.CopyImageTip" xml:space="preserve">
-    <value>Copy the card image to the clipboard</value>
+    <value>Copier l'image de la carte dans le presse-papiers</value>
     <comment>ToolTip in LyricShareDialog.axaml</comment>
   </data>
   <!-- LyricsPanelView.axaml (auto-migrated) -->
@@ -3251,7 +3251,7 @@
     <comment>Text in MainWindow.axaml</comment>
   </data>
   <data name="Main.ImportPlaylist" xml:space="preserve">
-    <value>Import Playlist</value>
+    <value>Importer une playlist</value>
     <comment>Text in MainWindow.axaml</comment>
   </data>
   <data name="Main.FromM3uM3u8File" xml:space="preserve">
@@ -3311,19 +3311,19 @@
     <comment>ToolTip.Tip in MainWindow.axaml</comment>
   </data>
   <data name="Main.FilterTip" xml:space="preserve">
-    <value>Filter</value>
+    <value>Filtre</value>
     <comment>Top-right corner filter icon tooltip prefix</comment>
   </data>
   <data name="Main.SwitchToCoverFlow" xml:space="preserve">
-    <value>Switch to Cover Flow</value>
+    <value>Basculer vers le flux de couverture</value>
     <comment>Top-right view-mode icon tooltip</comment>
   </data>
   <data name="Main.SwitchToLibrary" xml:space="preserve">
-    <value>Switch to Library</value>
+    <value>Basculer vers la bibliothèque</value>
     <comment>Top-right view-mode icon tooltip</comment>
   </data>
   <data name="Main.Layout" xml:space="preserve">
-    <value>Layout:</value>
+    <value>Mise en page :</value>
     <comment>Cover Flow layout icon tooltip prefix</comment>
   </data>
   <data name="Main.Carousel" xml:space="preserve">
@@ -3368,7 +3368,7 @@
     <comment>Title in MetadataFinderDialog.axaml</comment>
   </data>
   <data name="MetadataFinder.IdentifyPoorlyTaggedTracks" xml:space="preserve">
-    <value>Fix missing or wrong tags. Review before applying.</value>
+    <value>Corriger les tags manquants ou incorrects. Revoir avant de postuler.</value>
     <comment>Text in MetadataFinderDialog.axaml</comment>
   </data>
   <data name="MetadataFinder.IdentifyAll" xml:space="preserve">
@@ -3409,47 +3409,47 @@
     <comment>ToolTip.Tip in MetadataWindow.axaml</comment>
   </data>
   <data name="Metadata.GroupInfo" xml:space="preserve">
-    <value>Info</value>
+    <value>Infos</value>
     <comment>Rail group label in MetadataWindow.axaml</comment>
   </data>
   <data name="Metadata.GroupLyrics" xml:space="preserve">
-    <value>Lyrics</value>
+    <value>Paroles</value>
     <comment>Rail group label in MetadataWindow.axaml</comment>
   </data>
   <data name="Metadata.GroupPlayback" xml:space="preserve">
-    <value>Playback</value>
+    <value>Lecture</value>
     <comment>Rail group label in MetadataWindow.axaml</comment>
   </data>
   <data name="Metadata.GroupFile" xml:space="preserve">
-    <value>File</value>
+    <value>Fichier</value>
     <comment>Rail group label in MetadataWindow.axaml</comment>
   </data>
   <data name="Metadata.NoChangesYet" xml:space="preserve">
-    <value>No changes yet</value>
+    <value>Pas encore de changement</value>
     <comment>Footer status in MetadataWindow.axaml</comment>
   </data>
   <data name="Metadata.ChangesOne" xml:space="preserve">
-    <value>1 change</value>
+    <value>1 changement</value>
     <comment>Footer status in MetadataWindow.axaml</comment>
   </data>
   <data name="Metadata.ChangesMany" xml:space="preserve">
-    <value>{0} changes</value>
+    <value>Changements {0}</value>
     <comment>Footer status in MetadataWindow.axaml</comment>
   </data>
   <data name="Metadata.AppliesToFiles" xml:space="preserve">
-    <value>applies to {0} files</value>
+    <value>s'applique aux fichiers {0}</value>
     <comment>Footer status in MetadataWindow.axaml</comment>
   </data>
   <data name="Metadata.MixedHint" xml:space="preserve">
-    <value>Values that differ across the {0} tracks show as Mixed</value>
+    <value>Les valeurs qui diffèrent entre les pistes {0} s'affichent comme étant mixtes</value>
     <comment>Details tab hint in MetadataWindow.axaml</comment>
   </data>
   <data name="Metadata.SecSorting" xml:space="preserve">
-    <value>Sorting</value>
+    <value>Tri en cours</value>
     <comment>Text in MetadataWindow.axaml</comment>
   </data>
   <data name="Metadata.SecPeople" xml:space="preserve">
-    <value>People &amp; credits</value>
+    <value>Personnes et crédits</value>
     <comment>Text in MetadataWindow.axaml</comment>
   </data>
   <data name="Metadata.SecIdentification" xml:space="preserve">
@@ -3457,31 +3457,31 @@
     <comment>Text in MetadataWindow.axaml</comment>
   </data>
   <data name="Metadata.SecContent" xml:space="preserve">
-    <value>Content</value>
+    <value>Contenus</value>
     <comment>Text in MetadataWindow.axaml</comment>
   </data>
   <data name="Metadata.SecTechnical" xml:space="preserve">
-    <value>Technical</value>
+    <value>Technique</value>
     <comment>Text in MetadataWindow.axaml</comment>
   </data>
   <data name="Metadata.SecCustomTags" xml:space="preserve">
-    <value>Custom tags</value>
+    <value>Tags personnalisés</value>
     <comment>Text in MetadataWindow.axaml</comment>
   </data>
   <data name="Metadata.SecKind" xml:space="preserve">
-    <value>Kind</value>
+    <value>Type</value>
     <comment>Text in MetadataWindow.axaml</comment>
   </data>
   <data name="Metadata.SecPlayRange" xml:space="preserve">
-    <value>Play range</value>
+    <value>Plage de lecture</value>
     <comment>Text in MetadataWindow.axaml</comment>
   </data>
   <data name="Metadata.SecBehaviour" xml:space="preserve">
-    <value>Behaviour</value>
+    <value>Comportement</value>
     <comment>Text in MetadataWindow.axaml</comment>
   </data>
   <data name="Metadata.SecSound" xml:space="preserve">
-    <value>Sound</value>
+    <value>Sonnerie</value>
     <comment>Text in MetadataWindow.axaml</comment>
   </data>
   <data name="Metadata.SecAudio" xml:space="preserve">
@@ -3493,27 +3493,27 @@
     <comment>Text in MetadataWindow.axaml</comment>
   </data>
   <data name="Metadata.SecLocation" xml:space="preserve">
-    <value>Location</value>
+    <value>Localisation</value>
     <comment>Text in MetadataWindow.axaml</comment>
   </data>
   <data name="Metadata.ShowInFolder" xml:space="preserve">
-    <value>Show in folder</value>
+    <value>Afficher dans le dossier</value>
     <comment>Text in MetadataWindow.axaml</comment>
   </data>
   <data name="Metadata.CopyPath" xml:space="preserve">
-    <value>Copy path</value>
+    <value>Copier le chemin</value>
     <comment>Text in MetadataWindow.axaml</comment>
   </data>
   <data name="Metadata.DoubleClickToReset" xml:space="preserve">
-    <value>Double-click the slider to reset</value>
+    <value>Double-cliquez sur le curseur pour réinitialiser</value>
     <comment>Text in MetadataWindow.axaml</comment>
   </data>
   <data name="Metadata.ArtworkSharedByAlbum" xml:space="preserve">
-    <value>Shared by the whole album</value>
+    <value>Partagé par l'album entier</value>
     <comment>Text in MetadataWindow.axaml</comment>
   </data>
   <data name="Metadata.AnimatedArtworkHint" xml:space="preserve">
-    <value>Per album · plays on the album page and Now Playing</value>
+    <value>Par album · joue sur la page de l'album et en cours de lecture</value>
     <comment>Text in MetadataWindow.axaml</comment>
   </data>
   <data name="Metadata.Cancel" xml:space="preserve">
@@ -4216,7 +4216,7 @@
     <comment>Title in OrganizeFilesDialog.axaml</comment>
   </data>
   <data name="OrganizeFiles.RenameMoveFilesInto" xml:space="preserve">
-    <value>Sort files into folders by their tags. Preview first.</value>
+    <value>Trier les fichiers dans des dossiers par tags. Aperçu d'abord.</value>
     <comment>Text in OrganizeFilesDialog.axaml</comment>
   </data>
   <data name="OrganizeFiles.UndoLast" xml:space="preserve">
@@ -4599,7 +4599,7 @@
     <comment>Text in PlaylistView.axaml</comment>
   </data>
   <data name="Playlist.Kicker" xml:space="preserve">
-    <value>PLAYLIST</value>
+    <value>LISTE DE JOUEURS</value>
     <comment>Hero kicker in PlaylistView.axaml</comment>
   </data>
   <data name="Playlist.PlayFromHereTip" xml:space="preserve">
@@ -5079,15 +5079,15 @@
     <comment>Text in StatisticsView.axaml</comment>
   </data>
   <data name="Statistics.Library" xml:space="preserve">
-    <value>Library</value>
+    <value>Bibliothèque</value>
     <comment>Overview section title in StatisticsView.axaml</comment>
   </data>
   <data name="Statistics.Liked" xml:space="preserve">
-    <value>liked</value>
+    <value>Aimé</value>
     <comment>Library footer fact, lowercase</comment>
   </data>
   <data name="Statistics.AvgLength" xml:space="preserve">
-    <value>avg length</value>
+    <value>longueur moyenne</value>
     <comment>Library footer fact, lowercase</comment>
   </data>
   <data name="Statistics.NoTracksLibrary" xml:space="preserve">
@@ -5335,10 +5335,10 @@
     <value>Extensions</value>
   </data>
   <data name="Plugins.Description" xml:space="preserve">
-    <value>Drop a plugin folder into the plugins directory and reload. Switch a plugin off here without deleting it.</value>
+    <value>Déposez un dossier de plugin dans le dossier des plugins et rechargez. Désactivez un plugin ici sans le supprimer.</value>
   </data>
   <data name="Plugins.Warning" xml:space="preserve">
-    <value>Plugins run with the same access as Noctis. Only install ones you trust.</value>
+    <value>Les plugins fonctionnent avec le même accès que Noctis. N'installez que ceux en qui vous avez confiance.</value>
   </data>
   <data name="Plugins.OpenFolder" xml:space="preserve">
     <value>Ouvrir le dossier des extensions</value>
@@ -5354,7 +5354,7 @@
     <value>Serveur Noctis</value>
   </data>
   <data name="Server.Description" xml:space="preserve">
-    <value>Let your phone and other devices browse and play this library. Works with any Subsonic app and the Noctis mobile app, over HTTPS.</value>
+    <value>Laissez votre téléphone et d'autres appareils naviguer et lire cette bibliothèque. Fonctionne avec n'importe quelle application Subsonic et l'application mobile Noctis, via HTTPS.</value>
   </data>
   <data name="Server.Port" xml:space="preserve">
     <value>Port</value>
@@ -5393,7 +5393,7 @@
     <value>Clé API pour</value>
   </data>
   <data name="Server.ApiKeyOnce" xml:space="preserve">
-    <value>Copy it now. It is shown once, and a new key replaces it.</value>
+    <value>Copiez-le maintenant. Il est affiché une fois, et une nouvelle clé le remplace.</value>
   </data>
   <data name="Server.Done" xml:space="preserve">
     <value>Terminé</value>
@@ -5412,19 +5412,19 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.TidalDescription" xml:space="preserve">
-    <value>Sign in to import TIDAL playlists by link.</value>
+    <value>Connectez-vous pour importer les listes de lecture TIDAL par lien.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.TidalConnected" xml:space="preserve">
-    <value>Signed in — tidal.com links import directly.</value>
+    <value>Connecté — les liens tidal.com importent directement.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.FlowingOff" xml:space="preserve">
-    <value>Off</value>
+    <value>Désactivé</value>
     <comment>Flowing-background picker row</comment>
   </data>
   <data name="Settings.FlowingDrift" xml:space="preserve">
-    <value>Drift</value>
+    <value>Dérive</value>
     <comment>Flowing-background picker row (built-in style)</comment>
   </data>
   <data name="Settings.FlowingKawarp" xml:space="preserve">
@@ -5432,11 +5432,11 @@
     <comment>Flowing-background picker row (liquid warp, beat-reactive)</comment>
   </data>
   <data name="Settings.FlowingKawarpCalm" xml:space="preserve">
-    <value>Kawarp (no beat)</value>
+    <value>Kawarp (pas de bat)</value>
     <comment>Flowing-background picker row</comment>
   </data>
   <data name="Settings.KawarpWarp" xml:space="preserve">
-    <value>Warp strength</value>
+    <value>Force de la déformation</value>
     <comment>Kawarp slider label</comment>
   </data>
   <data name="Settings.KawarpBlur" xml:space="preserve">
@@ -5445,19 +5445,19 @@
   </data>
   <!-- 2026-09 feature batch: pitch, click-to-rate, Send to Folder, bulk lyrics, YouTube, Account & Sync, Lyrics Studio, upmix -->
   <data name="PlaybackBar.Pitch" xml:space="preserve">
-    <value>Pitch</value>
+    <value>Tailler</value>
     <comment>Speed menu → pitch submenu header (island)</comment>
   </data>
   <data name="PlaybackBar.PitchNormal" xml:space="preserve">
-    <value>Normal</value>
+    <value>Normale</value>
     <comment>Pitch submenu: reset to ±0 semitones</comment>
   </data>
   <data name="LibrarySongs.RateTip" xml:space="preserve">
-    <value>Rate (click a star; click the same star again to clear)</value>
+    <value>Noter (cliquez sur une étoile; cliquez à nouveau sur la même étoile pour effacer)</value>
     <comment>ToolTip on the Songs row stars</comment>
   </data>
   <data name="SendTo.Title" xml:space="preserve">
-    <value>Send to Folder</value>
+    <value>Envoyer au dossier</value>
     <comment>Dialog title</comment>
   </data>
   <data name="SendTo.Destination" xml:space="preserve">
@@ -5465,159 +5465,159 @@
     <comment>Send to Folder dialog</comment>
   </data>
   <data name="SendTo.DestinationHint" xml:space="preserve">
-    <value>A USB drive, phone or any folder</value>
+    <value>Une clé USB, un téléphone ou tout autre dossier</value>
     <comment>Destination watermark</comment>
   </data>
   <data name="SendTo.Browse" xml:space="preserve">
-    <value>Browse…</value>
+    <value>Parcourir…</value>
     <comment>Folder picker button</comment>
   </data>
   <data name="SendTo.Organize" xml:space="preserve">
-    <value>Organize into folders</value>
+    <value>Organiser en dossiers</value>
     <comment>Toggle label</comment>
   </data>
   <data name="SendTo.OrganizeHint" xml:space="preserve">
-    <value>Artist and album folders using your file pattern:</value>
+    <value>Dossiers d'artistes et d'albums en utilisant votre modèle de fichier :</value>
     <comment>Toggle help, followed by the pattern</comment>
   </data>
   <data name="SendTo.IncludeLyrics" xml:space="preserve">
-    <value>Include lyrics files</value>
+    <value>Inclure les fichiers de paroles</value>
     <comment>Toggle label</comment>
   </data>
   <data name="SendTo.IncludeLyricsHint" xml:space="preserve">
-    <value>Copies each song's .lrc alongside it when there is one.</value>
+    <value>Copie le .lrc de chaque chanson quand il y en a une.</value>
     <comment>Toggle help</comment>
   </data>
   <data name="SendTo.LyricsIncluded" xml:space="preserve">
-    <value>Lyrics file included</value>
+    <value>Fichier de paroles inclus</value>
     <comment>Row tooltip</comment>
   </data>
   <data name="SendTo.Copy" xml:space="preserve">
-    <value>Copy</value>
+    <value>Copie</value>
     <comment>Primary button</comment>
   </data>
   <data name="SendTo.Close" xml:space="preserve">
-    <value>Close</value>
+    <value>Fermer</value>
     <comment>Secondary button</comment>
   </data>
   <data name="BulkLyrics.Title" xml:space="preserve">
-    <value>Lyrics</value>
+    <value>Paroles</value>
     <comment>Dialog title (window)</comment>
   </data>
   <data name="BulkLyrics.Close" xml:space="preserve">
-    <value>Close</value>
+    <value>Fermer</value>
     <comment>Secondary button</comment>
   </data>
   <data name="Main.AddFromYouTube" xml:space="preserve">
-    <value>Add from YouTube</value>
+    <value>Ajouter depuis YouTube</value>
     <comment>New/Add menu item</comment>
   </data>
   <data name="Main.AddFromYouTubeHint" xml:space="preserve">
-    <value>Search or paste a link — downloads into your library</value>
+    <value>Recherchez ou collez un lien - téléchargements dans votre bibliothèque</value>
     <comment>New/Add menu item subtitle</comment>
   </data>
   <data name="YouTube.Title" xml:space="preserve">
-    <value>Add from YouTube</value>
+    <value>Ajouter depuis YouTube</value>
     <comment>Dialog title</comment>
   </data>
   <data name="YouTube.Subtitle" xml:space="preserve">
-    <value>Search or paste a link. Saved to your library with cover art.</value>
+    <value>Recherchez ou collez un lien. Enregistré dans votre bibliothèque avec de l'art de couverture.</value>
     <comment>Dialog subtitle</comment>
   </data>
   <data name="YouTube.SearchHint" xml:space="preserve">
-    <value>Search YouTube or paste a link…</value>
+    <value>Rechercher sur YouTube ou coller un lien…</value>
     <comment>Search box watermark</comment>
   </data>
   <data name="YouTube.Search" xml:space="preserve">
-    <value>Search</value>
+    <value>Chercher</value>
     <comment>Search button</comment>
   </data>
   <data name="YouTube.SetupTitle" xml:space="preserve">
-    <value>One-time setup</value>
+    <value>Configuration unique</value>
     <comment>First-run card title</comment>
   </data>
   <data name="YouTube.SetupBody" xml:space="preserve">
-    <value>Noctis uses yt-dlp (free, open source) to talk to YouTube. It is downloaded once into Noctis's own folder and updated from here.</value>
+    <value>Noctis utilise yt-dlp (gratuit, open source) pour parler à YouTube. Il est téléchargé une fois dans le dossier de Noctis et mis à jour à partir d'ici.</value>
     <comment>First-run card body</comment>
   </data>
   <data name="YouTube.Install" xml:space="preserve">
-    <value>Install yt-dlp</value>
+    <value>Installer yt-dlp</value>
     <comment>First-run card button</comment>
   </data>
   <data name="YouTube.Download" xml:space="preserve">
-    <value>Download</value>
+    <value>Télécharger</value>
     <comment>Per-result button</comment>
   </data>
   <data name="YouTube.SavesTo" xml:space="preserve">
-    <value>Saves to</value>
+    <value>Enregistre vers</value>
     <comment>Footer label before the folder</comment>
   </data>
   <data name="YouTube.EmptyHint" xml:space="preserve">
-    <value>Results appear here. Downloads land in your library folder, tagged and with cover art.</value>
+    <value>Les résultats apparaissent ici. Les téléchargements se trouvent dans le dossier de votre bibliothèque, marqués et avec une pochette d'art.</value>
     <comment>Empty state</comment>
   </data>
   <data name="YouTube.Close" xml:space="preserve">
-    <value>Close</value>
+    <value>Fermer</value>
     <comment>Secondary button</comment>
   </data>
   <data name="YouTubeSettings.Section" xml:space="preserve">
-    <value>YOUTUBE DOWNLOADS</value>
+    <value>TÉLÉCHARGEMENT DE YOUTUBE</value>
     <comment>Library tab section title</comment>
   </data>
   <data name="YouTubeSettings.Title" xml:space="preserve">
-    <value>Add songs from YouTube</value>
+    <value>Ajouter des chansons depuis YouTube</value>
     <comment>Card title</comment>
   </data>
   <data name="YouTubeSettings.Description" xml:space="preserve">
-    <value>Search or paste a link to download.</value>
+    <value>Recherchez ou collez un lien à télécharger.</value>
     <comment>Card description</comment>
   </data>
   <data name="YouTubeSettings.Open" xml:space="preserve">
-    <value>Open downloader</value>
+    <value>Ouvrir le téléchargeur</value>
     <comment>Card button</comment>
   </data>
   <data name="YouTubeSettings.Folder" xml:space="preserve">
-    <value>Download folder</value>
+    <value>Télécharger le dossier</value>
     <comment>Row label</comment>
   </data>
   <data name="YouTubeSettings.FolderHint" xml:space="preserve">
-    <value>Empty uses a &quot;YouTube&quot; folder inside your first music folder.</value>
+    <value>Vide utilise un dossier &quot;YouTube&quot; dans votre premier dossier musical.</value>
     <comment>Row help</comment>
   </data>
   <data name="YouTubeSettings.Tool" xml:space="preserve">
-    <value>yt-dlp</value>
+    <value>dlp yt</value>
     <comment>Row label</comment>
   </data>
   <data name="YouTubeSettings.InstallUpdate" xml:space="preserve">
-    <value>Install / update</value>
+    <value>Installer / mettre à jour</value>
     <comment>Row button</comment>
   </data>
   <data name="YouTubeSettings.ToolPathHint" xml:space="preserve">
-    <value>Custom path to yt-dlp (optional)</value>
+    <value>Chemin d'accès personnalisé vers yt-dlp (facultatif)</value>
     <comment>Path watermark</comment>
   </data>
   <data name="Upmix.Title" xml:space="preserve">
-    <value>Multi-channel upmix</value>
+    <value>amalgame multi-canaux</value>
     <comment>Audio card title</comment>
   </data>
   <data name="Upmix.Description" xml:space="preserve">
-    <value>Play stereo through every speaker of a 5.1 or 7.1 system.</value>
+    <value>Jouer la stéréo à travers chaque haut-parleur d'un système 5.1 ou 7.1.</value>
     <comment>Audio card description</comment>
   </data>
   <data name="Upmix.Off" xml:space="preserve">
-    <value>Off</value>
+    <value>Désactivé</value>
     <comment>Upmix mode</comment>
   </data>
   <data name="Upmix.OffHint" xml:space="preserve">
-    <value>Stereo only</value>
+    <value>Stéréo seulement</value>
     <comment>Upmix mode hint</comment>
   </data>
   <data name="Upmix.Duplicate" xml:space="preserve">
-    <value>Stereo everywhere</value>
+    <value>Stéréo partout</value>
     <comment>Upmix mode</comment>
   </data>
   <data name="Upmix.DuplicateHint" xml:space="preserve">
-    <value>Same music on every pair, centre and bass filled in</value>
+    <value>Même musique à chaque paire, centre et basses remplies</value>
     <comment>Upmix mode hint</comment>
   </data>
   <data name="Upmix.Surround" xml:space="preserve">
@@ -5625,79 +5625,79 @@
     <comment>Upmix mode</comment>
   </data>
   <data name="Upmix.SurroundHint" xml:space="preserve">
-    <value>Ambience to the rears, wide stage in front</value>
+    <value>Ambience à l'arrière, large scène devant</value>
     <comment>Upmix mode hint</comment>
   </data>
   <data name="Upmix.Note" xml:space="preserve">
-    <value>Built-in output engine only. Exclusive Mode keeps the file's own layout.</value>
+    <value>Moteur de sortie intégré uniquement. Mode exclusif conserve la propre disposition du fichier.</value>
     <comment>Upmix footnote</comment>
   </data>
   <data name="Server.AccountsMoved" xml:space="preserve">
-    <value>Accounts and device sync are managed in Account &amp; Sync.</value>
+    <value>La synchronisation des comptes et de l'appareil est gérée dans Compte &amp; Synchronisation.</value>
     <comment>Integrations → Noctis Server card footer</comment>
   </data>
   <data name="Server.OpenAccountSync" xml:space="preserve">
-    <value>Open Account &amp; Sync</value>
+    <value>Ouvrir un compte &amp; synchroniser</value>
     <comment>Integrations → Noctis Server card button</comment>
   </data>
   <data name="AccountSync.YourAccount" xml:space="preserve">
-    <value>YOUR ACCOUNT</value>
+    <value>VOTRE COMPTE</value>
     <comment>Account &amp; Sync section title</comment>
   </data>
   <data name="AccountSync.CreateTitle" xml:space="preserve">
-    <value>Create your account</value>
+    <value>Créez votre compte</value>
     <comment>No-account state title</comment>
   </data>
   <data name="AccountSync.CreateHelp" xml:space="preserve">
-    <value>Your devices sign in with this to browse, play and sync. The password is stored hashed and never leaves this computer.</value>
+    <value>Vos appareils se connectent avec cela pour naviguer, jouer et synchroniser. Le mot de passe est stocké haché et ne quitte jamais cet ordinateur.</value>
     <comment>No-account state help</comment>
   </data>
   <data name="AccountSync.Name" xml:space="preserve">
-    <value>Name</value>
+    <value>Nom</value>
     <comment>Create form watermark</comment>
   </data>
   <data name="AccountSync.Password" xml:space="preserve">
-    <value>Password (8+ characters)</value>
+    <value>Mot de passe (8+ caractères)</value>
     <comment>Create form watermark</comment>
   </data>
   <data name="AccountSync.Create" xml:space="preserve">
-    <value>Create</value>
+    <value>Créer</value>
     <comment>Create form button</comment>
   </data>
   <data name="AccountSync.PairDevice" xml:space="preserve">
-    <value>Pair a device</value>
+    <value>Associer un appareil</value>
     <comment>Account card button</comment>
   </data>
   <data name="AccountSync.NewApiKey" xml:space="preserve">
-    <value>New API key</value>
+    <value>Nouvelle clé API</value>
     <comment>Account card button</comment>
   </data>
   <data name="AccountSync.ChangePassword" xml:space="preserve">
-    <value>Change password</value>
+    <value>Changer le mot de passe</value>
     <comment>Account card button</comment>
   </data>
   <data name="AccountSync.NewPassword" xml:space="preserve">
-    <value>New password (8+ characters)</value>
+    <value>Nouveau mot de passe (8+ caractères)</value>
     <comment>Change password watermark</comment>
   </data>
   <data name="AccountSync.Save" xml:space="preserve">
-    <value>Save</value>
+    <value>Enregistrer</value>
     <comment>Change password button</comment>
   </data>
   <data name="AccountSync.Remove" xml:space="preserve">
-    <value>Remove</value>
+    <value>Retirer</value>
     <comment>Account card button</comment>
   </data>
   <data name="AccountSync.PairHelp" xml:space="preserve">
-    <value>On your phone, open Noctis or any Subsonic app, scan the code or type the address, and sign in.</value>
+    <value>Sur votre téléphone, ouvrez Noctis ou n'importe quelle application Subsonic, scannez le code ou tapez l'adresse et connectez-vous.</value>
     <comment>Pairing block help</comment>
   </data>
   <data name="AccountSync.ServerOffHelp" xml:space="preserve">
-    <value>Devices connect through Noctis Server on this computer. It is off.</value>
+    <value>Les périphériques se connectent via Noctis Server sur cet ordinateur. Il est éteint.</value>
     <comment>Pairing block when the server is off</comment>
   </data>
   <data name="AccountSync.TurnOnServer" xml:space="preserve">
-    <value>Turn on Noctis Server</value>
+    <value>Activer le serveur Noctis</value>
     <comment>Pairing block button</comment>
   </data>
   <data name="AccountSync.SyncSection" xml:space="preserve">
@@ -5705,35 +5705,35 @@
     <comment>Account &amp; Sync section title</comment>
   </data>
   <data name="AccountSync.OtherAccounts" xml:space="preserve">
-    <value>OTHER ACCOUNTS</value>
+    <value>AUTRES COMPTES</value>
     <comment>Account &amp; Sync section title</comment>
   </data>
   <data name="AccountSync.OtherTitle" xml:space="preserve">
-    <value>Family and guests</value>
+    <value>Famille et invités</value>
     <comment>Other accounts card title</comment>
   </data>
   <data name="AccountSync.OtherHelp" xml:space="preserve">
-    <value>Extra accounts that can sign in from their own devices.</value>
+    <value>Comptes supplémentaires qui peuvent se connecter depuis leurs propres appareils.</value>
     <comment>Other accounts card help</comment>
   </data>
   <data name="Sync.Title" xml:space="preserve">
-    <value>Sync between your devices</value>
+    <value>Synchroniser entre vos appareils</value>
     <comment>Sync card title</comment>
   </data>
   <data name="Sync.Description" xml:space="preserve">
-    <value>Favourites, ratings, play counts and playlists stay the same on every signed-in device. The newest change wins.</value>
+    <value>Les favoris, les évaluations, le nombre de parties et les playlists restent les mêmes sur chaque appareil connecté. Le dernier changement gagne.</value>
     <comment>Sync card description</comment>
   </data>
   <data name="Sync.DeviceName" xml:space="preserve">
-    <value>This device</value>
+    <value>Cet appareil</value>
     <comment>Sync card row label</comment>
   </data>
   <data name="Sync.WhatSyncs" xml:space="preserve">
-    <value>Music files stay where they are. Needs Noctis Server to be on.</value>
+    <value>Les fichiers musicaux restent là où ils se trouvent.</value>
     <comment>Sync card footnote</comment>
   </data>
   <data name="LyricsStudioSettings.ModelSection" xml:space="preserve">
-    <value>SPEECH MODEL</value>
+    <value>MODEL DE VITESSE</value>
     <comment>Lyrics Studio tab section title</comment>
   </data>
   <data name="LyricsStudioSettings.Title" xml:space="preserve">
@@ -5741,83 +5741,83 @@
     <comment>Card title</comment>
   </data>
   <data name="LyricsStudioSettings.Description" xml:space="preserve">
-    <value>Times lyrics word by word on this computer. You review before saving.</value>
+    <value>Met les paroles mot par mot sur cet ordinateur. Vous commencez avant d'enregistrer.</value>
     <comment>Card description</comment>
   </data>
   <data name="LyricsStudioSettings.Model" xml:space="preserve">
-    <value>Model</value>
+    <value>Modélisation</value>
     <comment>Row label</comment>
   </data>
   <data name="LyricsStudioSettings.Language" xml:space="preserve">
-    <value>Language</value>
+    <value>Langue</value>
     <comment>Row label</comment>
   </data>
   <data name="LyricsStudioSettings.Download" xml:space="preserve">
-    <value>Download</value>
+    <value>Télécharger</value>
     <comment>Model button</comment>
   </data>
   <data name="LyricsStudioSettings.Delete" xml:space="preserve">
-    <value>Delete</value>
+    <value>Supprimez</value>
     <comment>Model button</comment>
   </data>
   <data name="LyricsStudioSettings.OutputSection" xml:space="preserve">
-    <value>OUTPUT</value>
+    <value>SORTIE</value>
     <comment>Section title</comment>
   </data>
   <data name="LyricsStudioSettings.WordTimings" xml:space="preserve">
-    <value>Word-by-word timings</value>
+    <value>Timings mot par mot</value>
     <comment>Toggle title</comment>
   </data>
   <data name="LyricsStudioSettings.WordTimingsHint" xml:space="preserve">
-    <value>A time for every word. Off saves one per line.</value>
+    <value>Un temps pour chaque mot. N'enregistre qu'un mot par ligne.</value>
     <comment>Toggle help</comment>
   </data>
   <data name="LyricsStudioSettings.EmbedTags" xml:space="preserve">
-    <value>Also write lyrics into the file's tags</value>
+    <value>Écrivez également des paroles dans les balises du fichier</value>
     <comment>Toggle title</comment>
   </data>
   <data name="LyricsStudioSettings.EmbedTagsHint" xml:space="preserve">
-    <value>Also store the plain lyrics inside the audio file.</value>
+    <value>Stockez également les paroles brutes dans le fichier audio.</value>
     <comment>Toggle help</comment>
   </data>
   <data name="LyricsStudioSettings.RunSection" xml:space="preserve">
-    <value>RUN</value>
+    <value>RÈGLER</value>
     <comment>Section title</comment>
   </data>
   <data name="LyricsStudioSettings.OpenTitle" xml:space="preserve">
-    <value>Songs missing the chosen format</value>
+    <value>Chansons manquantes au format choisi</value>
     <comment>Run card title</comment>
   </data>
   <data name="LyricsStudioSettings.OpenHelp" xml:space="preserve">
-    <value>Up to 40 songs that lack the format above.</value>
+    <value>Jusqu'à 40 chansons qui n'ont pas le format ci-dessus.</value>
     <comment>Run card help</comment>
   </data>
   <data name="LyricsStudioSettings.Open" xml:space="preserve">
-    <value>Open Lyrics Studio</value>
+    <value>Ouvrir Lyrics Studio</value>
     <comment>Run card button</comment>
   </data>
   <data name="LyricsStudioSettings.CountWord" xml:space="preserve">
-    <value>Word timings</value>
+    <value>Horodatages des mots</value>
     <comment>Library count tile</comment>
   </data>
   <data name="LyricsStudioSettings.CountLine" xml:space="preserve">
-    <value>Line timings</value>
+    <value>Horodatages des lignes</value>
     <comment>Library count tile</comment>
   </data>
   <data name="LyricsStudioSettings.CountPlain" xml:space="preserve">
-    <value>Plain only</value>
+    <value>Uniquement</value>
     <comment>Library count tile</comment>
   </data>
   <data name="LyricsStudioSettings.CountNone" xml:space="preserve">
-    <value>No lyrics</value>
+    <value>Pas de paroles</value>
     <comment>Library count tile</comment>
   </data>
   <data name="LyricsStudioSettings.Installed" xml:space="preserve">
-    <value>Installed</value>
+    <value>Installé</value>
     <comment>Model state chip</comment>
   </data>
   <data name="LyricsStudioSettings.NotInstalled" xml:space="preserve">
-    <value>Not installed</value>
+    <value>Non installé</value>
     <comment>Model state chip</comment>
   </data>
   <data name="LyricsStudio.Title" xml:space="preserve">
@@ -5825,63 +5825,63 @@
     <comment>Dialog title</comment>
   </data>
   <data name="LyricsStudio.Subtitle" xml:space="preserve">
-    <value>Times lyrics to the recording, or transcribes when there are none.</value>
+    <value>Temps les paroles de l'enregistrement, ou transcrive quand il n'y en a pas.</value>
     <comment>Dialog subtitle</comment>
   </data>
   <data name="LyricsStudio.Model" xml:space="preserve">
-    <value>Model</value>
+    <value>Modélisation</value>
     <comment>Footer label</comment>
   </data>
   <data name="LyricsStudio.Language" xml:space="preserve">
-    <value>Language</value>
+    <value>Langue</value>
     <comment>Footer label</comment>
   </data>
   <data name="LyricsStudio.WordTimings" xml:space="preserve">
-    <value>Word timings</value>
+    <value>Horodatages des mots</value>
     <comment>Footer checkbox</comment>
   </data>
   <data name="LyricsStudio.SkipAlreadyTimed" xml:space="preserve">
-    <value>Skip songs already in this format</value>
+    <value>Ignorer les chansons déjà dans ce format</value>
     <comment>Footer checkbox</comment>
   </data>
   <data name="LyricsStudio.SkipAlreadyTimedTip" xml:space="preserve">
-    <value>Word timings (ELRC) and line timings (LRC) are different formats. Songs that only have line timings are still processed.</value>
+    <value>Les timings de mots (ELRC) et les timings de lignes (LRC) sont des formats différents.</value>
     <comment>Footer checkbox tooltip</comment>
   </data>
   <data name="LyricsStudio.TranscribeOnly" xml:space="preserve">
-    <value>Transcribe by ear (ignore existing lyrics)</value>
+    <value>Transcrire par oreille (ignorer les paroles existantes)</value>
     <comment>Footer checkbox</comment>
   </data>
   <data name="LyricsStudio.TranscribeOnlyTip" xml:space="preserve">
-    <value>The speech model listens to the song and writes the words itself, even when the song already has lyrics. Songs with no lyrics are always transcribed.</value>
+    <value>Le modèle de parole écoute la chanson et écrit les mots lui-même, même si la chanson a déjà des paroles. Les chansons sans paroles sont toujours transcrites.</value>
     <comment>Footer checkbox tooltip</comment>
   </data>
   <data name="LyricsStudio.OnlineLyrics" xml:space="preserve">
-    <value>Look up lyrics online when a song has none</value>
+    <value>Rechercher les paroles en ligne quand une chanson n'en a pas</value>
     <comment>Footer checkbox</comment>
   </data>
   <data name="LyricsStudio.OnlineLyricsTip" xml:space="preserve">
-    <value>Plain lyrics are fetched from LRCLIB first, so the model only has to time them. Off, the model writes the words by ear.</value>
+    <value>Les paroles pleines sont extraites de LRCLIB en premier, donc le modèle a seulement pour les chronométrer.</value>
     <comment>Footer checkbox tooltip</comment>
   </data>
   <data name="LyricsStudio.DownloadModel" xml:space="preserve">
-    <value>Download model</value>
+    <value>Télécharger le modèle</value>
     <comment>Footer button</comment>
   </data>
   <data name="LyricsStudio.Start" xml:space="preserve">
-    <value>Start</value>
+    <value>Début</value>
     <comment>Footer button</comment>
   </data>
   <data name="LyricsStudio.Stop" xml:space="preserve">
-    <value>Stop</value>
+    <value>Arrêter</value>
     <comment>Footer button</comment>
   </data>
   <data name="LyricsStudio.NeedsFfmpeg" xml:space="preserve">
-    <value>ffmpeg is needed to decode audio. Set its path in Settings › Advanced › Helper programs.</value>
+    <value>ffmpeg est nécessaire pour décoder l'audio. Définissez son chemin dans Paramètres › Advanced › Helper programmes.</value>
     <comment>Banner</comment>
   </data>
   <data name="LyricsStudio.Backdrops" xml:space="preserve">
-    <value>Backdrops</value>
+    <value>Arrière-plans</value>
     <comment>Header disclosure in LyricsStudioView.axaml</comment>
   </data>
   <data name="LyricsStudio.Options" xml:space="preserve">
@@ -5889,79 +5889,79 @@
     <comment>Footer dropdown holding the run options</comment>
   </data>
   <data name="LyricsStudio.Loading" xml:space="preserve">
-    <value>Loading</value>
+    <value>En cours de chargement</value>
     <comment>Page scan in progress</comment>
   </data>
   <data name="LyricsStudio.BackdropsTip" xml:space="preserve">
-    <value>The looping video behind the lyrics, and music videos in the cover slot</value>
+    <value>La vidéo en boucle derrière les paroles, et les vidéos de musique dans la fente de couverture</value>
     <comment>Tooltip in LyricsStudioView.axaml</comment>
   </data>
   <data name="LyricsStudio.ChooseSongs" xml:space="preserve">
-    <value>Choose songs</value>
+    <value>Choisir des chansons</value>
     <comment>Header chip in LyricsStudioView.axaml: opens the song/album picker</comment>
   </data>
   <data name="LyricsStudio.ChooseSongsTip" xml:space="preserve">
-    <value>Pick songs or whole albums for the Studio, and whether to write word or line timings</value>
+    <value>Choisissez des chansons ou des albums entiers pour le Studio, et si vous voulez écrire des timings de mots ou de lignes</value>
     <comment>Tooltip in LyricsStudioView.axaml</comment>
   </data>
   <data name="LyricsStudioPicker.Title" xml:space="preserve">
-    <value>Choose songs &amp; albums</value>
+    <value>Choisir des chansons et des albums</value>
     <comment>Picker dialog title</comment>
   </data>
   <data name="LyricsStudioPicker.Subtitle" xml:space="preserve">
-    <value>What the Studio times next, and the format it writes.</value>
+    <value>Ce que le Studio vient de faire, et le format qu'il écrit.</value>
     <comment>Picker dialog subtitle</comment>
   </data>
   <data name="LyricsStudioPicker.Format" xml:space="preserve">
-    <value>Format</value>
+    <value>Formater</value>
     <comment>Picker: format card title</comment>
   </data>
   <data name="LyricsStudioPicker.FormatHint" xml:space="preserve">
-    <value>Word timings move word by word (ELRC); line timings move line by line (LRC).</value>
+    <value>Les timings de mots déplacent mot par mot (ELRC); les timings de lignes se déplacent ligne par ligne (LRC).</value>
     <comment>Picker: format card hint</comment>
   </data>
   <data name="LyricsStudioPicker.WordTimings" xml:space="preserve">
-    <value>Word timings · ELRC</value>
+    <value>Horodatages des mots · ELRC</value>
     <comment>Picker: format chip</comment>
   </data>
   <data name="LyricsStudioPicker.LineTimings" xml:space="preserve">
-    <value>Line timings · LRC</value>
+    <value>Horodatages de la ligne · LRC</value>
     <comment>Picker: format chip</comment>
   </data>
   <data name="LyricsStudioPicker.Search" xml:space="preserve">
-    <value>Search songs and albums…</value>
+    <value>Rechercher des chansons et des albums…</value>
     <comment>Picker search box</comment>
   </data>
   <data name="LyricsStudioPicker.PromptTitle" xml:space="preserve">
-    <value>Search for a song or an album</value>
+    <value>Rechercher une chanson ou un album</value>
     <comment>Picker empty state</comment>
   </data>
   <data name="LyricsStudioPicker.PromptBody" xml:space="preserve">
-    <value>Every local song already has this format. An album adds every song in it; the pill on a song shows what it has now.</value>
+    <value>Un album ajoute toutes les chansons qu'il contient ; la pilule sur une chanson montre ce qu'elle a maintenant.</value>
     <comment>Picker empty state (also shown when nothing is missing)</comment>
   </data>
   <data name="LyricsStudioPicker.Add" xml:space="preserve">
-    <value>Add to Studio</value>
+    <value>Ajouter au Studio</value>
     <comment>Picker confirm button</comment>
   </data>
   <data name="LyricsStudioPicker.MissingWord" xml:space="preserve">
-    <value>WITHOUT WORD TIMINGS</value>
+    <value>SANS TEMPS DE MOT</value>
     <comment>Picker: header over the suggestions when word timings is chosen</comment>
   </data>
   <data name="LyricsStudioPicker.MissingLine" xml:space="preserve">
-    <value>WITHOUT TIMINGS</value>
+    <value>SANS TEMPS</value>
     <comment>Picker: header over the suggestions when line timings is chosen</comment>
   </data>
   <data name="LyricsStudioPicker.Scanning" xml:space="preserve">
-    <value>Looking through the library…</value>
+    <value>Recherche à travers la bibliothèque…</value>
     <comment>Picker: while the suggestions load</comment>
   </data>
   <data name="LyricsStudioPicker.SelectAll" xml:space="preserve">
-    <value>Select all</value>
+    <value>Tout sélectionner</value>
     <comment>Picker footer</comment>
   </data>
   <data name="LyricsStudioPicker.DeselectAll" xml:space="preserve">
-    <value>Deselect all</value>
+    <value>Désélectionner tout</value>
     <comment>Picker footer</comment>
   </data>
   <data name="LyricsStudio.Queue" xml:space="preserve">
@@ -5969,143 +5969,143 @@
     <comment>Queue column header</comment>
   </data>
   <data name="LyricsStudio.ReviewEmptyTitle" xml:space="preserve">
-    <value>Nothing to review yet</value>
+    <value>Rien à revoir pour le moment</value>
     <comment>Review pane empty state</comment>
   </data>
   <data name="LyricsStudio.ReviewEmptyBody" xml:space="preserve">
-    <value>Pick a song and press Start.</value>
+    <value>Choisissez une chanson et appuyez sur Démarrer.</value>
     <comment>Review pane empty state</comment>
   </data>
   <data name="LyricsStudio.Upgrade" xml:space="preserve">
-    <value>Time every word</value>
+    <value>Temps à chaque mot</value>
     <comment>Review button, shown for line-level lyrics</comment>
   </data>
   <data name="LyricsStudio.UpgradeTip" xml:space="preserve">
-    <value>Times every word of these lines. The line-level file is kept.</value>
+    <value>Temps chaque mot de ces lignes. Le fichier de niveau de ligne est conservé.</value>
     <comment>Review button tooltip</comment>
   </data>
   <data name="LyricsStudio.ReviewHint" xml:space="preserve">
-    <value>Click a time to hear that line. Edit text in place. Tinted lines need a second look.</value>
+    <value>Cliquez sur une heure pour entendre cette ligne. Modifier le texte en place. Les lignes teintées ont besoin d'un second look.</value>
     <comment>Review pane hint</comment>
   </data>
   <data name="LyricsStudio.NudgeEarlier" xml:space="preserve">
-    <value>All lines 0.1 s earlier</value>
+    <value>Toutes les lignes 0.1 s plus tôt</value>
     <comment>Tooltip</comment>
   </data>
   <data name="LyricsStudio.NudgeLater" xml:space="preserve">
-    <value>All lines 0.1 s later</value>
+    <value>Toutes les lignes 0,1 s plus tard</value>
     <comment>Tooltip</comment>
   </data>
   <data name="LyricsStudio.Redo" xml:space="preserve">
-    <value>Transcribe instead</value>
+    <value>Transcrire à la place</value>
     <comment>Review button</comment>
   </data>
   <data name="LyricsStudio.RedoTip" xml:space="preserve">
-    <value>Ignore these lyrics and transcribe what is sung</value>
+    <value>Ignorer ces paroles et transcrire ce qui est chanté</value>
     <comment>Tooltip</comment>
   </data>
   <data name="LyricsStudio.Skip" xml:space="preserve">
-    <value>Skip</value>
+    <value>Ignorer</value>
     <comment>Review button</comment>
   </data>
   <data name="LyricsStudio.Save" xml:space="preserve">
-    <value>Save lyrics</value>
+    <value>Enregistrer les paroles</value>
     <comment>Review button</comment>
   </data>
   <data name="LyricsStudio.Words" xml:space="preserve">
-    <value>Words</value>
+    <value>Mots</value>
     <comment>Per-line toggle that opens the word strip</comment>
   </data>
   <data name="LyricsStudio.WordsTip" xml:space="preserve">
-    <value>Show each word with its time. Click one to hear it.</value>
+    <value>Montrez chaque mot avec son temps. Cliquez sur un pour l'entendre.</value>
     <comment>Word toggle tooltip</comment>
   </data>
   <data name="LyricsStudio.WordEarlier" xml:space="preserve">
-    <value>Selected word 50 ms earlier (its neighbours stay put)</value>
+    <value>Le mot sélectionné 50 ms plus tôt (ses voisins sont restés)</value>
     <comment>Word nudge tooltip</comment>
   </data>
   <data name="LyricsStudio.WordLater" xml:space="preserve">
-    <value>Selected word 50 ms later (its neighbours stay put)</value>
+    <value>Le mot sélectionné 50 ms plus tard (ses voisins restent inscrits)</value>
     <comment>Word nudge tooltip</comment>
   </data>
   <data name="LyricsStudio.TapWords" xml:space="preserve">
-    <value>Tap words</value>
+    <value>Tapez sur les mots</value>
     <comment>Starts tap-to-time for one line</comment>
   </data>
   <data name="LyricsStudio.TapTip" xml:space="preserve">
-    <value>Plays the line. Press Space or Tap on each word; one more tap ends the line.</value>
+    <value>Joue la ligne. Appuyez sur Espace ou appuyez sur chaque mot; un appui supplémentaire termine la ligne.</value>
     <comment>Tap button tooltip</comment>
   </data>
   <data name="LyricsStudio.Tap" xml:space="preserve">
-    <value>Tap</value>
+    <value>Tapoter</value>
     <comment>Tap bar button</comment>
   </data>
   <data name="LyricsStudio.TapCancel" xml:space="preserve">
-    <value>Done</value>
+    <value>Fait</value>
     <comment>Tap bar leave button</comment>
   </data>
   <data name="LyricsStudio.PlayFromHere" xml:space="preserve">
-    <value>Play from here</value>
+    <value>Jouer depuis ici</value>
     <comment>Time pill tooltip</comment>
   </data>
   <data name="Settings.Desc.General" xml:space="preserve">
-    <value>Language, startup, and how the window and sidebar behave.</value>
+    <value>Langue, démarrage et comment se comporte la fenêtre et la barre latérale.</value>
     <comment>Settings page description</comment>
   </data>
   <data name="Settings.Desc.Appearance" xml:space="preserve">
-    <value>Themes, accent colour, glass, text animation and artwork.</value>
+    <value>Thèmes, couleurs d'accentuation, verre, animation de texte et d'illustration.</value>
     <comment>Settings page description</comment>
   </data>
   <data name="Settings.Desc.Player" xml:space="preserve">
-    <value>The player island, the mini player, Cover Flow and Now Playing artwork.</value>
+    <value>L'île du joueur, le mini-joueur, Cover Flow et Now Playing artwork.</value>
     <comment>Settings page description</comment>
   </data>
   <data name="Settings.Desc.Lyrics" xml:space="preserve">
-    <value>The lyrics page, online lyrics sources, and Lyrics Studio.</value>
+    <value>La page des paroles, les sources des paroles en ligne et Lyrics Studio.</value>
     <comment>Settings page description</comment>
   </data>
   <data name="Settings.Desc.Shortcuts" xml:space="preserve">
-    <value>Click a key to change it. Esc cancels, Backspace unbinds.</value>
+    <value>Cliquez sur une touche pour la modifier. Esc annule, Retour arrière.</value>
     <comment>Settings page description</comment>
   </data>
   <data name="Settings.Desc.Audio" xml:space="preserve">
-    <value>Playback, output, analysis and the equalizer.</value>
+    <value>Playback, sortie, analyse et égaliseur.</value>
     <comment>Settings page description</comment>
   </data>
   <data name="Settings.Desc.Library" xml:space="preserve">
-    <value>Media folders, scanning, how artists and albums are organised, and library tools.</value>
+    <value>Dossiers multimédia, numérisation, comment les artistes et les albums sont organisés, et outils de bibliothèque.</value>
     <comment>Settings page description</comment>
   </data>
   <data name="Settings.Desc.Advanced" xml:space="preserve">
-    <value>Storage, helper programs, updates and reset.</value>
+    <value>Stockage, programmes d'assistance, mises à jour et réinitialisation.</value>
     <comment>Settings page description</comment>
   </data>
   <data name="Settings.Desc.AccountDevices" xml:space="preserve">
-    <value>Your account, sync between devices, and Web Remote.</value>
+    <value>Votre compte, la synchronisation entre vos appareils et votre télécommande Web.</value>
     <comment>Settings page description</comment>
   </data>
   <data name="Settings.Desc.Integrations" xml:space="preserve">
-    <value>Discord, scrobbling, TIDAL and music servers.</value>
+    <value>Discord, scrobbling, TIDAL et serveurs de musique.</value>
     <comment>Settings page description</comment>
   </data>
   <data name="Settings.Desc.Plugins" xml:space="preserve">
-    <value>Installed plugins.</value>
+    <value>Plugins installés.</value>
     <comment>Settings page description</comment>
   </data>
   <data name="Settings.Desc.Statistics" xml:space="preserve">
-    <value>Your library and listening at a glance.</value>
+    <value>Votre bibliothèque et votre écoute d'un coup d'œil.</value>
     <comment>Settings page description</comment>
   </data>
   <data name="Settings.Desc.About" xml:space="preserve">
-    <value>Version, updates and links.</value>
+    <value>Versions, mises à jour et liens.</value>
     <comment>Settings page description</comment>
   </data>
   <data name="Settings.Section.Language" xml:space="preserve">
-    <value>Language</value>
+    <value>Langue</value>
     <comment>Settings section label</comment>
   </data>
   <data name="Settings.Section.StartupWindow" xml:space="preserve">
-    <value>Startup and window</value>
+    <value>Démarrage et fenêtre</value>
     <comment>Settings section label</comment>
   </data>
   <data name="Settings.Section.Sidebar" xml:space="preserve">
@@ -6113,59 +6113,59 @@
     <comment>Settings section label</comment>
   </data>
   <data name="Settings.Section.Files" xml:space="preserve">
-    <value>Files</value>
+    <value>Fichiers</value>
     <comment>Settings section label</comment>
   </data>
   <data name="Settings.Section.Theme" xml:space="preserve">
-    <value>Theme</value>
+    <value>Thème</value>
     <comment>Settings section label</comment>
   </data>
   <data name="Settings.Section.TextAnimation" xml:space="preserve">
-    <value>Text animation</value>
+    <value>Animation du texte</value>
     <comment>Settings section label</comment>
   </data>
   <data name="Settings.Section.Home" xml:space="preserve">
-    <value>Home</value>
+    <value>Domicile</value>
     <comment>Settings section label</comment>
   </data>
   <data name="Settings.Section.Artwork" xml:space="preserve">
-    <value>Artwork</value>
+    <value>Œuvre</value>
     <comment>Settings section label</comment>
   </data>
   <data name="Settings.HomeHeavyRotation" xml:space="preserve">
-    <value>Heavy Rotation</value>
+    <value>Rotation lourde</value>
     <comment>Appearance › Home toggle</comment>
   </data>
   <data name="Settings.HomeHeavyRotationDesc" xml:space="preserve">
-    <value>Show the "On repeat these past two weeks" row on the Home page.</value>
+    <value>Afficher la ligne "Répéter ces deux dernières semaines" sur la page d'accueil.</value>
     <comment>Appearance › Home toggle description</comment>
   </data>
   <data name="Settings.Section.Taskbar" xml:space="preserve">
-    <value>Taskbar</value>
+    <value>Barre des tâches</value>
     <comment>Settings section label</comment>
   </data>
   <data name="Settings.Section.PlayerIsland" xml:space="preserve">
-    <value>Player island</value>
+    <value>Île du joueur</value>
     <comment>Settings section label</comment>
   </data>
   <data name="Settings.Section.MiniPlayer" xml:space="preserve">
-    <value>Mini player</value>
+    <value>Mini lecteur</value>
     <comment>Settings section label</comment>
   </data>
   <data name="Settings.Section.NowPlayingArtwork" xml:space="preserve">
-    <value>Now Playing artwork</value>
+    <value>Lecture de l'illustration en cours</value>
     <comment>Settings section label</comment>
   </data>
   <data name="Settings.Section.CoverFlow" xml:space="preserve">
-    <value>Cover Flow</value>
+    <value>Flux de couverture</value>
     <comment>Settings section label</comment>
   </data>
   <data name="Settings.Section.LyricsPage" xml:space="preserve">
-    <value>Lyrics page</value>
+    <value>Page des paroles</value>
     <comment>Settings section label</comment>
   </data>
   <data name="Settings.Section.OnlineLyrics" xml:space="preserve">
-    <value>Online lyrics</value>
+    <value>Paroles en ligne</value>
     <comment>Settings section label</comment>
   </data>
   <data name="Settings.Section.LyricsStudio" xml:space="preserve">
@@ -6173,23 +6173,23 @@
     <comment>Settings section label</comment>
   </data>
   <data name="Settings.Section.Playback" xml:space="preserve">
-    <value>Playback</value>
+    <value>Lecture</value>
     <comment>Settings section label</comment>
   </data>
   <data name="Settings.Section.Output" xml:space="preserve">
-    <value>Output</value>
+    <value>Sortie</value>
     <comment>Settings section label</comment>
   </data>
   <data name="Settings.Section.Analysis" xml:space="preserve">
-    <value>Analysis</value>
+    <value>Analyse</value>
     <comment>Settings section label</comment>
   </data>
   <data name="Settings.Section.Equalizer" xml:space="preserve">
-    <value>Equalizer</value>
+    <value>Égaliseur</value>
     <comment>Settings section label</comment>
   </data>
   <data name="Settings.Section.Folders" xml:space="preserve">
-    <value>Folders and scanning</value>
+    <value>Dossiers et balayage</value>
     <comment>Settings section label</comment>
   </data>
   <data name="Settings.Section.Organisation" xml:space="preserve">
@@ -6197,27 +6197,27 @@
     <comment>Settings section label</comment>
   </data>
   <data name="Settings.Section.Metadata" xml:space="preserve">
-    <value>Metadata sources</value>
+    <value>Sources de métadonnées</value>
     <comment>Settings section label</comment>
   </data>
   <data name="Settings.Section.Tools" xml:space="preserve">
-    <value>Tools</value>
+    <value>Outils</value>
     <comment>Settings section label</comment>
   </data>
   <data name="Settings.Section.HiddenTracks" xml:space="preserve">
-    <value>Hidden tracks</value>
+    <value>Pistes cachées</value>
     <comment>Settings section label</comment>
   </data>
   <data name="Settings.Section.Storage" xml:space="preserve">
-    <value>Storage</value>
+    <value>Stockage</value>
     <comment>Settings section label</comment>
   </data>
   <data name="Settings.Section.AudioTools" xml:space="preserve">
-    <value>Helper programs</value>
+    <value>Programmes d'aide</value>
     <comment>Settings section label</comment>
   </data>
   <data name="Settings.Section.Updates" xml:space="preserve">
-    <value>Updates and developer</value>
+    <value>Mises à jour et développeurs</value>
     <comment>Settings section label</comment>
   </data>
   <data name="Settings.Section.Reset" xml:space="preserve">
@@ -6225,15 +6225,15 @@
     <comment>Settings section label</comment>
   </data>
   <data name="Settings.Section.YourAccount" xml:space="preserve">
-    <value>Your account</value>
+    <value>Votre compte</value>
     <comment>Settings section label</comment>
   </data>
   <data name="Settings.Section.Sync" xml:space="preserve">
-    <value>Sync</value>
+    <value>Synchroniser</value>
     <comment>Settings section label</comment>
   </data>
   <data name="Settings.Section.OtherAccounts" xml:space="preserve">
-    <value>Other accounts</value>
+    <value>Autres comptes</value>
     <comment>Settings section label</comment>
   </data>
   <data name="Settings.Section.NoctisServer" xml:space="preserve">
@@ -6241,11 +6241,11 @@
     <comment>Settings section label</comment>
   </data>
   <data name="Settings.Section.WebRemote" xml:space="preserve">
-    <value>Web Remote</value>
+    <value>Télécommande Web</value>
     <comment>Settings section label</comment>
   </data>
   <data name="Settings.Section.Discord" xml:space="preserve">
-    <value>Discord</value>
+    <value>Discord.</value>
     <comment>Settings section label</comment>
   </data>
   <data name="Settings.Section.Scrobbling" xml:space="preserve">
@@ -6257,43 +6257,43 @@
     <comment>Settings section label</comment>
   </data>
   <data name="Settings.Section.MediaServer" xml:space="preserve">
-    <value>Media server</value>
+    <value>Serveur multimédia</value>
     <comment>Settings section label</comment>
   </data>
   <data name="Settings.Section.LibraryOverview" xml:space="preserve">
-    <value>Library overview</value>
+    <value>Aperçu de la bibliothèque</value>
     <comment>Settings section label</comment>
   </data>
   <data name="Settings.Section.Listening" xml:space="preserve">
-    <value>Listening</value>
+    <value>Écoute</value>
     <comment>Settings section label</comment>
   </data>
   <data name="Settings.Section.TopPlayed" xml:space="preserve">
-    <value>Top played</value>
+    <value>Les mieux joués</value>
     <comment>Settings section label</comment>
   </data>
   <data name="Settings.CloseTip" xml:space="preserve">
-    <value>Close settings</value>
+    <value>Fermer les paramètres</value>
     <comment>Tooltip on the X in the settings header</comment>
   </data>
   <data name="AccountSync.EmailWatermark" xml:space="preserve">
-    <value>Email address</value>
+    <value>Adresse e-mail</value>
     <comment>Create form watermark</comment>
   </data>
   <data name="AccountSync.PasswordWatermark" xml:space="preserve">
-    <value>Password</value>
+    <value>Mot de passe</value>
     <comment>Create form watermark</comment>
   </data>
   <data name="Settings.YourListening" xml:space="preserve">
-    <value>Listening</value>
+    <value>Écoute</value>
     <comment>Statistics card label</comment>
   </data>
   <data name="Settings.RemovePictureTip" xml:space="preserve">
-    <value>Remove picture</value>
+    <value>Supprimer l'image</value>
     <comment>Profile avatar X tooltip</comment>
   </data>
   <data name="ThemeEditor.Subtitle" xml:space="preserve">
-    <value>Pick three colours. The preview updates live.</value>
+    <value>Choisissez trois couleurs. La mise à jour de l'aperçu en direct.</value>
     <comment>Dialog subtitle</comment>
   </data>
 </root>
