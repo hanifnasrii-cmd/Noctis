@@ -132,14 +132,18 @@ public class ArtworkRefreshTests : IDisposable
     }
 
     [Theory]
-    [InlineData(@"C:\Music\Album\cover.jpg", true)]
-    [InlineData(@"C:\Music\Album\Folder.PNG", true)]
-    [InlineData(@"C:\Music\Album\front.webp", true)]
-    [InlineData(@"C:\Music\Album\booklet.jpg", false)]
-    [InlineData(@"C:\Music\Album\cover.txt", false)]
+    [InlineData("cover.jpg", true)]
+    [InlineData("Folder.PNG", true)]
+    [InlineData("front.webp", true)]
+    [InlineData("booklet.jpg", false)]
+    [InlineData("cover.txt", false)]
     [InlineData("", false)]
-    public void Folder_art_candidate_names(string path, bool expected)
-        => Assert.Equal(expected, MetadataService.IsFolderArtCandidate(path));
+    public void Folder_art_candidate_names(string fileName, bool expected)
+    {
+        // Built with the host separator: a literal Windows path is one opaque file name on macOS and Linux.
+        var path = fileName.Length == 0 ? "" : Path.Combine(Path.GetTempPath(), "Music", "Album", fileName);
+        Assert.Equal(expected, MetadataService.IsFolderArtCandidate(path));
+    }
 
     private sealed class ArtworkTestPersistence : IPersistenceService, IDisposable
     {

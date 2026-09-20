@@ -16,6 +16,11 @@ public static class ServerCertificate
     public const string KeyFileName = "server.pfx.key";
     private const int ValidYears = 10;
 
+    /// <summary>macOS has no ephemeral key set: keys there land in a temporary keychain instead, so the flag is dropped on that platform.</summary>
+    private static X509KeyStorageFlags KeyFlags => OperatingSystem.IsMacOS()
+        ? X509KeyStorageFlags.Exportable
+        : X509KeyStorageFlags.Exportable | X509KeyStorageFlags.EphemeralKeySet;
+
     /// <summary>Loads the stored certificate or creates a new one. Regenerates if the stored one is unreadable or within 30 days of expiry.</summary>
     public static X509Certificate2 LoadOrCreate(string directory)
     {
@@ -28,7 +33,7 @@ public static class ServerCertificate
             try
             {
                 var cert = X509CertificateLoader.LoadPkcs12FromFile(pfx, File.ReadAllText(keyFile).Trim(),
-                    X509KeyStorageFlags.Exportable | X509KeyStorageFlags.EphemeralKeySet);
+                    KeyFlags);
                 if (cert.NotAfter > DateTime.UtcNow.AddDays(30) && cert.HasPrivateKey) return cert;
                 cert.Dispose();
             }
@@ -67,7 +72,7 @@ public static class ServerCertificate
         // Round-trip through PKCS#12 so the private key is attached in a form Kestrel accepts on every OS.
         var pfx = cert.Export(X509ContentType.Pkcs12);
         cert.Dispose();
-        return X509CertificateLoader.LoadPkcs12(pfx, null, X509KeyStorageFlags.Exportable | X509KeyStorageFlags.EphemeralKeySet);
+        return X509CertificateLoader.LoadPkcs12(pfx, null, KeyFlags);
     }
 
     /// <summary>"AB:CD:…" SHA-256 fingerprint the phone pins.</summary>

@@ -141,7 +141,7 @@ public class LyricsGlideStartTests
                 var offset = sv.Offset.Y;
                 _output.WriteLine($"frame {frame}: scale {scale:F4}  offset {offset - offset0:+0.0;-0.0}px");
                 if (scaleFrame is null && scale > scale0 + 1e-4) scaleFrame = frame;
-                if (scrollFrame is null && Math.Abs(offset - offset0) > 0.5) scrollFrame = frame;
+                if (scrollFrame is null && Math.Abs(offset - offset0) > 0.1) scrollFrame = frame;
             }
 
             Assert.NotNull(scaleFrame);

@@ -52,6 +52,7 @@ release-artifacts/
 release-assets/
 release-staging/
 release-staging-*/
+release-v*/
 installer-output/
 packaged/
 
