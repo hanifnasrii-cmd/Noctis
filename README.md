@@ -16,38 +16,21 @@
 
 ## Screenshots
 
+#### Artist pages
+
+![Artist page](docs/images/screenshot-1.png)
+
 #### Word-by-word karaoke lyrics
 
-![Fullscreen lyrics](docs/images/lyrics-page.png)
-
-#### Home
-
-![Home](docs/images/home-page.png)
+![Lyrics page](docs/images/screenshot-2.png)
 
 #### Cover Flow
 
-![Cover Flow](docs/images/cover-flow.png)
-
-#### Album pages
-
-![Album page with the lyrics panel](docs/images/lyrics-panel.png)
+![Cover Flow](docs/images/screenshot-3.png)
 
 #### Themes & accent colors
 
-![Themes](docs/images/appearance.png)
-
-<details>
-<summary><b>More screenshots</b>: Hi-Res library, parametric EQ, lyrics panel, queue, artist pages</summary>
-<br>
-
-|  |  |
-|:---:|:---:|
-| ![Hi-Res library](docs/images/songs.png) | ![Parametric EQ](docs/images/eq.png) |
-| ![Album page](docs/images/album.png) | ![Queue](docs/images/queue.png) |
-
-![Artist pages](docs/images/artist-page.png)
-
-</details>
+![Appearance settings](docs/images/screenshot-4.png)
 
 ---
 
