@@ -44,19 +44,28 @@
             <Setter Property="Cursor" Value="Hand" />
             <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundListMediumBrush}" />
         </Style>
+        <!-- Quality pill: the same rim and fill as the link box beside it (TextBox's Fluent
+             brushes), in every state (user ask 09-19). -->
         <Style Selector="ComboBox.pill">
             <Setter Property="CornerRadius" Value="999" />
             <Setter Property="Padding" Value="14,6" />
             <Setter Property="MinHeight" Value="0" />
             <Setter Property="BorderThickness" Value="1.5" />
-            <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseHighBrush}" />
-            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundChromeWhiteBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource TextControlBorderBrush}" />
+            <Setter Property="Background" Value="{DynamicResource TextControlBackground}" />
             <Setter Property="HorizontalContentAlignment" Value="Center" />
             <Setter Property="VerticalContentAlignment" Value="Center" />
             <Setter Property="UseLayoutRounding" Value="True" />
         </Style>
         <Style Selector="ComboBox.pill /template/ Border#Background">
             <Setter Property="CornerRadius" Value="999" />
+        </Style>
+        <Style Selector="ComboBox.pill:pointerover /template/ Border#Background">
+            <Setter Property="BorderBrush" Value="{DynamicResource TextControlBorderBrushPointerOver}" />
+            <Setter Property="Background" Value="{DynamicResource TextControlBackgroundPointerOver}" />
+        </Style>
+        <Style Selector="ComboBox.pill:focus /template/ Border#Background, ComboBox.pill:dropdownopen /template/ Border#Background">
+            <Setter Property="BorderBrush" Value="{DynamicResource TextControlBorderBrushFocused}" />
         </Style>
         <Style Selector="ComboBox.pill /template/ Border#HighlightBackground">
             <Setter Property="CornerRadius" Value="999" />
@@ -69,12 +78,6 @@
         </Style>
         <Style Selector="ComboBoxItem /template/ ContentPresenter">
             <Setter Property="CornerRadius" Value="999" />
-        </Style>
-        <Style Selector="Border.kind-chip">
-            <Setter Property="Background" Value="#22FFFFFF" />
-            <Setter Property="CornerRadius" Value="999" />
-            <Setter Property="Padding" Value="6,1" />
-            <Setter Property="VerticalAlignment" Value="Center" />
         </Style>
     </Window.Styles>
 
@@ -142,6 +145,7 @@
                                            TextTrimming="CharacterEllipsis" MaxLines="1"
                                            IsVisible="{Binding HasDefaultVideo}" />
                                 <TextBlock Text="{loc:T LyricsBackground.NoDefaultVideo}" FontSize="11" Opacity="0.45"
+                                           TextWrapping="Wrap"
                                            IsVisible="{Binding !HasDefaultVideo}" />
                             </StackPanel>
                             <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
@@ -245,14 +249,9 @@
                                                                       Stretch="UniformToFill" />
                                             </Border>
                                             <StackPanel Grid.Column="1" Margin="12,0" VerticalAlignment="Center" Spacing="1">
-                                                <StackPanel Orientation="Horizontal" Spacing="6">
-                                                    <TextBlock Text="{Binding Title}"
-                                                               FontSize="13" FontWeight="SemiBold"
-                                                               TextTrimming="CharacterEllipsis" MaxLines="1" />
-                                                    <Border Classes="kind-chip">
-                                                        <TextBlock Text="{Binding KindLabel}" FontSize="9" FontWeight="Bold" Opacity="0.8" />
-                                                    </Border>
-                                                </StackPanel>
+                                                <TextBlock Text="{Binding Title}"
+                                                           FontSize="13" FontWeight="SemiBold"
+                                                           TextTrimming="CharacterEllipsis" MaxLines="1" />
                                                 <TextBlock Text="{Binding Subtitle}"
                                                            FontSize="11" Opacity="0.6"
                                                            TextTrimming="CharacterEllipsis" MaxLines="1" />
@@ -273,8 +272,10 @@
                                                         Command="{Binding $parent[ItemsControl].((vm:LyricsBackgroundPickerViewModel)DataContext).YouTubeForItemCommand}"
                                                         CommandParameter="{Binding}"
                                                         IsVisible="{Binding $parent[ItemsControl].((vm:LyricsBackgroundPickerViewModel)DataContext).CanUseYouTube}" />
+                                                <!-- Same word as the default row: drops this row's own clip
+                                                     so it falls back to the default. -->
                                                 <Button Classes="row-action"
-                                                        Content="{loc:T LyricsBackground.UseDefault}"
+                                                        Content="{loc:T LyricsBackground.Remove}"
                                                         Command="{Binding $parent[ItemsControl].((vm:LyricsBackgroundPickerViewModel)DataContext).ClearForItemCommand}"
                                                         CommandParameter="{Binding}"
                                                         IsVisible="{Binding HasOwnVideo}" />

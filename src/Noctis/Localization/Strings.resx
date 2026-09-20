@@ -261,16 +261,14 @@
   <data name="LyricsBackground.NoDefaultVideo" xml:space="preserve"><value>None. Songs without their own video show the blurred cover.</value><comment>Picker: no default clip</comment></data>
   <data name="LyricsBackground.ChooseVideo" xml:space="preserve"><value>Choose video</value><comment>Picker: pick a file</comment></data>
   <data name="LyricsBackground.Remove" xml:space="preserve"><value>Remove</value><comment>Picker: drop the default clip</comment></data>
-  <data name="LyricsBackground.UseDefault" xml:space="preserve"><value>Use default</value><comment>Picker: drop a song's or album's own clip</comment></data>
   <data name="LyricsBackground.SearchWatermark" xml:space="preserve"><value>Search songs and albums…</value><comment>Picker search box</comment></data>
   <data name="LyricsBackground.WithOwnVideo" xml:space="preserve"><value>WITH THEIR OWN VIDEO</value><comment>Picker: header over the list when not searching</comment></data>
   <data name="LyricsBackground.PromptTitle" xml:space="preserve"><value>No song or album has its own video yet</value><comment>Picker: empty state</comment></data>
   <data name="LyricsBackground.PromptBody" xml:space="preserve"><value>Search above and choose a video for any song or album. Everything else plays the default.</value><comment>Picker: empty state body</comment></data>
-  <data name="LyricsBackground.Song" xml:space="preserve"><value>SONG</value><comment>Picker row chip</comment></data>
-  <data name="LyricsBackground.Album" xml:space="preserve"><value>ALBUM</value><comment>Picker row chip</comment></data>
   <data name="LyricsBackground.UsesDefault" xml:space="preserve"><value>Uses the default video</value><comment>Picker row status</comment></data>
+  <data name="LyricsBackground.OwnVideo" xml:space="preserve"><value>Has its own video</value><comment>Picker row status</comment></data>
   <data name="LyricsBackground.FromYouTube" xml:space="preserve"><value>YouTube</value><comment>Button: download the backdrop from a YouTube link</comment></data>
-  <data name="LyricsBackground.YouTubeWatermark" xml:space="preserve"><value>Paste a YouTube link…</value><comment>Watermark</comment></data>
+  <data name="LyricsBackground.YouTubeWatermark" xml:space="preserve"><value>Paste a YouTube link</value><comment>Watermark</comment></data>
   <data name="LyricsBackground.Download" xml:space="preserve"><value>Download</value><comment>Button</comment></data>
   <data name="LyricsBackground.YouTubeClose" xml:space="preserve"><value>Cancel</value><comment>Button: fold the YouTube panel / stop the download</comment></data>
   <data name="LyricsBackground.NeedsYtDlp" xml:space="preserve"><value>Downloading from YouTube needs yt-dlp.</value><comment>Shown when the tool is missing</comment></data>

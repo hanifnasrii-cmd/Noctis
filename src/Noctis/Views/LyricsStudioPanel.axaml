@@ -104,8 +104,8 @@
             <Setter Property="BorderBrush" Value="{DynamicResource AccentColorBrush}" />
         </Style>
         <!-- Options dropdown: same rim and fill as the two pills beside it. Fluent paints a
-             Button's chrome on the presenter, so hover/press are pinned there; the press
-             keeps the hover zoom instead of Fluent's shrink (a click read as a "zoom"). -->
+             Button's chrome on the presenter, so hover/press are pinned there. No zoom on
+             hover or press (user ask 09-19): the app-wide Button:pointerover scale is undone. -->
         <Style Selector="Button.studio-options">
             <Setter Property="CornerRadius" Value="999" />
             <Setter Property="Padding" Value="14,8" />
@@ -121,12 +121,11 @@
             <Setter Property="BorderBrush" Value="#99A0A0A8" />
             <Setter Property="Background" Value="{DynamicResource ComboBoxBackgroundPointerOver}" />
         </Style>
-        <Style Selector="Button.studio-options:pressed">
-            <Setter Property="RenderTransform" Value="scale(1.045)" />
+        <Style Selector="Button.studio-options:pointerover, Button.studio-options:pressed">
+            <Setter Property="RenderTransform" Value="scale(1)" />
         </Style>
         <!-- Chromeless presenter for the Options flyout (MetadataWindow search-pop recipe):
-             the card inside draws the chrome, and the padding leaves room for the
-             checkbox circles' hover scale, which the stock presenter clipped at its edge. -->
+             the card inside draws the chrome. -->
         <Style Selector="FlyoutPresenter.studio-options-pop">
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="BorderThickness" Value="0" />
@@ -182,10 +181,16 @@
         <Style Selector="Button.dialog-close:pointerover">
             <Setter Property="RenderTransform" Value="scale(1)" />
         </Style>
-        <!-- Footer option boxes: the metadata editor's animated pill checkbox, one size down. -->
+        <!-- Footer option boxes: the metadata editor's animated pill checkbox, one size down.
+             The circle's 1.5px ring is pinned to whole pixels and does not grow on hover: the
+             scaled ring landed on half pixels and read as clipped at one edge (user, 09-19). -->
         <Style Selector="CheckBox.metadata-pill-checkbox.studio-option">
             <Setter Property="FontSize" Value="12.5" />
             <Setter Property="MinHeight" Value="0" />
+            <Setter Property="UseLayoutRounding" Value="True" />
+        </Style>
+        <Style Selector="CheckBox.metadata-pill-checkbox.studio-option:pointerover /template/ Border#IndicatorBorder">
+            <Setter Property="RenderTransform" Value="scale(1)" />
         </Style>
     </UserControl.Styles>
 
@@ -251,8 +256,10 @@
                         </StackPanel>
                         <Button.Flyout>
                             <Flyout Placement="Top" ShowMode="Standard" FlyoutPresenterClasses="studio-options-pop">
+                                <!-- Theme card surface (the Home tiles' brush, derived per theme), not the
+                                     sidebar's: that one is near-black on the grey theme (user, 09-19). -->
                                 <Border CornerRadius="16" Padding="18,14"
-                                        Background="{DynamicResource AppSidebarBackground}"
+                                        Background="{DynamicResource HomeCardBackground}"
                                         BorderBrush="#22FFFFFF" BorderThickness="1"
                                         BoxShadow="0 10 30 0 #90000000">
                                     <StackPanel Spacing="10">

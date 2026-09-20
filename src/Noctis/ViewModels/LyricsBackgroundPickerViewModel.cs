@@ -37,8 +37,9 @@ public partial class LyricsBackgroundPickItem : ObservableObject
     private string _videoName = string.Empty;
 
     public bool HasOwnVideo => !string.IsNullOrEmpty(VideoName);
-    public string KindLabel => IsAlbum ? Localization.Loc.T("LyricsBackground.Album") : Localization.Loc.T("LyricsBackground.Song");
-    public string StatusText => HasOwnVideo ? VideoName : Localization.Loc.T("LyricsBackground.UsesDefault");
+    /// <summary>The stored clip is named after the key (album_&lt;id&gt;.mp4), which means nothing
+    /// to the user (09-19), so the row says only whether it has its own clip.</summary>
+    public string StatusText => Localization.Loc.T(HasOwnVideo ? "LyricsBackground.OwnVideo" : "LyricsBackground.UsesDefault");
 }
 
 /// <summary>
