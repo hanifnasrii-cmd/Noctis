@@ -195,7 +195,7 @@
                             <ToolTip.Tip>
                                 <TextBlock><Run Text="{loc:T Main.Type}"/><Run Text=" "/><Run Text="{Binding ReleaseTypeFilterLabel}"/></TextBlock>
                             </ToolTip.Tip>
-                            <PathIcon Data="{StaticResource FilterIcon}"/>
+                            <PathIcon Data="{StaticResource ReleaseTypeIcon}"/>
                             <Button.Flyout>
                                 <MenuFlyout Placement="BottomEdgeAlignedRight">
                                     <MenuItem Header="{loc:T Main.All}" Command="{Binding ReleaseTypeFilterCommand}" CommandParameter="all">
@@ -233,7 +233,7 @@
                                 <ToolTip.Tip>
                                     <TextBlock><Run Text="{loc:T Main.Type}"/><Run Text=" "/><Run Text="{Binding ReleaseTypeFilterLabel}"/><Run Text=" · "/><Run Text="{Binding QualityFilterLabel}"/></TextBlock>
                                 </ToolTip.Tip>
-                                <PathIcon Data="{StaticResource FilterIcon}"/>
+                                <PathIcon Data="{StaticResource ReleaseTypeIcon}"/>
                                 <Button.Flyout>
                                     <MenuFlyout Placement="BottomEdgeAlignedRight">
                                         <MenuItem Header="{loc:T Main.All}" Command="{Binding ReleaseTypeFilterCommand}" CommandParameter="all">

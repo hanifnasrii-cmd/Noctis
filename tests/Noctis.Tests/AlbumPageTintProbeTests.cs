@@ -79,7 +79,7 @@ public class AlbumPageTintProbeTests
             using var fs = File.Create(artPath); data.SaveTo(fs);
         }
         var settings = new SettingsViewModel(persistence, lib, new NoOpPlayHistory());
-        Assert.True(settings.AlbumPageTintEnabled);
+        settings.AlbumPageTintEnabled = true; // default is off; this probe exercises the tint itself
         var player = new PlayerViewModel(new FakeAudioPlayer(), lib, persistence, new FakeAnimatedCoverService());
         var vm = new AlbumDetailViewModel(album, player, persistence, lib, new SidebarViewModel(persistence, lib), new FakeLastFm(), settings);
         Assert.Equal(artPath, vm.HeaderArtPath);

@@ -163,7 +163,7 @@ public class AppSettings
     /// <summary>Album pages take their background colour from the cover's edge colour,
     /// Apple-Music style, with the page text flipping dark on light covers. Ships on;
     /// the Appearance toggle turns it off for users who want the flat theme page.</summary>
-    public bool AlbumPageTintEnabled { get; set; } = true;
+    public bool AlbumPageTintEnabled { get; set; } = false;
 
     /// <summary>Minimizing the main window hides it to the system tray.</summary>
     public bool MinimizeToTray { get; set; }
