@@ -26,6 +26,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\Noctis\Noctis.csproj" />
     <ProjectReference Include="..\..\src\Noctis.Core\Noctis.Core.csproj" />
+    <ProjectReference Include="..\..\src\Noctis.Core.Server\Noctis.Core.Server.csproj" />
     <!-- The sample plugin is the plugin host's integration fixture (PluginHostTests). -->
     <ProjectReference Include="..\..\samples\Noctis.SamplePlugin\Noctis.SamplePlugin.csproj" />
     <ProjectReference Include="..\..\plugins\Noctis.Plugins.Kawarp\Noctis.Plugins.Kawarp.csproj" />

@@ -19,6 +19,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Noctis.Core\Noctis.Core.csproj" />
+    <ProjectReference Include="..\Noctis.Core.Server\Noctis.Core.Server.csproj" />
   </ItemGroup>
 
 </Project>

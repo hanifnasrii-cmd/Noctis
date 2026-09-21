@@ -58,6 +58,7 @@
     <ProjectReference Include="..\Noctis.Plugins.Abstractions\Noctis.Plugins.Abstractions.csproj" />
     <!-- UI-free core (models, persistence, library, server, sync); shared with noctis-server. -->
     <ProjectReference Include="..\Noctis.Core\Noctis.Core.csproj" />
+    <ProjectReference Include="..\Noctis.Core.Server\Noctis.Core.Server.csproj" />
   </ItemGroup>
 
   <!-- Avalonia UI -->

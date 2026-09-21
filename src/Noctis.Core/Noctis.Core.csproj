@@ -2,7 +2,8 @@
 
   <PropertyGroup>
     <!-- The UI-free heart of Noctis: models, persistence, the library scanner and
-         index, tag metadata, the OpenSubsonic server and device sync. The desktop app
+         index, tag metadata and device sync (the OpenSubsonic server lives in
+         Noctis.Core.Server, so nothing here needs ASP.NET either). The desktop app
          references it; so does the headless noctis-server host, which is why nothing
          in here may depend on Avalonia, LibVLC, NAudio, Skia or Whisper. Plain net10.0
          on every OS (the app's Windows TFM exists only for WinRT projections). -->
@@ -18,11 +19,6 @@
     <InternalsVisibleTo Include="Noctis" />
     <InternalsVisibleTo Include="Noctis.Tests" />
     <InternalsVisibleTo Include="noctis-server" />
-  </ItemGroup>
-
-  <!-- Built-in Noctis server: OpenSubsonic API over Kestrel. -->
-  <ItemGroup>
-    <FrameworkReference Include="Microsoft.AspNetCore.App" />
   </ItemGroup>
 
   <ItemGroup>
