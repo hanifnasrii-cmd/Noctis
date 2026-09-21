@@ -6,7 +6,7 @@
         x:DataType="vm:YouTubeDownloadViewModel"
         Title="{loc:T YouTube.Title}"
         CanResize="False"
-        SystemDecorations="None"
+        WindowDecorations="None"
         TransparencyLevelHint="Transparent"
         Background="Transparent"
         ShowInTaskbar="False"

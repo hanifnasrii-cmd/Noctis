@@ -6,7 +6,7 @@
         x:DataType="vm:SendToFolderViewModel"
         Title="{loc:T SendTo.Title}"
         CanResize="False"
-        SystemDecorations="None"
+        WindowDecorations="None"
         TransparencyLevelHint="Transparent"
         Background="Transparent"
         ShowInTaskbar="False"

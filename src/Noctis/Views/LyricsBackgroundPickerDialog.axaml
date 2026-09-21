@@ -7,7 +7,7 @@
         x:DataType="vm:LyricsBackgroundPickerViewModel"
         Title="{loc:T LyricsBackground.Title}"
         CanResize="False"
-        SystemDecorations="None"
+        WindowDecorations="None"
         TransparencyLevelHint="Transparent"
         Background="Transparent"
         ShowInTaskbar="False"

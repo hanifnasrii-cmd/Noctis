@@ -6,7 +6,7 @@
         x:DataType="vm:SongsViewOptionsViewModel"
         Title="{loc:T SongsViewOptions.ViewOptions}"
         CanResize="False"
-        SystemDecorations="None"
+        WindowDecorations="None"
         Background="Transparent"
         TransparencyLevelHint="Transparent"
         ShowInTaskbar="False">

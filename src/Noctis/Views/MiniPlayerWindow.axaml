@@ -14,7 +14,7 @@
         MaxWidth="960" MaxHeight="840"
         CanResize="True"
         Topmost="True"
-        SystemDecorations="None"
+        WindowDecorations="None"
         Background="Transparent"
         WindowStartupLocation="Manual">
 

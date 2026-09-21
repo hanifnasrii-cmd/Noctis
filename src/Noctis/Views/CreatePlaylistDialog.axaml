@@ -6,7 +6,7 @@
         x:DataType="vm:CreatePlaylistDialogViewModel"
         Title="{loc:T CreatePlaylist.CreateNewPlaylist}"
         CanResize="False"
-        SystemDecorations="None"
+        WindowDecorations="None"
         TransparencyLevelHint="Transparent"
         Background="Transparent"
         ShowInTaskbar="False"

@@ -7,7 +7,7 @@
         x:DataType="vm:LyricsStudioPickerViewModel"
         Title="{loc:T LyricsStudioPicker.Title}"
         CanResize="False"
-        SystemDecorations="None"
+        WindowDecorations="None"
         TransparencyLevelHint="Transparent"
         Background="Transparent"
         ShowInTaskbar="False"

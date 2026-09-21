@@ -7,7 +7,7 @@
         x:DataType="vm:ThemeEditorViewModel"
         Title="{loc:T ThemeEditor.ThemeEditor}"
         CanResize="False"
-        SystemDecorations="None"
+        WindowDecorations="None"
         TransparencyLevelHint="Transparent"
         Background="Transparent"
         ShowInTaskbar="False"
