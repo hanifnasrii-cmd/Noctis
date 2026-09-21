@@ -92,7 +92,7 @@ public partial class App : Application
                     && source != focused
                     && !Avalonia.VisualTree.VisualExtensions.IsVisualAncestorOf(focused, source))
                 {
-                    top.FocusManager.ClearFocus();
+                    top.FocusManager.Focus(null); // 12: Focus(null) clears (ClearFocus removed)
                 }
             },
             Avalonia.Interactivity.RoutingStrategies.Tunnel);

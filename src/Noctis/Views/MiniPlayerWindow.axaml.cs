@@ -1053,7 +1053,7 @@ public partial class MiniPlayerWindow : Window
             return true;
         if (visual == MenuCard || MenuCard.IsVisualAncestorOf(visual))
             return false;
-        if (visual.GetVisualRoot() is Visual root && !ReferenceEquals(root, this))
+        if (TopLevel.GetTopLevel(visual) is { } root && !ReferenceEquals(root, this))
             return false;
 
         foreach (var ancestor in visual.GetSelfAndVisualAncestors())

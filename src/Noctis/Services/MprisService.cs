@@ -28,7 +28,7 @@ public sealed class MprisService : IDisposable
     private const string IfaceProps = "org.freedesktop.DBus.Properties";
 
     private readonly PlayerViewModel _player;
-    private Connection? _connection;
+    private DBusConnection? _connection;
     private volatile bool _disposed;
 
     // Snapshot of the now-playing state, written on the UI thread by
@@ -76,7 +76,7 @@ public sealed class MprisService : IDisposable
     {
         try
         {
-            var address = Address.Session;
+            var address = DBusAddress.Session;
             if (string.IsNullOrEmpty(address))
             {
                 DebugLogger.Warn(DebugLogger.Category.Playback, "Mpris.NoBus",
@@ -84,7 +84,7 @@ public sealed class MprisService : IDisposable
                 return;
             }
 
-            var connection = new Connection(address);
+            var connection = new DBusConnection(address);
             await connection.ConnectAsync();
             connection.AddMethodHandler(new Handler(this));
 
@@ -135,7 +135,7 @@ public sealed class MprisService : IDisposable
     /// keys stopped working and the GNOME/KDE widget went blank, with no log line and
     /// no recovery short of restarting Noctis.
     /// </summary>
-    private async Task WatchForDisconnectAsync(Connection connection)
+    private async Task WatchForDisconnectAsync(DBusConnection connection)
     {
         try
         {
@@ -173,7 +173,7 @@ public sealed class MprisService : IDisposable
 
     private const int MprisReconnectAttempts = 5;
 
-    private static MessageBuffer CreateRequestNameMessage(Connection connection)
+    private static MessageBuffer CreateRequestNameMessage(DBusConnection connection)
     {
         using var writer = connection.GetMessageWriter();
         writer.WriteMethodCallHeader(
@@ -428,7 +428,7 @@ public sealed class MprisService : IDisposable
     /// the D-Bus read loop; anything touching the ViewModel hops to the UI
     /// thread (commands) or reads the lock-protected snapshot (properties).
     /// </summary>
-    private sealed class Handler : IMethodHandler
+    private sealed class Handler : IPathMethodHandler
     {
         private readonly MprisService _s;
 
@@ -436,7 +436,7 @@ public sealed class MprisService : IDisposable
 
         public string Path => MprisPath;
 
-        public bool RunMethodHandlerSynchronously(Message message) => true;
+        public bool HandlesChildPaths => false;
 
         public ValueTask HandleMethodAsync(MethodContext context)
         {

@@ -1,5 +1,6 @@
 using Avalonia.Controls;
 using Avalonia.Input;
+using Avalonia.Input.Platform;
 using Avalonia.Interactivity;
 using Avalonia.Media.Transformation;
 using Avalonia.Platform.Storage;
@@ -59,7 +60,7 @@ public partial class PlaylistImportDialog : Window
             {
                 var clipboard = GetTopLevel(this)?.Clipboard;
                 if (clipboard is null) return;
-                vm.OfferClipboardText(await clipboard.GetTextAsync());
+                vm.OfferClipboardText(await clipboard.TryGetTextAsync());
             }
             catch
             {

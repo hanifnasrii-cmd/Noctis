@@ -122,7 +122,7 @@ public partial class LyricsPanelView : UserControl
     // Settings toggle is on; the animator itself idles while the panel is hidden.
 
     private void UpdateFlowAnimationState()
-        => _flow.Enabled = _vm != null && this.GetVisualRoot() != null
+        => _flow.Enabled = _vm != null && this.VisualRoot != null
                            && _vm.IsColorModeArtwork && _vm.Player.LyricsFlowingLightEnabled;
 
     private void OnPlayerPropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -191,7 +191,7 @@ public partial class LyricsPanelView : UserControl
 
         // Skip anchoring work entirely while the panel is closed (wrapper hidden);
         // opening the panel re-anchors via EnsureLyricsForCurrentTrack.
-        if (_vm == null || this.GetVisualRoot() == null || !IsEffectivelyVisible) return;
+        if (_vm == null || this.VisualRoot == null || !IsEffectivelyVisible) return;
 
         if (e.PropertyName == nameof(LyricsViewModel.ActiveLineIndex))
         {

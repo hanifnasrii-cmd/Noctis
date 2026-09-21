@@ -511,14 +511,14 @@ public partial class LyricsView : UserControl
     {
         // Subscribed-but-not-yet-attached window (first creation): don't animate
         // a tree that isn't on screen.
-        if (this.GetVisualRoot() == null) return;
+        if (this.VisualRoot == null) return;
         _lyricsSwapInProgress = true;
         FadeLyricsHost(0.0, LyricsViewModel.LyricsSwapFadeOutMs);
     }
 
     private void OnLyricsSwapped(object? sender, EventArgs e)
     {
-        if (this.GetVisualRoot() == null) return;
+        if (this.VisualRoot == null) return;
         // Re-anchor from scratch while still invisible: a glide from the old
         // track's offset is meaningless on new content, so jump.
         if (DataContext is LyricsViewModel vm)

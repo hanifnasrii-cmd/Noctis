@@ -399,7 +399,7 @@ public partial class MainWindow : Window
                 // never tracked later switches. The VM no-ops unless System is the
                 // active theme; Post guards against a non-UI-thread raise (SetTheme
                 // touches Application.Resources, which is UI-thread-only).
-                if (PlatformSettings is { } platformSettings)
+                if (this.GetPlatformSettings() is { } platformSettings)
                 {
                     _platformColorsChangedHandler = (_, _) =>
                         Dispatcher.UIThread.Post(() => vm.Settings.NotifySystemColorsChanged());
@@ -1067,7 +1067,7 @@ public partial class MainWindow : Window
             _trayIcon = null;
         }
 
-        if (_platformColorsChangedHandler != null && PlatformSettings is { } platformSettings)
+        if (_platformColorsChangedHandler != null && this.GetPlatformSettings() is { } platformSettings)
             platformSettings.ColorValuesChanged -= _platformColorsChangedHandler;
 
         // Unsubscribe from all event handlers to prevent memory leak

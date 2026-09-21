@@ -70,12 +70,13 @@ public static class DragFileBehavior
         var state = _states.GetOrCreateValue(ctl);
         state.StartPoint = e.GetPosition(ctl);
         state.Started = false;
+        state.Pressed = e;   // DoDragDropAsync wants the press that began the gesture
     }
 
     private static async void OnMoved(object? sender, PointerEventArgs e)
     {
         if (sender is not Control ctl) return;
-        if (!_states.TryGetValue(ctl, out var state) || state.Started) return;
+        if (!_states.TryGetValue(ctl, out var state) || state.Started || state.Pressed is not { } pressed) return;
         if (!e.GetCurrentPoint(ctl).Properties.IsLeftButtonPressed) return;
 
         var pos = e.GetPosition(ctl);
@@ -94,7 +95,7 @@ public static class DragFileBehavior
             if (ctl.DataContext is PlaylistNavItem { IsFolder: false, PlaylistId: { } playlistId })
             {
                 using var playlistData = BuildPlaylistTransfer(playlistId);
-                await DragDrop.DoDragDropAsync(e, playlistData, DragDropEffects.Move);
+                await DragDrop.DoDragDropAsync(pressed, playlistData, DragDropEffects.Move);
                 return;
             }
 
@@ -116,7 +117,7 @@ public static class DragFileBehavior
             // The Track objects ride along (via the slot) so in-app drop targets (sidebar
             // playlists) can add them without a path round-trip through the library.
             using var data = BuildTracksTransfer(tracks, items);
-            await DragDrop.DoDragDropAsync(e, data, DragDropEffects.Copy);
+            await DragDrop.DoDragDropAsync(pressed, data, DragDropEffects.Copy);
         }
         catch (Exception ex)
         {
@@ -203,5 +204,6 @@ public static class DragFileBehavior
     {
         public Point StartPoint;
         public bool Started;
+        public PointerPressedEventArgs? Pressed;
     }
 }

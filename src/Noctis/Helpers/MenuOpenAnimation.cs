@@ -94,7 +94,7 @@ public static class MenuOpenAnimation
 
             // The setter is often applied after the popup has already attached, so the
             // attach event would be missed. Run now if we're already in the visual tree.
-            if (control.GetVisualRoot() is not null)
+            if (TopLevel.GetTopLevel(control) is not null)
                 TryRun(control);
         });
 
@@ -253,7 +253,7 @@ public static class MenuOpenAnimation
     private static bool TryGetLastMenuFlyoutPresenter(out MenuFlyoutPresenter presenter)
     {
         if (_lastMenuFlyoutPresenter?.TryGetTarget(out var target) == true &&
-            target.GetVisualRoot() is not null)
+            TopLevel.GetTopLevel(target) is not null)
         {
             presenter = target;
             return true;
