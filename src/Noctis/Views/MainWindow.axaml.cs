@@ -876,7 +876,7 @@ public partial class MainWindow : Window
 
         try
         {
-            var iconUri = new Uri("avares://Noctis/Assets/Icons/Noctis.ico");
+            var iconUri = new Uri("avares://Noctis.UI/Assets/Icons/Noctis.ico");
             var icon = new WindowIcon(Avalonia.Platform.AssetLoader.Open(iconUri));
 
             var menu = new NativeMenu();

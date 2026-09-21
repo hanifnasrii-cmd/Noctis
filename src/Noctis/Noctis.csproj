@@ -59,6 +59,7 @@
     <!-- UI-free core (models, persistence, library, server, sync); shared with noctis-server. -->
     <ProjectReference Include="..\Noctis.Core\Noctis.Core.csproj" />
     <ProjectReference Include="..\Noctis.Core.Server\Noctis.Core.Server.csproj" />
+    <ProjectReference Include="..\Noctis.UI\Noctis.UI.csproj" />
   </ItemGroup>
 
   <!-- Avalonia UI -->
@@ -144,7 +145,8 @@
 
   <!-- Embedded assets -->
   <ItemGroup>
-    <AvaloniaResource Include="Assets\**" />
+    <!-- Shared assets (themes, styles, icons, fonts) live in Noctis.UI; only the
+         exe icon stays here for ApplicationIcon and the installer. -->
     <AvaloniaResource Include="Controls\EqVisualizer.axaml" />
   </ItemGroup>
 

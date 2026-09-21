@@ -10,7 +10,7 @@
         x:Class="Noctis.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         Title="{loc:T Main.Noctis}"
-        Icon="avares://Noctis/Assets/Icons/Noctis.ico"
+        Icon="avares://Noctis.UI/Assets/Icons/Noctis.ico"
         Width="1280" Height="800"
         MinWidth="780" MinHeight="500"
         WindowStartupLocation="CenterScreen"
@@ -475,7 +475,7 @@
                                             helpers:MenuOpenAnimation.EnableFlyoutClose="True">
                                     <MenuItem Command="{Binding PageCreatePlaylistCommand}">
                                         <MenuItem.Icon>
-                                            <Border Width="16" Height="16" Background="{DynamicResource SystemControlForegroundBaseHighBrush}" RenderOptions.BitmapInterpolationMode="HighQuality"><Border.OpacityMask><ImageBrush Source="avares://Noctis/Assets/Icons/Playlist%20icon.png" Stretch="Uniform" /></Border.OpacityMask></Border>
+                                            <Border Width="16" Height="16" Background="{DynamicResource SystemControlForegroundBaseHighBrush}" RenderOptions.BitmapInterpolationMode="HighQuality"><Border.OpacityMask><ImageBrush Source="avares://Noctis.UI/Assets/Icons/Playlist%20icon.png" Stretch="Uniform" /></Border.OpacityMask></Border>
                                         </MenuItem.Icon>
                                         <MenuItem.Header>
                                             <StackPanel Margin="0,5" Spacing="2">
@@ -499,7 +499,7 @@
                                     <Separator />
                                     <MenuItem Command="{Binding PageImportPlaylistCommand}">
                                         <MenuItem.Icon>
-                                            <Border Width="14" Height="14" Background="{DynamicResource SystemControlForegroundBaseHighBrush}" RenderOptions.BitmapInterpolationMode="HighQuality"><Border.OpacityMask><ImageBrush Source="avares://Noctis/Assets/Icons/Arrow%20Down%20ICON.png" Stretch="Uniform" /></Border.OpacityMask></Border>
+                                            <Border Width="14" Height="14" Background="{DynamicResource SystemControlForegroundBaseHighBrush}" RenderOptions.BitmapInterpolationMode="HighQuality"><Border.OpacityMask><ImageBrush Source="avares://Noctis.UI/Assets/Icons/Arrow%20Down%20ICON.png" Stretch="Uniform" /></Border.OpacityMask></Border>
                                         </MenuItem.Icon>
                                         <MenuItem.Header>
                                             <StackPanel Margin="0,5" Spacing="2">
@@ -540,7 +540,7 @@
                                 <Border Width="12" Height="12" Background="{DynamicResource AccentForegroundBrush}" VerticalAlignment="Center"
                                         RenderOptions.BitmapInterpolationMode="HighQuality">
                                     <Border.OpacityMask>
-                                        <ImageBrush Source="avares://Noctis/Assets/Icons/Play%20ICON.png" Stretch="Uniform" />
+                                        <ImageBrush Source="avares://Noctis.UI/Assets/Icons/Play%20ICON.png" Stretch="Uniform" />
                                     </Border.OpacityMask>
                                 </Border>
                                 <TextBlock Text="{loc:T Main.PlayTip}" FontSize="12" FontWeight="SemiBold"
@@ -592,7 +592,7 @@
                                 <Border Width="12" Height="12" Background="{DynamicResource AccentForegroundBrush}" VerticalAlignment="Center"
                                         RenderOptions.BitmapInterpolationMode="HighQuality">
                                     <Border.OpacityMask>
-                                        <ImageBrush Source="avares://Noctis/Assets/Icons/Play%20ICON.png" Stretch="Uniform" />
+                                        <ImageBrush Source="avares://Noctis.UI/Assets/Icons/Play%20ICON.png" Stretch="Uniform" />
                                     </Border.OpacityMask>
                                 </Border>
                                 <TextBlock Text="{loc:T Main.PlayTip}" FontSize="12" FontWeight="SemiBold"
@@ -616,7 +616,7 @@
                                 <Border Width="12" Height="12" Background="{DynamicResource AccentForegroundBrush}" VerticalAlignment="Center"
                                         RenderOptions.BitmapInterpolationMode="HighQuality">
                                     <Border.OpacityMask>
-                                        <ImageBrush Source="avares://Noctis/Assets/Icons/Play%20ICON.png" Stretch="Uniform" />
+                                        <ImageBrush Source="avares://Noctis.UI/Assets/Icons/Play%20ICON.png" Stretch="Uniform" />
                                     </Border.OpacityMask>
                                 </Border>
                                 <TextBlock Text="{loc:T Main.PlayTip}" FontSize="12" FontWeight="SemiBold"
@@ -890,7 +890,7 @@
                                                                     Background="{DynamicResource SystemControlForegroundBaseHighBrush}"
                                                                     RenderOptions.BitmapInterpolationMode="HighQuality">
                                                                 <Border.OpacityMask>
-                                                                    <ImageBrush Source="avares://Noctis/Assets/Icons/Clear%20Queue%20ICON.png" Stretch="Uniform" />
+                                                                    <ImageBrush Source="avares://Noctis.UI/Assets/Icons/Clear%20Queue%20ICON.png" Stretch="Uniform" />
                                                                 </Border.OpacityMask>
                                                             </Border>
                                                         </MenuItem.Icon>

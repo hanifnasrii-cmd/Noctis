@@ -319,10 +319,10 @@ public partial class App : Application
 
         var overlayUri = themeName switch
         {
-            ThemeDark => "avares://Noctis/Assets/Themes/Dark.axaml",
-            ThemeMidnight => "avares://Noctis/Assets/Themes/Midnight.axaml",
-            ThemeInk => "avares://Noctis/Assets/Themes/Ink.axaml",
-            ThemeSmoke => "avares://Noctis/Assets/Themes/Smoke.axaml",
+            ThemeDark => "avares://Noctis.UI/Assets/Themes/Dark.axaml",
+            ThemeMidnight => "avares://Noctis.UI/Assets/Themes/Midnight.axaml",
+            ThemeInk => "avares://Noctis.UI/Assets/Themes/Ink.axaml",
+            ThemeSmoke => "avares://Noctis.UI/Assets/Themes/Smoke.axaml",
             _ => null
         };
 

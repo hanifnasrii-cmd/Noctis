@@ -73,7 +73,7 @@
                             Background="{DynamicResource SystemControlForegroundBaseHighBrush}"
                             RenderOptions.BitmapInterpolationMode="HighQuality">
                         <Border.OpacityMask>
-                            <ImageBrush Source="avares://Noctis/Assets/Icons/Play%20ICON.png" Stretch="Uniform" />
+                            <ImageBrush Source="avares://Noctis.UI/Assets/Icons/Play%20ICON.png" Stretch="Uniform" />
                         </Border.OpacityMask>
                     </Border>
                     <StackPanel Grid.Column="1" VerticalAlignment="Center">
@@ -206,7 +206,7 @@
                                 Opacity="0.6"
                                 RenderOptions.BitmapInterpolationMode="HighQuality">
                             <Border.OpacityMask>
-                                <ImageBrush Source="avares://Noctis/Assets/Icons/Clear%20Queue%20ICON.png" Stretch="Uniform" />
+                                <ImageBrush Source="avares://Noctis.UI/Assets/Icons/Clear%20Queue%20ICON.png" Stretch="Uniform" />
                             </Border.OpacityMask>
                         </Border>
                         <TextBlock Text="{loc:T Queue.Clear}"

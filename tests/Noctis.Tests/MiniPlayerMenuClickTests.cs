@@ -77,7 +77,7 @@ public class MiniPlayerMenuClickTests
         if (app.Resources.TryGetResource("SearchIcon", null, out _)) return;
         app.Resources.MergedDictionaries.Add(new ResourceInclude((Uri?)null)
         {
-            Source = new Uri("avares://Noctis/Assets/Icons.axaml"),
+            Source = new Uri("avares://Noctis.UI/Assets/Icons.axaml"),
         });
     }
 

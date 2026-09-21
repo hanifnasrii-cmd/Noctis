@@ -37,9 +37,9 @@ public class RowDoubleClickToPlayTests
         if (app.Resources.TryGetResource("HeartFillIcon", null, out _)) return;
         app.Resources["InterSemiBold"] = FontFamily.Default;
         app.Resources.MergedDictionaries.Add(new ResourceInclude(new Uri("avares://Noctis/"))
-        { Source = new Uri("avares://Noctis/Assets/Icons.axaml") });
+        { Source = new Uri("avares://Noctis.UI/Assets/Icons.axaml") });
         app.Styles.Add(new StyleInclude(new Uri("avares://Noctis/"))
-        { Source = new Uri("avares://Noctis/Assets/Styles.axaml") });
+        { Source = new Uri("avares://Noctis.UI/Assets/Styles.axaml") });
     }
 
     /// <summary>Raises the routed event the gesture recognizer raises on a double click, so

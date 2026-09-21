@@ -76,42 +76,42 @@ public sealed class TrackContextMenuBuilder
         var items = Menu.Items;
 
         Play = new MenuItem { MaxWidth = 400 };
-        Play.Icon = CreatePngIcon("avares://Noctis/Assets/Icons/Play%20ICON.png");
+        Play.Icon = CreatePngIcon("avares://Noctis.UI/Assets/Icons/Play%20ICON.png");
         items.Add(Play);
 
         Shuffle = new MenuItem { Header = "Shuffle" };
-        Shuffle.Icon = CreatePngIcon("avares://Noctis/Assets/Icons/Shuffle%20ICON.png");
+        Shuffle.Icon = CreatePngIcon("avares://Noctis.UI/Assets/Icons/Shuffle%20ICON.png");
         items.Add(Shuffle);
 
         PlayNext = new MenuItem { Header = "Play Next" };
-        PlayNext.Icon = CreatePngIcon("avares://Noctis/Assets/Icons/Forward%20ICON.png");
+        PlayNext.Icon = CreatePngIcon("avares://Noctis.UI/Assets/Icons/Forward%20ICON.png");
         items.Add(PlayNext);
 
         AddToQueue = new MenuItem { Header = "Add to Queue" };
-        AddToQueue.Icon = CreatePngIcon("avares://Noctis/Assets/Icons/Queue%20ICON.png", 17);
+        AddToQueue.Icon = CreatePngIcon("avares://Noctis.UI/Assets/Icons/Queue%20ICON.png", 17);
         items.Add(AddToQueue);
 
         // Hidden unless the view supplies a startRadioCommand in Bind().
         StartRadio = new MenuItem { Header = "Start Radio", IsVisible = false };
-        StartRadio.Icon = CreatePngIcon("avares://Noctis/Assets/Icons/Shuffle%20ICON.png");
+        StartRadio.Icon = CreatePngIcon("avares://Noctis.UI/Assets/Icons/Shuffle%20ICON.png");
         items.Add(StartRadio);
 
         // Hidden unless the view supplies a snoozeCommand in Bind().
         SnoozeForMonth = new MenuItem { Header = "Snooze for a month", IsVisible = false };
         // placeholder icon: no dedicated snooze glyph in resources
-        SnoozeForMonth.Icon = CreatePngIcon("avares://Noctis/Assets/Icons/Shuffle%20ICON.png");
+        SnoozeForMonth.Icon = CreatePngIcon("avares://Noctis.UI/Assets/Icons/Shuffle%20ICON.png");
         items.Add(SnoozeForMonth);
 
         items.Add(new Separator());
 
         AddToPlaylist = new MenuItem { Header = "Add to Playlist" };
-        AddToPlaylist.Icon = CreatePngIcon("avares://Noctis/Assets/Icons/Playlist%20icon.png");
+        AddToPlaylist.Icon = CreatePngIcon("avares://Noctis.UI/Assets/Icons/Playlist%20icon.png");
         items.Add(AddToPlaylist);
 
         items.Add(new Separator());
 
         Favorite = new MenuItem { Header = "Favorites" };
-        Favorite.Icon = CreatePngIcon("avares://Noctis/Assets/Icons/Favorites%20icon.png");
+        Favorite.Icon = CreatePngIcon("avares://Noctis.UI/Assets/Icons/Favorites%20icon.png");
         items.Add(Favorite);
 
         Unfavorite = new MenuItem { Header = "Remove from Favorites" };
@@ -139,28 +139,28 @@ public sealed class TrackContextMenuBuilder
         items.Add(Rate);
 
         Metadata = new MenuItem { Header = "Metadata" };
-        Metadata.Icon = CreatePngIcon("avares://Noctis/Assets/Icons/Metadata%20ICON.png");
+        Metadata.Icon = CreatePngIcon("avares://Noctis.UI/Assets/Icons/Metadata%20ICON.png");
         items.Add(Metadata);
 
         Convert = new MenuItem { Header = "Convert File", IsVisible = false };
-        Convert.Icon = CreatePngIcon("avares://Noctis/Assets/Icons/Metadata%20ICON.png");
+        Convert.Icon = CreatePngIcon("avares://Noctis.UI/Assets/Icons/Metadata%20ICON.png");
         items.Add(Convert);
 
         ScanReplayGain = new MenuItem { Header = "Scan ReplayGain", IsVisible = false };
-        ScanReplayGain.Icon = CreatePngIcon("avares://Noctis/Assets/Icons/Metadata%20ICON.png");
+        ScanReplayGain.Icon = CreatePngIcon("avares://Noctis.UI/Assets/Icons/Metadata%20ICON.png");
         items.Add(ScanReplayGain);
 
         // Spek-style spectrum analysis of the file. Self-contained (shared static command),
         // so every view that uses this builder gets it without wiring a command.
         Spectrogram = new MenuItem { Header = "Spectrogram", Command = SpectrogramLauncher.OpenCommand };
-        Spectrogram.Icon = CreatePngIcon("avares://Noctis/Assets/Icons/Metadata%20ICON.png");
+        Spectrogram.Icon = CreatePngIcon("avares://Noctis.UI/Assets/Icons/Metadata%20ICON.png");
         items.Add(Spectrogram);
 
         // Lyrics ▸ — Search Lyrics stays where it always was, now with the bulk actions
         // beneath it. The bulk entries stay hidden on views that don't wire them, so the
         // submenu reads as "Search Lyrics" plus nothing extra there.
         Lyrics = new MenuItem { Header = "Lyrics" };
-        Lyrics.Icon = CreatePngIcon("avares://Noctis/Assets/Icons/Lyrics%20ICON.png");
+        Lyrics.Icon = CreatePngIcon("avares://Noctis.UI/Assets/Icons/Lyrics%20ICON.png");
         SearchLyrics = new MenuItem { Header = "Search Lyrics" };
         Lyrics.Items.Add(SearchLyrics);
         FetchLyrics = new MenuItem { Header = "Fetch & Save Lyrics", IsVisible = false };
@@ -175,7 +175,7 @@ public sealed class TrackContextMenuBuilder
         // Lyrics Background Video ▸ — this song's own clip behind the lyrics page (static
         // commands, so no per-view wiring; "Use default" shows only when the song has one).
         LyricsBackground = new MenuItem { Header = "Lyrics Background Video" };
-        LyricsBackground.Icon = CreatePngIcon("avares://Noctis/Assets/Icons/Lyrics%20ICON.png");
+        LyricsBackground.Icon = CreatePngIcon("avares://Noctis.UI/Assets/Icons/Lyrics%20ICON.png");
         LyricsBackgroundChoose = new MenuItem { Header = "Choose video for this song…", Command = LyricsBackgroundOverrides.ChooseForTrackCommand };
         LyricsBackground.Items.Add(LyricsBackgroundChoose);
         LyricsBackgroundClear = new MenuItem { Header = "Use default video", Command = LyricsBackgroundOverrides.ClearForTrackCommand };
@@ -184,18 +184,18 @@ public sealed class TrackContextMenuBuilder
 
         // Send to Folder (MusicBee's Send To → Folder): copies the selection to a drive/folder.
         SendToFolder = new MenuItem { Header = "Send to Folder…", IsVisible = false };
-        SendToFolder.Icon = CreatePngIcon("avares://Noctis/Assets/Icons/Folder%20ICON.png");
+        SendToFolder.Icon = CreatePngIcon("avares://Noctis.UI/Assets/Icons/Folder%20ICON.png");
         items.Add(SendToFolder);
 
         ShowFolder = new MenuItem { Header = "Show Folder" };
-        ShowFolder.Icon = CreatePngIcon("avares://Noctis/Assets/Icons/Folder%20ICON.png");
+        ShowFolder.Icon = CreatePngIcon("avares://Noctis.UI/Assets/Icons/Folder%20ICON.png");
         items.Add(ShowFolder);
 
         // "Open in <app>" / native Open-with picker. Header and visibility are
         // refreshed in Bind() from the configured external app.
         // placeholder icon: no dedicated open-with glyph in resources
         OpenWith = new MenuItem { Header = "Open File With" };
-        OpenWith.Icon = CreatePngIcon("avares://Noctis/Assets/Icons/Metadata%20ICON.png");
+        OpenWith.Icon = CreatePngIcon("avares://Noctis.UI/Assets/Icons/Metadata%20ICON.png");
         items.Add(OpenWith);
 
         items.Add(new Separator());

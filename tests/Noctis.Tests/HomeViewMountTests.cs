@@ -26,11 +26,11 @@ public class HomeViewMountTests
         app.Resources["InterSemiBold"] = Avalonia.Media.FontFamily.Default;
         app.Resources.MergedDictionaries.Add(new ResourceInclude(new Uri("avares://Noctis/"))
         {
-            Source = new Uri("avares://Noctis/Assets/Icons.axaml")
+            Source = new Uri("avares://Noctis.UI/Assets/Icons.axaml")
         });
         app.Styles.Add(new StyleInclude(new Uri("avares://Noctis/"))
         {
-            Source = new Uri("avares://Noctis/Assets/Styles.axaml")
+            Source = new Uri("avares://Noctis.UI/Assets/Styles.axaml")
         });
     }
 

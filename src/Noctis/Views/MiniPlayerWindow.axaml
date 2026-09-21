@@ -2380,7 +2380,7 @@
                                 <Border Width="14" Height="14" Background="{DynamicResource SystemControlForegroundBaseHighBrush}"
                                         RenderOptions.BitmapInterpolationMode="HighQuality">
                                     <Border.OpacityMask>
-                                        <ImageBrush Source="avares://Noctis/Assets/Icons/Queue%20ICON.png" Stretch="Uniform"/>
+                                        <ImageBrush Source="avares://Noctis.UI/Assets/Icons/Queue%20ICON.png" Stretch="Uniform"/>
                                     </Border.OpacityMask>
                                 </Border>
                                 <TextBlock Text="{loc:T MiniPlayer.Queue}" FontSize="13" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" VerticalAlignment="Center"/>
@@ -2394,7 +2394,7 @@
                                 <Border Width="14" Height="14" Background="{DynamicResource SystemControlForegroundBaseHighBrush}"
                                         RenderOptions.BitmapInterpolationMode="HighQuality">
                                     <Border.OpacityMask>
-                                        <ImageBrush Source="avares://Noctis/Assets/Icons/Volume%20ICON.png" Stretch="Uniform"/>
+                                        <ImageBrush Source="avares://Noctis.UI/Assets/Icons/Volume%20ICON.png" Stretch="Uniform"/>
                                     </Border.OpacityMask>
                                 </Border>
                                 <TextBlock Text="{loc:T MiniPlayer.Volume}" FontSize="13" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" VerticalAlignment="Center"/>
@@ -2417,7 +2417,7 @@
                                 <Border Width="14" Height="14" Background="{DynamicResource SystemControlForegroundBaseHighBrush}"
                                         RenderOptions.BitmapInterpolationMode="HighQuality">
                                     <Border.OpacityMask>
-                                        <ImageBrush Source="avares://Noctis/Assets/Icons/Lyrics%20ICON.png" Stretch="Uniform"/>
+                                        <ImageBrush Source="avares://Noctis.UI/Assets/Icons/Lyrics%20ICON.png" Stretch="Uniform"/>
                                     </Border.OpacityMask>
                                 </Border>
                                 <TextBlock Text="{Binding LyricsMenuLabel}" FontSize="13" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" VerticalAlignment="Center"/>

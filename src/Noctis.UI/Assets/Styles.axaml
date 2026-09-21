@@ -901,12 +901,8 @@
     <Style Selector="Border.now-playing controls|RatingStars">
         <Setter Property="Foreground" Value="{DynamicResource NowPlayingRowForegroundBrush}" />
     </Style>
-    <!-- The row's playing indicator. EqVisualizer.axaml defaults its Foreground to
-         AccentColorBrush, which would be accent-on-accent here; the bars are only ever
-         visible on the now-playing row, so this setter is the only one that renders. -->
-    <Style Selector="Border.now-playing controls|EqVisualizer">
-        <Setter Property="Foreground" Value="{DynamicResource NowPlayingRowForegroundBrush}" />
-    </Style>
+    <!-- The row's playing indicator (EqVisualizer, desktop-only) takes the row foreground
+         via a style in src/Noctis/Controls/EqVisualizer.axaml; it cannot be named here. -->
     <!-- The row-foreground styles above also match through the logical tree into popups,
          so a context menu / flyout opened on a now-playing row repainted every menu
          label in the row foreground. Restore the normal menu foreground (and keep

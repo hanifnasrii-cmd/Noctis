@@ -40,10 +40,12 @@ public class ThemeKeyCoverageTests
     /// <summary>Per source file: the dynamic keys it consumes that it does not define itself.</summary>
     public static IReadOnlyDictionary<string, IReadOnlyList<string>> ConsumedKeysByFile()
     {
-        var src = Path.Combine(FindRepoRoot(), "src", "Noctis");
-        var files = new[] { "Views", "Controls" }
-            .SelectMany(d => Directory.EnumerateFiles(Path.Combine(src, d), "*.axaml", SearchOption.AllDirectories))
-            .Append(Path.Combine(src, "Assets", "Styles.axaml"))
+        var root = FindRepoRoot();
+        var src = Path.Combine(root, "src", "Noctis");
+        var ui = Path.Combine(root, "src", "Noctis.UI"); // shared styles and controls
+        var files = new[] { Path.Combine(src, "Views"), Path.Combine(src, "Controls"), Path.Combine(ui, "Controls") }
+            .SelectMany(d => Directory.EnumerateFiles(d, "*.axaml", SearchOption.AllDirectories))
+            .Append(Path.Combine(ui, "Assets", "Styles.axaml"))
             .Where(f => !f.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}"));
 
         var result = new Dictionary<string, IReadOnlyList<string>>();
@@ -66,12 +68,12 @@ public class ThemeKeyCoverageTests
         // Styles.axaml (+ font/icon prerequisites) exactly as the view-mount tests load it.
         _ = ThemeOverlayParityTests.BaseDarkKeys();
         if (!app.Styles.OfType<StyleInclude>().Any(s => s.Source?.ToString().EndsWith("Styles.axaml") == true))
-            app.Styles.Add(new StyleInclude(new Uri("avares://Noctis/")) { Source = new Uri("avares://Noctis/Assets/Styles.axaml") });
+            app.Styles.Add(new StyleInclude(new Uri("avares://Noctis/")) { Source = new Uri("avares://Noctis.UI/Assets/Styles.axaml") });
 
         var variant = light ? ThemeVariant.Light : ThemeVariant.Dark;
         var overlay = new ResourceInclude(new Uri("avares://Noctis/"))
         {
-            Source = new Uri($"avares://Noctis/Assets/Themes/{theme}.axaml"),
+            Source = new Uri($"avares://Noctis.UI/Assets/Themes/{theme}.axaml"),
         };
         var previousVariant = app.RequestedThemeVariant;
         app.RequestedThemeVariant = variant;

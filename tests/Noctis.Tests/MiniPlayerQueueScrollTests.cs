@@ -67,7 +67,7 @@ public class MiniPlayerQueueScrollTests
     {
         var app = Application.Current!;
         if (app.Resources.TryGetResource("SearchIcon", null, out _)) return;
-        app.Resources.MergedDictionaries.Add(new ResourceInclude((Uri?)null) { Source = new Uri("avares://Noctis/Assets/Icons.axaml") });
+        app.Resources.MergedDictionaries.Add(new ResourceInclude((Uri?)null) { Source = new Uri("avares://Noctis.UI/Assets/Icons.axaml") });
     }
 
     private static async Task PumpFor(int ms)

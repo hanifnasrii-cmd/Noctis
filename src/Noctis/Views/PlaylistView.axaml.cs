@@ -354,7 +354,7 @@ public partial class PlaylistView : UserControl
 
         _menuBuilder = new TrackContextMenuBuilder();
         return _menuBuilder.Build("Remove from Playlist",
-            "avares://Noctis/Assets/Icons/Remove%20from%20Playlist%20ICON.png", this);
+            "avares://Noctis.UI/Assets/Icons/Remove%20from%20Playlist%20ICON.png", this);
     }
 
     private void BindContextMenuToTrack(Track track)

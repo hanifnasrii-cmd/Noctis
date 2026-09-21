@@ -35,8 +35,8 @@ public class TitleBadgeAndMarqueeProbeTests
         var app = Application.Current!;
         if (app.Resources.TryGetResource("HeartFillIcon", null, out _)) return;
         app.Resources["InterSemiBold"] = FontFamily.Default;
-        app.Resources.MergedDictionaries.Add(new ResourceInclude(new Uri("avares://Noctis/")) { Source = new Uri("avares://Noctis/Assets/Icons.axaml") });
-        app.Styles.Add(new StyleInclude(new Uri("avares://Noctis/")) { Source = new Uri("avares://Noctis/Assets/Styles.axaml") });
+        app.Resources.MergedDictionaries.Add(new ResourceInclude(new Uri("avares://Noctis/")) { Source = new Uri("avares://Noctis.UI/Assets/Icons.axaml") });
+        app.Styles.Add(new StyleInclude(new Uri("avares://Noctis/")) { Source = new Uri("avares://Noctis.UI/Assets/Styles.axaml") });
     }
 
     private static void Pump(int n = 4)
@@ -121,7 +121,7 @@ public class TitleBadgeAndMarqueeProbeTests
     [Fact]
     public void Inter_CapCentre_IsTheLineBoxCentre()
     {
-        var path = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../../src/Noctis/Assets/Fonts/Inter-SemiBold.ttf"));
+        var path = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../../src/Noctis.UI/Assets/Fonts/Inter-SemiBold.ttf"));
         Assert.True(File.Exists(path), path);
         using var tf = SKTypeface.FromFile(path);
         using var font = new SKFont(tf, 13);

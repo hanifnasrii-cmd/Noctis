@@ -1073,7 +1073,7 @@ public static class ShareCardRenderer
             if (_logoLoadAttempted) return _logo;
             try
             {
-                var uri = new Uri("avares://Noctis/Assets/Icons/Noctis%20Logo%20Clean.png");
+                var uri = new Uri("avares://Noctis.UI/Assets/Icons/Noctis%20Logo%20Clean.png");
                 using var stream = Avalonia.Platform.AssetLoader.Open(uri);
                 var raw = SKBitmap.Decode(stream);
                 if (raw != null)

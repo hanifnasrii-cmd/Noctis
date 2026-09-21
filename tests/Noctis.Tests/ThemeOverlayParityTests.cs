@@ -32,7 +32,7 @@ public class ThemeOverlayParityTests
     {
         var include = new ResourceInclude(new Uri("avares://Noctis/"))
         {
-            Source = new Uri($"avares://Noctis/Assets/Themes/{name}.axaml"),
+            Source = new Uri($"avares://Noctis.UI/Assets/Themes/{name}.axaml"),
         };
         return Assert.IsType<ResourceDictionary>(include.Loaded);
     }
@@ -47,11 +47,11 @@ public class ThemeOverlayParityTests
         if (!app.Resources.TryGetResource("HeartFillIcon", null, out _))
             app.Resources.MergedDictionaries.Add(new ResourceInclude(new Uri("avares://Noctis/"))
             {
-                Source = new Uri("avares://Noctis/Assets/Icons.axaml"),
+                Source = new Uri("avares://Noctis.UI/Assets/Icons.axaml"),
             });
         var include = new StyleInclude(new Uri("avares://Noctis/"))
         {
-            Source = new Uri("avares://Noctis/Assets/Styles.axaml"),
+            Source = new Uri("avares://Noctis.UI/Assets/Styles.axaml"),
         };
         var styles = Assert.IsType<Styles>(include.Loaded);
         var dark = Assert.IsType<ResourceDictionary>(styles.Resources.ThemeDictionaries[ThemeVariant.Dark]);
