@@ -155,8 +155,8 @@ public partial class SidebarView : UserControl
 
     private void OnPlaylistDragOver(object? sender, DragEventArgs e)
     {
-        var tracks = Helpers.DragFileBehavior.GetDraggedTracks(e.Data);
-        var playlistId = Helpers.DragFileBehavior.GetDraggedPlaylistId(e.Data);
+        var tracks = Helpers.DragFileBehavior.GetDraggedTracks(e.DataTransfer);
+        var playlistId = Helpers.DragFileBehavior.GetDraggedPlaylistId(e.DataTransfer);
         if (tracks == null && playlistId == null) return; // external file drag — the window handles it
 
         var (container, item, _) = HitPlaylistRow(e);
@@ -175,8 +175,8 @@ public partial class SidebarView : UserControl
         try
         {
             SetDropHighlight(null);
-            var tracks = Helpers.DragFileBehavior.GetDraggedTracks(e.Data);
-            var playlistId = Helpers.DragFileBehavior.GetDraggedPlaylistId(e.Data);
+            var tracks = Helpers.DragFileBehavior.GetDraggedTracks(e.DataTransfer);
+            var playlistId = Helpers.DragFileBehavior.GetDraggedPlaylistId(e.DataTransfer);
             if (tracks == null && playlistId == null) return;
 
             var (_, item, placeAfter) = HitPlaylistRow(e);

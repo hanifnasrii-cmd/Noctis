@@ -18,14 +18,21 @@ namespace Noctis.Helpers;
 /// </summary>
 public static class DragFileBehavior
 {
-    /// <summary>Custom format marker so the main window can distinguish internal drags from external file drops.</summary>
-    public const string InternalDragFormat = "Noctis.InternalDrag";
+    // Application-scoped string formats carrying a per-drag token. The objects
+    // themselves (the Track list, the playlist id) live in the slot below for the
+    // duration of one drag: a DataTransferItem only carries bytes/strings/files/
+    // bitmaps for custom formats, so in-process objects cannot ride inside it.
 
-    /// <summary>Data format carrying the dragged <see cref="Track"/> list (in-app drops).</summary>
-    public const string TracksFormat = "Noctis.Tracks";
+    /// <summary>Data format marking a drag that carries <see cref="Track"/>s (in-app drops).</summary>
+    public static readonly DataFormat<string> TracksFormat = DataFormat.CreateStringApplicationFormat("noctis.tracks");
 
-    /// <summary>Data format carrying a dragged sidebar playlist's id (reorder / move to folder).</summary>
-    public const string PlaylistFormat = "Noctis.Playlist";
+    /// <summary>Data format marking a sidebar playlist drag (reorder / move to folder).</summary>
+    public static readonly DataFormat<string> PlaylistFormat = DataFormat.CreateStringApplicationFormat("noctis.playlist");
+
+    private static readonly object _slotLock = new();
+    private static string? _token;
+    private static IReadOnlyList<Track>? _tracks;
+    private static Guid? _playlistId;
 
     public static readonly AttachedProperty<bool> EnableFileDragProperty =
         AvaloniaProperty.RegisterAttached<Control, bool>("EnableFileDrag", typeof(DragFileBehavior));
@@ -82,27 +89,17 @@ public static class DragFileBehavior
 
         try
         {
-            // Pre-11.3 IDataObject/DataFormats drag API; suppress obsolete-usage
-            // warnings rather than rewriting working code for the new DataTransfer API.
-#pragma warning disable CS0618 // Type or member is obsolete
-            var data = new DataObject();
-            data.Set(InternalDragFormat, true);
-
             // Sidebar playlist row: an in-app reorder / move-to-folder drag. No file
             // payload — nothing outside the app should receive it.
             if (ctl.DataContext is PlaylistNavItem { IsFolder: false, PlaylistId: { } playlistId })
             {
-                data.Set(PlaylistFormat, playlistId);
-                await DragDrop.DoDragDrop(e, data, DragDropEffects.Move);
+                using var playlistData = BuildPlaylistTransfer(playlistId);
+                await DragDrop.DoDragDropAsync(e, playlistData, DragDropEffects.Move);
                 return;
             }
 
             var tracks = GetTracks(ctl.DataContext);
             if (tracks == null || tracks.Count == 0) return;
-
-            // The Track objects ride along so in-app drop targets (sidebar playlists)
-            // can add them without a path round-trip through the library.
-            data.Set(TracksFormat, tracks);
 
             var items = new List<IStorageItem>();
             foreach (var t in tracks)
@@ -116,11 +113,10 @@ public static class DragFileBehavior
                 var file = await topLevel.StorageProvider.TryGetFileFromPathAsync(t.FilePath);
                 if (file != null) items.Add(file);
             }
-            if (items.Count > 0)
-                data.Set(DataFormats.Files, items);
-
-            await DragDrop.DoDragDrop(e, data, DragDropEffects.Copy);
-#pragma warning restore CS0618 // Type or member is obsolete
+            // The Track objects ride along (via the slot) so in-app drop targets (sidebar
+            // playlists) can add them without a path round-trip through the library.
+            using var data = BuildTracksTransfer(tracks, items);
+            await DragDrop.DoDragDropAsync(e, data, DragDropEffects.Copy);
         }
         catch (Exception ex)
         {
@@ -128,15 +124,67 @@ public static class DragFileBehavior
         }
     }
 
-#pragma warning disable CS0618 // Type or member is obsolete
-    /// <summary>The tracks carried by an in-app drag, or null when the payload isn't one.</summary>
-    public static IReadOnlyList<Track>? GetDraggedTracks(IDataObject data)
-        => data.Contains(TracksFormat) ? data.Get(TracksFormat) as IReadOnlyList<Track> : null;
+    private static string NewToken(IReadOnlyList<Track>? tracks, Guid? playlistId)
+    {
+        lock (_slotLock)
+        {
+            _token = Guid.NewGuid().ToString("N");
+            _tracks = tracks;
+            _playlistId = playlistId;
+            return _token;
+        }
+    }
+
+    /// <summary>A track drag: the token item plus one file item per exportable track.</summary>
+    public static DataTransfer BuildTracksTransfer(IReadOnlyList<Track> tracks, IReadOnlyList<IStorageItem> files)
+    {
+        var token = NewToken(tracks, null);
+        var transfer = new DataTransfer();
+        var item = new DataTransferItem();
+        item.Set(TracksFormat, token);
+        transfer.Add(item);
+        foreach (var file in files)
+            transfer.Add(DataTransferItem.CreateFile(file));
+        return transfer;
+    }
+
+    /// <summary>A sidebar playlist drag: token only, nothing an external app can consume.</summary>
+    public static DataTransfer BuildPlaylistTransfer(Guid playlistId)
+    {
+        var token = NewToken(null, playlistId);
+        var transfer = new DataTransfer();
+        var item = new DataTransferItem();
+        item.Set(PlaylistFormat, token);
+        transfer.Add(item);
+        return transfer;
+    }
+
+    /// <summary>True for a drag started inside the app (tracks or playlist), so the
+    /// main window's file-import overlay leaves it alone.</summary>
+    public static bool IsInternalDrag(IDataTransfer data)
+        => data.Contains(TracksFormat) || data.Contains(PlaylistFormat);
+
+    /// <summary>The tracks carried by an in-app drag, or null when the payload isn't one
+    /// (or belongs to an earlier drag).</summary>
+    public static IReadOnlyList<Track>? GetDraggedTracks(IDataTransfer data)
+    {
+        if (!data.Contains(TracksFormat)) return null;
+        var token = ReadToken(data, TracksFormat);
+        lock (_slotLock)
+            return token is not null && token == _token ? _tracks : null;
+    }
 
     /// <summary>The playlist id carried by a sidebar playlist drag, or null.</summary>
-    public static Guid? GetDraggedPlaylistId(IDataObject data)
-        => data.Contains(PlaylistFormat) && data.Get(PlaylistFormat) is Guid id ? id : null;
-#pragma warning restore CS0618 // Type or member is obsolete
+    public static Guid? GetDraggedPlaylistId(IDataTransfer data)
+    {
+        if (!data.Contains(PlaylistFormat)) return null;
+        var token = ReadToken(data, PlaylistFormat);
+        lock (_slotLock)
+            return token is not null && token == _token ? _playlistId : null;
+    }
+
+    private static string? ReadToken(IDataTransfer data, DataFormat<string> format)
+        => data.TryGetValue(format);
 
     private static List<Track>? GetTracks(object? dc)
     {

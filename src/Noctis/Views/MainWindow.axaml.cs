@@ -1234,17 +1234,13 @@ public partial class MainWindow : Window
             paused: player.State != PlaybackState.Playing);
     }
 
-    // The file-import drag-drop below uses Avalonia's pre-11.3 IDataObject/DataFormats
-    // API. The newer DataTransfer API isn't adopted yet, so suppress the obsolete-usage
-    // warnings for this self-contained region rather than rewriting working code.
-#pragma warning disable CS0618 // Type or member is obsolete
     private void OnWindowDragOver(object? sender, DragEventArgs e)
     {
         // Don't show import overlay for internal drags (album/track tiles dragged within the app)
-        if (e.Data.Contains(Helpers.DragFileBehavior.InternalDragFormat))
+        if (Helpers.DragFileBehavior.IsInternalDrag(e.DataTransfer))
             return;
 
-        var paths = GetDroppedLocalPaths(e.Data);
+        var paths = GetDroppedLocalPaths(e.DataTransfer);
         var hasImportable = paths.Any(IsImportablePath);
         e.DragEffects = hasImportable ? DragDropEffects.Copy : DragDropEffects.None;
         ShowDragOverlay(hasImportable);
@@ -1259,14 +1255,14 @@ public partial class MainWindow : Window
     private async void OnWindowDrop(object? sender, DragEventArgs e)
     {
         // Ignore internal drags (album/track tiles dragged within the app)
-        if (e.Data.Contains(Helpers.DragFileBehavior.InternalDragFormat))
+        if (Helpers.DragFileBehavior.IsInternalDrag(e.DataTransfer))
             return;
 
         e.Handled = true;
         ShowDragOverlay(false);
         if (DataContext is not MainWindowViewModel vm) return;
 
-        var paths = GetDroppedLocalPaths(e.Data);
+        var paths = GetDroppedLocalPaths(e.DataTransfer);
         if (paths.Count == 0) return;
 
         try
@@ -1291,14 +1287,14 @@ public partial class MainWindow : Window
         overlay.Opacity = show ? 1 : 0;
     }
 
-    private static List<string> GetDroppedLocalPaths(IDataObject data)
+    private static List<string> GetDroppedLocalPaths(IDataTransfer data)
     {
         var paths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
         try
         {
             // Primary: Avalonia IStorageItem API (works for Explorer drops on most platforms).
-            foreach (var item in data.GetFiles() ?? Enumerable.Empty<IStorageItem>())
+            foreach (var item in data.TryGetFiles() ?? Enumerable.Empty<IStorageItem>())
             {
                 try
                 {
@@ -1314,29 +1310,11 @@ public partial class MainWindow : Window
                 }
             }
 
-            // Fallback: DataFormats.Files may contain IStorageItem or string collections.
-            if (paths.Count == 0 && data.Contains(DataFormats.Files))
-            {
-                var raw = data.Get(DataFormats.Files);
-                if (raw is IEnumerable<IStorageItem> storageItems)
-                {
-                    foreach (var si in storageItems)
-                    {
-                        try { TryAddPath(si.Path?.LocalPath); } catch { }
-                    }
-                }
-                else if (raw is IEnumerable<string> stringPaths)
-                {
-                    foreach (var s in stringPaths)
-                        TryAddPath(s);
-                }
-            }
-
             // Fallback: raw Text payload (some drag sources provide newline-separated paths).
             // Only accept lines that look like real file paths (drive letter or UNC prefix).
-            if (paths.Count == 0 && data.Contains(DataFormats.Text))
+            if (paths.Count == 0 && data.Contains(DataFormat.Text))
             {
-                var text = data.GetText();
+                var text = data.TryGetText();
                 if (!string.IsNullOrWhiteSpace(text))
                 {
                     foreach (var line in text.Split('\n', '\r'))
@@ -1388,7 +1366,6 @@ public partial class MainWindow : Window
         if (!File.Exists(path)) return false;
         return MetadataService.SupportedExtensions.Contains(Path.GetExtension(path));
     }
-#pragma warning restore CS0618 // Type or member is obsolete
 
     /// <summary>
     /// Set when the tunnelling KeyDown handler ran a shortcut, so the matching KeyUp is
