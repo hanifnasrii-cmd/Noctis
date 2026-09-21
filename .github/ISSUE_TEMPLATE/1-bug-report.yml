@@ -1,0 +1,131 @@
+name: Bug report
+description: Something is broken, crashes, or behaves wrong.
+title: "[Bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report this. Fill in what you can. The version, platform, and steps are the ones that matter most.
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What went wrong, in one or two sentences.
+      placeholder: Playback stops after the first track when crossfade is on.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect to happen?
+      placeholder: The next track should start with the crossfade applied.
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Exact clicks, in order. Start from a fresh launch if you can.
+      value: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: frequency
+    attributes:
+      label: How often does it happen?
+      options:
+        - Every time
+        - Most of the time
+        - Sometimes
+        - Only once so far
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Noctis version
+      description: Shown in Settings under About, or in the installer filename.
+      placeholder: v1.5.0
+    validations:
+      required: true
+
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Operating system
+      options:
+        - Windows 11
+        - Windows 10
+        - macOS (Apple Silicon)
+        - macOS (Intel)
+        - Linux
+    validations:
+      required: true
+
+  - type: dropdown
+    id: install-method
+    attributes:
+      label: How did you install Noctis?
+      options:
+        - Installer (Setup.exe)
+        - winget
+        - Scoop
+        - Portable zip
+        - macOS .dmg
+        - Linux AppImage
+        - Linux tarball
+        - Built from source
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Which part of the app is affected?
+      multiple: true
+      options:
+        - Playback / audio
+        - Library scan / import
+        - Lyrics (display, sync, Lyrics Studio)
+        - Artwork / metadata
+        - Playlists
+        - Search
+        - Mini player / island
+        - Visualizer / Cover Flow
+        - Settings / themes
+        - Discord / Last.fm / integrations
+        - Noctis Server / sync
+        - Startup / crash
+        - Other
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Crash log or error text
+      description: |
+        If Noctis crashed, paste the end of `crash.log`. Find it at `%APPDATA%\Noctis\crash.log` on Windows, or `~/.config/Noctis/crash.log` on macOS and Linux. Any error message shown on screen helps too.
+      render: text
+
+  - type: textarea
+    id: extra
+    attributes:
+      label: Screenshots or anything else
+      description: Drag images or video straight into this box. Mention the file format of the affected song if it seems relevant.
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before you submit
+      options:
+        - label: I searched existing issues and this is not a duplicate.
+          required: true
+        - label: I am on the latest release.
