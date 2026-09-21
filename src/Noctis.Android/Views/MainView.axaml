@@ -1,0 +1,96 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="using:Noctis.Controls"
+             x:Class="Noctis.Android.Views.MainView">
+
+    <!-- Bootstrap screen: the Library page's skeleton from the concept mockups (title,
+         search, 2x3 count tiles). Static numbers for now; it exists to prove the
+         toolchain, the shared styles, the icon resources and the Inter font on a
+         phone. Real content arrives with the library scan. -->
+    <Grid RowDefinitions="Auto,Auto,Auto,*" Margin="20,48,20,0">
+
+        <TextBlock Grid.Row="0" Text="Library" FontSize="34" FontWeight="Bold" />
+
+        <Border Grid.Row="1" Margin="0,16,0,20" CornerRadius="12" Background="#1E1E20" Padding="14,10">
+            <StackPanel Orientation="Horizontal" Spacing="10">
+                <PathIcon Data="{StaticResource SearchIcon}" Width="16" Height="16" Opacity="0.6" />
+                <TextBlock Text="Artists, Songs, Lyrics, and More" Opacity="0.55" VerticalAlignment="Center" />
+            </StackPanel>
+        </Border>
+
+        <Grid Grid.Row="2" ColumnDefinitions="*,12,*" RowDefinitions="Auto,12,Auto,12,Auto">
+            <Grid.Styles>
+                <Style Selector="Border.tile">
+                    <Setter Property="Background" Value="#1E1E20" />
+                    <Setter Property="CornerRadius" Value="14" />
+                    <Setter Property="Padding" Value="14,12" />
+                    <Setter Property="Height" Value="76" />
+                </Style>
+                <Style Selector="Border.tile TextBlock.count">
+                    <Setter Property="FontSize" Value="24" />
+                    <Setter Property="FontWeight" Value="Bold" />
+                    <Setter Property="HorizontalAlignment" Value="Right" />
+                    <Setter Property="VerticalAlignment" Value="Top" />
+                </Style>
+                <Style Selector="Border.tile TextBlock.label">
+                    <Setter Property="FontSize" Value="15" />
+                    <Setter Property="Opacity" Value="0.8" />
+                    <Setter Property="VerticalAlignment" Value="Bottom" />
+                </Style>
+                <Style Selector="Border.tile Ellipse.dot">
+                    <Setter Property="Width" Value="26" />
+                    <Setter Property="Height" Value="26" />
+                    <Setter Property="Fill" Value="{DynamicResource AccentColorBrush}" />
+                    <Setter Property="HorizontalAlignment" Value="Left" />
+                    <Setter Property="VerticalAlignment" Value="Top" />
+                </Style>
+            </Grid.Styles>
+
+            <Border Classes="tile" Grid.Row="0" Grid.Column="0">
+                <Grid>
+                    <Ellipse Classes="dot" />
+                    <TextBlock Classes="count" Text="0" />
+                    <TextBlock Classes="label" Text="Songs" />
+                </Grid>
+            </Border>
+            <Border Classes="tile" Grid.Row="0" Grid.Column="2">
+                <Grid>
+                    <Ellipse Classes="dot" />
+                    <TextBlock Classes="count" Text="0" />
+                    <TextBlock Classes="label" Text="Albums" />
+                </Grid>
+            </Border>
+            <Border Classes="tile" Grid.Row="2" Grid.Column="0">
+                <Grid>
+                    <Ellipse Classes="dot" />
+                    <TextBlock Classes="count" Text="0" />
+                    <TextBlock Classes="label" Text="Artists" />
+                </Grid>
+            </Border>
+            <Border Classes="tile" Grid.Row="2" Grid.Column="2">
+                <Grid>
+                    <Ellipse Classes="dot" />
+                    <TextBlock Classes="count" Text="0" />
+                    <TextBlock Classes="label" Text="Playlists" />
+                </Grid>
+            </Border>
+            <Border Classes="tile" Grid.Row="4" Grid.Column="0">
+                <Grid>
+                    <Ellipse Classes="dot" />
+                    <TextBlock Classes="count" Text="0" />
+                    <TextBlock Classes="label" Text="Recently Added" />
+                </Grid>
+            </Border>
+            <Border Classes="tile" Grid.Row="4" Grid.Column="2">
+                <Grid>
+                    <controls:HeartIcon IsFavorite="True" Size="26" HorizontalAlignment="Left" VerticalAlignment="Top" />
+                    <TextBlock Classes="count" Text="0" />
+                    <TextBlock Classes="label" Text="Favourites" />
+                </Grid>
+            </Border>
+        </Grid>
+
+        <TextBlock Grid.Row="3" Text="Noctis for Android · bootstrap build"
+                   Opacity="0.4" FontSize="12" VerticalAlignment="Bottom" Margin="0,0,0,24" />
+    </Grid>
+</UserControl>

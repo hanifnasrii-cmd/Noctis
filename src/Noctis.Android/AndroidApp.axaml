@@ -1,0 +1,24 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="Noctis.Android.AndroidApp"
+             Name="Noctis"
+             RequestedThemeVariant="Dark">
+
+    <!-- Same resource and style stack as the desktop App.axaml, minus the desktop-only
+         control stylesheet. Theme overlays (Ink, Smoke, ...) are merged at runtime by
+         AndroidApp.SetTheme exactly as App.SetThemeCore does on the desktop. -->
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceInclude Source="avares://Noctis.UI/Assets/Icons.axaml" />
+            </ResourceDictionary.MergedDictionaries>
+            <FontFamily x:Key="InterSemiBold">avares://Noctis.UI/Assets/Fonts/Inter-SemiBold.ttf#Inter SemiBold</FontFamily>
+        </ResourceDictionary>
+    </Application.Resources>
+
+    <Application.Styles>
+        <FluentTheme />
+        <StyleInclude Source="avares://Noctis.UI/Assets/Styles.axaml" />
+    </Application.Styles>
+
+</Application>
