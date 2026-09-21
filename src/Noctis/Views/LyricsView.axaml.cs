@@ -695,6 +695,7 @@ public partial class LyricsView : UserControl
 
         FlowLayerHost.IsVisible = builtIn;
         BeatGlow.IsVisible = builtIn;
+        _flow.BeatReactive = FlowingStyles.IsBeatReactive(style);
         _flow.Enabled = builtIn && vm.IsColorModeArtwork;
         KawarpLayer.BeatReactive = style == FlowingStyles.Kawarp;
         KawarpLayer.IsVisible = kawarp;
@@ -705,7 +706,7 @@ public partial class LyricsView : UserControl
     private Noctis.Plugins.IVisualLayerProvider? SelectedPluginLayer(LyricsViewModel vm)
     {
         var style = FlowingStyles.Normalize(vm.Player.LyricsFlowingStyle);
-        if (style == FlowingStyles.Drift || _pluginHost is null) return null;
+        if (FlowingStyles.IsDrift(style) || _pluginHost is null) return null;
         return _pluginHost.VisualLayers.FirstOrDefault(p => string.Equals(p.Name, style, StringComparison.Ordinal));
     }
 

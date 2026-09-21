@@ -455,6 +455,14 @@ public partial class SettingsViewModel : ViewModelBase
     public bool IsAutoMixStyle { get => string.Equals(TransitionStyle, "AutoMix", StringComparison.OrdinalIgnoreCase); set { if (value) TransitionStyle = "AutoMix"; } }
 
     [ObservableProperty] private bool _soundCheckEnabled;
+
+    /// <summary>GitHub #71: fade the level out before a pause lands and back in after a
+    /// resume, so play/pause never cuts hard. Duration in milliseconds.</summary>
+    [ObservableProperty] private bool _playPauseFadeEnabled;
+    [ObservableProperty] private double _playPauseFadeMs = 300;
+
+    /// <summary>GitHub #71: drops import into the library (default) or play/queue in place.</summary>
+    [ObservableProperty] private bool _importDroppedMedia = true;
     [ObservableProperty] private bool _trackTitleMarqueeEnabled = true;
     [ObservableProperty] private bool _artistMarqueeEnabled = true;
     [ObservableProperty] private bool _coverFlowMarqueeEnabled = true;
@@ -501,6 +509,7 @@ public partial class SettingsViewModel : ViewModelBase
     [ObservableProperty] private bool _playbackBarShowShuffle;
     [ObservableProperty] private bool _playbackBarShowRepeat;
     [ObservableProperty] private bool _playbackBarShowFavorite;
+    [ObservableProperty] private bool _playbackBarShowTime;
 
     public bool IsSkipSeconds10 { get => PlaybackBarSkipSeconds == 10; set { if (value) PlaybackBarSkipSeconds = 10; } }
     public bool IsSkipSeconds15 { get => PlaybackBarSkipSeconds == 15; set { if (value) PlaybackBarSkipSeconds = 15; } }
@@ -1872,6 +1881,9 @@ public partial class SettingsViewModel : ViewModelBase
 
             // Playback
             MigrateTransitionSettings(_settings);
+            PlayPauseFadeEnabled = _settings.PlayPauseFadeEnabled;
+            PlayPauseFadeMs = Math.Clamp(_settings.PlayPauseFadeMs, 100, 2000);
+            ImportDroppedMedia = _settings.ImportDroppedMedia;
             CrossfadeEnabled = _settings.CrossfadeEnabled;
             CrossfadeDuration = Math.Clamp(_settings.CrossfadeDuration, 1, 12);
             SongTransitionsEnabled = _settings.SongTransitionsEnabled;
@@ -1903,6 +1915,7 @@ public partial class SettingsViewModel : ViewModelBase
             PlaybackBarShowShuffle = _settings.PlaybackBarShowShuffle;
             PlaybackBarShowRepeat = _settings.PlaybackBarShowRepeat;
             PlaybackBarShowFavorite = _settings.PlaybackBarShowFavorite;
+            PlaybackBarShowTime = _settings.PlaybackBarShowTime;
             PlaybackBarIslandWidth = _settings.PlaybackBarWidth;
             LyricsFlowingLightEnabled = _settings.LyricsFlowingLightEnabled;
             LyricsFlowingStyle = FlowingStyles.Normalize(_settings.LyricsFlowingStyle);
@@ -2265,6 +2278,10 @@ public partial class SettingsViewModel : ViewModelBase
         // both About-tab toggles turned back off on the next launch.
         _settings.IncludePrereleaseUpdates = IncludePrereleaseUpdates;
         _settings.DeveloperMode = DeveloperMode;
+        // Same trap (Discord, Mistery 2026-09-21: "language changes to system default after
+        // restart"): the picker wrote _settings.Language once, the merge put the on-disk ""
+        // back, and the file was saved with the old value.
+        _settings.Language = LanguageChoice?.Code ?? string.Empty;
         _settings.MusicFolders = _collectionSnapshot?.MusicFolders ?? MusicFolders.ToList();
         _settings.FolderRules = _collectionSnapshot?.FolderRules ?? FolderRules
             .Where(r => !string.IsNullOrWhiteSpace(r.Path))
@@ -2276,6 +2293,9 @@ public partial class SettingsViewModel : ViewModelBase
             })
             .ToList();
         _settings.SongTransitionsEnabled = SongTransitionsEnabled;
+        _settings.PlayPauseFadeEnabled = PlayPauseFadeEnabled;
+        _settings.PlayPauseFadeMs = (int)Math.Round(Math.Clamp(PlayPauseFadeMs, 100, 2000));
+        _settings.ImportDroppedMedia = ImportDroppedMedia;
         _settings.TransitionStyle = TransitionStyle ?? "Crossfade";
         _settings.SongTransitionStrength = SongTransitionStrength ?? "Balanced";
         _settings.SongTransitionBeatMatch = SongTransitionBeatMatch;
@@ -2304,6 +2324,7 @@ public partial class SettingsViewModel : ViewModelBase
         _settings.PlaybackBarShowShuffle = PlaybackBarShowShuffle;
         _settings.PlaybackBarShowRepeat = PlaybackBarShowRepeat;
         _settings.PlaybackBarShowFavorite = PlaybackBarShowFavorite;
+        _settings.PlaybackBarShowTime = PlaybackBarShowTime;
         _settings.LyricsFlowingLightEnabled = LyricsFlowingLightEnabled;
         _settings.LyricsFlowingStyle = LyricsFlowingStyle;
         _settings.LyricsKawarpWarp = LyricsKawarpWarp;
@@ -2511,6 +2532,7 @@ public partial class SettingsViewModel : ViewModelBase
     private void ApplyAudioSettings()
     {
         _audioPlayer?.SetNormalization(SoundCheckEnabled);
+        _audioPlayer?.SetPlayPauseFade(PlayPauseFadeEnabled, (int)Math.Round(PlayPauseFadeMs));
         _audioPlayer?.SetCrossfade(SongTransitionsEnabled && IsCrossfadeStyle, (int)Math.Round(CrossfadeDuration));
         ApplyAutoMixToPlayer();
         _audioPlayer?.SetGapless(GaplessPlaybackEnabled);
@@ -2554,6 +2576,7 @@ public partial class SettingsViewModel : ViewModelBase
         _player.IslandShowShuffle = PlaybackBarShowShuffle;
         _player.IslandShowRepeat = PlaybackBarShowRepeat;
         _player.IslandShowFavorite = PlaybackBarShowFavorite;
+        _player.IslandShowTime = PlaybackBarShowTime;
         _player.IslandBackgroundOpacity = Math.Clamp(PlaybackBarBackgroundOpacity, 0, 1);
         _player.IslandTrackBoxOpacity = Math.Clamp(PlaybackBarTrackBoxOpacity, 0, 1);
         // Already clamped by AppSettings.ClampToValidRanges on load; a live
@@ -3115,6 +3138,30 @@ public partial class SettingsViewModel : ViewModelBase
         _ = SaveAsync();
     }
 
+    partial void OnPlayPauseFadeEnabledChanged(bool value)
+    {
+        ApplyAudioSettings();
+        if (_settingsLoaded) _ = SaveAsync();
+    }
+
+    partial void OnPlayPauseFadeMsChanged(double value)
+    {
+        var clamped = Math.Clamp(value, 100, 2000);
+        if (clamped != value)
+        {
+            PlayPauseFadeMs = clamped;
+            return;
+        }
+        ApplyAudioSettings();
+        if (_settingsLoaded) QueueSettingsSave();
+    }
+
+    partial void OnImportDroppedMediaChanged(bool value)
+    {
+        _settings.ImportDroppedMedia = value;
+        if (_settingsLoaded) _ = SaveAsync();
+    }
+
     partial void OnSongTransitionsEnabledChanged(bool value)
     {
         ApplyAudioSettings();
@@ -3568,6 +3615,12 @@ public partial class SettingsViewModel : ViewModelBase
         if (_settingsLoaded) _ = SaveAsync();
     }
 
+    partial void OnPlaybackBarShowTimeChanged(bool value)
+    {
+        ApplyPlayerSettings();
+        if (_settingsLoaded) _ = SaveAsync();
+    }
+
     partial void OnPlaybackBarShowRepeatChanged(bool value)
     {
         ApplyPlayerSettings();
@@ -3683,6 +3736,7 @@ public partial class SettingsViewModel : ViewModelBase
         {
             new(FlowingOff, Loc.T("Settings.FlowingOff")),
             new(FlowingStyles.Drift, Loc.T("Settings.FlowingDrift")),
+            new(FlowingStyles.DriftCalm, Loc.T("Settings.FlowingDriftCalm")),
             new(FlowingStyles.Kawarp, Loc.T("Settings.FlowingKawarp")),
             new(FlowingStyles.KawarpCalm, Loc.T("Settings.FlowingKawarpCalm")),
         };
@@ -5346,6 +5400,7 @@ public partial class SettingsViewModel : ViewModelBase
             PlaybackBarShowShuffle = defaultSettings.PlaybackBarShowShuffle;
             PlaybackBarShowRepeat = defaultSettings.PlaybackBarShowRepeat;
             PlaybackBarShowFavorite = defaultSettings.PlaybackBarShowFavorite;
+            PlaybackBarShowTime = defaultSettings.PlaybackBarShowTime;
             PlaybackBarIslandWidth = defaultSettings.PlaybackBarWidth;
             LyricsFlowingLightEnabled = defaultSettings.LyricsFlowingLightEnabled;
             LyricsFlowingStyle = defaultSettings.LyricsFlowingStyle;
@@ -5371,6 +5426,9 @@ public partial class SettingsViewModel : ViewModelBase
             // would re-persist the pre-reset width over the freshly defaulted file
             // (the ApplyPlayerSettings call below pushes the default to the bar).
             _playbackBarWidth = null;
+            PlayPauseFadeEnabled = defaultSettings.PlayPauseFadeEnabled;
+            PlayPauseFadeMs = defaultSettings.PlayPauseFadeMs;
+            ImportDroppedMedia = defaultSettings.ImportDroppedMedia;
             ProfileName = defaultSettings.ProfileName;
             ProfileAvatarPath = defaultSettings.ProfileAvatarPath;
 

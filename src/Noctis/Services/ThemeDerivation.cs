@@ -117,6 +117,9 @@ public static class ThemeDerivation
             ["ToggleSwitchFillOnDragging"]    = new SolidColorBrush(accent),
 
             // ── App backgrounds ──
+            // The window root too, or the theme editor's "Main background" pick leaves the
+            // base Gray #252525 framing the page (Discord, Mistery 09-21).
+            ["AppWindowBackgroundBrush"] = new SolidColorBrush(main),
             ["AppSidebarBackground"]   = new SolidColorBrush(sidebar),
             ["AppMainBackground"]      = new SolidColorBrush(main),
             ["AppMainBackgroundColor"] = main,

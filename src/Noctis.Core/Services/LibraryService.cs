@@ -48,6 +48,11 @@ public class LibraryService : ILibraryService
     private TaskCompletionSource? _scanFinished;
     private volatile bool _checkpointRequested;
 
+    /// <summary>See <see cref="ILibraryService.IsPublishingPartial"/>: set for the lifetime of
+    /// a scan's progressive publisher, cleared before the authoritative publish.</summary>
+    private volatile bool _publishingPartial;
+    public bool IsPublishingPartial => _publishingPartial;
+
     // Serializes scans. Two overlapping scans both drive _tracks, both Clear+Upsert the
     // SQLite index, and the second clobbers the first's _activeScanCts — so shutdown could
     // only cancel one of them. The startup auto-scan runs on a detached Task.Run, so
@@ -233,6 +238,7 @@ public class LibraryService : ILibraryService
         }
 
         using var publishCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        _publishingPartial = true;
         var publishTask = RunProgressivePublishAsync(publishCts.Token);
 
         try
@@ -364,6 +370,7 @@ public class LibraryService : ILibraryService
         {
             publishCts.Cancel();
             try { await publishTask.ConfigureAwait(false); } catch { /* publisher already stopping */ }
+            _publishingPartial = false;
         }
 
         // If scan was cancelled, either checkpoint the partial work (graceful
@@ -933,6 +940,7 @@ public class LibraryService : ILibraryService
         }
 
         using var publishCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        _publishingPartial = true;
         var publishTask = RunProgressivePublishAsync(publishCts.Token);
 
         try
@@ -1008,6 +1016,7 @@ public class LibraryService : ILibraryService
         {
             publishCts.Cancel();
             try { await publishTask.ConfigureAwait(false); } catch { /* publisher already stopping */ }
+            _publishingPartial = false;
         }
 
         if (ct.IsCancellationRequested)

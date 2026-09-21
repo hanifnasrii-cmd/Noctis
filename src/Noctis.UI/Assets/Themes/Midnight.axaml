@@ -29,7 +29,10 @@
     <SolidColorBrush x:Key="ToggleSwitchFillOnPressed" Color="#C73E4C" />
     <SolidColorBrush x:Key="ToggleSwitchFillOnDragging" Color="#EC5F6A" />
 
-    <!-- App backgrounds — deep blue-black -->
+    <!-- App backgrounds — deep blue-black. AppWindowBackgroundBrush is the window root;
+         without it the base dictionary's Gray #252525 framed the page (Discord, Mistery
+         09-21: "Midnight lacks this background change"). -->
+    <SolidColorBrush x:Key="AppWindowBackgroundBrush" Color="#0E1322" />
     <SolidColorBrush x:Key="AppSidebarBackground" Color="#1A2238" />
     <SolidColorBrush x:Key="AppMainBackground" Color="#0E1322" />
     <Color x:Key="AppMainBackgroundColor">#0E1322</Color>

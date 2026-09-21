@@ -234,7 +234,8 @@ public partial class PlaybackBarView : UserControl
             e.PropertyName == nameof(PlayerViewModel.IslandShowSleepTimer) ||
             e.PropertyName == nameof(PlayerViewModel.IslandShowShuffle) ||
             e.PropertyName == nameof(PlayerViewModel.IslandShowRepeat) ||
-            e.PropertyName == nameof(PlayerViewModel.IslandShowFavorite))
+            e.PropertyName == nameof(PlayerViewModel.IslandShowFavorite) ||
+            e.PropertyName == nameof(PlayerViewModel.IslandShowTime))
         {
             UpdateIslandWidth();
         }
@@ -958,6 +959,10 @@ public partial class PlaybackBarView : UserControl
     // Each optional island button (repeat / favorite / speed / skip back / skip forward /
     // sleep / shuffle) is a 34px button plus its row's 2px spacing.
     private const double ExtraTransportButtonWidth = 36;
+
+    /// <summary>Width the stacked elapsed / remaining labels add to the track box when
+    /// Settings → Player → Playback time is on ("12:34" at 10px + its 8px gap).</summary>
+    private const double IslandTimeWidth = 44;
     // Breathing room to the host's edges, matching the 8px margins the side panels use.
     private const double IslandEdgeMargin = 8;
     private static readonly TimeSpan VolumeFlyoutCloseDelay = TimeSpan.FromMilliseconds(140);
@@ -1176,7 +1181,7 @@ public partial class PlaybackBarView : UserControl
                         + (vm.IslandShowShuffle ? 1 : 0)
                         + (vm.IslandShowRepeat ? 1 : 0)
                         + (vm.IslandShowFavorite ? 1 : 0);
-            return buttons * ExtraTransportButtonWidth;
+            return buttons * ExtraTransportButtonWidth + (vm.IslandShowTime ? IslandTimeWidth : 0);
         }
     }
 

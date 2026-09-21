@@ -22,6 +22,15 @@ public interface ILibraryService
     /// <summary>Fires during scanning with progress info (current file count).</summary>
     event EventHandler<int>? ScanProgress;
 
+    /// <summary>
+    /// True while a scan/import is surfacing partial snapshots (the progressive fill):
+    /// <see cref="LibraryUpdated"/> then carries only the tracks found so far, so a
+    /// missing id is "not scanned yet", not "deleted". Consumers that treat a missing
+    /// track as removed (the player's queue purge) must wait for the authoritative
+    /// publish, which arrives with this false (GitHub #72).
+    /// </summary>
+    bool IsPublishingPartial => false;
+
     /// <summary>Fires when track favorites have been toggled (lightweight, no re-index).</summary>
     event EventHandler? FavoritesChanged;
 

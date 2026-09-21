@@ -135,6 +135,8 @@ public partial class PlayerViewModel : ViewModelBase
     /// track-box layout, so the stock bar is transport + box + lyrics/queue/volume.</summary>
     [ObservableProperty] private bool _islandShowRepeat;
     [ObservableProperty] private bool _islandShowFavorite;
+    /// <summary>Elapsed / remaining time inside the island's track box (Settings → Player).</summary>
+    [ObservableProperty] private bool _islandShowTime;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IslandSkipLabel))]
@@ -2839,6 +2841,14 @@ public partial class PlayerViewModel : ViewModelBase
     {
         Dispatcher.UIThread.Post(() =>
         {
+            // A scan's progressive fill publishes the tracks found SO FAR every 1.5 s;
+            // judging "deleted" against that partial index purged the queue and stopped
+            // playback the moment a folder was removed or a rescan started (GitHub #72:
+            // the playing album wasn't even in the removed folder). The authoritative
+            // publish follows with IsPublishingPartial false — reconcile then.
+            if (_library.IsPublishingPartial)
+                return;
+
             // If library is now empty, stop playback and clear everything
             if (_library.Tracks.Count == 0)
             {

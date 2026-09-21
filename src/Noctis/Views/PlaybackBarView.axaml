@@ -848,7 +848,7 @@
                        left) like the reference LCD. Its corner radius is the card's minus
                        the inset (10 − 3 = 7) so the two corners run concentric — a smaller
                        radius left a bright sliver of card fill inside the card's corner. -->
-                  <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto" Margin="3,0,3,0">
+                  <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto,Auto" Margin="3,0,3,0">
 
                     <!-- Album art thumbnail (click opens the Mini Player) -->
                     <Border Grid.Column="0"
@@ -1054,12 +1054,36 @@
                         </StackPanel>
                     </Grid>
 
+                    <!-- Playback time (Settings → Player → Playback time; Discord, Luwi 09-21):
+                         elapsed over remaining, stacked like the LCD's own two text rows and
+                         right-aligned so the digits tick in place. The island grows by
+                         IslandTimeWidth while this is on (see ExtraTransportWidth) so the
+                         title/artist viewports keep their full width. -->
+                    <StackPanel Grid.Column="2"
+                                x:Name="TrackTimeStack"
+                                VerticalAlignment="Center"
+                                Margin="0,0,8,0"
+                                MinWidth="36"
+                                IsVisible="{Binding IslandShowTime}">
+                        <TextBlock Text="{Binding PositionText}"
+                                   FontSize="10"
+                                   FontWeight="SemiBold"
+                                   TextAlignment="Right"
+                                   HorizontalAlignment="Right"
+                                   Foreground="{DynamicResource IslandForeground}" />
+                        <TextBlock Text="{Binding RemainingTimeText, StringFormat='-{0}'}"
+                                   FontSize="10"
+                                   TextAlignment="Right"
+                                   HorizontalAlignment="Right"
+                                   Foreground="{DynamicResource IslandForegroundSecondary}" />
+                    </StackPanel>
+
                     <!-- Now-playing bars (the same EqVisualizer the album/track rows use,
                          accent-coloured by its default style) + the options button, on the
                          box's right edge. The MenuFlyout itself stays declared on the right
                          cluster's OptionsButton — the fallback shown only while this box is
                          hidden — and this button opens that same flyout anchored here. -->
-                    <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                    <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center">
                         <controls:EqVisualizer Width="22" Height="18"
                                                VerticalAlignment="Center"
                                                IsPlaying="{Binding IsPlaying}" />

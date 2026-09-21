@@ -220,6 +220,8 @@
   <data name="Settings.SleepTimerOneClick" xml:space="preserve"><value>Sleep timer one click away.</value><comment>Text in SettingsView.axaml</comment></data>
   <data name="Settings.Shuffle" xml:space="preserve"><value>Shuffle</value><comment>Text in SettingsView.axaml</comment></data>
   <data name="Settings.ShuffleButtonAfterRepeat" xml:space="preserve"><value>A shuffle button next to Repeat.</value><comment>Text in SettingsView.axaml</comment></data>
+  <data name="Settings.PlaybackTime" xml:space="preserve"><value>Playback time</value><comment>Text in SettingsView.axaml</comment></data>
+  <data name="Settings.PlaybackTimeInTrackBox" xml:space="preserve"><value>Elapsed and remaining time of the current title in the track box.</value><comment>Text in SettingsView.axaml</comment></data>
   <data name="Settings.TrackBoxOpacity" xml:space="preserve"><value>Track Box Opacity</value><comment>Text in SettingsView.axaml</comment></data>
   <data name="Settings.HowSolidTrackBox" xml:space="preserve"><value>How solid the box around the song info in the player bar is. 0% hides it.</value><comment>Text in SettingsView.axaml</comment></data>
   <data name="Settings.RepeatButton" xml:space="preserve"><value>Repeat</value><comment>Text in SettingsView.axaml</comment></data>
@@ -300,6 +302,9 @@
   <data name="Settings.10s" xml:space="preserve"><value>10s</value><comment>Content in SettingsView.axaml</comment></data>
   <data name="Settings.SoundCheck" xml:space="preserve"><value>Sound Check</value><comment>Text in SettingsView.axaml</comment></data>
   <data name="Settings.KeepSongVolumeAt" xml:space="preserve"><value>Keep song volume at a consistent level.</value><comment>Text in SettingsView.axaml</comment></data>
+  <data name="Settings.PlayPauseFade" xml:space="preserve"><value>Fade on play and pause</value><comment>Text in SettingsView.axaml</comment></data>
+  <data name="Settings.PlayPauseFadeHint" xml:space="preserve"><value>Fade the sound out when pausing and back in when resuming instead of stopping dead.</value><comment>Text in SettingsView.axaml</comment></data>
+  <data name="Settings.FadeDuration" xml:space="preserve"><value>Fade duration</value><comment>Text in SettingsView.axaml</comment></data>
   <data name="Settings.GaplessPlayback" xml:space="preserve"><value>Gapless Playback</value><comment>Text in SettingsView.axaml</comment></data>
   <data name="Settings.TracksFlowIntoEach" xml:space="preserve"><value>Tracks flow into each other without a pause.</value><comment>Text in SettingsView.axaml</comment></data>
   <data name="Settings.Autoplay" xml:space="preserve"><value>Autoplay</value><comment>Text in SettingsView.axaml</comment></data>
@@ -387,6 +392,8 @@
   <data name="Settings.MediaFolderLocations" xml:space="preserve"><value>Media Folder Locations</value><comment>Text in SettingsView.axaml</comment></data>
   <data name="Settings.FoldersWhereMusicStored" xml:space="preserve"><value>Folders where your music is stored.</value><comment>Text in SettingsView.axaml</comment></data>
   <data name="Settings.AddFolder" xml:space="preserve"><value>Add Folder</value><comment>Text in SettingsView.axaml</comment></data>
+  <data name="Settings.ImportDroppedFiles" xml:space="preserve"><value>Import dropped files</value><comment>Text in SettingsView.axaml</comment></data>
+  <data name="Settings.ImportDroppedFilesHint" xml:space="preserve"><value>Files dropped onto Noctis are moved into the Noctis Imports folder and added to the library. Off: they play or queue from where they are and the library is left alone.</value><comment>Text in SettingsView.axaml</comment></data>
   <data name="Settings.LibraryScan" xml:space="preserve"><value>Library Scan</value><comment>Text in SettingsView.axaml</comment></data>
   <data name="Settings.FindNewTracksUpdate" xml:space="preserve"><value>Find new tracks and update search.</value><comment>Text in SettingsView.axaml</comment></data>
   <data name="Settings.ScanLibrary" xml:space="preserve"><value>Scan Library</value><comment>Text in SettingsView.axaml</comment></data>
@@ -1480,6 +1487,7 @@
   <data name="Settings.FlowingDrift" xml:space="preserve"><value>Drift</value><comment>Flowing-background picker row (built-in style)</comment></data>
   <data name="Settings.FlowingKawarp" xml:space="preserve"><value>Kawarp</value><comment>Flowing-background picker row (liquid warp, beat-reactive)</comment></data>
   <data name="Settings.FlowingKawarpCalm" xml:space="preserve"><value>Kawarp (no beat)</value><comment>Flowing-background picker row</comment></data>
+  <data name="Settings.FlowingDriftCalm" xml:space="preserve"><value>Drift (no beat)</value><comment>Flowing-background picker row</comment></data>
   <data name="Settings.KawarpWarp" xml:space="preserve"><value>Warp strength</value><comment>Kawarp slider label</comment></data>
   <data name="Settings.KawarpBlur" xml:space="preserve"><value>Blur</value><comment>Kawarp slider label</comment></data>
 

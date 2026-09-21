@@ -581,6 +581,7 @@ public partial class LyricsViewModel : ViewModelBase, IDisposable
 
         // Reload lyrics when metadata is edited (e.g. synced lyrics toggled off)
         _library.LibraryUpdated += OnLibraryUpdated;
+        RefreshHeaderCredits();
 
         // Subscribe to state changes to start/stop the sync timer
         _player.PropertyChanged += OnPlayerPropertyChanged;
@@ -947,6 +948,50 @@ public partial class LyricsViewModel : ViewModelBase, IDisposable
         if (!string.IsNullOrWhiteSpace(artist))
             _viewArtistAction?.Invoke(artist);
     }
+
+    // ── Header credits (Discord, aaron 2026-09-21) ──
+    // "Kanye West, GLC, Consequence" was ONE button that always opened the first name;
+    // the album page already renders one link per credited artist, so the lyrics page
+    // now does the same. The facts line printed the playing file's TRCK total (the
+    // current DISC's count) — the album's own count spans every disc.
+
+    /// <summary>One entry per credited artist of the current track, in tag order.</summary>
+    [ObservableProperty] private IReadOnlyList<ArtistTokenItem> _artistTokens = Array.Empty<ArtistTokenItem>();
+
+    /// <summary>True when the credit splits into more than one artist (per-artist links shown).</summary>
+    [ObservableProperty] private bool _hasMultipleArtists;
+
+    /// <summary>The album's track count across all discs, falling back to the tag's per-disc total.</summary>
+    [ObservableProperty] private int _albumTrackCount;
+
+    [RelayCommand]
+    private void ViewArtistNamed(string? name)
+    {
+        if (!string.IsNullOrWhiteSpace(name))
+            _viewArtistAction?.Invoke(name);
+    }
+
+    private void RefreshHeaderCredits()
+    {
+        var track = _player.CurrentTrack;
+        var tokens = BuildArtistTokens(track?.Artist);
+        ArtistTokens = tokens;
+        HasMultipleArtists = tokens.Length > 1;
+        AlbumTrackCount = track is null ? 0 : ResolveAlbumTrackCount(track, _library.GetAlbumById(track.AlbumId));
+    }
+
+    /// <summary>Splits a credit with the library's configured separators (Settings → Library).</summary>
+    internal static ArtistTokenItem[] BuildArtistTokens(string? artist)
+    {
+        if (string.IsNullOrWhiteSpace(artist)) return Array.Empty<ArtistTokenItem>();
+        var names = Track.ParseArtistTokens(artist);
+        if (names.Length == 0) names = new[] { artist.Trim() };
+        return names.Select((n, i) => new ArtistTokenItem(n, IsLast: i == names.Length - 1)).ToArray();
+    }
+
+    /// <summary>The album's grouped count (every disc) when the library knows it, else the tag's per-disc total.</summary>
+    internal static int ResolveAlbumTrackCount(Track track, Album? album)
+        => album is { TrackCount: > 0 } ? album.TrackCount : track.TrackCount;
 
     [RelayCommand]
     private void ViewAlbum()
@@ -1758,6 +1803,7 @@ public partial class LyricsViewModel : ViewModelBase, IDisposable
     {
         Dispatcher.UIThread.Post(() =>
         {
+            RefreshHeaderCredits(); // the album's grouped track count can change with a scan
             if (_currentTrack == null) return;
 
             // Reload lyrics only if the track's lyrics content actually changed
@@ -1834,6 +1880,9 @@ public partial class LyricsViewModel : ViewModelBase, IDisposable
 
     private void OnPlayerPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
+        if (e.PropertyName == nameof(PlayerViewModel.CurrentTrack))
+            RefreshHeaderCredits();
+
         // Clear lyrics when track becomes null (queue ended)
         if (e.PropertyName == nameof(PlayerViewModel.CurrentTrack) && _player.CurrentTrack == null)
         {

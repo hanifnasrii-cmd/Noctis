@@ -42,15 +42,26 @@ public class AnimatedCoverServiceTests : IDisposable
     private static void Touch(string path) => File.WriteAllBytes(path, new byte[] { 1 });
 
     [Fact]
-    public void Resolve_PrefersTrackSidecar_OverAlbumSidecar()
+    public void Resolve_IgnoresTheSongsOwnClip_ItIsTheMusicVideo()
     {
+        // A same-name clip beside the song is what MusicVideoLocator finds; treating it as
+        // an animated cover too showed the clip cropped into the square cover slot the
+        // moment "Music videos" was off (Discord, aaron 2026-09-21).
         var t = NewTrack(out var folder);
         Touch(Path.Combine(folder, "song.mp4"));
         Touch(Path.Combine(folder, "cover.mp4"));
 
-        var result = _svc.Resolve(t);
+        Assert.Equal(Path.Combine(folder, "cover.mp4"), _svc.Resolve(t));
+        Assert.Equal(Path.Combine(folder, "song.mp4"), Noctis.Helpers.MusicVideoLocator.Find(t.FilePath));
+    }
 
-        Assert.Equal(Path.Combine(folder, "song.mp4"), result);
+    [Fact]
+    public void Resolve_OnlyTheSongsOwnClip_IsNotAnAnimatedCover()
+    {
+        var t = NewTrack(out var folder);
+        Touch(Path.Combine(folder, "song.webm"));
+
+        Assert.Null(_svc.Resolve(t));
     }
 
     [Fact]

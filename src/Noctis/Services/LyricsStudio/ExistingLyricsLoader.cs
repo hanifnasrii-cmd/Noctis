@@ -1,3 +1,4 @@
+using Noctis.Helpers;
 using System.Text.RegularExpressions;
 using Noctis.Models;
 
@@ -42,7 +43,13 @@ public static partial class ExistingLyricsLoader
                 return new ExistingLyrics(HasWordTimings(lrcLines) ? LyricsFormat.Elrc : LyricsFormat.Lrc, lrcLines, ".lrc file", lrc);
         }
 
-        var embedded = track.SyncedLyrics;
+        // Synced field first; then the plain lyrics tag, which is where the scanner puts the
+        // file's USLT / LYRICS frame — timed text embedded there counts too (see
+        // LyricsFormatDetector.Detect). Untimed plain text is not "existing" here: the
+        // engine re-times it from scratch.
+        var embedded = !string.IsNullOrWhiteSpace(track.SyncedLyrics) ? track.SyncedLyrics
+            : LyricsTextHelper.ContainsTimestamps(track.Lyrics) ? track.Lyrics
+            : null;
         if (!string.IsNullOrWhiteSpace(embedded))
         {
             var lines = ParseTimed(embedded);

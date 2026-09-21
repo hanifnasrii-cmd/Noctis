@@ -1267,7 +1267,12 @@ public partial class MainWindow : Window
 
         try
         {
-            await vm.ImportDroppedMediaAsync(paths);
+            // GitHub #71: Settings → Library → "Import dropped files" off plays / queues
+            // the drop from where it is instead of relocating it into Noctis Imports.
+            if (vm.Settings.ImportDroppedMedia)
+                await vm.ImportDroppedMediaAsync(paths);
+            else
+                await vm.QueueExternalMediaAsync(paths);
         }
         catch (OperationCanceledException)
         {
@@ -1885,6 +1890,30 @@ public partial class MainWindow : Window
             rootPanel.AddHandler(DragDrop.DragLeaveEvent, OnWindowDragLeave, RoutingStrategies.Bubble, handledEventsToo: true);
         }
 
+        // GitHub #71 (3): rows dragged from any library page drop onto the queue popup
+        // to append them. The window handlers above leave in-app payloads alone, so this
+        // list is the one place that reads them here.
+        if (this.FindControl<ListBox>("QueuePopupListBox") is { } queueDropTarget)
+        {
+            DragDrop.SetAllowDrop(queueDropTarget, true);
+            queueDropTarget.AddHandler(DragDrop.DragOverEvent, OnQueueDragOver);
+            queueDropTarget.AddHandler(DragDrop.DropEvent, OnQueueDrop);
+        }
+    }
+
+    private void OnQueueDragOver(object? sender, DragEventArgs e)
+    {
+        if (Helpers.DragFileBehavior.GetDraggedTracks(e.DataTransfer) is not { Count: > 0 }) return;
+        e.DragEffects = DragDropEffects.Copy;
+        e.Handled = true;
+    }
+
+    private void OnQueueDrop(object? sender, DragEventArgs e)
+    {
+        if (Helpers.DragFileBehavior.GetDraggedTracks(e.DataTransfer) is not { Count: > 0 } tracks) return;
+        if (DataContext is not MainWindowViewModel vm) return;
+        e.Handled = true;
+        vm.Player.AddRangeToQueue(tracks.ToList());
     }
 
     // Backdrop click closes the Settings modal; clicks inside the card are swallowed.

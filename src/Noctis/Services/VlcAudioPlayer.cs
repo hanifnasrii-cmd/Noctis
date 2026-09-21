@@ -2106,6 +2106,115 @@ public class VlcAudioPlayer : IAudioPlayer
         _crossfadeOverlap = overlap;
     }
 
+    // ── Fade on play / pause (GitHub #73) ──
+    // Pause: ramp the audible level to silence, land the pause, then put the level
+    // straight back (inaudible while paused) so every other path — the next Play(),
+    // a slider move, the reassert nets, the crossfade's _rampCurrentMilli baseline —
+    // still sees the user's level. Resume: dip to silence, un-pause, ramp back up.
+    // Each output path rides its own click-free primitive: the OS session (Windows,
+    // amplitude-milli), the callback sink's per-sample gain target, or the native
+    // LibVLC player volume (macOS/Linux). Both run inside _playbackLock like the
+    // crossfade, with _transitionInFlight parking the slider for the ramp.
+    private volatile bool _playPauseFadeEnabled;
+    private int _playPauseFadeMs = 300;
+
+    public void SetPlayPauseFade(bool enabled, int durationMs)
+    {
+        if (_disposed) return;
+        _playPauseFadeEnabled = enabled;
+        _playPauseFadeMs = Math.Clamp(durationMs, 50, 3000);
+    }
+
+    private bool PlayPauseFadeArmed => _playPauseFadeEnabled && !_userMuted && _playPauseFadeMs > 0;
+
+    /// <summary>The user's level in the amplitude-milli domain — what the crossfade lands on.</summary>
+    private int UserLevelMilli() => CurvedVolumeToLevelMilli(
+        ApplyReplayGainScalar(ApplyVolumeCurve(Math.Clamp(_userVolume + _volumeAdjust, 0, 100))));
+
+    private void FadeOutBeforePause()
+    {
+        var ms = _playPauseFadeMs;
+        _transitionInFlight = true;
+        try
+        {
+            if (ActiveCallbackSink is { } sink)
+                StepSinkGain(sink, WasapiGainLevel(), 0f, ms);
+            else if (_sessionVolume != null)
+            {
+                var start = Volatile.Read(ref _rampCurrentMilli);
+                if (start <= 0) start = UserLevelMilli();
+                FadeSessionLevelBlocking(start, 0, ms, CancellationToken.None);
+            }
+            else
+                FadePlayerVolumeBlocking(_player.Volume, 0, ms);
+        }
+        finally { _transitionInFlight = false; }
+    }
+
+    /// <summary>Puts the level back at the user's value while paused (nothing is audible).</summary>
+    private void RestoreLevelWhilePaused()
+    {
+        if (ActiveCallbackSink is { } sink)
+            sink.SetGainTarget(WasapiGainLevel());
+        else if (_sessionVolume != null)
+        {
+            var milli = UserLevelMilli();
+            _sessionVolume.SetLevel(milli / 1000.0);
+            Volatile.Write(ref _rampCurrentMilli, milli);
+        }
+        else
+            SetPlayerVolumeInsistent(_player, GetTargetVlcVolume());
+    }
+
+    /// <summary>Silences the output right before the un-pause so the fade-in starts from zero.</summary>
+    private void DipLevelBeforeResume()
+    {
+        if (ActiveCallbackSink is { } sink)
+            sink.SetGainTarget(0f);
+        else if (_sessionVolume != null)
+        {
+            _sessionVolume.SetLevel(0);
+            Volatile.Write(ref _rampCurrentMilli, 0);
+        }
+        else
+            SetPlayerVolumeInsistent(_player, 0);
+    }
+
+    private void FadeInAfterResume()
+    {
+        var ms = _playPauseFadeMs;
+        _transitionInFlight = true;
+        try
+        {
+            if (ActiveCallbackSink is { } sink)
+                StepSinkGain(sink, 0f, WasapiGainLevel(), ms);
+            else if (_sessionVolume != null)
+                FadeSessionLevelBlocking(0, UserLevelMilli(), ms, CancellationToken.None);
+            else
+            {
+                var target = GetTargetVlcVolume();
+                FadePlayerVolumeBlocking(0, target, ms);
+                SetPlayerVolumeInsistent(_player, target); // the landing must not ride a droppable write
+            }
+        }
+        finally { _transitionInFlight = false; }
+    }
+
+    /// <summary>Eases the callback sink's gain target between two levels; the sink
+    /// interpolates per sample toward each step, so this stays click-free at any pace.</summary>
+    private void StepSinkGain(WasapiGainOutput sink, float from, float to, int durationMs)
+    {
+        var steps = Math.Max(1, durationMs / FadeStepMs);
+        var sleepMs = Math.Max(1, durationMs / steps);
+        for (var i = 1; i <= steps; i++)
+        {
+            if (_disposed) return;
+            var eased = AutoMixFadeMath.SmoothFadeProgress((double)i / steps);
+            sink.SetGainTarget((float)(from + ((to - from) * eased)));
+            if (i < steps) Thread.Sleep(sleepMs);
+        }
+    }
+
     // ── Playback speed (podcast/audiobook island) ──
     private double _playbackRate = 1.0;
     private double _pitchRatio = 1.0;
@@ -4072,6 +4181,8 @@ public class VlcAudioPlayer : IAudioPlayer
                 if (_player.IsPlaying)
                 {
                     ResetEndReachedPending();
+                    var fade = PlayPauseFadeArmed;
+                    if (fade) FadeOutBeforePause();
                     _player.Pause();
                     // Engine: the ring holds seconds of decoded audio — pausing
                     // only VLC would keep the sink audibly playing it out.
@@ -4079,6 +4190,7 @@ public class VlcAudioPlayer : IAudioPlayer
                         _gaplessSink?.Pause();
                     _isPaused = true;
                     _positionTimer.Stop();
+                    if (fade) RestoreLevelWhilePaused();
                 }
             }
             catch (ObjectDisposedException) { /* disposed mid-pause */ }
@@ -4111,12 +4223,15 @@ public class VlcAudioPlayer : IAudioPlayer
                 if (_isPaused)
                 {
                     ResetEndReachedPending();
+                    var fade = PlayPauseFadeArmed;
+                    if (fade) DipLevelBeforeResume();
                     if (_gaplessEngine)
                         _gaplessSink?.Resume();
                     // VLC's Pause() toggles between pause and play
                     _player.Pause();
                     _isPaused = false;
                     _positionTimer.Start();
+                    if (fade) FadeInAfterResume();
                 }
             }
             catch (ObjectDisposedException) { /* disposed mid-resume */ }

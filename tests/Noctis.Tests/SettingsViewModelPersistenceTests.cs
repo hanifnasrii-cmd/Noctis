@@ -56,6 +56,71 @@ public class SettingsViewModelPersistenceTests : IDisposable
         Assert.True(reloaded.DeveloperMode);
     }
 
+    /// <summary>Discord (Mistery, 2026-09-21): the picker applied the language live but the
+    /// save merged the on-disk "" back, so every restart fell back to the OS language.</summary>
+    [AvaloniaFact]
+    public async Task Language_SurvivesSaveAndReload()
+    {
+        var vm = CreateViewModel();
+        await vm.LoadAsync();
+        var pick = vm.LanguageOptions.FirstOrDefault(o => !string.IsNullOrEmpty(o.Code));
+        Assert.NotNull(pick); // satellite resource assemblies ship with the test output
+        try
+        {
+            vm.LanguageChoice = pick;
+            await vm.SaveAsync();
+
+            var reloaded = CreateViewModel();
+            await reloaded.LoadAsync();
+
+            Assert.Equal(pick!.Code, reloaded.GetSettings().Language);
+            Assert.Equal(pick.Code, reloaded.LanguageChoice?.Code);
+        }
+        finally
+        {
+            vm.LanguageChoice = vm.LanguageOptions[0]; // back to the system language for the other tests
+        }
+    }
+
+    /// <summary>GitHub #71 / #73: the import toggle and the play/pause fade are VM-owned too.</summary>
+    [AvaloniaFact]
+    public async Task ImportToggleAndPlayPauseFade_SurviveSaveAndReload()
+    {
+        var vm = CreateViewModel();
+        await vm.LoadAsync();
+        Assert.True(vm.ImportDroppedMedia);
+        Assert.False(vm.PlayPauseFadeEnabled);
+        Assert.Equal(300, vm.PlayPauseFadeMs);
+
+        vm.ImportDroppedMedia = false;
+        vm.PlayPauseFadeEnabled = true;
+        vm.PlayPauseFadeMs = 750;
+        await vm.SaveAsync();
+
+        var reloaded = CreateViewModel();
+        await reloaded.LoadAsync();
+
+        Assert.False(reloaded.ImportDroppedMedia);
+        Assert.True(reloaded.PlayPauseFadeEnabled);
+        Assert.Equal(750, reloaded.PlayPauseFadeMs);
+    }
+
+    [AvaloniaFact]
+    public async Task FlowingBackgroundPicker_OffersDriftWithoutTheBeat()
+    {
+        var vm = CreateViewModel();
+        await vm.LoadAsync();
+
+        var keys = vm.FlowingOptions.Select(o => o.Key).ToList();
+        Assert.Equal(new[] { SettingsViewModel.FlowingOff, FlowingStyles.Drift, FlowingStyles.DriftCalm, FlowingStyles.Kawarp, FlowingStyles.KawarpCalm },
+            keys.Take(5));
+
+        vm.SelectedFlowingOption = vm.FlowingOptions.First(o => o.Key == FlowingStyles.DriftCalm);
+        Assert.True(vm.LyricsFlowingLightEnabled);
+        Assert.Equal(FlowingStyles.DriftCalm, vm.LyricsFlowingStyle);
+        Assert.False(vm.IsKawarpStyle);
+    }
+
     [AvaloniaFact]
     public async Task ShutdownVolume_SurvivesSaveAndReload()
     {

@@ -25,6 +25,11 @@ public static class LyricsFormatDetector
     {
         if (!string.IsNullOrWhiteSpace(synced) && LyricsTextHelper.ContainsTimestamps(synced))
             return HasWordTags(synced) ? LyricsFormat.Elrc : LyricsFormat.Lrc;
+        // The scanner stores the file's lyrics tag (USLT / LYRICS) in the plain field — the
+        // only lyrics frame TagLib exposes — so LRC text embedded there is timed lyrics too
+        // (Discord, Mistery 2026-09-21: "Lyrics Studio doesn't catch embedded lyrics").
+        if (!string.IsNullOrWhiteSpace(plain) && LyricsTextHelper.ContainsTimestamps(plain))
+            return HasWordTags(plain) ? LyricsFormat.Elrc : LyricsFormat.Lrc;
         if (!string.IsNullOrWhiteSpace(synced) || !string.IsNullOrWhiteSpace(plain))
             return LyricsFormat.Plain;
         return LyricsFormat.None;

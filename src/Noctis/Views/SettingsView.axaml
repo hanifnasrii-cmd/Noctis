@@ -2133,6 +2133,15 @@
                                               IsChecked="{Binding PlaybackBarShowShuffle}"
                                               VerticalAlignment="Center"/>
                     </Grid>
+                    <Grid ColumnDefinitions="*,Auto">
+                        <StackPanel Grid.Column="0" Spacing="2">
+                            <TextBlock Text="{loc:T Settings.PlaybackTime}" FontSize="13" FontWeight="SemiBold"/>
+                            <TextBlock Text="{loc:T Settings.PlaybackTimeInTrackBox}" FontSize="12" Opacity="0.5" TextWrapping="Wrap"/>
+                        </StackPanel>
+                        <controls:LottieToggle Grid.Column="1"
+                                              IsChecked="{Binding PlaybackBarShowTime}"
+                                              VerticalAlignment="Center"/>
+                    </Grid>
                 </StackPanel>
             </Border>
             <Border Classes="setting-row">
@@ -2754,6 +2763,39 @@
                                           VerticalAlignment="Center"/>
                 </Grid>
             </Border>
+            <!-- GitHub #73: the level fades out before a pause lands and back in after a resume. -->
+            <Border Classes="setting-row">
+                <StackPanel Spacing="6">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <StackPanel Grid.Column="0" Spacing="2">
+                            <TextBlock Text="{loc:T Settings.PlayPauseFade}" FontSize="15" FontWeight="SemiBold"/>
+                            <TextBlock Text="{loc:T Settings.PlayPauseFadeHint}"
+                                       FontSize="12" Opacity="0.5" TextWrapping="Wrap"/>
+                        </StackPanel>
+                        <controls:LottieToggle Grid.Column="1"
+                                              IsChecked="{Binding PlayPauseFadeEnabled}"
+                                              VerticalAlignment="Center"/>
+                    </Grid>
+                    <controls:CollapsibleContent IsOpen="{Binding PlayPauseFadeEnabled}" Lift="10">
+                        <StackPanel Classes="sub-setting" Spacing="6" Margin="2,10,0,0">
+                            <TextBlock Text="{loc:T Settings.FadeDuration}" FontSize="13" FontWeight="SemiBold"/>
+                            <Grid ColumnDefinitions="*,Auto">
+                                <Slider Grid.Column="0"
+                                        Classes="accent-slider"
+                                        Minimum="100" Maximum="2000"
+                                        TickFrequency="50" IsSnapToTickEnabled="True"
+                                        Value="{Binding PlayPauseFadeMs, Mode=TwoWay}"
+                                        VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="1"
+                                           Text="{Binding PlayPauseFadeMs, StringFormat='{}{0:0} ms'}"
+                                           FontSize="12" Opacity="0.7"
+                                           VerticalAlignment="Center"
+                                           MinWidth="74" TextAlignment="Right" Margin="12,0,0,0"/>
+                            </Grid>
+                        </StackPanel>
+                    </controls:CollapsibleContent>
+                </StackPanel>
+            </Border>
             <Border Classes="setting-row">
                 <Grid ColumnDefinitions="*,Auto">
                     <StackPanel Grid.Column="0" Spacing="2">
@@ -3104,6 +3146,20 @@
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
                 </StackPanel>
+            </Border>
+            <!-- GitHub #71: off = dropped files play / queue from where they are, nothing is
+                 moved into Noctis Imports or added to the library. -->
+            <Border Classes="setting-row">
+                <Grid ColumnDefinitions="*,Auto">
+                    <StackPanel Grid.Column="0" Spacing="2" VerticalAlignment="Center">
+                        <TextBlock Text="{loc:T Settings.ImportDroppedFiles}" FontSize="15" FontWeight="SemiBold"/>
+                        <TextBlock Text="{loc:T Settings.ImportDroppedFilesHint}"
+                                   FontSize="12" Opacity="0.5" TextWrapping="Wrap"/>
+                    </StackPanel>
+                    <controls:LottieToggle Grid.Column="1"
+                                          IsChecked="{Binding ImportDroppedMedia}"
+                                          VerticalAlignment="Center"/>
+                </Grid>
             </Border>
             <Border Classes="setting-row">
                 <Grid ColumnDefinitions="*,Auto">

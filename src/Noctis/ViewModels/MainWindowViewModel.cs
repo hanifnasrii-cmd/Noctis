@@ -762,6 +762,77 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         try
         {
+            var tracks = await ResolveExternalTracksAsync(paths);
+            if (tracks.Count == 0) return;
+            Player.ReplaceQueueAndPlay(tracks, 0);
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[MainWindowVM] OpenExternalFiles failed: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// GitHub #71: with Settings → Library → "Import dropped files" off, a drop plays or
+    /// queues the files from where they are — nothing is moved into Noctis Imports and
+    /// the library is left alone. Folders expand to their audio files in name order.
+    /// Empty player: the drop replaces the queue and starts; otherwise it appends.
+    /// </summary>
+    public async Task QueueExternalMediaAsync(IReadOnlyList<string> paths)
+    {
+        try
+        {
+            var files = await Task.Run(() => ExpandDroppedAudioFiles(paths));
+            if (files.Count == 0) return;
+            var tracks = await ResolveExternalTracksAsync(files);
+            if (tracks.Count == 0) return;
+            if (Player.CurrentTrack == null)
+                Player.ReplaceQueueAndPlay(tracks, 0);
+            else
+                Player.AddRangeToQueue(tracks);
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[MainWindowVM] QueueExternalMedia failed: {ex.Message}");
+        }
+    }
+
+    /// <summary>Dropped files and folders → the playable files, folders walked recursively
+    /// and sorted by path so disc/track prefixes give the play order. Internal for tests.</summary>
+    internal static List<string> ExpandDroppedAudioFiles(IReadOnlyList<string> paths)
+    {
+        var files = new List<string>();
+        foreach (var raw in paths)
+        {
+            if (string.IsNullOrWhiteSpace(raw)) continue;
+            if (Directory.Exists(raw))
+            {
+                var perFolder = new List<string>();
+                try
+                {
+                    foreach (var file in Directory.EnumerateFiles(raw, "*.*", SearchOption.AllDirectories))
+                        if (MetadataService.SupportedExtensions.Contains(Path.GetExtension(file)))
+                            perFolder.Add(file);
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"[MainWindowVM] Failed to enumerate dropped folder {raw}: {ex.Message}");
+                    continue;
+                }
+                perFolder.Sort((a, b) => string.Compare(a, b, StringComparison.OrdinalIgnoreCase));
+                files.AddRange(perFolder);
+            }
+            else if (File.Exists(raw) && MetadataService.SupportedExtensions.Contains(Path.GetExtension(raw)))
+                files.Add(raw);
+        }
+        return files.Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+    }
+
+    /// <summary>Library entries by path where known (play counts / ratings attach), else a
+    /// direct metadata read with artwork extracted the way the scanner does. Off the UI thread.</summary>
+    private async Task<List<Track>> ResolveExternalTracksAsync(IReadOnlyList<string> paths)
+    {
+        {
             // Snapshot the path index on the UI thread — _library.Tracks is mutated there.
             var byPath = new Dictionary<string, Track>(StringComparer.OrdinalIgnoreCase);
             foreach (var t in _library.Tracks)
@@ -805,12 +876,7 @@ public partial class MainWindowViewModel : ViewModelBase
                 return resolved;
             });
 
-            if (tracks.Count == 0) return;
-            Player.ReplaceQueueAndPlay(tracks, 0);
-        }
-        catch (Exception ex)
-        {
-            Debug.WriteLine($"[MainWindowVM] OpenExternalFiles failed: {ex.Message}");
+            return tracks;
         }
     }
 

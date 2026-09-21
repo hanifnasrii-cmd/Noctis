@@ -100,6 +100,11 @@ public interface IAudioPlayer : IDisposable
     /// overlap blend) both tracks play simultaneously through the crossover.</summary>
     void SetCrossfade(bool enabled, int durationSeconds, AutoMixFadeCurve fadeCurve = AutoMixFadeCurve.SmoothEase, bool fadeOut = true, bool overlap = false);
 
+    /// <summary>GitHub #73: fade the level out before a pause lands and back in after a
+    /// resume, over <paramref name="durationMs"/>. Off = the hard cut. Engines without a
+    /// gain stage may ignore it.</summary>
+    void SetPlayPauseFade(bool enabled, int durationMs) { }
+
     /// <summary>
     /// Enables gapless playback: when the next track was prepared via
     /// <see cref="PrepareNext"/> and no crossfade is active, track changes hand

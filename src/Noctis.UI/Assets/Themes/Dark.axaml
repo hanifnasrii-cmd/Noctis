@@ -33,6 +33,9 @@
          sidebar is lifted to match the same luminance step Gray theme uses
          (#141414 sidebar vs #252525 main), so the rounded sidebar pill reads
          clearly against the black backdrop without drawing any outline. -->
+    <!-- Window root (MainWindow.Background). Without it the base Dark dictionary's
+         Gray #252525 showed through around the content (Discord, Mistery 09-21). -->
+    <SolidColorBrush x:Key="AppWindowBackgroundBrush" Color="#000000" />
     <SolidColorBrush x:Key="AppSidebarBackground" Color="#1C1C1C" />
     <SolidColorBrush x:Key="AppMainBackground" Color="#000000" />
     <Color x:Key="AppMainBackgroundColor">#000000</Color>

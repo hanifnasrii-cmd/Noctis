@@ -69,6 +69,20 @@ public class ThemeOverlayParityTests
         Assert.True(missing.Count == 0, $"{theme} is missing: {string.Join(", ", missing)}");
     }
 
+    /// <summary>Dark and Midnight left the window root to the base Gray #252525, so the
+    /// page sat in a gray frame whatever the theme said (Discord, Mistery 2026-09-21).</summary>
+    [AvaloniaTheory]
+    [InlineData("Dark", "#000000")]
+    [InlineData("Midnight", "#0E1322")]
+    [InlineData("Ink", "#0F0F0F")]
+    public void Overlay_PaintsTheWindowRoot_LikeItsMainBackground(string theme, string hex)
+    {
+        var overlay = LoadOverlay(theme);
+        var brush = Assert.IsType<Avalonia.Media.SolidColorBrush>(overlay["AppWindowBackgroundBrush"]);
+        Assert.Equal(Avalonia.Media.Color.Parse(hex), brush.Color);
+        Assert.Equal(brush.Color, Assert.IsType<Avalonia.Media.SolidColorBrush>(overlay["AppMainBackground"]).Color);
+    }
+
     [AvaloniaFact]
     public void Overlays_ShareOneKeySet_UpToTheirDeclaredExtras()
     {

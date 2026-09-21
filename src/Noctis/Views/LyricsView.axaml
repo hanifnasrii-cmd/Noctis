@@ -491,27 +491,6 @@
             <Rectangle Fill="#8C000000"/>
         </Grid>
 
-        <!-- Live audio visualizer (Settings → Appearance → Audio Visualizer): the spectrum
-             of what is being heard, drawn along the bottom of the page over every background
-             mode and under the lyrics. Reads SpectrumMeter, which the output chains feed
-             from the same post-gain tap as the beat pulse; runs only while this page is
-             visible and the toggle is on (SpectrumVisualizer parks itself otherwise). -->
-        <controls:SpectrumVisualizer x:Name="LyricsSpectrum"
-                                     Grid.ColumnSpan="2"
-                                     Grid.RowSpan="2"
-                                     ZIndex="-1"
-                                     VerticalAlignment="Bottom"
-                                     Height="220"
-                                     Margin="24,0,24,0"
-                                     Opacity="0.55"
-                                     IsHitTestVisible="False"
-                                     Fill="White"
-                                     ArtworkColor="{Binding Player.ArtworkAccentColor}"
-                                     UseArtworkColor="{Binding Player.LyricsVisualizerArtworkColor}"
-                                     StyleName="{Binding Player.LyricsVisualizerStyle}"
-                                     IsActive="{Binding $self.IsVisible}"
-                                     IsVisible="{Binding Player.LyricsVisualizerEnabled}"/>
-
         <!-- Kawarp (GitHub #58): built-in liquid warp of the cover, one of the Flowing Lyrics
              Background styles. Code-behind (UpdateFlowAnimationState) shows/activates it in
              place of the Drift layers; parked (no frame loop) otherwise. -->
@@ -534,6 +513,28 @@
                ZIndex="-1"
                ClipToBounds="True"
                IsHitTestVisible="False"/>
+
+        <!-- Live audio visualizer (Settings → Appearance → Audio Visualizer): the spectrum
+             of what is being heard, drawn along the bottom of the page over every background
+             mode (declared after Kawarp and the plugin host, which paint opaquely, so
+             it stays on top of them) and under the lyrics. Reads SpectrumMeter, which the output chains feed
+             from the same post-gain tap as the beat pulse; runs only while this page is
+             visible and the toggle is on (SpectrumVisualizer parks itself otherwise). -->
+        <controls:SpectrumVisualizer x:Name="LyricsSpectrum"
+                                     Grid.ColumnSpan="2"
+                                     Grid.RowSpan="2"
+                                     ZIndex="-1"
+                                     VerticalAlignment="Bottom"
+                                     Height="220"
+                                     Margin="24,0,24,0"
+                                     Opacity="0.55"
+                                     IsHitTestVisible="False"
+                                     Fill="White"
+                                     ArtworkColor="{Binding Player.ArtworkAccentColor}"
+                                     UseArtworkColor="{Binding Player.LyricsVisualizerArtworkColor}"
+                                     StyleName="{Binding Player.LyricsVisualizerStyle}"
+                                     IsActive="{Binding $self.IsVisible}"
+                                     IsVisible="{Binding Player.LyricsVisualizerEnabled}"/>
 
 
         <!-- ══════════════════════════════════════════════════════ -->
@@ -624,11 +625,15 @@
                         </controls:MarqueeTextBlock.InlineContent>
                     </controls:MarqueeTextBlock>
 
-                    <!-- Artist -->
+                    <!-- Artist. A single credit keeps the marquee button (a long name still
+                         scrolls); a multi-artist credit renders one link per name, like the
+                         album page (Discord, aaron 09-21: "Kanye West, GLC, Consequence" was
+                         one button that always opened the first name). -->
                     <Button x:Name="ArtistLinkButton"
                             Classes="link-btn"
                             Command="{Binding ViewArtistCommand}"
-                            HorizontalAlignment="Center">
+                            HorizontalAlignment="Center"
+                            IsVisible="{Binding !HasMultipleArtists}">
                         <controls:MarqueeTextBlock x:Name="ArtistMarquee"
                                                    Text="{Binding Player.CurrentTrack.Artist, FallbackValue=''}"
                                                    FontSize="17"
@@ -637,6 +642,35 @@
                                                    IsLyricsPage="True"
                                                    IsForArtist="True"/>
                     </Button>
+                    <ItemsControl x:Name="ArtistCreditLinks"
+                                  ItemsSource="{Binding ArtistTokens}"
+                                  HorizontalAlignment="Center"
+                                  MaxWidth="520"
+                                  IsVisible="{Binding HasMultipleArtists}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel Orientation="Horizontal" HorizontalAlignment="Center"/>
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="vm:ArtistTokenItem">
+                                <StackPanel Orientation="Horizontal">
+                                    <Button Classes="link-btn"
+                                            Command="{Binding $parent[ItemsControl].((vm:LyricsViewModel)DataContext).ViewArtistNamedCommand}"
+                                            CommandParameter="{Binding Name}">
+                                        <TextBlock Text="{Binding Name}"
+                                                   FontSize="17"
+                                                   Foreground="{Binding $parent[ItemsControl].((vm:LyricsViewModel)DataContext).LyricsAccentFg}"/>
+                                    </Button>
+                                    <TextBlock Text=", "
+                                               FontSize="17"
+                                               Opacity="0.7"
+                                               Foreground="{Binding $parent[ItemsControl].((vm:LyricsViewModel)DataContext).LyricsAccentFg}"
+                                               IsVisible="{Binding !IsLast}"/>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
 
                     <!-- Album -->
                     <Button x:Name="AlbumLinkButton"
@@ -670,7 +704,9 @@
                             <MultiBinding Converter="{StaticResource MetadataLine}" ConverterParameter="track">
                                 <Binding Path="Player.CurrentTrack.Genre" FallbackValue=""/>
                                 <Binding Path="Player.CurrentTrack.DisplayYear" FallbackValue="0"/>
-                                <Binding Path="Player.CurrentTrack.TrackCount" FallbackValue="0"/>
+                                <!-- Album-wide count (every disc), not the file's per-disc TRCK
+                                     total: "9 tracks" on a 19-song, 3-disc album (Discord, aaron 09-21). -->
+                                <Binding Path="AlbumTrackCount" FallbackValue="0"/>
                             </MultiBinding>
                         </TextBlock.Text>
                     </TextBlock>
