@@ -33,7 +33,7 @@ public class NoctisServerSyncTests : IAsyncLifetime
 
     private SyncPersistence _persistence = null!;
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         Directory.CreateDirectory(_dir);
         _users = new ServerUserStore(Path.Combine(_dir, "users.db"));
@@ -47,7 +47,7 @@ public class NoctisServerSyncTests : IAsyncLifetime
         _http = new HttpClient { BaseAddress = new Uri($"http://127.0.0.1:{_server.Port}/") };
     }
 
-    public async Task DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
         _http.Dispose();
         await _server.StopAsync();

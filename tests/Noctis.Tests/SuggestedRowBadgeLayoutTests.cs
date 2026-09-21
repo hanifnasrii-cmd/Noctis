@@ -3,7 +3,6 @@ using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
 using Avalonia.Layout;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace Noctis.Tests;
 

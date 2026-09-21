@@ -192,8 +192,8 @@ public class MiniPlayerDesignTests
         Assert.Equal(90, vm.Player.Volume);
     }
 
-    private readonly Xunit.Abstractions.ITestOutputHelper? _out;
-    public MiniPlayerDesignTests(Xunit.Abstractions.ITestOutputHelper output) => _out = output;
+    private readonly ITestOutputHelper? _out;
+    public MiniPlayerDesignTests(ITestOutputHelper output) => _out = output;
 
     [AvaloniaTheory]
     [InlineData("Classic", "SeekSlider")]

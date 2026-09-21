@@ -10,7 +10,6 @@ using Avalonia.Threading;
 using Avalonia.VisualTree;
 using Noctis.Helpers;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace Noctis.Tests;
 
@@ -235,12 +234,12 @@ public class PlaylistRowStampGeometryTests
         _output.WriteLine($"steps={steps} shiftedSteps={shiftedSteps} worstShift={worstShift:F1}px");
 
         Assert.True(steps > 0, "no scroll steps ran");
-        Assert.True(shiftedSteps > 0,
-            "expected the deferred run-header stamp to shove already-drawn rows; if this now " +
-            "reports zero the defect was fixed — tighten this test to assert zero.");
-        // Guard against it getting worse than what was measured when this was written.
-        Assert.True(worstShift < 40,
-            $"post-layout row displacement grew to {worstShift:F1}px (was 3.0px on 2026-08-01)");
+        // Avalonia 11 shoved rows by ~3px per stamp (measured 2026-08-01); the Avalonia 12
+        // layout pass no longer does (0 shifted steps on 2026-09-20). Pinned at zero so a
+        // regression shows up here rather than as a scroll hitch.
+        Assert.True(shiftedSteps == 0,
+            $"deferred run-header stamp shoved already-drawn rows on {shiftedSteps}/{steps} steps " +
+            $"(worst {worstShift:F1}px); Avalonia 12 kept them still");
     }
 
     [AvaloniaFact]

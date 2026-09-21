@@ -9,7 +9,6 @@ using Noctis.Controls;
 using Noctis.Models;
 using Noctis.Views;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace Noctis.Tests;
 

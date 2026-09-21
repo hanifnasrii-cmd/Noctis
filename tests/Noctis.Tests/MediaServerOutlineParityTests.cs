@@ -5,7 +5,6 @@ using Avalonia.Media;
 using Avalonia.VisualTree;
 using Noctis.Views;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace Noctis.Tests;
 

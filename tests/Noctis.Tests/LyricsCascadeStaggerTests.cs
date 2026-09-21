@@ -1,6 +1,5 @@
 using Noctis.Helpers;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace Noctis.Tests;
 

@@ -13,7 +13,6 @@ using Noctis.Services;
 using Noctis.ViewModels;
 using Noctis.Views;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace Noctis.Tests;
 
@@ -131,7 +130,7 @@ public class MiniPlayerMenuClickTests
     /// so the event travels the same route platform input builds.</summary>
     private static bool Click(Button target)
     {
-        var root = (Visual?)target.GetVisualRoot() ?? target;
+        var root = (Visual?)TopLevel.GetTopLevel(target) ?? target;
         var pointer = new Pointer(1, PointerType.Mouse, true);
         var point = target.Bounds.Width > 0
             ? target.TranslatePoint(new Point(target.Bounds.Width / 2, target.Bounds.Height / 2), root) ?? default

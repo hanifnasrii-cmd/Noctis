@@ -50,7 +50,7 @@ public class SmoothScrollPopupWheelTests
             var popup = box.GetVisualDescendants().OfType<Popup>().First(p => p.Name == "PART_Popup");
             Assert.True(popup.IsOpen);
             var body = (Control)popup.Child!;
-            var popupRoot = (Visual)body.GetVisualRoot()!;
+            var popupRoot = (Visual)TopLevel.GetTopLevel(body)!;
 
             // A notch with the pointer over the drop-down list.
             var wheel = new PointerWheelEventArgs(

@@ -17,7 +17,6 @@ using Noctis.ViewModels;
 using Noctis.Views;
 using SkiaSharp;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace Noctis.Tests;
 

@@ -4,7 +4,6 @@ using Avalonia.Headless.XUnit;
 using Avalonia.Layout;
 using Avalonia.VisualTree;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace Noctis.Tests;
 

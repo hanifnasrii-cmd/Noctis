@@ -52,7 +52,7 @@ public class RowDoubleClickToPlayTests
             target, pointer, root, point, 0,
             new PointerPointProperties(RawInputModifiers.LeftMouseButton, PointerUpdateKind.LeftButtonPressed),
             KeyModifiers.None, 2);
-        target.RaiseEvent(new TappedEventArgs(Gestures.DoubleTappedEvent, press));
+        target.RaiseEvent(new TappedEventArgs(InputElement.DoubleTappedEvent, press));
         Dispatcher.UIThread.RunJobs();
     }
 

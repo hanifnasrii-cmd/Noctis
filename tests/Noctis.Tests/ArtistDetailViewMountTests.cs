@@ -2,6 +2,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Presenters;
 using Avalonia.Headless.XUnit;
+using Avalonia.Input;
 using Avalonia.Markup.Xaml.Styling;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
@@ -228,7 +229,7 @@ public class ArtistDetailViewMountTests
         Assert.DoesNotContain(vm.FavoriteSongs, r => ReferenceEquals(r.Track, favTrack));
 
         // Right-click a row that is still on the page: the menu must open again.
-        var next = Rows(view).First(r => r.IsVisible && r.GetVisualRoot() != null && !ReferenceEquals(r, favRow));
+        var next = Rows(view).First(r => r.IsVisible && TopLevel.GetTopLevel(r) != null && !ReferenceEquals(r, favRow));
         next.RaiseEvent(new ContextRequestedEventArgs { RoutedEvent = Control.ContextRequestedEvent, Source = next });
         Dispatcher.UIThread.RunJobs();
         Assert.Same(menu, next.ContextMenu);
@@ -303,10 +304,10 @@ public class ArtistDetailViewMountTests
         other.IsFavorite = false;
         lib.NotifyFavoritesChanged(new[] { other });
         Dispatcher.UIThread.RunJobs();
-        Assert.Null(favRow.GetVisualRoot()); // the owner row was torn down
+        Assert.Null(TopLevel.GetTopLevel(favRow)); // the owner row was torn down
         Assert.False(menu.IsOpen);            // and Avalonia closed the menu with it
 
-        var next = Rows(view).First(r => r.IsVisible && r.GetVisualRoot() != null);
+        var next = Rows(view).First(r => r.IsVisible && TopLevel.GetTopLevel(r) != null);
         next.RaiseEvent(new ContextRequestedEventArgs { RoutedEvent = Control.ContextRequestedEvent, Source = next });
         Dispatcher.UIThread.RunJobs();
         Assert.Same(menu, next.ContextMenu);
