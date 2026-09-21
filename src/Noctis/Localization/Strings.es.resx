@@ -609,7 +609,7 @@
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.HowCoverAppearsLyrics" xml:space="preserve">
-    <value>Cómo aparece la portada en la página de Letras Disciplina mientras juegas.</value>
+    <value>Cómo aparece la portada en la página de Letras. El disco gira mientras la canción suena.</value>
     <comment>Text in SettingsView.axaml</comment>
   </data>
   <data name="Settings.AlbumCoverAsTip" xml:space="preserve">
