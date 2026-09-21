@@ -67,7 +67,6 @@
     <PackageReference Include="Avalonia.Labs.Lottie" Version="11.3.1" />
     <PackageReference Include="Avalonia.Themes.Fluent" Version="11.3.18" />
     <PackageReference Include="Avalonia.Fonts.Inter" Version="11.3.18" />
-    <PackageReference Include="Avalonia.Diagnostics" Version="11.3.18" Condition="'$(Configuration)' == 'Debug'" />
     <!-- MPRIS media keys on Linux (MprisService). Same version Avalonia's
          FreeDesktop backend already ships transitively — no new vendor. -->
     <PackageReference Include="Tmds.DBus.Protocol" Version="0.21.3" />
@@ -89,7 +88,6 @@
   <!-- Audio playback via libVLC -->
   <ItemGroup>
     <PackageReference Include="LibVLCSharp" Version="3.10.0" />
-    <PackageReference Include="LibVLCSharp.Avalonia" Version="3.10.0" />
     <PackageReference Include="VideoLAN.LibVLC.Windows" Version="3.0.23.1" Condition="$([MSBuild]::IsOSPlatform('Windows'))" />
     <!-- macOS gets NO libvlc NuGet on purpose: VideoLAN.LibVLC.Mac's 3.0.21 pin
          never existed on nuget.org, so restore floated to the abandoned 2019-era
