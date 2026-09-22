@@ -104,6 +104,42 @@ public class FileSystemSourceScanTests : IDisposable
         Assert.Equal(2, library.Tracks.Count); // library untouched
     }
 
+    /// <summary>
+    /// PathIsUnder decides whether a revoked SAF grant is treated as "root unavailable,
+    /// abort and keep the library" (see the ScanCoreAsync guard) or silently wipes every
+    /// track under it, so its two branches need direct coverage with real strings: the
+    /// URI branch on real Android Storage Access Framework document URIs (including the
+    /// "%2F"-encoded-separator case for a document nested under a directory document,
+    /// which had zero coverage), and the filesystem branch on a real Windows path.
+    /// </summary>
+    [Fact]
+    public void PathIsUnder_MatchesSafDocumentsUnderTheirTree_AndRealPathsUnderTheirParent()
+    {
+        const string treeRoot = "content://com.android.externalstorage.documents/tree/primary%3AMusic";
+        const string documentUnderTree =
+            "content://com.android.externalstorage.documents/tree/primary%3AMusic/document/primary%3AMusic%2FTones%2Ftone_a.mp3";
+        const string directoryDocument =
+            "content://com.android.externalstorage.documents/tree/primary%3AMusic/document/primary%3AMusic%2FTones";
+        const string documentUnderDirectoryDocument =
+            "content://com.android.externalstorage.documents/tree/primary%3AMusic/document/primary%3AMusic%2FTones%2Fnested%2Ftone_b.mp3";
+        const string siblingTree =
+            "content://com.android.externalstorage.documents/tree/primary%3AMusic2/document/primary%3AMusic2%2Fx.mp3";
+        const string siblingDirectoryDocument =
+            "content://com.android.externalstorage.documents/tree/primary%3AMusic/document/primary%3AMusic%2FTones2%2Fx.mp3";
+
+        Assert.True(LibraryService.PathIsUnder(documentUnderTree, treeRoot));
+        // The %2F branch: a document nested under a directory document (not the tree root).
+        Assert.True(LibraryService.PathIsUnder(documentUnderDirectoryDocument, directoryDocument));
+        Assert.False(LibraryService.PathIsUnder(siblingTree, treeRoot));
+        Assert.False(LibraryService.PathIsUnder(siblingDirectoryDocument, directoryDocument));
+
+        // Filesystem branch stays pinned alongside the URI branch.
+        var fileUnderRoot = Path.Combine(_music, "01 - First.mp3");
+        var siblingFolder = Path.Combine(_root, "music", "Album2", "x.mp3");
+        Assert.True(LibraryService.PathIsUnder(fileUnderRoot, _music));
+        Assert.False(LibraryService.PathIsUnder(siblingFolder, _music));
+    }
+
     /// <summary>Serves the fixture folder as opaque "fake://" entries with streams only.</summary>
     private sealed class StreamOnlySource : IFileSystemSource
     {

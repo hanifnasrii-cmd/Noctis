@@ -55,10 +55,32 @@ public sealed class LocalFileSystemSource : IFileSystemSource
             {
                 var ext = Path.GetExtension(file);
                 if (!MetadataService.SupportedExtensions.Contains(ext)) continue;
-                FileInfo fi;
-                try { fi = new FileInfo(file); } catch { continue; }
+
+                // FileInfo's constructor does no I/O (it only normalizes the path); the
+                // actual stat happens the first time Length/LastWriteTimeUtc/Name are read,
+                // which throws if the file was deleted or renamed between the directory
+                // listing above and now (NoBuffering pulls files lazily, so that window can
+                // be seconds to minutes on a large tree). Reading the values inside this try
+                // — instead of in the yield return argument list, where a throw would escape
+                // the iterator and abort the whole scan — keeps a vanished file a per-file
+                // skip, same as every other file failure here.
+                long length;
+                DateTime lastWrite;
+                string name;
+                try
+                {
+                    var fi = new FileInfo(file);
+                    length = fi.Length;
+                    lastWrite = fi.LastWriteTimeUtc;
+                    name = fi.Name;
+                }
+                catch
+                {
+                    continue;
+                }
+
                 var captured = file;
-                yield return new ScanEntry(file, fi.Name, fi.Length, fi.LastWriteTimeUtc, file, () => File.OpenRead(captured));
+                yield return new ScanEntry(file, name, length, lastWrite, file, () => File.OpenRead(captured));
             }
         }
     }
