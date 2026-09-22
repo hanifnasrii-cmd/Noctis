@@ -463,6 +463,12 @@ public partial class SettingsViewModel : ViewModelBase
 
     /// <summary>GitHub #71: drops import into the library (default) or play/queue in place.</summary>
     [ObservableProperty] private bool _importDroppedMedia = true;
+
+    /// <summary>GitHub #74: playlist page furniture toggles (all on by default).</summary>
+    [ObservableProperty] private bool _playlistShowAlbumHeaders = true;
+    [ObservableProperty] private bool _playlistShowNewBadge = true;
+    [ObservableProperty] private bool _playlistShowAddedColumn = true;
+    [ObservableProperty] private bool _playlistShowFavoriteColumn = true;
     [ObservableProperty] private bool _trackTitleMarqueeEnabled = true;
     [ObservableProperty] private bool _artistMarqueeEnabled = true;
     [ObservableProperty] private bool _coverFlowMarqueeEnabled = true;
@@ -1884,6 +1890,10 @@ public partial class SettingsViewModel : ViewModelBase
             PlayPauseFadeEnabled = _settings.PlayPauseFadeEnabled;
             PlayPauseFadeMs = Math.Clamp(_settings.PlayPauseFadeMs, 100, 2000);
             ImportDroppedMedia = _settings.ImportDroppedMedia;
+            PlaylistShowAlbumHeaders = _settings.PlaylistShowAlbumHeaders;
+            PlaylistShowNewBadge = _settings.PlaylistShowNewBadge;
+            PlaylistShowAddedColumn = _settings.PlaylistShowAddedColumn;
+            PlaylistShowFavoriteColumn = _settings.PlaylistShowFavoriteColumn;
             CrossfadeEnabled = _settings.CrossfadeEnabled;
             CrossfadeDuration = Math.Clamp(_settings.CrossfadeDuration, 1, 12);
             SongTransitionsEnabled = _settings.SongTransitionsEnabled;
@@ -2296,6 +2306,10 @@ public partial class SettingsViewModel : ViewModelBase
         _settings.PlayPauseFadeEnabled = PlayPauseFadeEnabled;
         _settings.PlayPauseFadeMs = (int)Math.Round(Math.Clamp(PlayPauseFadeMs, 100, 2000));
         _settings.ImportDroppedMedia = ImportDroppedMedia;
+        _settings.PlaylistShowAlbumHeaders = PlaylistShowAlbumHeaders;
+        _settings.PlaylistShowNewBadge = PlaylistShowNewBadge;
+        _settings.PlaylistShowAddedColumn = PlaylistShowAddedColumn;
+        _settings.PlaylistShowFavoriteColumn = PlaylistShowFavoriteColumn;
         _settings.TransitionStyle = TransitionStyle ?? "Crossfade";
         _settings.SongTransitionStrength = SongTransitionStrength ?? "Balanced";
         _settings.SongTransitionBeatMatch = SongTransitionBeatMatch;
@@ -3161,6 +3175,11 @@ public partial class SettingsViewModel : ViewModelBase
         _settings.ImportDroppedMedia = value;
         if (_settingsLoaded) _ = SaveAsync();
     }
+
+    partial void OnPlaylistShowAlbumHeadersChanged(bool value) { _settings.PlaylistShowAlbumHeaders = value; if (_settingsLoaded) _ = SaveAsync(); }
+    partial void OnPlaylistShowNewBadgeChanged(bool value) { _settings.PlaylistShowNewBadge = value; if (_settingsLoaded) _ = SaveAsync(); }
+    partial void OnPlaylistShowAddedColumnChanged(bool value) { _settings.PlaylistShowAddedColumn = value; if (_settingsLoaded) _ = SaveAsync(); }
+    partial void OnPlaylistShowFavoriteColumnChanged(bool value) { _settings.PlaylistShowFavoriteColumn = value; if (_settingsLoaded) _ = SaveAsync(); }
 
     partial void OnSongTransitionsEnabledChanged(bool value)
     {
@@ -5429,6 +5448,10 @@ public partial class SettingsViewModel : ViewModelBase
             PlayPauseFadeEnabled = defaultSettings.PlayPauseFadeEnabled;
             PlayPauseFadeMs = defaultSettings.PlayPauseFadeMs;
             ImportDroppedMedia = defaultSettings.ImportDroppedMedia;
+            PlaylistShowAlbumHeaders = defaultSettings.PlaylistShowAlbumHeaders;
+            PlaylistShowNewBadge = defaultSettings.PlaylistShowNewBadge;
+            PlaylistShowAddedColumn = defaultSettings.PlaylistShowAddedColumn;
+            PlaylistShowFavoriteColumn = defaultSettings.PlaylistShowFavoriteColumn;
             ProfileName = defaultSettings.ProfileName;
             ProfileAvatarPath = defaultSettings.ProfileAvatarPath;
 

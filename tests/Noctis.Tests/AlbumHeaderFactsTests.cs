@@ -38,6 +38,20 @@ public class AlbumHeaderFactsTests
     public void Kicker_FallsBackToTrackCount_WhenUntagged(int count, string expected)
         => Assert.Equal(expected, Make(count).ReleaseKindLabel);
 
+    [Theory]
+    [InlineData(2, 12, 0, "ALBUM")]   // 2 of 12 downloaded: tag total says album
+    [InlineData(3, 0, 11, "ALBUM")]   // no total tag, but track #11 exists
+    [InlineData(2, 5, 0, "EP")]       // 2 of 5: still an EP
+    [InlineData(1, 1, 1, "SINGLE")]   // complete single stays a single
+    [InlineData(4, 2, 0, "EP")]       // a stale/short total never shrinks below files present
+    public void Kicker_UsesTaggedTotal_WhenAlbumIsPartial(int files, int taggedTotal, int highestNumber, string expected)
+    {
+        var album = Make(files);
+        album.Tracks![0].TrackCount = taggedTotal;
+        album.Tracks![0].TrackNumber = highestNumber;
+        Assert.Equal(expected, album.ReleaseKindLabel);
+    }
+
     [Fact]
     public void Kicker_TrustsTagsOverTrackCount()
     {

@@ -1463,6 +1463,7 @@ public class LibraryService : ILibraryService
                 track.IsDisliked = s.IsDisliked;
                 track.SnoozedUntil = s.SnoozedUntil;
                 track.SavedPositionMs = s.SavedPositionMs;
+                track.Badge = s.Badge;
                 track.IsFavorite = s.IsFavorite;
                 // After IsFavorite: its setter stamps/clears FavoritedAt, and the
                 // journaled timestamp must win over a fresh stamp.
@@ -1521,6 +1522,25 @@ public class LibraryService : ILibraryService
         await SaveTrackUserStateAsync(changed);
         QueueRatingTagWrites(changed);
     }
+
+    /// <summary>GitHub #74: set (or clear with null/blank) the user badge on the tracks.</summary>
+    public async Task SetTracksBadgeAsync(IReadOnlyList<Track> tracks, string? badge)
+    {
+        badge = string.IsNullOrWhiteSpace(badge) ? null : badge.Trim();
+        var changed = tracks.Where(t => !string.Equals(t.Badge, badge, StringComparison.Ordinal)).ToList();
+        if (changed.Count == 0) return;
+
+        foreach (var track in changed)
+            track.Badge = badge;
+        await SaveTrackUserStateAsync(changed);
+    }
+
+    /// <summary>Every badge name in use, case-insensitively de-duplicated, sorted.</summary>
+    public IReadOnlyList<string> GetBadgeNames()
+        => _tracks.Select(t => t.Badge).Where(b => !string.IsNullOrWhiteSpace(b))
+                  .Select(b => b!.Trim())
+                  .Distinct(StringComparer.OrdinalIgnoreCase)
+                  .OrderBy(b => b, StringComparer.OrdinalIgnoreCase).ToList();
 
     public async Task SetTracksDislikedAsync(IReadOnlyList<Track> tracks, bool isDisliked)
     {
@@ -1796,6 +1816,7 @@ public class LibraryService : ILibraryService
         target.LastPlayed = source.LastPlayed;
         target.Rating = source.Rating;
         target.IsDisliked = source.IsDisliked;
+        target.Badge = source.Badge;
         target.SourceType = source.SourceType;
         target.SourceTrackId = source.SourceTrackId;
         target.SourceConnectionId = source.SourceConnectionId;

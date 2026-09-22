@@ -394,6 +394,15 @@
   <data name="Settings.AddFolder" xml:space="preserve"><value>Add Folder</value><comment>Text in SettingsView.axaml</comment></data>
   <data name="Settings.ImportDroppedFiles" xml:space="preserve"><value>Import dropped files</value><comment>Text in SettingsView.axaml</comment></data>
   <data name="Settings.ImportDroppedFilesHint" xml:space="preserve"><value>Files dropped onto Noctis are moved into the Noctis Imports folder and added to the library. Off: they play or queue from where they are and the library is left alone.</value><comment>Text in SettingsView.axaml</comment></data>
+  <data name="Settings.Section.PlaylistPage" xml:space="preserve"><value>Playlist page</value><comment>Text in SettingsView.axaml</comment></data>
+  <data name="Settings.PlaylistAlbumHeaders" xml:space="preserve"><value>Album headers</value><comment>Text in SettingsView.axaml</comment></data>
+  <data name="Settings.PlaylistAlbumHeadersHint" xml:space="preserve"><value>Show the album name above each run of tracks from the same album.</value><comment>Text in SettingsView.axaml</comment></data>
+  <data name="Settings.PlaylistNewBadge" xml:space="preserve"><value>NEW badge</value><comment>Text in SettingsView.axaml</comment></data>
+  <data name="Settings.PlaylistNewBadgeHint" xml:space="preserve"><value>Mark tracks added to the playlist in the last 7 days.</value><comment>Text in SettingsView.axaml</comment></data>
+  <data name="Settings.PlaylistAddedColumn" xml:space="preserve"><value>Added column</value><comment>Text in SettingsView.axaml</comment></data>
+  <data name="Settings.PlaylistAddedColumnHint" xml:space="preserve"><value>Show the date each track was added.</value><comment>Text in SettingsView.axaml</comment></data>
+  <data name="Settings.PlaylistFavoriteColumn" xml:space="preserve"><value>Favorite column</value><comment>Text in SettingsView.axaml</comment></data>
+  <data name="Settings.PlaylistFavoriteColumnHint" xml:space="preserve"><value>Show the heart on each row. Off: favorite from the row menu or the song page.</value><comment>Text in SettingsView.axaml</comment></data>
   <data name="Settings.LibraryScan" xml:space="preserve"><value>Library Scan</value><comment>Text in SettingsView.axaml</comment></data>
   <data name="Settings.FindNewTracksUpdate" xml:space="preserve"><value>Find new tracks and update search.</value><comment>Text in SettingsView.axaml</comment></data>
   <data name="Settings.ScanLibrary" xml:space="preserve"><value>Scan Library</value><comment>Text in SettingsView.axaml</comment></data>
@@ -1235,6 +1244,11 @@
   <data name="Playlist.RecentlyAdded" xml:space="preserve"><value>Recently Added</value><comment>Header in PlaylistView.axaml</comment></data>
   <data name="Playlist.ReleaseDateOldest" xml:space="preserve"><value>Release Date (Oldest)</value><comment>Header in PlaylistView.axaml</comment></data>
   <data name="Playlist.ReleaseDateNewest" xml:space="preserve"><value>Release Date (Newest)</value><comment>Header in PlaylistView.axaml</comment></data>
+  <data name="Playlist.SortBadge" xml:space="preserve"><value>Badge</value><comment>Header in PlaylistView.axaml</comment></data>
+  <data name="Badge.Title" xml:space="preserve"><value>New badge</value><comment>Text in BadgeNameDialog.axaml</comment></data>
+  <data name="Badge.NamePlaceholder" xml:space="preserve"><value>Badge name</value><comment>Text in BadgeNameDialog.axaml</comment></data>
+  <data name="Badge.Add" xml:space="preserve"><value>Add</value><comment>Text in BadgeNameDialog.axaml</comment></data>
+  <data name="Badge.Cancel" xml:space="preserve"><value>Cancel</value><comment>Text in BadgeNameDialog.axaml</comment></data>
   <data name="Playlist.FEATUREDARTISTS" xml:space="preserve"><value>FEATURED ARTISTS</value><comment>Text in PlaylistView.axaml</comment></data>
   <data name="Playlist.Text2" xml:space="preserve"><value>&#xE76C;</value><comment>Text in PlaylistView.axaml</comment></data>
   <data name="Playlist.SUGGESTED" xml:space="preserve"><value>SUGGESTED</value><comment>Text in PlaylistView.axaml</comment></data>

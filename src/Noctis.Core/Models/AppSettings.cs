@@ -13,6 +13,14 @@ public class AppSettings
     /// behaviour) or played/queued from where they are without touching the library.</summary>
     public bool ImportDroppedMedia { get; set; } = true;
 
+    /// <summary>GitHub #74: playlist page furniture, each opt-out. Album run headers
+    /// above each same-album run, the NEW badge on tracks added in the last 7 days,
+    /// and the Added / Favorite columns.</summary>
+    public bool PlaylistShowAlbumHeaders { get; set; } = true;
+    public bool PlaylistShowNewBadge { get; set; } = true;
+    public bool PlaylistShowAddedColumn { get; set; } = true;
+    public bool PlaylistShowFavoriteColumn { get; set; } = true;
+
     /// <summary>File paths explicitly removed from the library. Skipped during rescans.</summary>
     public List<string> ExcludedFilePaths { get; set; } = new();
 

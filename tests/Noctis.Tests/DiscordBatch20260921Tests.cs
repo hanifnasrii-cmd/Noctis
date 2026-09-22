@@ -45,6 +45,23 @@ public class DiscordBatch20260921Tests
         Assert.True(spectrum > plugins, "LyricsSpectrum must be declared after PluginLayerHost");
     }
 
+    // ── Island shuffle glyph stays white while on (Discord, Mistery) ──
+
+    [Fact]
+    public void IslandShuffle_GlyphTurnsAccent_WhenOn_LikeRepeat()
+    {
+        // Repeat swaps its glyph to AccentColorBrush while on; Shuffle only tinted the
+        // pill and kept the white arrows. Both glyph variants must exist, gated on
+        // IsShuffleEnabled, so the arrows follow the accent the way the mini player's do.
+        var xaml = ReadView("PlaybackBarView.axaml");
+        var button = xaml.IndexOf("Command=\"{Binding ToggleShuffleCommand}\"", StringComparison.Ordinal);
+        Assert.True(button > 0, "island shuffle button must exist");
+        var section = xaml.Substring(button, 2000);
+        Assert.Contains("Fill=\"{DynamicResource AccentColorBrush}\"", section);
+        Assert.Contains("IsVisible=\"{Binding IsShuffleEnabled}\"", section);
+        Assert.Contains("IsVisible=\"{Binding !IsShuffleEnabled}\"", section);
+    }
+
     // ── Drag & drop from the Folders page (Discord, Luwi) ──
 
     [Fact]

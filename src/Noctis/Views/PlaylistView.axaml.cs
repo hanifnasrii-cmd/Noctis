@@ -13,6 +13,7 @@ using Noctis.Controls;
 using Noctis.Helpers;
 using Noctis.Models;
 using Noctis.ViewModels;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Noctis.Views;
 
@@ -117,6 +118,32 @@ public partial class PlaylistView : UserControl
         Dispatcher.UIThread.Post(RefreshAllRowVisuals, DispatcherPriority.Loaded);
     }
 
+    // ── GitHub #74: Settings → Library → Playlist page → Album headers ──
+    // The header is stamped per realized row, so a toggle flip re-stamps them all.
+    private SettingsViewModel? _settingsVm;
+
+    private static bool AlbumHeadersEnabled =>
+        App.Services?.GetService<MainWindowViewModel>()?.Settings.PlaylistShowAlbumHeaders ?? true;
+
+    private void HookSettings()
+    {
+        if (_settingsVm != null) return;
+        _settingsVm = App.Services?.GetService<MainWindowViewModel>()?.Settings;
+        if (_settingsVm != null) _settingsVm.PropertyChanged += OnSettingsPropertyChanged;
+    }
+
+    private void UnhookSettings()
+    {
+        if (_settingsVm != null) _settingsVm.PropertyChanged -= OnSettingsPropertyChanged;
+        _settingsVm = null;
+    }
+
+    private void OnSettingsPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(SettingsViewModel.PlaylistShowAlbumHeaders))
+            Dispatcher.UIThread.Post(RefreshAllRowVisuals, DispatcherPriority.Loaded);
+    }
+
     private void RefreshAllRowVisuals()
     {
         foreach (var container in TrackList.GetRealizedContainers())
@@ -175,7 +202,8 @@ public partial class PlaylistView : UserControl
 
         var show = isRunStart
                    && !string.IsNullOrEmpty(album)
-                   && string.IsNullOrWhiteSpace(vm.SearchText);
+                   && string.IsNullOrWhiteSpace(vm.SearchText)
+                   && AlbumHeadersEnabled;
         header.IsVisible = show;
         if (!show) return true;
 
@@ -383,7 +411,9 @@ public partial class PlaylistView : UserControl
             fetchLyricsCommand: vm.FetchLyricsCommand,
             lyricsStudioCommand: vm.OpenLyricsStudioCommand,
             removeLyricsCommand: vm.RemoveLyricsCommand,
-            sendToFolderCommand: vm.SendToFolderCommand);
+            sendToFolderCommand: vm.SendToFolderCommand,
+            badgeCommand: vm.SetBadgeCommand,
+            badgeNames: vm.BadgeNames);
     }
 
     private void DetachMenuFromOwner()
@@ -705,6 +735,13 @@ public partial class PlaylistView : UserControl
         var insertIndex = GetPlaylistDropInsertIndex(posInList);
         if (insertIndex < 0) return; // no realized rows to target — treat as cancel
 
+        // GitHub #74: a row dragged out of a multi-selection carries the whole selection.
+        if (_dragTrack != null && _selectedTracks.Count > 1 && _selectedTracks.Contains(_dragTrack))
+        {
+            await vm.MoveTracks(_selectedTracks.ToList(), insertIndex);
+            return;
+        }
+
         // Convert an insertion index into a Move destination: removing the source first
         // shifts everything after it down by one.
         var toIndex = insertIndex > _dragSourceIndex ? insertIndex - 1 : insertIndex;
@@ -788,6 +825,7 @@ public partial class PlaylistView : UserControl
     {
         CancelPendingScrollRestore();
         ResetPlaylistDragState();
+        UnhookSettings();
 
         // Unsubscribe VM events: DataContextChanged never fires for a view the
         // presenter discards, so these would pin the view alive via a VM that
@@ -831,6 +869,7 @@ public partial class PlaylistView : UserControl
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
     {
         base.OnAttachedToVisualTree(e);
+        HookSettings();
 
         // Re-subscribe on re-attach (detach unsubscribed; DataContextChanged
         // won't fire again when the DataContext is unchanged).

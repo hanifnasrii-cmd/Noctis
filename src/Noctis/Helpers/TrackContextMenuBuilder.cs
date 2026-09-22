@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Windows.Input;
 using Avalonia;
@@ -54,6 +55,9 @@ public sealed class TrackContextMenuBuilder
     /// <summary>"Rate ▸" submenu: ★ … ★★★★★ and Clear rating. Hidden unless the view passes a rateCommand.</summary>
     public MenuItem Rate { get; private set; } = null!;
     private readonly MenuItem[] _rateItems = new MenuItem[6];
+    /// <summary>"Badge ▸" submenu (GitHub #74): every badge in use, "New badge…", "Remove badge".
+    /// Hidden unless the view passes a badgeCommand; rebuilt on every Bind since the list changes.</summary>
+    public MenuItem Badge { get; private set; } = null!;
     public MenuItem SendToFolder { get; private set; } = null!;
     public MenuItem LyricsBackground { get; private set; } = null!;
     public MenuItem LyricsBackgroundChoose { get; private set; } = null!;
@@ -137,6 +141,10 @@ public sealed class TrackContextMenuBuilder
         _rateItems[0] = new MenuItem { Header = "Clear rating" };
         Rate.Items.Add(_rateItems[0]);
         items.Add(Rate);
+
+        Badge = new MenuItem { Header = "Badge", IsVisible = false };
+        Badge.Icon = new PathIcon { Width = 14, Height = 14, Data = (Geometry)resourceHost.FindResource("StarIcon")! };
+        items.Add(Badge);
 
         Metadata = new MenuItem { Header = "Metadata" };
         Metadata.Icon = CreatePngIcon("avares://Noctis.UI/Assets/Icons/Metadata%20ICON.png");
@@ -241,9 +249,50 @@ public sealed class TrackContextMenuBuilder
         ICommand? fetchLyricsCommand = null,
         ICommand? lyricsStudioCommand = null,
         ICommand? removeLyricsCommand = null,
-        ICommand? sendToFolderCommand = null)
+        ICommand? sendToFolderCommand = null,
+        ICommand? badgeCommand = null,
+        IReadOnlyList<string>? badgeNames = null)
     {
         Menu.DataContext = track;
+
+        // Badge ▸ (optional). Rebuilt per bind: the names come from what the library holds now.
+        Badge.IsVisible = badgeCommand != null;
+        if (badgeCommand != null)
+        {
+            Badge.Items.Clear();
+            foreach (var name in badgeNames ?? Array.Empty<string>())
+            {
+                var isCurrent = string.Equals(name, track.Badge, StringComparison.OrdinalIgnoreCase);
+                Badge.Items.Add(new MenuItem
+                {
+                    Header = name,
+                    FontWeight = isCurrent ? FontWeight.Bold : FontWeight.Normal,
+                    Icon = new Border
+                    {
+                        Width = 10, Height = 10, CornerRadius = new CornerRadius(5),
+                        Background = BadgePalette.BrushFor(name),
+                    },
+                    Command = badgeCommand,
+                    CommandParameter = new BadgeRequest(track, name),
+                });
+            }
+            if (Badge.Items.Count > 0) Badge.Items.Add(new Separator());
+            Badge.Items.Add(new MenuItem
+            {
+                Header = "New badge…",
+                Command = badgeCommand,
+                CommandParameter = new BadgeRequest(track, BadgeRequest.NewBadge),
+            });
+            var remove = new MenuItem
+            {
+                Header = "Remove badge",
+                IsVisible = track.HasBadge,
+                Command = badgeCommand,
+                CommandParameter = new BadgeRequest(track, null),
+            };
+            remove.Classes.Add("danger");
+            Badge.Items.Add(remove);
+        }
 
         // Rate ▸ (optional). Parameter carries the track so the same command serves every row.
         Rate.IsVisible = rateCommand != null;

@@ -1,0 +1,84 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:loc="using:Noctis.Localization"
+        x:Class="Noctis.Views.BadgeNameDialog"
+        Title="{loc:T Badge.Title}"
+        CanResize="False"
+        WindowDecorations="None"
+        TransparencyLevelHint="Transparent"
+        Background="Transparent"
+        ShowInTaskbar="False"
+        WindowStartupLocation="CenterOwner">
+
+    <!-- GitHub #74: "New badge…" prompt. Same overlay / card motion as CreatePlaylistDialog. -->
+    <Border x:Name="DialogOverlay"
+            Background="#50000000"
+            Opacity="0"
+            PointerPressed="OnOverlayPointerPressed"
+            PointerWheelChanged="OnOverlayWheel">
+        <Border.Transitions>
+            <Transitions>
+                <DoubleTransition Property="Opacity" Duration="0:0:0.18">
+                    <DoubleTransition.Easing>
+                        <CubicEaseOut/>
+                    </DoubleTransition.Easing>
+                </DoubleTransition>
+            </Transitions>
+        </Border.Transitions>
+
+        <Border x:Name="DialogCard"
+                CornerRadius="24"
+                ClipToBounds="True"
+                Background="{DynamicResource AppMainBackground}"
+                Width="400"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                RenderTransformOrigin="50%,50%"
+                RenderTransform="scale(0.96)"
+                BoxShadow="0 8 32 0 #80000000, 0 0 0 1 #33FFFFFF">
+            <Border.Transitions>
+                <Transitions>
+                    <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.18">
+                        <TransformOperationsTransition.Easing>
+                            <CubicEaseOut/>
+                        </TransformOperationsTransition.Easing>
+                    </TransformOperationsTransition>
+                </Transitions>
+            </Border.Transitions>
+            <DockPanel>
+                <Border DockPanel.Dock="Bottom" Padding="24,12,24,16">
+                    <Grid ColumnDefinitions="*,Auto,Auto">
+                        <Button Grid.Column="1"
+                                Content="{loc:T Badge.Cancel}"
+                                Click="OnCancelClick"
+                                Width="100" Padding="0,8" FontWeight="Bold"
+                                HorizontalContentAlignment="Center"
+                                CornerRadius="999" Margin="0,0,8,0" Cursor="Hand" />
+                        <Button Grid.Column="2"
+                                Content="{loc:T Badge.Add}"
+                                Click="OnAddClick"
+                                Width="100" Padding="0,8"
+                                Classes="accent-btn"
+                                Background="{DynamicResource AccentButtonBackground}"
+                                Foreground="{DynamicResource AccentForegroundBrush}"
+                                FontWeight="Bold"
+                                HorizontalContentAlignment="Center"
+                                CornerRadius="999" Cursor="Hand" />
+                    </Grid>
+                </Border>
+                <StackPanel Margin="24,20,24,16" Spacing="14">
+                    <TextBlock Text="{loc:T Badge.Title}"
+                               FontSize="20" FontWeight="Bold"
+                               HorizontalAlignment="Center" />
+                    <TextBox x:Name="NameTextBox"
+                             Classes="crisp-input"
+                             Watermark="{loc:T Badge.NamePlaceholder}"
+                             MaxLength="24"
+                             CornerRadius="999"
+                             Padding="14,8"
+                             KeyDown="OnNameKeyDown" />
+                </StackPanel>
+            </DockPanel>
+        </Border>
+    </Border>
+</Window>

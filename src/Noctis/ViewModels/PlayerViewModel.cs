@@ -81,15 +81,22 @@ public partial class PlayerViewModel : ViewModelBase
     /// <summary>0 = flat, otherwise the rounded corner radius of the video frame.</summary>
     [ObservableProperty] private double _musicVideoCornerRadius = 18;
     public bool HasMusicVideo => !string.IsNullOrEmpty(CurrentMusicVideoPath);
+    /// <summary>Whether a clip exists for the current song regardless of the toggle: the
+    /// player menu's "Music video" item shows only then (Discord, aaron 2026-09-21: it
+    /// showed for songs with no video), and stays while the feature is off so it can be
+    /// switched back on.</summary>
+    [ObservableProperty] private bool _currentTrackHasMusicVideoFile;
     partial void OnCurrentMusicVideoPathChanged(string? value) => OnPropertyChanged(nameof(HasMusicVideo));
     partial void OnMusicVideosEnabledChanged(bool value) => ResolveMusicVideo();
 
     private void ResolveMusicVideo()
     {
         var track = CurrentTrack;
-        CurrentMusicVideoPath = MusicVideosEnabled && track != null && !track.IsRemoteStream
+        var found = track != null && !track.IsRemoteStream
             ? Helpers.MusicVideoLocator.Find(track.FilePath)
             : null;
+        CurrentTrackHasMusicVideoFile = found != null;
+        CurrentMusicVideoPath = MusicVideosEnabled ? found : null;
     }
     [ObservableProperty] private string _positionText = "0:00";
     [ObservableProperty] private string _durationText = "0:00";
@@ -513,12 +520,26 @@ public partial class PlayerViewModel : ViewModelBase
             RemainingTimeText = FormatTime(Duration);
             Seeked?.Invoke(this, TimeSpan.Zero);
         }
+        else if (_precedingInQueue.Count > 0)
+        {
+            // Step back into the part of the queue that was started past (GitHub #74).
+            CancelAutoMixTransition("user skipped");
+            MarkQueueChanged();
+            if (CurrentTrack != null) UpNext.Insert(0, CurrentTrack);
+            var prev = _precedingInQueue[^1];
+            _precedingInQueue.RemoveAt(_precedingInQueue.Count - 1);
+            PlayTrack(prev);
+        }
         else if (History.Count > 0)
         {
             CancelAutoMixTransition("user skipped");
             GoBackInQueue(QueueAdvanceReason.Previous);
         }
     }
+
+    /// <summary>Queue entries before the one the user started from, newest-first is the
+    /// END of the list; consumed by <see cref="Previous"/> before <see cref="History"/>.</summary>
+    private readonly List<Track> _precedingInQueue = new();
 
     /// <summary>Island speed menu; parameter is a percent ("75" … "200").</summary>
     [RelayCommand]
@@ -1078,6 +1099,14 @@ public partial class PlayerViewModel : ViewModelBase
         // wrap replays the queue in the order the user actually started it.
         _repeatCycleTracks = tracks.Skip(startIndex).Concat(tracks.Take(startIndex)).ToList();
 
+        // GitHub #74: the tracks BEFORE the start point are what Previous should step back
+        // through (playlist started at track 5 → Previous plays track 4), not the last
+        // thing that happened to play before this queue. Kept apart from History, which
+        // the Queue panel and Cover Flow show as songs actually played.
+        _precedingInQueue.Clear();
+        for (int i = 0; i < startIndex; i++)
+            _precedingInQueue.Add(tracks[i]);
+
         // Clear and rebuild the queue
         var upNextTracks = new List<Track>(tracks.Count - startIndex - 1);
         for (int i = startIndex + 1; i < tracks.Count; i++)
@@ -1161,6 +1190,7 @@ public partial class PlayerViewModel : ViewModelBase
         CurrentTrack = null;
         UpNext.Clear();
         History.Clear();
+        _precedingInQueue.Clear();
         _originalQueue.Clear();
         _parkedExplicit.Clear();
         Position = TimeSpan.Zero;

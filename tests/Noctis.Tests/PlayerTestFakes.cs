@@ -115,6 +115,12 @@ internal sealed class FakeLibraryService : ILibraryService
         FavoritesChanged?.Invoke(this, EventArgs.Empty);
     }
     public Task SetTracksRatingAsync(IReadOnlyList<Track> tracks, int rating) => Task.CompletedTask;
+    public Task SetTracksBadgeAsync(IReadOnlyList<Track> tracks, string? badge)
+    {
+        foreach (var t in tracks) t.Badge = string.IsNullOrWhiteSpace(badge) ? null : badge.Trim();
+        return Task.CompletedTask;
+    }
+    public IReadOnlyList<string> GetBadgeNames() => TrackList.Select(t => t.Badge).Where(b => !string.IsNullOrWhiteSpace(b)).Select(b => b!).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(b => b).ToList();
     public Task SetTracksDislikedAsync(IReadOnlyList<Track> tracks, bool isDisliked) => Task.CompletedTask;
     public Task SetTracksSnoozedAsync(IReadOnlyList<Track> tracks, DateTime? until) => Task.CompletedTask;
     public void NotifyMetadataChanged() { }

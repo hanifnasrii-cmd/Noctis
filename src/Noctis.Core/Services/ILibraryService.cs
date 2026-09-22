@@ -129,6 +129,10 @@ public interface ILibraryService
 
     /// <summary>Sets a 0-5 star rating on the given tracks, saves the library, and writes the file tags.</summary>
     Task SetTracksRatingAsync(IReadOnlyList<Track> tracks, int rating);
+    /// <summary>GitHub #74: set (null/blank clears) the user badge on the tracks.</summary>
+    Task SetTracksBadgeAsync(IReadOnlyList<Track> tracks, string? badge);
+    /// <summary>Badge names in use across the library, sorted, de-duplicated case-insensitively.</summary>
+    IReadOnlyList<string> GetBadgeNames();
 
     /// <summary>Sets the "not liked" flag on the given tracks, saves the library, and writes the file tags.</summary>
     Task SetTracksDislikedAsync(IReadOnlyList<Track> tracks, bool isDisliked);
