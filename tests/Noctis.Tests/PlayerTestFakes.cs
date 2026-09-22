@@ -88,8 +88,11 @@ internal sealed class FakeLibraryService : ILibraryService
     /// root: it raises ScanAborted with these roots and leaves the library untouched.</summary>
     public string[]? AbortScanWithRoots { get; set; }
 
+    public List<string> ScannedFolders { get; } = new();
+
     public Task ScanAsync(IEnumerable<string> folders, CancellationToken ct = default)
     {
+        ScannedFolders.AddRange(folders);
         if (AbortScanWithRoots is { } roots)
             ScanAborted?.Invoke(this, roots);
         return Task.CompletedTask;
