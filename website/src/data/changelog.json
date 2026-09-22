@@ -1,58 +1,6 @@
 {
   "releases": [
     {
-      "tag": "v1.5.1",
-      "version": "1.5.1",
-      "name": "v1.5.1",
-      "publishedAt": "2026-09-22T04:59:23Z",
-      "url": "https://github.com/heartached/Noctis/releases/tag/v1.5.1",
-      "prerelease": false,
-      "sections": [
-        {
-          "title": "New Features",
-          "items": [
-            "Added Turkish language support",
-            "Added Playback time option in player island",
-            "Added Drift (no beat) flowing lyrics background",
-            "Added Import dropped files toggle in Settings",
-            "Added drag rows onto queue popup to append",
-            "Added Fade on play and pause setting",
-            "Added Playlist page toggles (album headers, NEW badge, columns)",
-            "Added Custom track badges with color pills and sort mode",
-            "Added visualizer support for Linux/macOS (side-decode audio feed)"
-          ]
-        },
-        {
-          "title": "Improvements",
-          "items": [
-            "Improved Type filter icon distinction from Songs filter",
-            "Improved multi-selection drag to preserve order"
-          ]
-        },
-        {
-          "title": "Bug Fixes",
-          "items": [
-            "Fixed \"&\" splitting duo artist names",
-            "Fixed audio visualizer invisible under Kawarp",
-            "Fixed music video shown cropped to a square",
-            "Fixed lyrics header artist line acting as one button",
-            "Fixed lyrics header track count showing wrong disc total",
-            "Fixed language reverting to system default after restart",
-            "Fixed gray window background on Dark/Midnight themes",
-            "Fixed Lyrics Studio missing embedded LRC lyrics",
-            "Fixed drag and drop not working from Folders page",
-            "Fixed removing library folder stopping playback",
-            "Fixed partially downloaded albums showing under Singles & EPs",
-            "Fixed Kawarp showing still image for some albums",
-            "Fixed island shuffle glyph staying white while active",
-            "Fixed Music Video menu item showing for songs with no clip",
-            "Fixed Previous button falling through to global history",
-            "Fixed visualizer showing static dots on Linux/macOS"
-          ]
-        }
-      ]
-    },
-    {
       "tag": "v1.5.0",
       "version": "1.5.0",
       "name": "v1.5.0",
@@ -2611,6 +2559,6 @@
       "sections": []
     }
   ],
-  "updatedAt": "2026-09-22T04:59:40.560Z",
+  "updatedAt": "2026-09-21T02:03:48.804Z",
   "degraded": false
 }

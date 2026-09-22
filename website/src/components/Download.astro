@@ -4,21 +4,14 @@ import { platforms, type PlatformId } from '../config/site';
 import { assetUrl } from '../lib/release';
 
 /**
- * Three cards, always all three, visually equal. The visitor's platform is
- * only promoted by ordering it first when the cards stack on small screens —
- * never by hiding or recolouring, because the detection is a guess and a
- * wrong guess must not cost anyone their download.
- *
- * The promotion is pure CSS off `data-os`, which Base.astro sets before first
- * paint. A custom property (--dl-order) carries the state down from the card,
- * so the four-way selector list is written exactly once.
+ * The closing call to action: a big centred headline, then the three
+ * platform cards. All three are always shown; the visitor's platform is only
+ * promoted by ordering it first when the cards stack on small screens.
  */
 interface Card {
   id: PlatformId;
   label: string;
   spec: string;
-  /** downloads.json asset key — also the data-asset hook the live release
-      feed in site.ts uses to repoint the link when a new release ships. */
   asset: string;
   alt: { asset: string; label: string };
 }
@@ -42,62 +35,46 @@ const cards: Card[] = [
 ];
 ---
 
-<section class="section dl" id="download" aria-labelledby="download-title" data-tint="3">
+<section class="section dl" id="download" aria-labelledby="download-title">
   <div class="container">
-    <div class="dl__head" data-reveal>
-      <h2 class="h2" id="download-title">Pick your platform</h2>
-      <p class="lede">All builds are free and open source, straight from GitHub Releases.</p>
-    </div>
+    <header class="sec-head dl__head" data-reveal>
+      <h2 class="h2" id="download-title">Put your music<br />back on your desktop.</h2>
+      <p class="lede">Free and open source, and it stays that way. No account, no trial.</p>
+    </header>
 
     <ul class="dl__grid" role="list" data-reveal-group>
-      {
-        cards.map((c) => (
-          <li class="dl__card" data-os={c.id} data-reveal>
-            <div class="dl__top">
-              <span class="dl__icon">
-                <AppMark app={c.id} size={40} />
-              </span>
-            </div>
+      {cards.map((c) => (
+        <li class="dl__card" data-os={c.id} data-reveal>
+          <span class="dl__icon">
+            <AppMark app={c.id} size={40} />
+          </span>
 
-            <h3 class="dl__name">{c.label}</h3>
-            <p class="dl__spec mono">{c.spec}</p>
+          <h3 class="dl__name">{c.label}</h3>
+          <p class="dl__spec mono">{c.spec}</p>
 
-            <a class="btn btn--primary dl__btn" href={assetUrl(c.asset)} data-asset={c.asset}>
-              Download<span class="visually-hidden"> for {c.label}</span>
-            </a>
+          <a class="btn btn--primary dl__btn" href={assetUrl(c.asset)} data-asset={c.asset}>
+            Download<span class="visually-hidden"> for {c.label}</span>
+          </a>
 
-            <a class="dl__alt" href={assetUrl(c.alt.asset)} data-asset={c.alt.asset}>
-              {c.alt.label}
-            </a>
-          </li>
-        ))
-      }
+          <a class="dl__alt" href={assetUrl(c.alt.asset)} data-asset={c.alt.asset}>
+            {c.alt.label}
+          </a>
+        </li>
+      ))}
     </ul>
 
+    <p class="dl__note" data-reveal>MIT licence · No telemetry · Straight from GitHub Releases</p>
   </div>
 </section>
 
 <style>
-  /* Centred, like the comparison section: the three cards below centre in the
-     container, and a left-parked heading left a field of empty band to its
-     right on every wide screen. */
   .dl__head {
-    max-width: 44ch;
-    margin-inline: auto;
-    margin-bottom: clamp(var(--s-7), 5vw, var(--s-8));
-    text-align: center;
+    max-width: 40rem;
   }
-
-  .dl__head .lede {
-    margin-top: var(--s-4);
-    margin-inline: auto;
-  }
-
-  /* --- The three cards ----------------------------------------------------- */
 
   .dl__grid {
     display: grid;
-    gap: clamp(var(--s-4), 2vw, var(--s-5));
+    gap: var(--s-4);
     margin: 0;
     padding: 0;
     list-style: none;
@@ -106,32 +83,18 @@ const cards: Card[] = [
   .dl__card {
     display: flex;
     flex-direction: column;
-    padding: clamp(var(--s-4), 3vw, var(--s-6));
-    border: 1px solid var(--line);
+    align-items: center;
+    padding: clamp(var(--s-5), 3vw, var(--s-6));
     border-radius: var(--r-card);
     background: var(--bg-1);
-    box-shadow: var(--shadow-card);
     text-align: center;
-    transition: border-color var(--t-base) var(--ease);
   }
 
-  .dl__top {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: var(--s-3);
-    margin-bottom: var(--s-5);
-  }
-
-  /* No plate. The grey rounded square behind each mark was the one thing on
-     these cards that looked like chrome rather than product. The Windows mark
-     brings its own blue and Tux his own colours; only the Apple mark needs the
-     theme, and it takes it from currentColor. */
   .dl__icon {
     display: grid;
     place-items: center;
     height: 40px;
-    flex: none;
+    margin-bottom: var(--s-5);
     color: var(--ink-0);
   }
 
@@ -143,40 +106,36 @@ const cards: Card[] = [
 
   .dl__name {
     font-family: var(--font-display);
-    font-optical-sizing: auto;
-    font-weight: 600;
+    font-weight: 700;
     font-size: var(--step-1);
     line-height: 1.1;
     letter-spacing: -0.02em;
   }
 
   .dl__spec {
-    /* The bottom margin sets the MINIMUM gap above the CTA; margin-top:auto on
-       the button absorbs whatever is left over. */
     margin-block: var(--s-2) var(--s-6);
     color: var(--ink-2);
     font-size: var(--step--2);
     line-height: 1.6;
   }
 
-  /* Pinned to the bottom, so a spec line that wraps on one card does not leave
-     that card's button out of line with the other two. */
   .dl__btn {
     width: 100%;
     margin-top: auto;
-    padding-inline: var(--s-4);
+    min-height: 50px;
+    font-weight: 600;
   }
 
   .dl__alt {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-height: 44px;
+    min-height: 40px;
     margin-top: var(--s-1);
-    color: var(--ink-1);
+    color: var(--ink-2);
     font-size: var(--step--1);
     line-height: 1.5;
-    text-align: center;
+    text-decoration: none;
     transition: color var(--t-instant) var(--ease);
   }
 
@@ -184,10 +143,12 @@ const cards: Card[] = [
     color: var(--accent-text);
   }
 
-  /* --- Detected platform ---------------------------------------------------
-     Written once. Everything downstream reads --dl-order, which inherits.
-     With JS off, html has no data-os and Windows is offered — the same
-     default the hero uses. */
+  .dl__note {
+    margin-top: clamp(1.5rem, 3vw, 2.25rem);
+    color: var(--ink-2);
+    font-size: var(--step--1);
+    text-align: center;
+  }
 
   :global(html:not([data-os])) .dl__card[data-os='windows'],
   :global(html[data-os='windows']) .dl__card[data-os='windows'],
@@ -196,9 +157,6 @@ const cards: Card[] = [
     --dl-order: -1;
   }
 
-  /* --- Responsive ---------------------------------------------------------- */
-
-  /* Stacked: the detected card leads, the other two follow untouched. */
   @media (max-width: 819.98px) {
     .dl__card {
       order: var(--dl-order, 0);

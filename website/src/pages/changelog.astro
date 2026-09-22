@@ -74,8 +74,8 @@ const PROLOGUE: Record<string, { title: string; body: string }> = {
       <header class="cl__head">
         <h1 class="display" id="cl-title">Changelog</h1>
         <p class="lede cl__lede">
-          Every fix, every feature, in the order it shipped. That’s {releases.length} releases and{' '}
-          {total.toLocaleString('en-US')} changes{
+          Every fix, every feature, in the order it shipped. That’s <span data-cl-releases>{releases.length}</span> releases and{' '}
+          <span data-cl-changes>{total.toLocaleString('en-US')}</span> changes{
             first && ` since ${monthFmt.format(new Date(first.publishedAt))}`
           }.
         </p>
@@ -230,8 +230,8 @@ const PROLOGUE: Record<string, { title: string; body: string }> = {
   .cl__pill {
     padding: var(--s-1) var(--s-3);
     border-radius: var(--r-pill);
-    background: color-mix(in srgb, var(--band-text) 14%, transparent);
-    color: var(--band-text);
+    background: color-mix(in srgb, var(--accent-text) 14%, transparent);
+    color: var(--accent-text);
     font-size: var(--step--1);
     font-weight: 500;
     text-decoration: none;
@@ -242,7 +242,7 @@ const PROLOGUE: Record<string, { title: string; body: string }> = {
   }
 
   .cl__pill:hover {
-    background: var(--band-text);
+    background: var(--accent-text);
     color: var(--bg-0);
   }
 
@@ -473,4 +473,121 @@ const PROLOGUE: Record<string, { title: string; body: string }> = {
       btn.toggleAttribute('data-on', !entry.isIntersecting);
     }).observe(head);
   }
+</script>
+
+{/*
+  Live refresh. The page is rendered from changelog.json at build time, so a
+  release published after the last deploy would be missing until the next
+  one. This asks GitHub directly for the release list and inserts any entry
+  the page does not already have, built with createElement/textContent — the
+  hash CSP allows no other route and release notes are remote input.
+*/}
+<script>
+  import { REPO } from '../config/site';
+  import { fromGitHub, type ParsedRelease } from '../lib/changelog-parse';
+
+  const list = document.querySelector<HTMLOListElement>('.cl__list');
+  const nReleases = document.querySelector<HTMLElement>('[data-cl-releases]');
+  const nChanges = document.querySelector<HTMLElement>('[data-cl-changes]');
+  const POLL = 2 * 60 * 1000;
+
+  const dateFmt = new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    timeZone: 'UTC',
+  });
+
+  /* Astro scopes this page's CSS with a data-astro-cid-* attribute on every
+     element it renders; anything built here has to carry the same one or it
+     falls outside every rule. Read off the list itself. */
+  const scope = list ? [...list.attributes].find((a) => a.name.startsWith('data-astro-cid-'))?.name : undefined;
+
+  function el<K extends keyof HTMLElementTagNameMap>(
+    tag: K,
+    className?: string,
+    text?: string
+  ): HTMLElementTagNameMap[K] {
+    const node = document.createElement(tag);
+    if (scope) node.setAttribute(scope, '');
+    if (className) node.className = className;
+    if (text != null) node.textContent = text;
+    return node;
+  }
+
+  function render(r: ParsedRelease): HTMLLIElement {
+    const li = el('li', 'cl__entry');
+
+    const rail = el('div', 'cl__rail');
+    const pill = el('a', 'cl__pill mono', r.version);
+    pill.href = r.url;
+    pill.target = '_blank';
+    pill.rel = 'noopener';
+    pill.setAttribute('aria-label', `Release ${r.tag} on GitHub`);
+    const time = el('time', 'cl__date', dateFmt.format(new Date(r.publishedAt)));
+    time.dateTime = r.publishedAt;
+    rail.append(pill, time);
+
+    const body = el('div', 'cl__body');
+    const h2 = el('h2', 'cl__version');
+    h2.id = r.tag;
+    const anchor = el('a', 'cl__anchor', r.version);
+    anchor.href = `#${r.tag}`;
+    h2.append(anchor);
+    if (r.prerelease) h2.append(el('span', 'cl__pre', 'Pre-release'));
+    body.append(h2);
+
+    if (!r.sections.length) {
+      const p = el('p', 'cl__none', 'No release notes. ');
+      const a = el('a', undefined, 'View on GitHub');
+      a.href = r.url;
+      a.target = '_blank';
+      a.rel = 'noopener';
+      p.append(a);
+      body.append(p);
+    }
+
+    for (const s of r.sections) {
+      const group = el('div', 'cl__group');
+      if (s.title) group.append(el('h3', 'cl__kind', s.title));
+      const ul = el('ul', 'cl__items');
+      for (const item of s.items) ul.append(el('li', undefined, item));
+      group.append(ul);
+      body.append(group);
+    }
+
+    li.append(rail, body);
+    return li;
+  }
+
+  async function refresh() {
+    if (!list || document.visibilityState === 'hidden') return;
+    try {
+      const res = await fetch(`https://api.github.com/repos/${REPO}/releases?per_page=100`, {
+        headers: { Accept: 'application/vnd.github+json' },
+      });
+      if (!res.ok) return;
+      const releases = fromGitHub(await res.json(), REPO);
+
+      /* Anything already on the page stays as built; only unseen tags are
+         added, newest first, so the order matches GitHub's. */
+      const fresh = releases.filter((r) => !document.getElementById(r.tag)).reverse();
+      for (const r of fresh) list.prepend(render(r));
+
+      if (fresh.length) {
+        const entries = list.querySelectorAll('.cl__entry').length;
+        const changes = list.querySelectorAll('.cl__items > li').length;
+        if (nReleases) nReleases.textContent = String(entries);
+        if (nChanges) nChanges.textContent = changes.toLocaleString('en-US');
+      }
+    } catch {
+      /* offline or rate-limited — the built page is still correct */
+    }
+  }
+
+  refresh();
+  setInterval(refresh, POLL);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') refresh();
+  });
 </script>

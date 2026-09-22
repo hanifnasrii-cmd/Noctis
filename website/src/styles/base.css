@@ -97,8 +97,6 @@ a {
   color: var(--on-accent);
   font-weight: 600;
   text-decoration: none;
-  /* Hidden by clipping, not by an off-canvas offset: anything painted above
-     the document top is revealed by mobile rubber-band overscroll. */
   clip-path: inset(50%);
 }
 
@@ -109,45 +107,47 @@ a {
 
 /* ==========================================================================
    Type primitives
+   Big, white, centred, tightly tracked. The accent word in a display line is
+   colour only — no italic, no width axis.
    ========================================================================== */
 
 .display {
   font-family: var(--font-display);
-  font-optical-sizing: auto;
   font-weight: 700;
   font-size: var(--step-display);
-  line-height: 0.94;
-  /* Bricolage Grotesque already sets tight; -0.03em closed the counters. */
-  letter-spacing: -0.022em;
+  line-height: 1.02;
+  letter-spacing: -0.035em;
   text-wrap: balance;
 }
 
-/* The emphasis word. Bricolage Grotesque has no italic, so the accent is the
-   colour plus a step down the width axis — a pinch in the line rather than a
-   slant. Renderers without the wdth axis get the colour alone, which is still
-   a legible emphasis. */
 .display em {
   font-style: normal;
-  font-weight: 800;
-  font-variation-settings: var(--wdth-tight);
   color: var(--accent-text);
 }
 
 .h2 {
   font-family: var(--font-display);
-  font-optical-sizing: auto;
   font-weight: 700;
   font-size: var(--step-3);
-  line-height: 1.03;
-  letter-spacing: -0.02em;
+  line-height: 1.06;
+  letter-spacing: -0.03em;
+  text-wrap: balance;
+}
+
+.h3 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--step-2);
+  line-height: 1.1;
+  letter-spacing: -0.025em;
   text-wrap: balance;
 }
 
 .lede {
   color: var(--ink-1);
-  font-size: var(--step-0);
-  line-height: 1.6;
-  max-width: 62ch;
+  font-size: clamp(1.1rem, 0.5vw + 0.95rem, 1.35rem);
+  line-height: 1.5;
+  max-width: 52ch;
   text-wrap: pretty;
 }
 
@@ -167,6 +167,54 @@ a {
 
 .num {
   font-variant-numeric: tabular-nums;
+}
+
+/* Centred section header: h2 over lede, both on the centre axis. */
+.sec-head {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: 44rem;
+  margin-inline: auto;
+  margin-bottom: clamp(2.5rem, 5vw, 4rem);
+  text-align: center;
+}
+
+.sec-head .lede {
+  margin-top: var(--s-5);
+  margin-inline: auto;
+}
+
+/* Red text link with a trailing chevron — the secondary action beside a
+   white button. */
+.link-arrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35em;
+  color: var(--accent-text);
+  font-weight: 500;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.link-arrow::after {
+  content: '';
+  width: 0.55em;
+  height: 0.55em;
+  border-right: 1.5px solid currentColor;
+  border-top: 1.5px solid currentColor;
+  transform: rotate(45deg);
+  transition: transform var(--t-base) var(--ease);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .link-arrow:hover::after {
+    transform: rotate(45deg) translate(2px, -2px);
+  }
+}
+
+.link-arrow:hover {
+  text-decoration: underline;
 }
 
 /* ==========================================================================
@@ -203,53 +251,63 @@ a {
 
 /* ==========================================================================
    Buttons
+   The primary is a white pill with black text on the black page (and inverts
+   with the theme). The accent is kept for text links and marks.
    ========================================================================== */
 
 .btn {
   --btn-bg: transparent;
   --btn-fg: var(--ink-0);
   --btn-bd: var(--line);
-  --btn-icon: 20px;
+  --btn-icon: 18px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: var(--s-3);
-  min-height: 52px;
-  padding: 0 var(--s-6);
+  gap: var(--s-2);
+  min-height: 46px;
+  padding: 0 var(--s-5);
   border: 1px solid var(--btn-bd);
   border-radius: var(--r-pill);
   background: var(--btn-bg);
   color: var(--btn-fg);
-  font-size: 1rem;
-  font-weight: 600;
+  font-size: 0.95rem;
+  font-weight: 500;
   letter-spacing: -0.01em;
   text-decoration: none;
   white-space: nowrap;
-  /* Transform and shadow ride the longer duration so the hover grow — and the
-     settle back on mouse-out — glide instead of snapping. Colour stays quick. */
   transition:
     transform var(--t-base) var(--ease),
     box-shadow var(--t-base) var(--ease),
     border-color var(--t-instant) var(--ease),
-    background-color var(--t-instant) var(--ease);
+    background-color var(--t-instant) var(--ease),
+    color var(--t-instant) var(--ease);
 }
 
 .btn--primary {
-  --btn-bg: var(--accent-500);
-  --btn-fg: var(--on-accent);
+  --btn-bg: var(--ink-0);
+  --btn-fg: var(--bg-0);
   --btn-bd: transparent;
-  box-shadow: 0 2px 8px var(--accent-glow);
+}
+
+.btn--primary:hover {
+  --btn-bg: color-mix(in srgb, var(--ink-0) 88%, var(--bg-0));
+}
+
+.btn--ghost {
+  --btn-bg: color-mix(in srgb, var(--ink-0) 6%, transparent);
+  --btn-bd: color-mix(in srgb, var(--ink-0) 12%, transparent);
 }
 
 .btn--ghost:hover {
-  --btn-bd: color-mix(in srgb, var(--accent-500) 45%, var(--line));
-  background: color-mix(in srgb, var(--accent-500) 7%, transparent);
+  --btn-bg: color-mix(in srgb, var(--ink-0) 11%, transparent);
+  --btn-bd: color-mix(in srgb, var(--ink-0) 20%, transparent);
 }
 
 .btn--lg {
-  min-height: 58px;
-  padding-inline: var(--s-7);
+  min-height: 54px;
+  padding-inline: var(--s-6);
   font-size: 1.05rem;
+  --btn-icon: 20px;
 }
 
 .btn svg {
@@ -268,22 +326,11 @@ a {
 
 @media (prefers-reduced-motion: no-preference) {
   .btn:hover {
-    transform: scale(1.02);
-  }
-
-  .btn--primary:hover {
-    box-shadow: 0 6px 24px var(--accent-glow);
+    transform: scale(1.03);
   }
 
   .btn:active {
     transform: scale(0.985);
-  }
-}
-
-/* Under reduced motion the affordance becomes a state change, not a movement. */
-@media (prefers-reduced-motion: reduce) {
-  .btn--primary:hover {
-    box-shadow: 0 6px 24px var(--accent-glow);
   }
 }
 
@@ -311,9 +358,6 @@ a {
   height: 18px;
 }
 
-/* Brand colour sits on the button so the :hover rule below can override it in
-   one place when the button fills with accent. Discord ships one brand colour;
-   GitHub's mark is specified monochrome, so it tracks the theme's ink. */
 .icon-btn--discord {
   color: #5865f2;
 }
@@ -323,9 +367,9 @@ a {
 }
 
 .icon-btn:hover {
-  color: var(--on-accent);
-  background: var(--accent-500);
-  border-color: var(--accent-500);
+  color: var(--ink-0);
+  background: color-mix(in srgb, var(--ink-0) 10%, transparent);
+  border-color: color-mix(in srgb, var(--ink-0) 20%, transparent);
 }
 
 @media (prefers-reduced-motion: no-preference) {
@@ -352,4 +396,9 @@ a {
 
 [hidden] {
   display: none !important;
+}
+
+/* The header floats over the page, so the page starts below it. */
+main {
+  padding-top: var(--header-h);
 }

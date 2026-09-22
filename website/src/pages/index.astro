@@ -2,19 +2,20 @@
 import Base from '../layouts/Base.astro';
 import Hero from '../components/Hero.astro';
 import FormatMarquee from '../components/FormatMarquee.astro';
+import Stats from '../components/Stats.astro';
 import Showcase from '../components/Showcase.astro';
 import Features from '../components/Features.astro';
+import Lyrics from '../components/Lyrics.astro';
 import AudioChain from '../components/AudioChain.astro';
 import Compare from '../components/Compare.astro';
+import FAQ from '../components/FAQ.astro';
 import Download from '../components/Download.astro';
 import Community from '../components/Community.astro';
 
 /**
- * Six sections and a footer, down from nine.
- *
- * Cover Flow and Lyrics merged into Showcase. Tints alternate one section on,
- * one off — every second band picking up a little accent is the rhythm; two in
- * a row is a gradient.
+ * One black page, every section centred on the same axis:
+ * hero → proof row → views → features → lyrics → signal chain → comparison
+ * → FAQ → download → footer.
  */
 ---
 
@@ -25,10 +26,12 @@ import Community from '../components/Community.astro';
 >
   <Hero />
   <FormatMarquee />
+  <Stats />
   <Showcase />
-  <Features />
+  <Lyrics />
   <AudioChain />
   <Compare />
+  <FAQ />
   <Download />
   <Community slot="footer" />
 </Base>

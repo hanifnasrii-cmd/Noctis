@@ -21,11 +21,11 @@ const STEP = 2.6; // seconds each line holds focus
 const TOTAL = (lines.length * STEP).toFixed(1);
 ---
 
-<div class="ly" id="lyrics">
+<section class="section ly" id="lyrics" aria-labelledby="ly-title">
 
   <div class="container ly__grid">
     <div class="ly__copy" data-reveal>
-      <h3 class="h3">Time-synced lyrics</h3>
+      <h3 class="h3" id="ly-title">Time-synced lyrics</h3>
       <p class="lede">
         Each line lights up as it is sung, down to the word when the lyrics carry the timing.
       </p>
@@ -47,7 +47,7 @@ const TOTAL = (lines.length * STEP).toFixed(1);
       </div>
     </div>
   </div>
-</div>
+</section>
 
 <style>
   /* Second half of Showcase.astro. The section padding belongs to the parent;
@@ -55,7 +55,7 @@ const TOTAL = (lines.length * STEP).toFixed(1);
   .ly {
     position: relative;
     overflow: clip;
-    margin-top: clamp(3rem, 6vw, 5rem);
+
   }
 
   .ly__grid {

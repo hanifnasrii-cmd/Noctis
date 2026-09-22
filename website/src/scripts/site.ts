@@ -4,6 +4,8 @@
  */
 
 import { REPO } from '../config/site';
+import './live-stats';
+import { readCache, remember } from './live-cache';
 
 const root = document.documentElement;
 const live = document.getElementById('live-region');
@@ -27,7 +29,7 @@ const THEME_KEY = 'noctis-theme';
 /* Mirrors the two <meta name="theme-color"> values in Base.astro. Those tags
    switch on the OS scheme, not on html[data-theme], so a manual toggle has to
    rewrite them or the mobile browser chrome keeps the other theme's color. */
-const THEME_BG: Record<string, string> = { dark: '#07080C', light: '#FAF9F7' };
+const THEME_BG: Record<string, string> = { dark: '#000000', light: '#FFFFFF' };
 
 function syncThemeColor(theme: string) {
   for (const m of document.querySelectorAll('meta[name="theme-color"]')) {
@@ -400,9 +402,38 @@ function safeHttp(u: string, fallback: string): string {
   return fallback;
 }
 
-/** Applies everything in the feed that is not the count. */
+/** Version strings as comparable number tuples: "1.10.2" -> [1, 10, 2]. */
+function parts(v: string): number[] {
+  return v.replace(/^v/, '').split(/[.\-+]/).map((p) => parseInt(p, 10) || 0);
+}
+
+/** true when `a` is older than `b`. */
+function older(a: string, b: string): boolean {
+  const x = parts(a);
+  const y = parts(b);
+  for (let i = 0; i < Math.max(x.length, y.length); i++) {
+    const d = (x[i] ?? 0) - (y[i] ?? 0);
+    if (d !== 0) return d < 0;
+  }
+  return false;
+}
+
+/* The newest version ever shown on this page. The two sources disagree in
+   age — the feed is only as fresh as the last deploy, GitHub is live — and
+   they are applied in turn on every poll. Without this, a poll where GitHub
+   failed (rate limit, offline) would let the feed's older version overwrite
+   the live one and the badge would visibly step backwards. */
+let bestVersion = verEl?.textContent?.trim() ?? '';
+
+/** Applies everything in the feed that is not the count — but only when it is
+    at least as new as what is already on the page. */
 function applyRelease(data: Feed) {
   const version = data.latestVersion;
+  if (version && bestVersion && older(version, bestVersion)) return;
+  if (version) {
+    bestVersion = version;
+    remember({ release: { latestVersion: version, latestUrl: data.latestUrl, assets: data.assets } });
+  }
   if (version && verEl && verEl.textContent !== `v${version}`) {
     verEl.textContent = `v${version}`;
   }
@@ -433,11 +464,15 @@ function applyRelease(data: Feed) {
    feed recovers. Either element is reason enough to poll. */
 if (counter || verEl) {
   const format = new Intl.NumberFormat('en-US').format;
+  /* The public figure is a floor: never below 10,000, rounded down to the
+     thousand, with a plus. Mirrors displayDownloads() in src/lib/release.ts. */
+  const FLOOR = 10_000;
+  const display = (n: number) => `${format(Math.floor(Math.max(n, FLOOR) / 1000) * 1000)}+`;
   const FEED = '/api/downloads.json';
   /* 60s. The feed is a static same-origin file, so this is cheap — but note
      the real freshness ceiling is the workflow that WRITES the file, not this
      interval. Polling faster than the source changes buys nothing. */
-  const POLL = 60 * 1000;
+  const POLL = 5 * 60 * 1000;
   const DURATION = 1400;
   // The house curve, so the count-up matches every other transition.
   const ease = (t: number) => 1 - Math.pow(1 - t, 3);
@@ -445,6 +480,14 @@ if (counter || verEl) {
   const parsed = Number(counter?.dataset.downloadTotal);
   let shown = Number.isFinite(parsed) ? parsed : 0;
   let frame = 0;
+
+  /* Start from the newest values this browser has seen, not from the build. */
+  const cached = readCache();
+  if (cached.release) applyRelease(cached.release);
+  if (counter && typeof cached.total === 'number' && cached.total > shown) {
+    shown = cached.total;
+    counter.textContent = display(shown);
+  }
 
   /** Rolls the visible number to `target` from wherever it currently sits. */
   function rollTo(target: number) {
@@ -454,7 +497,7 @@ if (counter || verEl) {
 
     if (reduced.matches) {
       shown = target;
-      counter!.textContent = format(target);
+      counter!.textContent = display(target);
       return;
     }
 
@@ -465,7 +508,7 @@ if (counter || verEl) {
     const tick = (now: number) => {
       const progress = Math.min((now - start) / DURATION, 1);
       shown = Math.round(from + delta * ease(progress));
-      counter!.textContent = format(shown);
+      counter!.textContent = display(shown);
       if (progress < 1) frame = requestAnimationFrame(tick);
       else shown = target;
     };
@@ -563,8 +606,15 @@ if (counter || verEl) {
        deploy — the fresher source must land last. */
     const gh = await fetchGitHub();
     if (gh.release) applyRelease(gh.release);
+    /* Downloads only ever go up, so a source reporting fewer than the page
+       already shows is a staler source, not a real drop. */
+    /* Downloads only go up; a source reporting fewer than the page shows is
+       a staler source, not a real drop. */
     const total = gh.total ?? feedTotal;
-    if (total) rollTo(total);
+    if (total && total > shown) {
+      rollTo(total);
+      remember({ total });
+    }
   }
 
   /* The opening flourish counts up from zero once per session; on every later
@@ -581,7 +631,7 @@ if (counter || verEl) {
   if (counter && !flourished && !reduced.matches && shown > 0) {
     const target = shown;
     shown = 0;
-    counter.textContent = '0';
+    counter.textContent = display(0);
     new IntersectionObserver((entries, observer) => {
       if (!entries.some((e) => e.isIntersecting)) return;
       observer.disconnect();

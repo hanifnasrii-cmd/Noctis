@@ -36,7 +36,13 @@ export function assetSize(key: string): string | null {
 }
 
 /** Rendered server-side so the counter is correct with JS disabled. */
-export const downloadsFormatted =
-  release.total == null ? null : new Intl.NumberFormat('en-US').format(release.total);
+/** The public figure is a floor: at least 10,000, rounded down to the thousand, with a plus.
+    Mirrored in src/scripts/site.ts (displayTotal). */
+export const DOWNLOADS_FLOOR = 10_000;
+export function displayDownloads(n: number): string {
+  const shown = Math.floor(Math.max(n, DOWNLOADS_FLOOR) / 1000) * 1000;
+  return `${new Intl.NumberFormat('en-US').format(shown)}+`;
+}
+export const downloadsFormatted = release.total == null ? null : displayDownloads(release.total);
 
 export const versionLabel = release.latestVersion ? `v${release.latestVersion}` : null;
