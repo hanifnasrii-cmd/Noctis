@@ -137,7 +137,7 @@ public static class SmoothScrollBehavior
             // the owner into this page, but the pointer is over the popup, not the page.
             // Scrolling the page here moved the Settings content out from under an open
             // Language list while the popup stayed put (09-19 report).
-            if (!ReferenceEquals(source.GetVisualRoot(), element.GetVisualRoot())
+            if (!ReferenceEquals(TopLevel.GetTopLevel(source), TopLevel.GetTopLevel(element))
                 || source.FindAncestorOfType<OverlayPopupHost>() != null)
                 return;
 

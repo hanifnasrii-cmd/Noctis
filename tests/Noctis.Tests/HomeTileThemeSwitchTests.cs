@@ -31,11 +31,11 @@ public class HomeTileThemeSwitchTests
         app.Resources["InterSemiBold"] = FontFamily.Default;
         app.Resources.MergedDictionaries.Add(new ResourceInclude(new Uri("avares://Noctis/"))
         {
-            Source = new Uri("avares://Noctis/Assets/Icons.axaml")
+            Source = new Uri("avares://Noctis.UI/Assets/Icons.axaml")
         });
         app.Styles.Add(new StyleInclude(new Uri("avares://Noctis/"))
         {
-            Source = new Uri("avares://Noctis/Assets/Styles.axaml")
+            Source = new Uri("avares://Noctis.UI/Assets/Styles.axaml")
         });
     }
 
@@ -80,7 +80,7 @@ public class HomeTileThemeSwitchTests
         Lightness(ThemeOverlayParityTests.LoadOverlay("Ink")["HomeCardBackground"] as IBrush);
 
     private static ResourceInclude InkOverlay() =>
-        new((Uri?)null) { Source = new Uri("avares://Noctis/Assets/Themes/Ink.axaml") };
+        new((Uri?)null) { Source = new Uri("avares://Noctis.UI/Assets/Themes/Ink.axaml") };
 
     /// <summary>Ticks the headless render timer while real time passes, sampling the presenter
     /// fill each frame; keeps going past the window until the value has held still for a few

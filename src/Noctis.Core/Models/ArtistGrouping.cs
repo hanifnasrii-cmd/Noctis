@@ -52,10 +52,12 @@ public static class ArtistCredit
     /// spellings only: the old hard-coded list also split on the bare words "and",
     /// "with" and "x", which cut real names in half app-wide ("Florence and the
     /// Machine" → "Florence", "Lil Nas X" → "Lil Nas") — the "artists missing their
-    /// full name" complaint in #51. Users who want those back can add them.
+    /// full name" complaint in #51. "&amp;" is left out too: duos carry it inside their
+    /// name ("Simon &amp; Garfunkel", "Bomba Estéreo &amp; ..."), so splitting on it by
+    /// default cut them in two (Discord report). Users who want those back can add them.
     /// </summary>
     public static readonly IReadOnlyList<string> DefaultSeparators =
-        new[] { "/", ",", ";", "&", "feat.", "ft.", "featuring" };
+        new[] { "/", ",", ";", "feat.", "ft.", "featuring" };
 
     private static readonly object Gate = new();
     private static IReadOnlyList<string> _separators = DefaultSeparators;

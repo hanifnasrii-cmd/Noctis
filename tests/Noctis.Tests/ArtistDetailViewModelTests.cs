@@ -42,7 +42,7 @@ public class ArtistDetailViewModelTests
     public void Releases_AreCreditedAlbums_AppearsOn_IsFeatureOnly()
     {
         var own = MakeAlbum("Phases", "Chase Atlantic", 2019, ("Angels", "Chase Atlantic", 5), ("Her", "Chase Atlantic", 2));
-        var collab = MakeAlbum("Duo", "Chase Atlantic & Friend", 2021, ("Together", "Chase Atlantic & Friend", 1));
+        var collab = MakeAlbum("Duo", "Chase Atlantic, Friend", 2021, ("Together", "Chase Atlantic, Friend", 1));
         var feature = MakeAlbum("Other", "Someone Else", 2020,
             ("Solo", "Someone Else", 9), ("Feat", "Someone Else feat. Chase Atlantic", 4));
         var unrelated = MakeAlbum("Nope", "Nobody", 2018, ("X", "Nobody", 0));
@@ -173,7 +173,7 @@ public class ArtistDetailViewModelTests
     {
         var newer = MakeAlbum("New", "A", 2021, ("n2", "A", 0), ("n1", "A", 0));
         var older = MakeAlbum("Old", "A", 2019, ("o1", "A", 0));
-        var feature = MakeAlbum("Guest", "B", 2020, ("solo", "B", 0), ("with A", "B & A", 0));
+        var feature = MakeAlbum("Guest", "B", 2020, ("solo", "B", 0), ("with A", "B, A", 0));
         var (vm, _) = Make("A", newer, older, feature);
 
         var all = vm.GetAllTracks();

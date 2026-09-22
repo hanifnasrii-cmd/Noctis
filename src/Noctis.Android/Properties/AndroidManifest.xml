@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" android:installLocation="auto">
+	<!-- Bootstrap set. Playback adds FOREGROUND_SERVICE, FOREGROUND_SERVICE_MEDIA_PLAYBACK,
+	     WAKE_LOCK and READ_MEDIA_AUDIO when the Media3 service lands. -->
+	<uses-permission android:name="android.permission.INTERNET" />
+	<application android:label="Noctis" android:icon="@drawable/icon" />
+</manifest>

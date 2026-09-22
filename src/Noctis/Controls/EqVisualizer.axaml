@@ -39,4 +39,11 @@
             </ControlTemplate>
         </Setter>
     </Style>
+    <!-- On the now-playing row the bars take the row foreground: this control defaults
+         its Foreground to AccentColorBrush, which would be accent-on-accent there, and
+         the bars are only ever visible on that row. Lived in the shared Styles.axaml
+         until that moved to Noctis.UI, which cannot name this desktop-only control. -->
+    <Style Selector="Border.now-playing ctrl|EqVisualizer">
+        <Setter Property="Foreground" Value="{DynamicResource NowPlayingRowForegroundBrush}" />
+    </Style>
 </Styles>

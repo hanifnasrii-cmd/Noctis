@@ -6,7 +6,7 @@
         x:DataType="vm:BulkLyricsViewModel"
         Title="{loc:T BulkLyrics.Title}"
         CanResize="False"
-        SystemDecorations="None"
+        WindowDecorations="None"
         TransparencyLevelHint="Transparent"
         Background="Transparent"
         ShowInTaskbar="False"

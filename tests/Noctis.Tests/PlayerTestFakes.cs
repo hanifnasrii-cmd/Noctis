@@ -52,6 +52,8 @@ internal sealed class FakeAudioPlayer : IAudioPlayer
     public void ApplyReplayGain(string mode, double preampDb) { }
     public void SetCrossfade(bool enabled, int durationSeconds, AutoMixFadeCurve fadeCurve = AutoMixFadeCurve.SmoothEase, bool fadeOut = true, bool overlap = false) { }
     public void SetGapless(bool enabled) { }
+    public (bool Enabled, int DurationMs) PlayPauseFade { get; private set; }
+    public void SetPlayPauseFade(bool enabled, int durationMs) => PlayPauseFade = (enabled, durationMs);
     public double PlaybackRate { get; private set; } = 1.0;
     public void SetPlaybackRate(double rate) => PlaybackRate = rate;
     public double PitchSemitones { get; private set; }
@@ -77,6 +79,7 @@ internal sealed class FakeLibraryService : ILibraryService
     public event EventHandler<int>? ScanProgress;
 
     public void RaiseLibraryUpdated() => LibraryUpdated?.Invoke(this, EventArgs.Empty);
+    public bool IsPublishingPartial { get; set; }
     public event EventHandler? FavoritesChanged;
     public event EventHandler<List<string>>? MusicFoldersChanged;
     public event EventHandler<string[]>? ScanAborted;
@@ -112,6 +115,12 @@ internal sealed class FakeLibraryService : ILibraryService
         FavoritesChanged?.Invoke(this, EventArgs.Empty);
     }
     public Task SetTracksRatingAsync(IReadOnlyList<Track> tracks, int rating) => Task.CompletedTask;
+    public Task SetTracksBadgeAsync(IReadOnlyList<Track> tracks, string? badge)
+    {
+        foreach (var t in tracks) t.Badge = string.IsNullOrWhiteSpace(badge) ? null : badge.Trim();
+        return Task.CompletedTask;
+    }
+    public IReadOnlyList<string> GetBadgeNames() => TrackList.Select(t => t.Badge).Where(b => !string.IsNullOrWhiteSpace(b)).Select(b => b!).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(b => b).ToList();
     public Task SetTracksDislikedAsync(IReadOnlyList<Track> tracks, bool isDisliked) => Task.CompletedTask;
     public Task SetTracksSnoozedAsync(IReadOnlyList<Track> tracks, DateTime? until) => Task.CompletedTask;
     public void NotifyMetadataChanged() { }

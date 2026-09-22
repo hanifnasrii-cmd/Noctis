@@ -6,7 +6,7 @@
         x:DataType="vm:SpectrogramViewModel"
         Title="{loc:T Spectrogram.Spectrogram}"
         CanResize="False"
-        SystemDecorations="None"
+        WindowDecorations="None"
         TransparencyLevelHint="Transparent"
         Background="Transparent"
         ShowInTaskbar="False"

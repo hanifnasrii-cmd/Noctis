@@ -6,7 +6,7 @@
         x:DataType="vm:LyricShareViewModel"
         Title="{loc:T LyricShare.ShareLyrics}"
         CanResize="False"
-        SystemDecorations="None"
+        WindowDecorations="None"
         Background="Transparent"
         TransparencyLevelHint="Transparent"
         ShowInTaskbar="False">

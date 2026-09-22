@@ -16,6 +16,7 @@
         <conv:HexColorToBrushConverter x:Key="HexColorConverter" />
         <conv:DateAddedDisplayConverter x:Key="DateAddedDisplay" />
         <conv:RecentlyAddedConverter x:Key="RecentAdded" />
+        <conv:BadgeBrushConverter x:Key="BadgeBrush" />
     </UserControl.Resources>
 
     <UserControl.Styles>
@@ -580,13 +581,13 @@
                                     <MenuItem Header="{loc:T Playlist.PlayNext}"
                                               Command="{Binding PlayNextAllCommand}">
                                         <MenuItem.Icon>
-                                            <Border Width="14" Height="14" Background="{DynamicResource SystemControlForegroundBaseHighBrush}" RenderOptions.BitmapInterpolationMode="HighQuality"><Border.OpacityMask><ImageBrush Source="avares://Noctis/Assets/Icons/Forward%20ICON.png" Stretch="Uniform" /></Border.OpacityMask></Border>
+                                            <Border Width="14" Height="14" Background="{DynamicResource SystemControlForegroundBaseHighBrush}" RenderOptions.BitmapInterpolationMode="HighQuality"><Border.OpacityMask><ImageBrush Source="avares://Noctis.UI/Assets/Icons/Forward%20ICON.png" Stretch="Uniform" /></Border.OpacityMask></Border>
                                         </MenuItem.Icon>
                                     </MenuItem>
                                     <MenuItem Header="{loc:T Playlist.AddQueue}"
                                               Command="{Binding AddAllToQueueCommand}">
                                         <MenuItem.Icon>
-                                            <Border Width="17" Height="17" Background="{DynamicResource SystemControlForegroundBaseHighBrush}" RenderOptions.BitmapInterpolationMode="HighQuality"><Border.OpacityMask><ImageBrush Source="avares://Noctis/Assets/Icons/Queue%20ICON.png" Stretch="Uniform" /></Border.OpacityMask></Border>
+                                            <Border Width="17" Height="17" Background="{DynamicResource SystemControlForegroundBaseHighBrush}" RenderOptions.BitmapInterpolationMode="HighQuality"><Border.OpacityMask><ImageBrush Source="avares://Noctis.UI/Assets/Icons/Queue%20ICON.png" Stretch="Uniform" /></Border.OpacityMask></Border>
                                         </MenuItem.Icon>
                                     </MenuItem>
                                     <Separator />
@@ -600,7 +601,7 @@
                                     <MenuItem Header="{loc:T Playlist.EditPlaylist}"
                                               Command="{Binding EditPlaylistCommand}">
                                         <MenuItem.Icon>
-                                            <Border Width="14" Height="14" Background="{DynamicResource SystemControlForegroundBaseHighBrush}" RenderOptions.BitmapInterpolationMode="HighQuality"><Border.OpacityMask><ImageBrush Source="avares://Noctis/Assets/Icons/Edit%20Playlist%20ICON.png" Stretch="Uniform" /></Border.OpacityMask></Border>
+                                            <Border Width="14" Height="14" Background="{DynamicResource SystemControlForegroundBaseHighBrush}" RenderOptions.BitmapInterpolationMode="HighQuality"><Border.OpacityMask><ImageBrush Source="avares://Noctis.UI/Assets/Icons/Edit%20Playlist%20ICON.png" Stretch="Uniform" /></Border.OpacityMask></Border>
                                         </MenuItem.Icon>
                                     </MenuItem>
                                     <Separator />
@@ -644,6 +645,7 @@
                                     <MenuItem Header="{loc:T Playlist.RecentlyAdded}" Command="{Binding SetSortCommand}" CommandParameter="RecentlyAdded" />
                                     <MenuItem Header="{loc:T Playlist.ReleaseDateOldest}" Command="{Binding SetSortCommand}" CommandParameter="ReleaseDateOldest" />
                                     <MenuItem Header="{loc:T Playlist.ReleaseDateNewest}" Command="{Binding SetSortCommand}" CommandParameter="ReleaseDateNewest" />
+                                    <MenuItem Header="{loc:T Playlist.SortBadge}" Command="{Binding SetSortCommand}" CommandParameter="Badge" />
                                 </MenuFlyout>
                             </Button.Flyout>
                         </Button>
@@ -663,7 +665,7 @@
                      row content box (1px ListBoxItem border + 8px right padding) so each
                      header sits exactly over its column's data. -->
                 <Grid Grid.Row="0"
-                      ColumnDefinitions="34,48,2*,1.4*,70,64,64,40"
+                      ColumnDefinitions="34,48,2*,1.4*,Auto,Auto,64,40"
                       Margin="1,0,9,6">
                     <TextBlock Grid.Column="0" Text="#"
                                FontSize="12" FontWeight="SemiBold" Opacity="0.5"
@@ -673,12 +675,17 @@
                                Margin="12,0,0,0" />
                     <TextBlock Grid.Column="3" Text="{loc:T Playlist.Album}"
                                FontSize="12" FontWeight="SemiBold" Opacity="0.5" />
-                    <TextBlock Grid.Column="4" Text="{loc:T Playlist.Added}"
+                    <!-- GitHub #74: Added / Favorite are Auto columns whose only child is this
+                         fixed-width cell, so hiding the cell (Settings → Library → Playlist page)
+                         collapses the column in the header and every row alike. -->
+                    <TextBlock Grid.Column="4" Text="{loc:T Playlist.Added}" Width="70"
                                FontSize="12" FontWeight="SemiBold" Opacity="0.5"
-                               HorizontalAlignment="Center" />
-                    <TextBlock Grid.Column="5" Text="{loc:T Playlist.Favorite}"
+                               TextAlignment="Center"
+                               IsVisible="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).Settings.PlaylistShowAddedColumn, FallbackValue=True}" />
+                    <TextBlock Grid.Column="5" Text="{loc:T Playlist.Favorite}" Width="64"
                                FontSize="12" FontWeight="SemiBold" Opacity="0.5"
-                               HorizontalAlignment="Center" />
+                               TextAlignment="Center"
+                               IsVisible="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).Settings.PlaylistShowFavoriteColumn, FallbackValue=True}" />
                     <TextBlock Grid.Column="6" Text="{loc:T Playlist.Time}"
                                FontSize="12" FontWeight="SemiBold" Opacity="0.5"
                                HorizontalAlignment="Left" />
@@ -725,7 +732,7 @@
                                 <Border Classes="row-body"
                                         Classes.now-playing="{Binding IsNowPlaying}"
                                         Classes.reorderable="{Binding $parent[UserControl].((vm:PlaylistViewModel)DataContext).CanReorder}">
-                                <Grid ColumnDefinitions="34,48,2*,1.4*,70,64,64,40"
+                                <Grid ColumnDefinitions="34,48,2*,1.4*,Auto,Auto,64,40"
                                       Margin="0,1" Background="Transparent">
 
                                     <!-- Row number; becomes a grip hint on hover when reorder is possible -->
@@ -795,7 +802,7 @@
                                              budgets it MaxWidth = cell - badges; ClipToBounds is the
                                              backstop for the frame before that lands. Without this the
                                              title painted straight over the Album column (issue #30). -->
-                                        <Grid ColumnDefinitions="Auto,Auto,Auto"
+                                        <Grid ColumnDefinitions="Auto,Auto,Auto,Auto"
                                               ClipToBounds="True"
                                               LayoutUpdated="OnTitleCellLayoutUpdated">
                                             <!-- Trimming is also set inline, as in the Songs rows: the
@@ -829,12 +836,36 @@
                                                     VerticalAlignment="Center"
                                                     BorderThickness="1"
                                                     BorderBrush="{DynamicResource AccentTextExactBrush}"
-                                                    IsVisible="{Binding DateAdded, Converter={StaticResource RecentAdded}}"
                                                     ToolTip.Tip="{loc:T Playlist.AddedLast7DaysTip}">
+                                                <!-- GitHub #74: the badge can be switched off in Settings. -->
+                                                <Border.IsVisible>
+                                                    <MultiBinding Converter="{x:Static BoolConverters.And}">
+                                                        <Binding Path="DateAdded" Converter="{StaticResource RecentAdded}" />
+                                                        <Binding Path="$parent[Window].((vm:MainWindowViewModel)DataContext).Settings.PlaylistShowNewBadge" FallbackValue="True" />
+                                                    </MultiBinding>
+                                                </Border.IsVisible>
                                                 <TextBlock Text="{loc:T Playlist.NEW}"
                                                            FontSize="8"
                                                            FontWeight="Bold"
                                                            Foreground="{DynamicResource AccentTextExactBrush}" />
+                                            </Border>
+                                            <!-- GitHub #74: the user's own badge, coloured by name (BadgePalette). -->
+                                            <Border Grid.Column="3"
+                                                    Classes="user-badge"
+                                                    CornerRadius="999"
+                                                    Padding="6,1.5"
+                                                    Margin="6,0,0,0"
+                                                    VerticalAlignment="Center"
+                                                    BorderThickness="1"
+                                                    BorderBrush="{Binding Badge, Converter={StaticResource BadgeBrush}}"
+                                                    IsVisible="{Binding HasBadge}"
+                                                    ToolTip.Tip="{Binding Badge}">
+                                                <TextBlock Text="{Binding Badge}"
+                                                           FontSize="8"
+                                                           FontWeight="Bold"
+                                                           MaxWidth="90"
+                                                           TextTrimming="CharacterEllipsis"
+                                                           Foreground="{Binding Badge, Converter={StaticResource BadgeBrush}}" />
                                             </Border>
                                         </Grid>
                                         <Button Background="Transparent" BorderThickness="0" Padding="0" MinHeight="0"
@@ -866,17 +897,19 @@
                                                                      VerticalAlignment="Center" />
                                     </Button>
 
-                                    <!-- Added date -->
-                                    <TextBlock Grid.Column="4"
+                                    <!-- Added date (column hidden via Settings → Library → Playlist page) -->
+                                    <TextBlock Grid.Column="4" Width="70"
                                                Text="{Binding DateAdded, Converter={StaticResource DateAddedDisplay}}"
                                                FontSize="11.5"
                                                Opacity="0.5"
-                                               HorizontalAlignment="Center"
-                                               VerticalAlignment="Center" />
+                                               TextAlignment="Center"
+                                               VerticalAlignment="Center"
+                                               IsVisible="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).Settings.PlaylistShowAddedColumn, FallbackValue=True}" />
 
                                     <!-- Favorite heart toggle: red when favorited, faint otherwise (click toggles this track only) -->
-                                    <Button Grid.Column="5"
-                                            Classes="heart-btn"
+                                    <Panel Grid.Column="5" Width="64"
+                                           IsVisible="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).Settings.PlaylistShowFavoriteColumn, FallbackValue=True}">
+                                    <Button Classes="heart-btn"
                                             Background="Transparent"
                                             BorderThickness="0"
                                             Padding="0"
@@ -895,6 +928,7 @@
                                                             HorizontalAlignment="Center" VerticalAlignment="Center"
                                                             IsFavorite="{Binding IsFavorite}" />
                                     </Button>
+                                    </Panel>
 
                                     <!-- Time / duration -->
                                     <TextBlock Grid.Column="6"

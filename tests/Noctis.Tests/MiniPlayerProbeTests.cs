@@ -10,7 +10,6 @@ using Noctis.Services;
 using Noctis.ViewModels;
 using Noctis.Views;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace Noctis.Tests;
 
@@ -68,7 +67,7 @@ public class MiniPlayerProbeTests
         if (app.Resources.TryGetResource("SearchIcon", null, out _)) return;
         app.Resources.MergedDictionaries.Add(new ResourceInclude((Uri?)null)
         {
-            Source = new Uri("avares://Noctis/Assets/Icons.axaml"),
+            Source = new Uri("avares://Noctis.UI/Assets/Icons.axaml"),
         });
     }
 

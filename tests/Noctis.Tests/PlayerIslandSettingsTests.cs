@@ -16,6 +16,8 @@ public class PlayerIslandSettingsTests
         // Repeat and the favorite heart became opt-in with the track-box layout.
         Assert.False(s.PlaybackBarShowRepeat);
         Assert.False(s.PlaybackBarShowFavorite);
+        // Elapsed / remaining time in the track box (Discord, Luwi 09-21) is opt-in too.
+        Assert.False(s.PlaybackBarShowTime);
         Assert.Equal(15, s.PlaybackBarSkipSeconds);
         Assert.Equal(0.07, s.PlaybackBarTrackBoxOpacity);
     }

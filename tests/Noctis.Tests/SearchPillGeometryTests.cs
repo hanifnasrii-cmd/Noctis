@@ -55,7 +55,7 @@ public class SearchPillGeometryTests
         else button.Classes.Remove("expanded");
         sidebar.FindControl<TextBlock>("SearchLabel")!.IsVisible = expanded;
         sidebar.FindControl<TextBlock>("BackLabel")!.IsVisible = expanded;
-        (sidebar.GetVisualRoot() as Window)?.UpdateLayout();
+        (TopLevel.GetTopLevel(sidebar) as Window)?.UpdateLayout();
     }
 
     private static double RailIconX(SidebarView sidebar)

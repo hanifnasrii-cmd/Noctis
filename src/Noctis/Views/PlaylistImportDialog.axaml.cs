@@ -1,5 +1,6 @@
 using Avalonia.Controls;
 using Avalonia.Input;
+using Avalonia.Input.Platform;
 using Avalonia.Interactivity;
 using Avalonia.Media.Transformation;
 using Avalonia.Platform.Storage;
@@ -59,7 +60,7 @@ public partial class PlaylistImportDialog : Window
             {
                 var clipboard = GetTopLevel(this)?.Clipboard;
                 if (clipboard is null) return;
-                vm.OfferClipboardText(await clipboard.GetTextAsync());
+                vm.OfferClipboardText(await clipboard.TryGetTextAsync());
             }
             catch
             {
@@ -82,7 +83,7 @@ public partial class PlaylistImportDialog : Window
 
     private static void OnDragOver(object? sender, DragEventArgs e)
     {
-        e.DragEffects = e.Data.Contains(DataFormats.Files) ? DragDropEffects.Copy : DragDropEffects.None;
+        e.DragEffects = e.DataTransfer.Contains(DataFormat.File) ? DragDropEffects.Copy : DragDropEffects.None;
         e.Handled = true;
     }
 
@@ -92,7 +93,7 @@ public partial class PlaylistImportDialog : Window
         try
         {
             if (DataContext is not PlaylistImportViewModel vm) return;
-            var file = (e.Data.GetFiles() ?? Enumerable.Empty<IStorageItem>()).OfType<IStorageFile>().FirstOrDefault();
+            var file = (e.DataTransfer.TryGetFiles() ?? Enumerable.Empty<IStorageItem>()).OfType<IStorageFile>().FirstOrDefault();
             var path = file?.TryGetLocalPath();
             e.Handled = true;
             if (!string.IsNullOrWhiteSpace(path) && System.IO.File.Exists(path))

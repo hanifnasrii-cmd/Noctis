@@ -13,9 +13,11 @@ FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 ARG TARGETARCH
 WORKDIR /src
 COPY src/Noctis.Core/Noctis.Core.csproj src/Noctis.Core/
+COPY src/Noctis.Core.Server/Noctis.Core.Server.csproj src/Noctis.Core.Server/
 COPY src/Noctis.Server/Noctis.Server.csproj src/Noctis.Server/
 RUN dotnet restore src/Noctis.Server/Noctis.Server.csproj -a "$TARGETARCH"
 COPY src/Noctis.Core/ src/Noctis.Core/
+COPY src/Noctis.Core.Server/ src/Noctis.Core.Server/
 COPY src/Noctis.Server/ src/Noctis.Server/
 RUN dotnet publish src/Noctis.Server/Noctis.Server.csproj -c Release -a "$TARGETARCH" \
       --no-restore --self-contained false -p:PublishReadyToRun=false -o /app

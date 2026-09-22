@@ -8,6 +8,19 @@ public class AppSettings
     /// <summary>Directories to scan for music files.</summary>
     public List<string> MusicFolders { get; set; } = new();
 
+    /// <summary>GitHub #71: whether files/folders dropped onto Noctis are moved into the
+    /// managed "Noctis Imports" folder and added to the library (true, the original
+    /// behaviour) or played/queued from where they are without touching the library.</summary>
+    public bool ImportDroppedMedia { get; set; } = true;
+
+    /// <summary>GitHub #74: playlist page furniture, each opt-out. Album run headers
+    /// above each same-album run, the NEW badge on tracks added in the last 7 days,
+    /// and the Added / Favorite columns.</summary>
+    public bool PlaylistShowAlbumHeaders { get; set; } = true;
+    public bool PlaylistShowNewBadge { get; set; } = true;
+    public bool PlaylistShowAddedColumn { get; set; } = true;
+    public bool PlaylistShowFavoriteColumn { get; set; } = true;
+
     /// <summary>File paths explicitly removed from the library. Skipped during rescans.</summary>
     public List<string> ExcludedFilePaths { get; set; } = new();
 
@@ -117,6 +130,12 @@ public class AppSettings
     /// <summary>Crossfade duration in seconds (1–12, fractional allowed).</summary>
     public double CrossfadeDuration { get; set; } = 6;
 
+    /// <summary>GitHub #73: fade the level out before a pause lands and back in after a
+    /// resume (off = the hard cut), over <see cref="PlayPauseFadeMs"/> milliseconds.</summary>
+    public bool PlayPauseFadeEnabled { get; set; }
+
+    public int PlayPauseFadeMs { get; set; } = 300;
+
     /// <summary>Master toggle for Apple-style song transitions (drives AutoMixTransitionMode).</summary>
     public bool SongTransitionsEnabled { get; set; }
     /// <summary>Transition style when enabled: "AutoMix" (key/tempo aware) or "Crossfade" (fixed duration).</summary>
@@ -163,7 +182,7 @@ public class AppSettings
     /// <summary>Album pages take their background colour from the cover's edge colour,
     /// Apple-Music style, with the page text flipping dark on light covers. Ships on;
     /// the Appearance toggle turns it off for users who want the flat theme page.</summary>
-    public bool AlbumPageTintEnabled { get; set; } = true;
+    public bool AlbumPageTintEnabled { get; set; } = false;
 
     /// <summary>Minimizing the main window hides it to the system tray.</summary>
     public bool MinimizeToTray { get; set; }
@@ -386,6 +405,11 @@ public class AppSettings
     public bool PlaybackBarShowRepeat { get; set; }
 
     public bool PlaybackBarShowFavorite { get; set; }
+
+    /// <summary>Discord (Luwi, 2026-09-21): elapsed / remaining time of the current title in
+    /// the island's track box, stacked beside the title. Off by default — the stock LCD
+    /// carries no time labels.</summary>
+    public bool PlaybackBarShowTime { get; set; }
 
     /// <summary>Whether tracks marked explicit (ITUNESADVISORY=1) may play automatically.
     /// On by default. When off they are skipped on queue advance, excluded from shuffle,
@@ -668,6 +692,7 @@ public class AppSettings
         ReplayGainPreampDb = Math.Clamp(ReplayGainPreampDb, -12, 12);
         EqPreampDb = Math.Clamp(EqPreampDb, Services.ParametricEqMath.EqPreampMinDb, Services.ParametricEqMath.EqPreampMaxDb);
         CrossfadeDuration = Math.Clamp(CrossfadeDuration, 1, 12);
+        PlayPauseFadeMs = Math.Clamp(PlayPauseFadeMs, 100, 2000);
         PlaybackBarBackgroundOpacity = Math.Clamp(PlaybackBarBackgroundOpacity, 0, 1);
         PlaybackBarTrackBoxOpacity = double.IsFinite(PlaybackBarTrackBoxOpacity)
             ? Math.Clamp(PlaybackBarTrackBoxOpacity, 0, 1)
@@ -708,7 +733,17 @@ public static class FlowingStyles
     /// <summary>Kawarp without the beat swell — same flow, no bounce.</summary>
     public const string KawarpCalm = "KawarpCalm";
 
+    /// <summary>Drift without the beat pulse (Discord, aaron/Mistery 2026-09-21): the cover
+    /// still drifts and rotates, but the backdrop scale and glow never swell.</summary>
+    public const string DriftCalm = "DriftCalm";
+
     public static bool IsKawarp(string? value) => value is Kawarp or KawarpCalm;
+
+    /// <summary>Either built-in Drift flavour (the FlowingArtworkAnimator layers).</summary>
+    public static bool IsDrift(string? value) => value is Drift or DriftCalm;
+
+    /// <summary>False for the "(no beat)" flavours, whose motion ignores the beat meter.</summary>
+    public static bool IsBeatReactive(string? value) => value is not (KawarpCalm or DriftCalm);
 
     public static string Normalize(string? value) => string.IsNullOrWhiteSpace(value) ? Drift : value.Trim();
 }

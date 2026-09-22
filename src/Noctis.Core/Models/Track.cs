@@ -409,6 +409,17 @@ public partial class Track : ObservableObject
     /// <summary>UTC timestamp when this track was last favorited. Null if never favorited.</summary>
     public DateTime? FavoritedAt { get; set; }
 
+    /// <summary>GitHub #74: the user's own label for this track ("Gym", "Late night"…), shown as
+    /// a pill next to the title on the playlist page and sortable there. Null = none.
+    /// Library-wide (it follows the song into every playlist); journaled with the other
+    /// user state.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasBadge))]
+    private string? _badge;
+
+    [System.Text.Json.Serialization.JsonIgnore]
+    public bool HasBadge => !string.IsNullOrWhiteSpace(Badge);
+
     partial void OnIsFavoriteChanged(bool value)
     {
         if (value)

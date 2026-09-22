@@ -18,7 +18,6 @@ using Noctis.Services;
 using Noctis.ViewModels;
 using Noctis.Views;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace Noctis.Tests;
 
@@ -33,8 +32,8 @@ public class TileOverlayProbeTests
         var app = Application.Current!;
         if (app.Resources.TryGetResource("HeartFillIcon", null, out _)) return;
         app.Resources["InterSemiBold"] = Avalonia.Media.FontFamily.Default;
-        app.Resources.MergedDictionaries.Add(new ResourceInclude(new Uri("avares://Noctis/")) { Source = new Uri("avares://Noctis/Assets/Icons.axaml") });
-        app.Styles.Add(new StyleInclude(new Uri("avares://Noctis/")) { Source = new Uri("avares://Noctis/Assets/Styles.axaml") });
+        app.Resources.MergedDictionaries.Add(new ResourceInclude(new Uri("avares://Noctis/")) { Source = new Uri("avares://Noctis.UI/Assets/Icons.axaml") });
+        app.Styles.Add(new StyleInclude(new Uri("avares://Noctis/")) { Source = new Uri("avares://Noctis.UI/Assets/Styles.axaml") });
     }
 
     private static Track T(string title, string artist, Guid albumId, string album) => new()
@@ -207,8 +206,8 @@ public class TileHeartFadeTests
         if (!app.Resources.TryGetResource("HeartFillIcon", null, out _))
         {
             app.Resources["InterSemiBold"] = Avalonia.Media.FontFamily.Default;
-            app.Resources.MergedDictionaries.Add(new ResourceInclude(new Uri("avares://Noctis/")) { Source = new Uri("avares://Noctis/Assets/Icons.axaml") });
-            app.Styles.Add(new StyleInclude(new Uri("avares://Noctis/")) { Source = new Uri("avares://Noctis/Assets/Styles.axaml") });
+            app.Resources.MergedDictionaries.Add(new ResourceInclude(new Uri("avares://Noctis/")) { Source = new Uri("avares://Noctis.UI/Assets/Icons.axaml") });
+            app.Styles.Add(new StyleInclude(new Uri("avares://Noctis/")) { Source = new Uri("avares://Noctis.UI/Assets/Styles.axaml") });
         }
         var lib = new FakeLibraryService();
         var id = Guid.NewGuid();

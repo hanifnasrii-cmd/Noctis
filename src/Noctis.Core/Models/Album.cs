@@ -163,7 +163,7 @@ public class Album : ObservableObject
     ///   1. Any track with <see cref="Track.IsReleaseTypeOverridden"/> wins.
     ///   2. The first non-Album <see cref="Track.ReleaseType"/> drawn from a tag (<see cref="Track.ReleaseTypeFromTag"/>).
     ///   3. Any explicit "Album" tag short-circuits the heuristic.
-    ///   4. Track-count fallback: ≤2 tracks → Single, 3–6 → EP, 7+ → Album.
+    ///   4. Track-count fallback on <see cref="KnownTrackTotal"/>: ≤2 → Single, 3–6 → EP, 7+ → Album.
     /// </summary>
     public ReleaseType ReleaseType
     {
@@ -186,10 +186,29 @@ public class Album : ObservableObject
             // 4. Track-count fallback (IsCompilation also handled here so the
             //    Albums view can filter compilations even without tags).
             if (IsCompilation) return ReleaseType.Compilation;
-            var count = Tracks.Count;
+            var count = KnownTrackTotal;
             if (count <= 2) return ReleaseType.Single;
             if (count <= 6) return ReleaseType.EP;
             return ReleaseType.Album;
+        }
+    }
+
+    /// <summary>
+    /// How many tracks the release is known to have: the files present, or more when the
+    /// tags say so (TRACKTOTAL, or a track number past the files present). A partially
+    /// downloaded 12-track album with 3 files is still an album, not an EP.
+    /// </summary>
+    private int KnownTrackTotal
+    {
+        get
+        {
+            var count = Tracks!.Count;
+            foreach (var t in Tracks)
+            {
+                if (t.TrackCount > count) count = t.TrackCount;
+                if (t.TrackNumber > count) count = t.TrackNumber;
+            }
+            return count;
         }
     }
 

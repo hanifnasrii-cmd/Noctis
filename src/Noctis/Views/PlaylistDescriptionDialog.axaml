@@ -8,7 +8,7 @@
         x:DataType="vm:PlaylistViewModel"
         Title="{loc:T PlaylistDescription.PlaylistDescription}"
         CanResize="False"
-        SystemDecorations="None"
+        WindowDecorations="None"
         Background="Transparent"
         TransparencyLevelHint="Transparent"
         ShowInTaskbar="False">

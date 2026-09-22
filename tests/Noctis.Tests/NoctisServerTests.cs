@@ -30,7 +30,7 @@ public class NoctisServerTests : IAsyncLifetime
     private static readonly Guid AlbumA = Guid.NewGuid(), AlbumB = Guid.NewGuid();
     private static readonly Guid ArtistX = Guid.NewGuid(), ArtistY = Guid.NewGuid();
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         Directory.CreateDirectory(_dir);
         _users = new ServerUserStore(Path.Combine(_dir, "users.db"));
@@ -61,7 +61,7 @@ public class NoctisServerTests : IAsyncLifetime
         _http = new HttpClient { BaseAddress = new Uri($"http://127.0.0.1:{_server.Port}/") };
     }
 
-    public async Task DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
         _http.Dispose();
         await _server.StopAsync();

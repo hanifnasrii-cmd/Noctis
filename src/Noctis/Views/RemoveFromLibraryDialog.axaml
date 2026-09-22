@@ -4,7 +4,7 @@
         x:Class="Noctis.Views.RemoveFromLibraryDialog"
         Title="{loc:T RemoveFromLibrary.RemoveFromLibrary}"
         CanResize="False"
-        SystemDecorations="None"
+        WindowDecorations="None"
         Background="Transparent"
         TransparencyLevelHint="Transparent"
         ShowInTaskbar="False">

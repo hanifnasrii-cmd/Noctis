@@ -233,6 +233,40 @@ public class LyricsSettingsToggleTests
         }
     }
 
+    /// <summary>"Drift (no beat)" (Discord, aaron / Mistery 09-21): the same Drift layers,
+    /// with the animator's beat target pinned at zero; plain Drift keeps reacting.</summary>
+    [AvaloniaFact]
+    public async Task FlowingStyle_DriftCalm_KeepsTheDriftLayers_ButParksTheBeat()
+    {
+        var (vm, player) = MakeViewModel();
+        var view = new LyricsView { DataContext = vm };
+        var win = new Window { Width = 1400, Height = 800, Content = view };
+        try
+        {
+            win.Show();
+            await Pump(50);
+
+            player.LyricsFlowingStyle = FlowingStyles.DriftCalm;
+            player.LyricsFlowingLightEnabled = true;
+            await Pump(100);
+
+            var layer = view.FindControl<Panel>("FlowLayerHost");
+            var kawarp = view.FindControl<Noctis.Controls.KawarpBackground>("KawarpLayer");
+            Assert.True(layer!.IsVisible, "Drift (no beat) still draws the Drift layers");
+            Assert.False(kawarp!.IsVisible);
+            Assert.True(Flow(view).Enabled);
+            Assert.False(Flow(view).BeatReactive, "the beat target must be parked");
+
+            player.LyricsFlowingStyle = FlowingStyles.Drift;
+            await Pump(100);
+            Assert.True(Flow(view).BeatReactive);
+        }
+        finally
+        {
+            win.Close();
+        }
+    }
+
     private static Noctis.Helpers.FlowingArtworkAnimator Flow(LyricsView view) =>
         (Noctis.Helpers.FlowingArtworkAnimator)typeof(LyricsView)
             .GetField("_flow", BindingFlags.Instance | BindingFlags.NonPublic)!

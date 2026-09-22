@@ -612,7 +612,7 @@
                                             VerticalAlignment="Center"
                                             RenderOptions.BitmapInterpolationMode="HighQuality">
                                         <Border.OpacityMask>
-                                            <ImageBrush Source="avares://Noctis/Assets/Icons/Arrow Down ICON.png" Stretch="Uniform"/>
+                                            <ImageBrush Source="avares://Noctis.UI/Assets/Icons/Arrow Down ICON.png" Stretch="Uniform"/>
                                         </Border.OpacityMask>
                                     </Border>
                                 </Grid>
@@ -2133,6 +2133,15 @@
                                               IsChecked="{Binding PlaybackBarShowShuffle}"
                                               VerticalAlignment="Center"/>
                     </Grid>
+                    <Grid ColumnDefinitions="*,Auto">
+                        <StackPanel Grid.Column="0" Spacing="2">
+                            <TextBlock Text="{loc:T Settings.PlaybackTime}" FontSize="13" FontWeight="SemiBold"/>
+                            <TextBlock Text="{loc:T Settings.PlaybackTimeInTrackBox}" FontSize="12" Opacity="0.5" TextWrapping="Wrap"/>
+                        </StackPanel>
+                        <controls:LottieToggle Grid.Column="1"
+                                              IsChecked="{Binding PlaybackBarShowTime}"
+                                              VerticalAlignment="Center"/>
+                    </Grid>
                 </StackPanel>
             </Border>
             <Border Classes="setting-row">
@@ -2754,6 +2763,39 @@
                                           VerticalAlignment="Center"/>
                 </Grid>
             </Border>
+            <!-- GitHub #73: the level fades out before a pause lands and back in after a resume. -->
+            <Border Classes="setting-row">
+                <StackPanel Spacing="6">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <StackPanel Grid.Column="0" Spacing="2">
+                            <TextBlock Text="{loc:T Settings.PlayPauseFade}" FontSize="15" FontWeight="SemiBold"/>
+                            <TextBlock Text="{loc:T Settings.PlayPauseFadeHint}"
+                                       FontSize="12" Opacity="0.5" TextWrapping="Wrap"/>
+                        </StackPanel>
+                        <controls:LottieToggle Grid.Column="1"
+                                              IsChecked="{Binding PlayPauseFadeEnabled}"
+                                              VerticalAlignment="Center"/>
+                    </Grid>
+                    <controls:CollapsibleContent IsOpen="{Binding PlayPauseFadeEnabled}" Lift="10">
+                        <StackPanel Classes="sub-setting" Spacing="6" Margin="2,10,0,0">
+                            <TextBlock Text="{loc:T Settings.FadeDuration}" FontSize="13" FontWeight="SemiBold"/>
+                            <Grid ColumnDefinitions="*,Auto">
+                                <Slider Grid.Column="0"
+                                        Classes="accent-slider"
+                                        Minimum="100" Maximum="2000"
+                                        TickFrequency="50" IsSnapToTickEnabled="True"
+                                        Value="{Binding PlayPauseFadeMs, Mode=TwoWay}"
+                                        VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="1"
+                                           Text="{Binding PlayPauseFadeMs, StringFormat='{}{0:0} ms'}"
+                                           FontSize="12" Opacity="0.7"
+                                           VerticalAlignment="Center"
+                                           MinWidth="74" TextAlignment="Right" Margin="12,0,0,0"/>
+                            </Grid>
+                        </StackPanel>
+                    </controls:CollapsibleContent>
+                </StackPanel>
+            </Border>
             <Border Classes="setting-row">
                 <Grid ColumnDefinitions="*,Auto">
                     <StackPanel Grid.Column="0" Spacing="2">
@@ -3105,6 +3147,70 @@
                     </ItemsControl>
                 </StackPanel>
             </Border>
+            <!-- GitHub #71: off = dropped files play / queue from where they are, nothing is
+                 moved into Noctis Imports or added to the library. -->
+            <Border Classes="setting-row">
+                <Grid ColumnDefinitions="*,Auto">
+                    <StackPanel Grid.Column="0" Spacing="2" VerticalAlignment="Center" Margin="0,0,16,0">
+                        <TextBlock Text="{loc:T Settings.ImportDroppedFiles}" FontSize="15" FontWeight="SemiBold"/>
+                        <TextBlock Text="{loc:T Settings.ImportDroppedFilesHint}"
+                                   FontSize="12" Opacity="0.5" TextWrapping="Wrap"/>
+                    </StackPanel>
+                    <controls:LottieToggle Grid.Column="1"
+                                          IsChecked="{Binding ImportDroppedMedia}"
+                                          VerticalAlignment="Center"/>
+                </Grid>
+            </Border>
+            <!-- GitHub #74: playlist page furniture, each opt-out. -->
+            <TextBlock Classes="section-title" Text="{loc:T Settings.Section.PlaylistPage}" Margin="0,16,0,8"/>
+            <Border Classes="setting-row">
+                <Grid ColumnDefinitions="*,Auto">
+                    <StackPanel Grid.Column="0" Spacing="2" VerticalAlignment="Center" Margin="0,0,16,0">
+                        <TextBlock Text="{loc:T Settings.PlaylistAlbumHeaders}" FontSize="15" FontWeight="SemiBold"/>
+                        <TextBlock Text="{loc:T Settings.PlaylistAlbumHeadersHint}"
+                                   FontSize="12" Opacity="0.5" TextWrapping="Wrap"/>
+                    </StackPanel>
+                    <controls:LottieToggle Grid.Column="1"
+                                          IsChecked="{Binding PlaylistShowAlbumHeaders}"
+                                          VerticalAlignment="Center"/>
+                </Grid>
+            </Border>
+            <Border Classes="setting-row">
+                <Grid ColumnDefinitions="*,Auto">
+                    <StackPanel Grid.Column="0" Spacing="2" VerticalAlignment="Center" Margin="0,0,16,0">
+                        <TextBlock Text="{loc:T Settings.PlaylistNewBadge}" FontSize="15" FontWeight="SemiBold"/>
+                        <TextBlock Text="{loc:T Settings.PlaylistNewBadgeHint}"
+                                   FontSize="12" Opacity="0.5" TextWrapping="Wrap"/>
+                    </StackPanel>
+                    <controls:LottieToggle Grid.Column="1"
+                                          IsChecked="{Binding PlaylistShowNewBadge}"
+                                          VerticalAlignment="Center"/>
+                </Grid>
+            </Border>
+            <Border Classes="setting-row">
+                <Grid ColumnDefinitions="*,Auto">
+                    <StackPanel Grid.Column="0" Spacing="2" VerticalAlignment="Center" Margin="0,0,16,0">
+                        <TextBlock Text="{loc:T Settings.PlaylistAddedColumn}" FontSize="15" FontWeight="SemiBold"/>
+                        <TextBlock Text="{loc:T Settings.PlaylistAddedColumnHint}"
+                                   FontSize="12" Opacity="0.5" TextWrapping="Wrap"/>
+                    </StackPanel>
+                    <controls:LottieToggle Grid.Column="1"
+                                          IsChecked="{Binding PlaylistShowAddedColumn}"
+                                          VerticalAlignment="Center"/>
+                </Grid>
+            </Border>
+            <Border Classes="setting-row">
+                <Grid ColumnDefinitions="*,Auto">
+                    <StackPanel Grid.Column="0" Spacing="2" VerticalAlignment="Center" Margin="0,0,16,0">
+                        <TextBlock Text="{loc:T Settings.PlaylistFavoriteColumn}" FontSize="15" FontWeight="SemiBold"/>
+                        <TextBlock Text="{loc:T Settings.PlaylistFavoriteColumnHint}"
+                                   FontSize="12" Opacity="0.5" TextWrapping="Wrap"/>
+                    </StackPanel>
+                    <controls:LottieToggle Grid.Column="1"
+                                          IsChecked="{Binding PlaylistShowFavoriteColumn}"
+                                          VerticalAlignment="Center"/>
+                </Grid>
+            </Border>
             <Border Classes="setting-row">
                 <Grid ColumnDefinitions="*,Auto">
                     <StackPanel Grid.Column="0" VerticalAlignment="Center">
@@ -3333,7 +3439,7 @@
                 <Grid ColumnDefinitions="Auto,*,Auto">
                     <Border Grid.Column="0" Classes="tool-bitmap" RenderOptions.BitmapInterpolationMode="HighQuality">
                         <Border.OpacityMask>
-                            <ImageBrush Source="avares://Noctis/Assets/Icons/Folder%20ICON.png" Stretch="Uniform"/>
+                            <ImageBrush Source="avares://Noctis.UI/Assets/Icons/Folder%20ICON.png" Stretch="Uniform"/>
                         </Border.OpacityMask>
                     </Border>
                     <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center">
@@ -3376,7 +3482,7 @@
                 <Grid ColumnDefinitions="Auto,*,Auto">
                     <Border Grid.Column="0" Classes="tool-bitmap" RenderOptions.BitmapInterpolationMode="HighQuality">
                         <Border.OpacityMask>
-                            <ImageBrush Source="avares://Noctis/Assets/Icons/Playlist%20icon.png" Stretch="Uniform"/>
+                            <ImageBrush Source="avares://Noctis.UI/Assets/Icons/Playlist%20icon.png" Stretch="Uniform"/>
                         </Border.OpacityMask>
                     </Border>
                     <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center">
@@ -4436,7 +4542,7 @@
                                Width="40" Height="40"
                                Margin="0,0,14,0"
                                VerticalAlignment="Top"
-                               Source="avares://Noctis/Assets/Icons/ListenBrainz ICON.png"
+                               Source="avares://Noctis.UI/Assets/Icons/ListenBrainz ICON.png"
                                RenderOptions.BitmapInterpolationMode="HighQuality"/>
 
                         <StackPanel Grid.Column="1" Grid.Row="0" Grid.RowSpan="2"
@@ -4929,7 +5035,7 @@
                                  antialiase (the source circle is full-bleed and would otherwise
                                  render with flat spots at 12/3/6/9 o'clock). No clip needed. -->
                             <Border Width="40" Height="40">
-                                <Image Source="avares://Noctis/Assets/Icons/Noctis%20Logo%20Padded.png"
+                                <Image Source="avares://Noctis.UI/Assets/Icons/Noctis%20Logo%20Padded.png"
                                        Stretch="Uniform"
                                        RenderOptions.BitmapInterpolationMode="HighQuality"/>
                             </Border>
@@ -5120,7 +5226,7 @@
                                 <StackPanel Margin="16,16,16,14">
                                     <!-- The real logo (red disc, white double note): on the red tile the
                                          disc merges with the fill and the note reads as the glyph. -->
-                                    <Image Source="avares://Noctis/Assets/Icons/Noctis%20Logo%20Padded.png"
+                                    <Image Source="avares://Noctis.UI/Assets/Icons/Noctis%20Logo%20Padded.png"
                                            Width="28" Height="28" Margin="-2,-2,0,-2"
                                            Stretch="Uniform" HorizontalAlignment="Left"
                                            RenderOptions.BitmapInterpolationMode="HighQuality"/>

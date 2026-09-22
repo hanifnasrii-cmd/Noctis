@@ -20,7 +20,7 @@ public class IconResourceReferenceTests
     public void EveryIconReference_MatchesACommittedFile_CaseSensitively()
     {
         var repoRoot = FindRepoRoot();
-        var iconsDir = Path.Combine(repoRoot, "src", "Noctis", "Assets", "Icons");
+        var iconsDir = Path.Combine(repoRoot, "src", "Noctis.UI", "Assets", "Icons"); // shared assets live in Noctis.UI
         Assert.True(Directory.Exists(iconsDir), $"Icons directory not found: {iconsDir}");
 
         // Authoritative file set, exact case as on disk (== committed in a clean checkout).
@@ -28,8 +28,8 @@ public class IconResourceReferenceTests
             Directory.GetFiles(iconsDir, "*.png").Select(p => Path.GetFileName(p)!),
             StringComparer.Ordinal);
 
-        var srcDir = Path.Combine(repoRoot, "src", "Noctis");
-        var sources = Directory.EnumerateFiles(srcDir, "*.*", SearchOption.AllDirectories)
+        var sources = new[] { "Noctis", "Noctis.UI" }
+            .SelectMany(proj => Directory.EnumerateFiles(Path.Combine(repoRoot, "src", proj), "*.*", SearchOption.AllDirectories))
             .Where(p =>
             {
                 var norm = p.Replace('\\', '/');

@@ -159,7 +159,9 @@ public partial class LyricsViewModel : ViewModelBase, IDisposable
             new("grad:#2E1437,#C850C0", "Fuchsia Haze", MakePreviewGradient("#2E1437", "#C850C0")),
         };
     }
-    private LyricLine? _currentActiveLine;
+    /// <summary>Line cursor + word-layer driver (Core); the ViewModel keeps the UI side:
+    /// opacities, the word-clock frame subscription, the trace.</summary>
+    private readonly LyricsTimeline _timeline;
     private bool _hasSyncedLyrics;
     private Track? _currentTrack;
     private string _loadedLyrics = string.Empty;
@@ -195,8 +197,6 @@ public partial class LyricsViewModel : ViewModelBase, IDisposable
     private bool _wordClockRunning;
 
     // Monotonic line cursor — avoids re-scanning every tick.
-    private int _lineCursor;
-    private TimeSpan _lastSyncPosition = TimeSpan.MinValue;
 
     public PlayerViewModel Player => _player;
 
@@ -527,6 +527,7 @@ public partial class LyricsViewModel : ViewModelBase, IDisposable
 
     public LyricsViewModel(PlayerViewModel player, ILrcLibService lrcLib, INetEaseService netEase, IMetadataService metadata, IPersistenceService persistence, ILibraryService library)
     {
+        _timeline = new LyricsTimeline(LyricLines, WordLookahead, LyricsLookahead);
         _player = player;
         _lrcLib = lrcLib;
         _netEase = netEase;
@@ -580,6 +581,7 @@ public partial class LyricsViewModel : ViewModelBase, IDisposable
 
         // Reload lyrics when metadata is edited (e.g. synced lyrics toggled off)
         _library.LibraryUpdated += OnLibraryUpdated;
+        RefreshHeaderCredits();
 
         // Subscribe to state changes to start/stop the sync timer
         _player.PropertyChanged += OnPlayerPropertyChanged;
@@ -946,6 +948,50 @@ public partial class LyricsViewModel : ViewModelBase, IDisposable
         if (!string.IsNullOrWhiteSpace(artist))
             _viewArtistAction?.Invoke(artist);
     }
+
+    // ── Header credits (Discord, aaron 2026-09-21) ──
+    // "Kanye West, GLC, Consequence" was ONE button that always opened the first name;
+    // the album page already renders one link per credited artist, so the lyrics page
+    // now does the same. The facts line printed the playing file's TRCK total (the
+    // current DISC's count) — the album's own count spans every disc.
+
+    /// <summary>One entry per credited artist of the current track, in tag order.</summary>
+    [ObservableProperty] private IReadOnlyList<ArtistTokenItem> _artistTokens = Array.Empty<ArtistTokenItem>();
+
+    /// <summary>True when the credit splits into more than one artist (per-artist links shown).</summary>
+    [ObservableProperty] private bool _hasMultipleArtists;
+
+    /// <summary>The album's track count across all discs, falling back to the tag's per-disc total.</summary>
+    [ObservableProperty] private int _albumTrackCount;
+
+    [RelayCommand]
+    private void ViewArtistNamed(string? name)
+    {
+        if (!string.IsNullOrWhiteSpace(name))
+            _viewArtistAction?.Invoke(name);
+    }
+
+    private void RefreshHeaderCredits()
+    {
+        var track = _player.CurrentTrack;
+        var tokens = BuildArtistTokens(track?.Artist);
+        ArtistTokens = tokens;
+        HasMultipleArtists = tokens.Length > 1;
+        AlbumTrackCount = track is null ? 0 : ResolveAlbumTrackCount(track, _library.GetAlbumById(track.AlbumId));
+    }
+
+    /// <summary>Splits a credit with the library's configured separators (Settings → Library).</summary>
+    internal static ArtistTokenItem[] BuildArtistTokens(string? artist)
+    {
+        if (string.IsNullOrWhiteSpace(artist)) return Array.Empty<ArtistTokenItem>();
+        var names = Track.ParseArtistTokens(artist);
+        if (names.Length == 0) names = new[] { artist.Trim() };
+        return names.Select((n, i) => new ArtistTokenItem(n, IsLast: i == names.Length - 1)).ToArray();
+    }
+
+    /// <summary>The album's grouped count (every disc) when the library knows it, else the tag's per-disc total.</summary>
+    internal static int ResolveAlbumTrackCount(Track track, Album? album)
+        => album is { TrackCount: > 0 } ? album.TrackCount : track.TrackCount;
 
     [RelayCommand]
     private void ViewAlbum()
@@ -1483,13 +1529,11 @@ public partial class LyricsViewModel : ViewModelBase, IDisposable
         _currentOnlineResult = null;
         _alternateOnlineResult = null;
         _alternateSource = null;
-        _currentActiveLine = null;
+        _timeline.Reset();
         _hasSyncedLyrics = false;
         IsSynced = false;
         HasSyncedLyricsAvailable = false;
         ActiveLineIndex = -1;
-        _lineCursor = 0;
-        _lastSyncPosition = TimeSpan.MinValue;
         CanSaveToFile = false;
         CanRemoveLyrics = false;
         HasAlternateLyrics = false;
@@ -1591,13 +1635,11 @@ public partial class LyricsViewModel : ViewModelBase, IDisposable
         _currentOnlineResult = result;
         LyricLines.Clear();
         UnsyncedLines.Clear();
-        _currentActiveLine = null;
+        _timeline.Reset();
         _hasSyncedLyrics = false;
         IsSynced = false;
         HasSyncedLyricsAvailable = false;
         ActiveLineIndex = -1;
-        _lineCursor = 0;
-        _lastSyncPosition = TimeSpan.MinValue;
         _lyricsSyncTimer.Interval = TimeSpan.FromMilliseconds(LineSyncIntervalMs);
 
         List<LyricLine>? parsedLines = null;
@@ -1684,13 +1726,11 @@ public partial class LyricsViewModel : ViewModelBase, IDisposable
         _currentOnlineResult = null;
         _alternateOnlineResult = null;
         _alternateSource = null;
-        _currentActiveLine = null;
+        _timeline.Reset();
         _hasSyncedLyrics = false;
         IsSynced = false;
         HasSyncedLyricsAvailable = false;
         ActiveLineIndex = -1;
-        _lineCursor = 0;
-        _lastSyncPosition = TimeSpan.MinValue;
         CanSaveToFile = false;
         CanRemoveLyrics = false;
         HasAlternateLyrics = false;
@@ -1763,6 +1803,7 @@ public partial class LyricsViewModel : ViewModelBase, IDisposable
     {
         Dispatcher.UIThread.Post(() =>
         {
+            RefreshHeaderCredits(); // the album's grouped track count can change with a scan
             if (_currentTrack == null) return;
 
             // Reload lyrics only if the track's lyrics content actually changed
@@ -1824,8 +1865,7 @@ public partial class LyricsViewModel : ViewModelBase, IDisposable
     {
         if (_hasSyncedLyrics && IsSyncTabSelected && LyricLines.Count > 0)
         {
-            _lineCursor = 0;
-            _lastSyncPosition = TimeSpan.MinValue;
+            _timeline.Rewind();
             UpdateActiveLine(GetPlaybackPosition());
             UpdateLineOpacities(ActiveLineIndex);
             OnPropertyChanged(nameof(ActiveLineIndex));
@@ -1840,6 +1880,9 @@ public partial class LyricsViewModel : ViewModelBase, IDisposable
 
     private void OnPlayerPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
+        if (e.PropertyName == nameof(PlayerViewModel.CurrentTrack))
+            RefreshHeaderCredits();
+
         // Clear lyrics when track becomes null (queue ended)
         if (e.PropertyName == nameof(PlayerViewModel.CurrentTrack) && _player.CurrentTrack == null)
         {
@@ -1946,13 +1989,11 @@ public partial class LyricsViewModel : ViewModelBase, IDisposable
         // swaps them wholesale behind the views' fade — the upfront clear was the
         // blank flash in the track-change flicker. Every populated apply path uses
         // ReplaceAll; the no-lyrics path clears explicitly.
-        _currentActiveLine = null;
+        _timeline.Reset();
         _hasSyncedLyrics = false;
         IsSynced = false;
         HasSyncedLyricsAvailable = false;
         ActiveLineIndex = -1;
-        _lineCursor = 0;
-        _lastSyncPosition = TimeSpan.MinValue;
         _lyricsSyncTimer.Interval = TimeSpan.FromMilliseconds(LineSyncIntervalMs);
 
         // Fire-and-forget: all file I/O runs off the UI thread, result is posted back.
@@ -2680,7 +2721,7 @@ public partial class LyricsViewModel : ViewModelBase, IDisposable
             .ToList();
         if (shareable.Count == 0) return;
 
-        int preselect = _currentActiveLine != null ? shareable.IndexOf(_currentActiveLine) : 0;
+        int preselect = _timeline.ActiveLine is { } active ? shareable.IndexOf(active) : 0;
         if (preselect < 0) preselect = 0;
 
         var vm = new LyricShareViewModel(
@@ -2777,7 +2818,7 @@ public partial class LyricsViewModel : ViewModelBase, IDisposable
     /// dispatch lead the word clock uses; it was a fixed 350ms that pre-dated the
     /// rate-locked clock and switched plain lines a beat early.
     ///
-    /// UpdateActiveLine uses a monotonic cursor (_lineCursor) that advances forward per
+    /// LyricsTimeline (Core) walks a monotonic cursor that advances forward per
     /// tick — O(1) amortized instead of scanning every line. Resets on seek-backwards.
     /// </summary>
     private static readonly TimeSpan LyricsLookahead =
@@ -2785,205 +2826,14 @@ public partial class LyricsViewModel : ViewModelBase, IDisposable
 
     private void UpdateActiveLine(TimeSpan position)
     {
-        if (LyricLines.Count == 0) return;
-
-        // Seek-backwards detection: rewind the cursor so we don't miss earlier lines.
-        // 750ms threshold tolerates small non-monotonic jitter from the player position poll.
-        if (_lastSyncPosition != TimeSpan.MinValue &&
-            position + TimeSpan.FromMilliseconds(750) < _lastSyncPosition)
-        {
-            _lineCursor = 0;
-        }
-        _lastSyncPosition = position;
-
-        // Per-line lookahead: word-timed lines activate on the word clock's small lead.
-        // The 350ms line-level lead would switch lines early, force-completing the
-        // outgoing line's final word sweep ~270ms before its end and leaving the
-        // incoming words dark — a visible jump-then-pause at every line boundary.
-        TimeSpan AdjustedFor(LyricLine l) =>
-            position + (l.HasWords || l.HasBackgroundWords ? WordLookahead : LyricsLookahead);
-
-        // Clamp cursor into range (collection may have shrunk).
-        if (_lineCursor >= LyricLines.Count) _lineCursor = LyricLines.Count - 1;
-        if (_lineCursor < 0) _lineCursor = 0;
-
-        // Advance forward while the next synced line's timestamp has been reached.
-        while (_lineCursor + 1 < LyricLines.Count)
-        {
-            var next = LyricLines[_lineCursor + 1];
-            if (next.Timestamp.HasValue && next.Timestamp.Value <= AdjustedFor(next))
-                _lineCursor++;
-            else
-                break;
-        }
-
-        // Mirror walk backwards. The forward walk above has no threshold, but rewinding
-        // used to depend solely on the 750ms reset — and a timeline drag never produces
-        // a drop that large in one sample, because this runs every 100ms off the sync
-        // timer and every rendered frame off the word clock. The cursor stayed parked on
-        // a later line, no candidate matched, and the safety branch below held the stale
-        // line: dragging backwards froze the lyrics until release finally delivered a big
-        // enough discontinuity. Stepping back per sample makes both directions resolve on
-        // the same tick, and still costs nothing during normal forward playback.
-        var rewound = false;
-        while (_lineCursor > 0)
-        {
-            var current = LyricLines[_lineCursor];
-            if (current.Timestamp.HasValue && current.Timestamp.Value > AdjustedFor(current))
-            {
-                _lineCursor--;
-                rewound = true;
-            }
-            else
-                break;
-        }
-
-        var candidate = LyricLines[_lineCursor];
-        LyricLine? bestMatch = null;
-        int bestIndex = -1;
-        if (candidate.Timestamp.HasValue && candidate.Timestamp.Value <= AdjustedFor(candidate))
-        {
-            bestMatch = candidate;
-            bestIndex = _lineCursor;
-        }
-
-        // Safety: if no match found but we're past the start and have a current line,
-        // keep the current line active (prevents "all dimmed" state from transient glitches).
-        // Skipped when the walk above rewound to the very first line and even that one is
-        // still ahead: the position genuinely sits before the first lyric, so holding the
-        // stale line there would re-freeze exactly what the backward walk exists to fix.
-        if (bestMatch == null && !rewound && _currentActiveLine != null && position.TotalSeconds > 1)
-        {
-            UpdateActiveWord(position);
-            return;
-        }
-
-        if (bestMatch != _currentActiveLine)
-        {
-            // Deactivate previous line — leave it fully swept (index past the end) so the
-            // bright overlay keeps covering the words while the base layer fades back to
-            // full opacity. Snapping to -1 here blanked the overlay instantly, which read
-            // as the finished line dimming for a beat. Re-entry recomputes the real index.
-            if (_currentActiveLine != null)
-            {
-                _currentActiveLine.IsActive = false;
-                if (_currentActiveLine.HasWords)
-                    _currentActiveLine.CurrentWordIndex = _currentActiveLine.Words!.Count;
-                if (_currentActiveLine.HasBackgroundWords)
-                    _currentActiveLine.BackgroundWordIndex = _currentActiveLine.BackgroundWords!.Count;
-            }
-
-            // Activate new line
-            if (bestMatch != null)
-                bestMatch.IsActive = true;
-
-            _currentActiveLine = bestMatch;
-            if (DebugLog.VlcBridgeEnabled)
-                Views.LyricsView.Trace($"active {ActiveLineIndex}→{bestIndex} at {position.TotalMilliseconds:0}ms" +
-                                       (bestMatch?.Timestamp is { } ts ? $" (line starts {ts.TotalMilliseconds:0}ms)" : ""));
-            ActiveLineIndex = bestIndex;
-            UpdateLineOpacities(bestIndex);
-            UpdateWordClockSubscription();
-        }
-        else if (bestMatch != null && !bestMatch.IsActive)
-        {
-            // Safety: ensure the active line stays active even if something reset it
-            bestMatch.IsActive = true;
-        }
-
-        UpdateActiveWord(position);
-    }
-
-    /// <summary>
-    /// Advances CurrentWordIndex on the active line when word-level timings are present.
-    /// No-op when the active line has no words — existing line-level highlight is all that renders.
-    /// </summary>
-    private void UpdateActiveWord(TimeSpan position)
-    {
-        var line = _currentActiveLine;
-        if (line == null || (!line.HasWords && !line.HasBackgroundWords)) return;
-
-        var adjusted = position + WordLookahead;
-
-        if (line.HasWords)
-            DriveWordLayer(line.Words!, adjusted, line.EndTimestamp,
-                line.CurrentWordIndex, i => line.CurrentWordIndex = i);
-
-        // Background vocals (adlibs) run as an independent layer with their own clock.
-        if (line.HasBackgroundWords)
-            DriveWordLayer(line.BackgroundWords!, adjusted, line.BackgroundEndTimestamp,
-                line.BackgroundWordIndex, i => line.BackgroundWordIndex = i);
-    }
-
-    /// <summary>Advances one word layer's current-word index and sweeps the active word.</summary>
-    private void DriveWordLayer(
-        IReadOnlyList<WordTiming> words, TimeSpan adjusted, TimeSpan? layerEnd,
-        int currentIndex, Action<int> setIndex)
-    {
-        // Past the layer's end → last word remains highlighted until the line changes.
-        int target;
-        if (adjusted < words[0].Start)
-        {
-            target = -1;
-        }
-        else
-        {
-            target = words.Count - 1;
-            for (int i = 0; i < words.Count; i++)
-            {
-                var w = words[i];
-                var end = w.End ?? (i + 1 < words.Count ? words[i + 1].Start : TimeSpan.MaxValue);
-                if (adjusted < end)
-                {
-                    target = i;
-                    break;
-                }
-            }
-        }
-
-        if (currentIndex != target)
-            setIndex(target);
-
-        // Drive the AMLL-style sweep on the current word AND its immediate
-        // neighbours, on the same lookahead-adjusted clock as the index above.
-        // BandProgress keeps moving a little past both ends of each word, so the
-        // feathered edge finishes crossing the previous token while it is already
-        // entering the next — clamping at [0,1] here is what used to park the band
-        // at every token boundary of a slow passage. Before the line starts
-        // (target -1) this pre-rolls word 0; past the layer end the last word
-        // settles at the inert-past sentinel (fully lit) until the line changes.
-        var first = Math.Max(0, target - 1);
-        var last = Math.Min(words.Count - 1, target + 1);
-        for (int i = first; i <= last; i++)
-        {
-            var w = words[i];
-            // Last word of a start-tag-only layer has no end anywhere — bound it by
-            // the next line's start (capped) so it sweeps instead of snapping to lit.
-            var end = w.End ?? (i + 1 < words.Count
-                ? words[i + 1].Start
-                : layerEnd ?? KaraokeSweep.ResolveOpenLastWordEnd(w.Start, NextSyncedLineStart()));
-            // Words joined from several timed spans sweep on their syllables' own
-            // clocks — a linear ramp would outrun the voice on a held syllable.
-            var progress = w.Syllables is { Count: > 1 } syllables
-                ? KaraokeSweep.SyllableBandProgress(
-                    syllables, w.Start.TotalSeconds, end.TotalSeconds, adjusted.TotalSeconds)
-                : KaraokeSweep.BandProgress(
-                    w.Start.TotalSeconds, end.TotalSeconds, adjusted.TotalSeconds);
-            if (w.Progress != progress)
-                w.Progress = progress;
-        }
-    }
-
-    /// <summary>Start of the first synced line after the active one; null when none.</summary>
-    private TimeSpan? NextSyncedLineStart()
-    {
-        if (ActiveLineIndex < 0) return null;
-        for (int i = ActiveLineIndex + 1; i < LyricLines.Count; i++)
-        {
-            var ts = LyricLines[i].Timestamp;
-            if (ts.HasValue) return ts;
-        }
-        return null;
+        var step = _timeline.Update(position);
+        if (!step.LineChanged) return;
+        if (DebugLog.VlcBridgeEnabled)
+            Views.LyricsView.Trace($"active {ActiveLineIndex}→{step.ActiveIndex} at {position.TotalMilliseconds:0}ms" +
+                                   (step.ActiveLine?.Timestamp is { } ts ? $" (line starts {ts.TotalMilliseconds:0}ms)" : ""));
+        ActiveLineIndex = step.ActiveIndex;
+        UpdateLineOpacities(step.ActiveIndex);
+        UpdateWordClockSubscription();
     }
 
     /// <summary>
@@ -3085,7 +2935,7 @@ public partial class LyricsViewModel : ViewModelBase, IDisposable
         && IsAnyLyricsSurfaceVisible
         && _player.State == Models.PlaybackState.Playing
         && _lyricsSyncTimer.IsEnabled
-        && (_currentActiveLine?.HasWords == true || _currentActiveLine?.HasBackgroundWords == true);
+        && (_timeline.ActiveLine?.HasWords == true || _timeline.ActiveLine?.HasBackgroundWords == true);
 
     private void OnWordClockFrame(TimeSpan _)
     {

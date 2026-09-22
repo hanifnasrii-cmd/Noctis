@@ -67,6 +67,7 @@ public partial class PlaylistViewModel : ViewModelBase, ISearchable, IDisposable
         PlaylistSortMode.RecentlyAdded => "Recently Added",
         PlaylistSortMode.ReleaseDateOldest => "Release Date (Oldest)",
         PlaylistSortMode.ReleaseDateNewest => "Release Date (Newest)",
+        PlaylistSortMode.Badge => "Badge",
         _ => "Manual"
     };
 
@@ -276,6 +277,10 @@ public partial class PlaylistViewModel : ViewModelBase, ISearchable, IDisposable
                                             .ThenBy(t => t.DiscNumber).ThenBy(t => t.TrackNumber).ToList(),
             PlaylistSortMode.Duration => tracks.OrderBy(t => t.Duration).ToList(),
             PlaylistSortMode.RecentlyAdded => tracks.OrderByDescending(t => t.DateAdded).ToList(),
+            PlaylistSortMode.Badge => tracks
+                .OrderBy(t => !t.HasBadge)
+                .ThenBy(t => t.Badge ?? string.Empty, StringComparer.OrdinalIgnoreCase)
+                .ThenBy(t => t.Title, StringComparer.OrdinalIgnoreCase).ToList(),
             // Disc/track stay ascending in both: flipping to newest-first reverses
             // the discography, not the running order inside each record. The album
             // tie-break DOES flip with the direction, so two albums sharing a
@@ -587,6 +592,25 @@ public partial class PlaylistViewModel : ViewModelBase, ISearchable, IDisposable
     [RelayCommand]
     private Task RateTrack(RateRequest request) => _library.SetTracksRatingAsync(SelectionOr(request.Track), request.Stars);
 
+    /// <summary>GitHub #74: Badge ▸ menu. Null badge = "Remove badge"; a request whose name
+    /// is <see cref="BadgeRequest.NewBadge"/> prompts for one. Bulk-aware like Rate.</summary>
+    [RelayCommand]
+    private async Task SetBadge(BadgeRequest request)
+    {
+        var name = request.Badge;
+        if (name == BadgeRequest.NewBadge)
+        {
+            name = await Helpers.BadgeNamePrompt.ShowAsync();
+            if (string.IsNullOrWhiteSpace(name)) return;
+        }
+        await _library.SetTracksBadgeAsync(SelectionOr(request.Track), name);
+        OnPropertyChanged(nameof(BadgeNames));
+        if (SortMode == PlaylistSortMode.Badge) LoadTracks();
+    }
+
+    /// <summary>Badge names in use across the library, for the Badge ▸ menu.</summary>
+    public IReadOnlyList<string> BadgeNames => _library.GetBadgeNames();
+
     [RelayCommand]
     private async Task FetchLyrics(Track track)
     {
@@ -675,6 +699,58 @@ public partial class PlaylistViewModel : ViewModelBase, ISearchable, IDisposable
         _playlist.ModifiedAt = DateTime.UtcNow;
 
         await _persistence.SavePlaylistsAsync(_sidebar.Playlists.ToList());
+    }
+
+    /// <summary>
+    /// GitHub #74: dragging one row of a multi-selection moves the whole selection as a
+    /// block to <paramref name="insertIndex"/> (an insertion index in the CURRENT list,
+    /// the same one the drop indicator draws at). The block keeps its list order.
+    /// </summary>
+    public async Task MoveTracks(IReadOnlyList<Track> moved, int insertIndex)
+    {
+        if (IsSmartPlaylist) return;
+        if (!string.IsNullOrWhiteSpace(_currentFilter)) return;
+        if (SortMode != PlaylistSortMode.Manual) return;
+        if (moved.Count == 0) return;
+
+        var target = ReorderBlock(Tracks.ToList(), moved, insertIndex);
+        if (target.SequenceEqual(Tracks)) return;
+
+        // Walk the target order and pull each row up into place: at most one Move per
+        // selected row, so the virtualized list keeps its realized rows (a ReplaceAll
+        // would rebuild every one).
+        for (var i = 0; i < target.Count; i++)
+        {
+            if (ReferenceEquals(Tracks[i], target[i])) continue;
+            var from = Tracks.IndexOf(target[i]);
+            if (from > i) Tracks.Move(from, i);
+        }
+
+        _playlist.TrackIds.Clear();
+        foreach (var t in Tracks)
+            _playlist.TrackIds.Add(t.Id);
+        _playlist.ModifiedAt = DateTime.UtcNow;
+
+        await _persistence.SavePlaylistsAsync(_sidebar.Playlists.ToList());
+    }
+
+    /// <summary>Pure block move: <paramref name="moved"/> (in any order) is lifted out of
+    /// <paramref name="list"/> and re-inserted, in its original relative order, where
+    /// <paramref name="insertIndex"/> pointed before the lift.</summary>
+    internal static List<Track> ReorderBlock(IReadOnlyList<Track> list, IReadOnlyList<Track> moved, int insertIndex)
+    {
+        var movedSet = new HashSet<Track>(moved);
+        var block = list.Where(movedSet.Contains).ToList();
+        var rest = new List<Track>(list.Count);
+        var insertAt = 0;
+        for (var i = 0; i < list.Count; i++)
+        {
+            if (i == insertIndex) insertAt = rest.Count;
+            if (!movedSet.Contains(list[i])) rest.Add(list[i]);
+        }
+        if (insertIndex >= list.Count) insertAt = rest.Count;
+        rest.InsertRange(insertAt, block);
+        return rest;
     }
 
     [RelayCommand]
@@ -957,7 +1033,10 @@ public enum PlaylistSortMode
     // direction control (each mode carries its own, like RecentlyAdded), and
     // "old to new" / "new to old" is the whole point of the request.
     ReleaseDateOldest,
-    ReleaseDateNewest
+    ReleaseDateNewest,
+
+    /// <summary>GitHub #74: grouped by the user badge (A→Z), unbadged tracks last.</summary>
+    Badge
 }
 
 public partial class PlaylistFeaturedArtist : ObservableObject

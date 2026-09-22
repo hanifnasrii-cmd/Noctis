@@ -26,8 +26,8 @@ public class ArtistTileHitTestTests
         var app = Application.Current!;
         if (app.Resources.TryGetResource("HeartFillIcon", null, out _)) return;
         app.Resources["InterSemiBold"] = Avalonia.Media.FontFamily.Default;
-        app.Resources.MergedDictionaries.Add(new ResourceInclude(new Uri("avares://Noctis/")) { Source = new Uri("avares://Noctis/Assets/Icons.axaml") });
-        app.Styles.Add(new StyleInclude(new Uri("avares://Noctis/")) { Source = new Uri("avares://Noctis/Assets/Styles.axaml") });
+        app.Resources.MergedDictionaries.Add(new ResourceInclude(new Uri("avares://Noctis/")) { Source = new Uri("avares://Noctis.UI/Assets/Icons.axaml") });
+        app.Styles.Add(new StyleInclude(new Uri("avares://Noctis/")) { Source = new Uri("avares://Noctis.UI/Assets/Styles.axaml") });
     }
 
     private static Button? TileAt(Window window, Point p)

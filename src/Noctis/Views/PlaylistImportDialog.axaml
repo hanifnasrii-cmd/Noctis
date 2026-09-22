@@ -6,7 +6,7 @@
         x:DataType="vm:PlaylistImportViewModel"
         Title="Import Playlist"
         CanResize="False"
-        SystemDecorations="None"
+        WindowDecorations="None"
         TransparencyLevelHint="Transparent"
         Background="Transparent"
         ShowInTaskbar="False"

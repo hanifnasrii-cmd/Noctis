@@ -2,7 +2,6 @@ using System.Windows.Input;
 using CommunityToolkit.Mvvm.Input;
 using Noctis.ViewModels;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace Noctis.Tests;
 

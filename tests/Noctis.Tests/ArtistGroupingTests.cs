@@ -14,7 +14,7 @@ public class ArtistGroupingTests
     private static readonly string[] Defaults = ArtistCredit.DefaultSeparators.ToArray();
 
     [Theory]
-    [InlineData("Bad Bunny & Bomba Estéreo", new[] { "Bad Bunny", "Bomba Estéreo" })]
+    [InlineData("Bad Bunny / Bomba Estéreo", new[] { "Bad Bunny", "Bomba Estéreo" })]
     [InlineData("A / B; C, D", new[] { "A", "B", "C", "D" })]
     [InlineData("Metro Boomin feat. Drake", new[] { "Metro Boomin", "Drake" })]
     [InlineData("Metro Boomin feat Drake", new[] { "Metro Boomin", "Drake" })]      // dot optional
@@ -31,6 +31,7 @@ public class ArtistGroupingTests
     [InlineData("Florence and the Machine")]
     [InlineData("Sly and the Family Stone")]
     [InlineData("Bill Withers with Grover Washington")]
+    [InlineData("Simon & Garfunkel")]                  // "&" no longer splits by default (duo names)
     [InlineData("Kraftwerk")]
     public void DefaultSeparators_KeepBareWordsInsideNamesWhole(string credit)
         => Assert.Equal(new[] { credit }, ArtistCredit.Split(credit, Defaults));
@@ -121,20 +122,20 @@ public class ArtistCreditConfigurationTests
         try
         {
             var track = new Track { Artist = "Simon & Garfunkel" };
-            Assert.Equal("Simon", track.PrimaryArtist);
+            Assert.Equal("Simon & Garfunkel", track.PrimaryArtist);
 
             var v0 = ArtistCredit.Version;
             ArtistCredit.Configure(ArtistGroupMode.Artist, ArtistCredit.DefaultSeparators);
             Assert.Equal(v0, ArtistCredit.Version); // no-op: nothing changed
 
-            ArtistCredit.Configure(ArtistGroupMode.AlbumArtist, new[] { "/", "feat." });
+            ArtistCredit.Configure(ArtistGroupMode.AlbumArtist, new[] { "&", "feat." });
             Assert.NotEqual(v0, ArtistCredit.Version);
             Assert.Equal(ArtistGroupMode.AlbumArtist, ArtistCredit.GroupMode);
 
             // The cached parse is invalidated by the version bump, not by an Artist write.
-            Assert.Equal("Simon & Garfunkel", track.PrimaryArtist);
-            Assert.Equal("Simon & Garfunkel", Track.GetPrimaryArtist("Simon & Garfunkel feat. Nobody"));
-            Assert.Equal(ArtistCredit.BuildSignature(ArtistGroupMode.AlbumArtist, new[] { "/", "feat." }), ArtistCredit.Signature);
+            Assert.Equal("Simon", track.PrimaryArtist);
+            Assert.Equal("Simon", Track.GetPrimaryArtist("Simon & Garfunkel feat. Nobody"));
+            Assert.Equal(ArtistCredit.BuildSignature(ArtistGroupMode.AlbumArtist, new[] { "&", "feat." }), ArtistCredit.Signature);
         }
         finally
         {
@@ -142,6 +143,6 @@ public class ArtistCreditConfigurationTests
         }
 
         Assert.Equal(ArtistGroupMode.Artist, ArtistCredit.GroupMode);
-        Assert.Equal("Simon", Track.GetPrimaryArtist("Simon & Garfunkel"));
+        Assert.Equal("Simon & Garfunkel", Track.GetPrimaryArtist("Simon & Garfunkel"));
     }
 }

@@ -4,6 +4,7 @@
              xmlns:vm="using:Noctis.ViewModels"
              xmlns:m="using:Noctis.Models"
              xmlns:controls="using:Noctis.Controls"
+             xmlns:helpers="using:Noctis.Helpers"
              x:Class="Noctis.Views.LibraryFoldersView"
              x:DataType="vm:LibraryFoldersViewModel"
              Background="{DynamicResource AppMainBackground}">
@@ -134,7 +135,12 @@
                         <Border Classes="row-body" Classes.now-playing="{Binding IsNowPlaying}">
                             <!-- Number column is wide enough for 4-digit row numbers;
                                  a large folder (100s–1000s of tracks) previously clipped them. -->
-                            <Grid ColumnDefinitions="48,*,Auto,64">
+                            <!-- Same drag start as the Songs page, so a row can be dropped on a
+                                 sidebar playlist (Discord, Luwi 09-21: "Drag & Drop doesn't work
+                                 from within Folder view"). Transparent background = hit-testable. -->
+                            <Grid ColumnDefinitions="48,*,Auto,64"
+                                  Background="Transparent"
+                                  helpers:DragFileBehavior.EnableFileDrag="True">
 
                                 <!-- Row number, swapped for the animated EQ on the playing track.
                                      EQ is centered over the digit column; numbers use tabular

@@ -9,7 +9,7 @@
         x:DataType="vm:AddToPlaylistDialogViewModel"
         Title="{loc:T AddToPlaylist.AddPlaylist}"
         CanResize="False"
-        SystemDecorations="None"
+        WindowDecorations="None"
         TransparencyLevelHint="Transparent"
         Background="Transparent"
         ShowInTaskbar="False"

@@ -368,6 +368,11 @@ internal class Program
             new AudioAnalysisService(sp.GetRequiredService<IAudioConverterService>()));
         services.AddSingleton<IAudioAnalysisStore>(sp =>
             new AudioAnalysisStore(sp.GetRequiredService<IPersistenceService>()));
+        // Off-Windows visualizer feed: LibVLC owns the output there (no render-chain
+        // tap), so the spectrum/beat meters are fed from an ffmpeg side decode of the
+        // playing track instead. Started from App once the player exists.
+        services.AddSingleton<SideDecodeMeterFeed>(sp =>
+            new SideDecodeMeterFeed(sp.GetRequiredService<IAudioPlayer>(), sp.GetRequiredService<IAudioConverterService>()));
         services.AddSingleton<AudioAnalysisCoordinator>(sp =>
             new AudioAnalysisCoordinator(
                 sp.GetRequiredService<IAudioAnalysisService>(),

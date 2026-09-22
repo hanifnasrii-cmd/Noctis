@@ -13,7 +13,6 @@ using Noctis.Models;
 using Noctis.ViewModels;
 using Noctis.Views;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace Noctis.Tests;
 
@@ -28,8 +27,8 @@ public class ArtistGridSpacingProbeTests
         var app = Application.Current!;
         if (app.Resources.TryGetResource("HeartFillIcon", null, out _)) return;
         app.Resources["InterSemiBold"] = Avalonia.Media.FontFamily.Default;
-        app.Resources.MergedDictionaries.Add(new ResourceInclude(new Uri("avares://Noctis/")) { Source = new Uri("avares://Noctis/Assets/Icons.axaml") });
-        app.Styles.Add(new StyleInclude(new Uri("avares://Noctis/")) { Source = new Uri("avares://Noctis/Assets/Styles.axaml") });
+        app.Resources.MergedDictionaries.Add(new ResourceInclude(new Uri("avares://Noctis/")) { Source = new Uri("avares://Noctis.UI/Assets/Icons.axaml") });
+        app.Styles.Add(new StyleInclude(new Uri("avares://Noctis/")) { Source = new Uri("avares://Noctis.UI/Assets/Styles.axaml") });
     }
     private static void Pump(int n = 4) { for (var i = 0; i < n; i++) { Dispatcher.UIThread.RunJobs(); AvaloniaHeadlessPlatform.ForceRenderTimerTick(); } }
 

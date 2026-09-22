@@ -56,5 +56,6 @@ public sealed record TrackUserState(
     bool IsFavorite,
     DateTime? FavoritedAt,
     DateTime? SnoozedUntil,
-    long SavedPositionMs);
+    long SavedPositionMs,
+    string? Badge = null);
 

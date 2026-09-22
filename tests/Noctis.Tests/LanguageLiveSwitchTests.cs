@@ -10,7 +10,6 @@ using Noctis.Services;
 using Noctis.ViewModels;
 using Noctis.Views;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace Noctis.Tests;
 
@@ -99,6 +98,7 @@ public class LanguageLiveSwitchTests
     [InlineData("en", "English")]
     [InlineData("es", "Español (Spanish)")]
     [InlineData("ko", "한국어 (Korean)")]
+    [InlineData("tr", "Türkçe (Turkish)")]
     [InlineData("zh-Hans", "中文（简体） (Chinese, Simplified)")]
     public void LanguageEntries_ShowNativeThenEnglishName(string code, string expected)
         => Assert.Equal(expected, SettingsViewModel.DescribeCulture(code));

@@ -6,7 +6,7 @@
         x:DataType="vm:ReplayGainScannerViewModel"
         Title="{loc:T ReplayGainScanner.ScanReplayGain}"
         CanResize="False"
-        SystemDecorations="None"
+        WindowDecorations="None"
         TransparencyLevelHint="Transparent"
         Background="Transparent"
         ShowInTaskbar="False"

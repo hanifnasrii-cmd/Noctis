@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Windows.Input;
 using Avalonia;
@@ -54,6 +55,9 @@ public sealed class TrackContextMenuBuilder
     /// <summary>"Rate ▸" submenu: ★ … ★★★★★ and Clear rating. Hidden unless the view passes a rateCommand.</summary>
     public MenuItem Rate { get; private set; } = null!;
     private readonly MenuItem[] _rateItems = new MenuItem[6];
+    /// <summary>"Badge ▸" submenu (GitHub #74): every badge in use, "New badge…", "Remove badge".
+    /// Hidden unless the view passes a badgeCommand; rebuilt on every Bind since the list changes.</summary>
+    public MenuItem Badge { get; private set; } = null!;
     public MenuItem SendToFolder { get; private set; } = null!;
     public MenuItem LyricsBackground { get; private set; } = null!;
     public MenuItem LyricsBackgroundChoose { get; private set; } = null!;
@@ -76,42 +80,42 @@ public sealed class TrackContextMenuBuilder
         var items = Menu.Items;
 
         Play = new MenuItem { MaxWidth = 400 };
-        Play.Icon = CreatePngIcon("avares://Noctis/Assets/Icons/Play%20ICON.png");
+        Play.Icon = CreatePngIcon("avares://Noctis.UI/Assets/Icons/Play%20ICON.png");
         items.Add(Play);
 
         Shuffle = new MenuItem { Header = "Shuffle" };
-        Shuffle.Icon = CreatePngIcon("avares://Noctis/Assets/Icons/Shuffle%20ICON.png");
+        Shuffle.Icon = CreatePngIcon("avares://Noctis.UI/Assets/Icons/Shuffle%20ICON.png");
         items.Add(Shuffle);
 
         PlayNext = new MenuItem { Header = "Play Next" };
-        PlayNext.Icon = CreatePngIcon("avares://Noctis/Assets/Icons/Forward%20ICON.png");
+        PlayNext.Icon = CreatePngIcon("avares://Noctis.UI/Assets/Icons/Forward%20ICON.png");
         items.Add(PlayNext);
 
         AddToQueue = new MenuItem { Header = "Add to Queue" };
-        AddToQueue.Icon = CreatePngIcon("avares://Noctis/Assets/Icons/Queue%20ICON.png", 17);
+        AddToQueue.Icon = CreatePngIcon("avares://Noctis.UI/Assets/Icons/Queue%20ICON.png", 17);
         items.Add(AddToQueue);
 
         // Hidden unless the view supplies a startRadioCommand in Bind().
         StartRadio = new MenuItem { Header = "Start Radio", IsVisible = false };
-        StartRadio.Icon = CreatePngIcon("avares://Noctis/Assets/Icons/Shuffle%20ICON.png");
+        StartRadio.Icon = CreatePngIcon("avares://Noctis.UI/Assets/Icons/Shuffle%20ICON.png");
         items.Add(StartRadio);
 
         // Hidden unless the view supplies a snoozeCommand in Bind().
         SnoozeForMonth = new MenuItem { Header = "Snooze for a month", IsVisible = false };
         // placeholder icon: no dedicated snooze glyph in resources
-        SnoozeForMonth.Icon = CreatePngIcon("avares://Noctis/Assets/Icons/Shuffle%20ICON.png");
+        SnoozeForMonth.Icon = CreatePngIcon("avares://Noctis.UI/Assets/Icons/Shuffle%20ICON.png");
         items.Add(SnoozeForMonth);
 
         items.Add(new Separator());
 
         AddToPlaylist = new MenuItem { Header = "Add to Playlist" };
-        AddToPlaylist.Icon = CreatePngIcon("avares://Noctis/Assets/Icons/Playlist%20icon.png");
+        AddToPlaylist.Icon = CreatePngIcon("avares://Noctis.UI/Assets/Icons/Playlist%20icon.png");
         items.Add(AddToPlaylist);
 
         items.Add(new Separator());
 
         Favorite = new MenuItem { Header = "Favorites" };
-        Favorite.Icon = CreatePngIcon("avares://Noctis/Assets/Icons/Favorites%20icon.png");
+        Favorite.Icon = CreatePngIcon("avares://Noctis.UI/Assets/Icons/Favorites%20icon.png");
         items.Add(Favorite);
 
         Unfavorite = new MenuItem { Header = "Remove from Favorites" };
@@ -138,29 +142,33 @@ public sealed class TrackContextMenuBuilder
         Rate.Items.Add(_rateItems[0]);
         items.Add(Rate);
 
+        Badge = new MenuItem { Header = "Badge", IsVisible = false };
+        Badge.Icon = new PathIcon { Width = 14, Height = 14, Data = (Geometry)resourceHost.FindResource("StarIcon")! };
+        items.Add(Badge);
+
         Metadata = new MenuItem { Header = "Metadata" };
-        Metadata.Icon = CreatePngIcon("avares://Noctis/Assets/Icons/Metadata%20ICON.png");
+        Metadata.Icon = CreatePngIcon("avares://Noctis.UI/Assets/Icons/Metadata%20ICON.png");
         items.Add(Metadata);
 
         Convert = new MenuItem { Header = "Convert File", IsVisible = false };
-        Convert.Icon = CreatePngIcon("avares://Noctis/Assets/Icons/Metadata%20ICON.png");
+        Convert.Icon = CreatePngIcon("avares://Noctis.UI/Assets/Icons/Metadata%20ICON.png");
         items.Add(Convert);
 
         ScanReplayGain = new MenuItem { Header = "Scan ReplayGain", IsVisible = false };
-        ScanReplayGain.Icon = CreatePngIcon("avares://Noctis/Assets/Icons/Metadata%20ICON.png");
+        ScanReplayGain.Icon = CreatePngIcon("avares://Noctis.UI/Assets/Icons/Metadata%20ICON.png");
         items.Add(ScanReplayGain);
 
         // Spek-style spectrum analysis of the file. Self-contained (shared static command),
         // so every view that uses this builder gets it without wiring a command.
         Spectrogram = new MenuItem { Header = "Spectrogram", Command = SpectrogramLauncher.OpenCommand };
-        Spectrogram.Icon = CreatePngIcon("avares://Noctis/Assets/Icons/Metadata%20ICON.png");
+        Spectrogram.Icon = CreatePngIcon("avares://Noctis.UI/Assets/Icons/Metadata%20ICON.png");
         items.Add(Spectrogram);
 
         // Lyrics ▸ — Search Lyrics stays where it always was, now with the bulk actions
         // beneath it. The bulk entries stay hidden on views that don't wire them, so the
         // submenu reads as "Search Lyrics" plus nothing extra there.
         Lyrics = new MenuItem { Header = "Lyrics" };
-        Lyrics.Icon = CreatePngIcon("avares://Noctis/Assets/Icons/Lyrics%20ICON.png");
+        Lyrics.Icon = CreatePngIcon("avares://Noctis.UI/Assets/Icons/Lyrics%20ICON.png");
         SearchLyrics = new MenuItem { Header = "Search Lyrics" };
         Lyrics.Items.Add(SearchLyrics);
         FetchLyrics = new MenuItem { Header = "Fetch & Save Lyrics", IsVisible = false };
@@ -175,7 +183,7 @@ public sealed class TrackContextMenuBuilder
         // Lyrics Background Video ▸ — this song's own clip behind the lyrics page (static
         // commands, so no per-view wiring; "Use default" shows only when the song has one).
         LyricsBackground = new MenuItem { Header = "Lyrics Background Video" };
-        LyricsBackground.Icon = CreatePngIcon("avares://Noctis/Assets/Icons/Lyrics%20ICON.png");
+        LyricsBackground.Icon = CreatePngIcon("avares://Noctis.UI/Assets/Icons/Lyrics%20ICON.png");
         LyricsBackgroundChoose = new MenuItem { Header = "Choose video for this song…", Command = LyricsBackgroundOverrides.ChooseForTrackCommand };
         LyricsBackground.Items.Add(LyricsBackgroundChoose);
         LyricsBackgroundClear = new MenuItem { Header = "Use default video", Command = LyricsBackgroundOverrides.ClearForTrackCommand };
@@ -184,18 +192,18 @@ public sealed class TrackContextMenuBuilder
 
         // Send to Folder (MusicBee's Send To → Folder): copies the selection to a drive/folder.
         SendToFolder = new MenuItem { Header = "Send to Folder…", IsVisible = false };
-        SendToFolder.Icon = CreatePngIcon("avares://Noctis/Assets/Icons/Folder%20ICON.png");
+        SendToFolder.Icon = CreatePngIcon("avares://Noctis.UI/Assets/Icons/Folder%20ICON.png");
         items.Add(SendToFolder);
 
         ShowFolder = new MenuItem { Header = "Show Folder" };
-        ShowFolder.Icon = CreatePngIcon("avares://Noctis/Assets/Icons/Folder%20ICON.png");
+        ShowFolder.Icon = CreatePngIcon("avares://Noctis.UI/Assets/Icons/Folder%20ICON.png");
         items.Add(ShowFolder);
 
         // "Open in <app>" / native Open-with picker. Header and visibility are
         // refreshed in Bind() from the configured external app.
         // placeholder icon: no dedicated open-with glyph in resources
         OpenWith = new MenuItem { Header = "Open File With" };
-        OpenWith.Icon = CreatePngIcon("avares://Noctis/Assets/Icons/Metadata%20ICON.png");
+        OpenWith.Icon = CreatePngIcon("avares://Noctis.UI/Assets/Icons/Metadata%20ICON.png");
         items.Add(OpenWith);
 
         items.Add(new Separator());
@@ -241,9 +249,50 @@ public sealed class TrackContextMenuBuilder
         ICommand? fetchLyricsCommand = null,
         ICommand? lyricsStudioCommand = null,
         ICommand? removeLyricsCommand = null,
-        ICommand? sendToFolderCommand = null)
+        ICommand? sendToFolderCommand = null,
+        ICommand? badgeCommand = null,
+        IReadOnlyList<string>? badgeNames = null)
     {
         Menu.DataContext = track;
+
+        // Badge ▸ (optional). Rebuilt per bind: the names come from what the library holds now.
+        Badge.IsVisible = badgeCommand != null;
+        if (badgeCommand != null)
+        {
+            Badge.Items.Clear();
+            foreach (var name in badgeNames ?? Array.Empty<string>())
+            {
+                var isCurrent = string.Equals(name, track.Badge, StringComparison.OrdinalIgnoreCase);
+                Badge.Items.Add(new MenuItem
+                {
+                    Header = name,
+                    FontWeight = isCurrent ? FontWeight.Bold : FontWeight.Normal,
+                    Icon = new Border
+                    {
+                        Width = 10, Height = 10, CornerRadius = new CornerRadius(5),
+                        Background = BadgePalette.BrushFor(name),
+                    },
+                    Command = badgeCommand,
+                    CommandParameter = new BadgeRequest(track, name),
+                });
+            }
+            if (Badge.Items.Count > 0) Badge.Items.Add(new Separator());
+            Badge.Items.Add(new MenuItem
+            {
+                Header = "New badge…",
+                Command = badgeCommand,
+                CommandParameter = new BadgeRequest(track, BadgeRequest.NewBadge),
+            });
+            var remove = new MenuItem
+            {
+                Header = "Remove badge",
+                IsVisible = track.HasBadge,
+                Command = badgeCommand,
+                CommandParameter = new BadgeRequest(track, null),
+            };
+            remove.Classes.Add("danger");
+            Badge.Items.Add(remove);
+        }
 
         // Rate ▸ (optional). Parameter carries the track so the same command serves every row.
         Rate.IsVisible = rateCommand != null;

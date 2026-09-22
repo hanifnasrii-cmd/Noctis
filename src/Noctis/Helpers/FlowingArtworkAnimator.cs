@@ -89,6 +89,10 @@ public sealed class FlowingArtworkAnimator : IDisposable
     /// <summary>The smoothed pulse currently on screen (0..1) — diagnostics/tests.</summary>
     public double CurrentPulse => _pulse;
 
+    /// <summary>False for the "Drift (no beat)" style: the layers keep drifting but the
+    /// beat target is pinned at 0, so the backdrop scale and glow never swell.</summary>
+    public bool BeatReactive { get; set; } = true;
+
     /// <summary>True while a frame callback is pending.</summary>
     public bool IsRunning => _running;
 
@@ -140,7 +144,7 @@ public sealed class FlowingArtworkAnimator : IDisposable
         var dtMs = Math.Clamp(nowMs - _lastFrameMs, 0, 100);
         _lastFrameMs = nowMs;
 
-        var target = BeatPulseSource.Evaluate(_meter, _meter.NowMs, _context());
+        var target = BeatReactive ? BeatPulseSource.Evaluate(_meter, _meter.NowMs, _context()) : 0;
         _pulse = FlowingArtworkMotion.Smooth(_pulse, target, dtMs);
 
         var size = _backdrop.Bounds.Size;

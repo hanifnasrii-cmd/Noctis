@@ -18,12 +18,12 @@ public class AnimatedCoverService : IAnimatedCoverService
         if (string.IsNullOrWhiteSpace(track.FilePath))
             return null;
 
-        foreach (var ext in SupportedExtensions)
-        {
-            var p = Path.ChangeExtension(track.FilePath, ext);
-            if (File.Exists(p)) return p;
-        }
-
+        // A clip with the song's own name next to it is its MUSIC VIDEO
+        // (Helpers.MusicVideoLocator, 09-15), not an animated cover: resolving it here
+        // too made the lyrics page show the clip cropped to the square cover slot the
+        // moment "Music videos" was switched off, and every album tile play it (Discord,
+        // aaron 2026-09-21). Animated covers are cover.mp4/.webm beside the album or the
+        // app's own animated_covers cache.
         var folder = Path.GetDirectoryName(track.FilePath);
         if (!string.IsNullOrEmpty(folder))
         {

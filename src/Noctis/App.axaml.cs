@@ -92,7 +92,7 @@ public partial class App : Application
                     && source != focused
                     && !Avalonia.VisualTree.VisualExtensions.IsVisualAncestorOf(focused, source))
                 {
-                    top.FocusManager.ClearFocus();
+                    top.FocusManager.Focus(null); // 12: Focus(null) clears (ClearFocus removed)
                 }
             },
             Avalonia.Interactivity.RoutingStrategies.Tunnel);
@@ -147,6 +147,10 @@ public partial class App : Application
             var analysisCoordinator = Services!.GetRequiredService<Noctis.Services.AudioAnalysis.AudioAnalysisCoordinator>();
             var library = Services!.GetRequiredService<ILibraryService>();
             library.LibraryUpdated += (_, _) => analysisCoordinator.StartBackfill();
+            // No-op on Windows (the output chain taps the meters); elsewhere this is the
+            // only thing that makes the visualizer / beat-reactive backdrops move.
+            var sideFeed = Services!.GetRequiredService<Noctis.Services.AudioAnalysis.SideDecodeMeterFeed>();
+            sideFeed.Start();
 
             // Clear temp export directories orphaned by a previous crash/kill.
             _ = Task.Run(Helpers.PngExportHelper.SweepStaleTempDirs);
@@ -190,6 +194,8 @@ public partial class App : Application
                 {
                     DebugLogger.Error(DebugLogger.Category.Error, "ShutdownSave", ex.Message);
                 }
+                // The provider is never disposed: stop the feed thread and its ffmpeg child here.
+                sideFeed.Dispose();
                 desktop.Shutdown();
             };
         }
@@ -319,10 +325,10 @@ public partial class App : Application
 
         var overlayUri = themeName switch
         {
-            ThemeDark => "avares://Noctis/Assets/Themes/Dark.axaml",
-            ThemeMidnight => "avares://Noctis/Assets/Themes/Midnight.axaml",
-            ThemeInk => "avares://Noctis/Assets/Themes/Ink.axaml",
-            ThemeSmoke => "avares://Noctis/Assets/Themes/Smoke.axaml",
+            ThemeDark => "avares://Noctis.UI/Assets/Themes/Dark.axaml",
+            ThemeMidnight => "avares://Noctis.UI/Assets/Themes/Midnight.axaml",
+            ThemeInk => "avares://Noctis.UI/Assets/Themes/Ink.axaml",
+            ThemeSmoke => "avares://Noctis.UI/Assets/Themes/Smoke.axaml",
             _ => null
         };
 

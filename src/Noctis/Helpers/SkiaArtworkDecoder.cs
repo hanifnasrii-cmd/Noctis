@@ -38,16 +38,32 @@ public static class SkiaArtworkDecoder
             if (codec == null) return null;
 
             var info = codec.Info;
+            if (info.Width <= 0 || info.Height <= 0) return null;
             var longest = Math.Max(info.Width, info.Height);
             var sample = 1;
             while (longest / sample > maxDimension) sample *= 2;
+            if (sample == 1) return SKBitmap.Decode(codec);
 
-            return sample > 1
-                ? SKBitmap.Decode(codec, new SKImageInfo(
-                    Math.Max(1, info.Width / sample),
-                    Math.Max(1, info.Height / sample),
-                    SKColorType.Bgra8888, SKAlphaType.Premul))
-                : SKBitmap.Decode(codec);
+            // Only ask the codec for a size it can actually produce: JPEG shrinks by 1/2,
+            // 1/4, 1/8; PNG and WebP-lossless decode at native size only, and requesting a
+            // smaller SKImageInfo from them fails outright (Kawarp then drew nothing for
+            // any album with a large PNG cover — Discord, aaron 2026-09-21). When the codec
+            // cannot shrink, decode native and resize down so the caller still gets the
+            // bounded bitmap it asked for.
+            var dims = codec.GetScaledDimensions(1f / sample);
+            if (dims.Width <= 0 || dims.Height <= 0) dims = new SKSizeI(info.Width, info.Height);
+            var decoded = SKBitmap.Decode(codec, new SKImageInfo(dims.Width, dims.Height,
+                SKColorType.Bgra8888, SKAlphaType.Premul));
+            if (decoded == null) return null;
+            if (Math.Max(decoded.Width, decoded.Height) <= maxDimension) return decoded;
+
+            using (decoded)
+            {
+                var scale = maxDimension / (double)Math.Max(decoded.Width, decoded.Height);
+                var w = Math.Max(1, (int)Math.Round(decoded.Width * scale));
+                var h = Math.Max(1, (int)Math.Round(decoded.Height * scale));
+                return decoded.Resize(new SKImageInfo(w, h, SKColorType.Bgra8888, SKAlphaType.Premul), SKFilterQuality.Medium);
+            }
         }
         catch
         {

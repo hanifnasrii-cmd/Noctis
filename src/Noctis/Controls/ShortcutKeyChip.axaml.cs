@@ -60,7 +60,7 @@ public partial class ShortcutKeyChip : UserControl
         base.OnKeyUp(e);
     }
 
-    protected override void OnLostFocus(RoutedEventArgs e)
+    protected override void OnLostFocus(FocusChangedEventArgs e)
     {
         base.OnLostFocus(e);
         if (Vm is { IsRecording: true } vm) vm.CancelRecordCommand.Execute(null);

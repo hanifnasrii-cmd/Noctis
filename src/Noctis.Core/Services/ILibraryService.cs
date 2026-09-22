@@ -22,6 +22,15 @@ public interface ILibraryService
     /// <summary>Fires during scanning with progress info (current file count).</summary>
     event EventHandler<int>? ScanProgress;
 
+    /// <summary>
+    /// True while a scan/import is surfacing partial snapshots (the progressive fill):
+    /// <see cref="LibraryUpdated"/> then carries only the tracks found so far, so a
+    /// missing id is "not scanned yet", not "deleted". Consumers that treat a missing
+    /// track as removed (the player's queue purge) must wait for the authoritative
+    /// publish, which arrives with this false (GitHub #72).
+    /// </summary>
+    bool IsPublishingPartial => false;
+
     /// <summary>Fires when track favorites have been toggled (lightweight, no re-index).</summary>
     event EventHandler? FavoritesChanged;
 
@@ -120,6 +129,10 @@ public interface ILibraryService
 
     /// <summary>Sets a 0-5 star rating on the given tracks, saves the library, and writes the file tags.</summary>
     Task SetTracksRatingAsync(IReadOnlyList<Track> tracks, int rating);
+    /// <summary>GitHub #74: set (null/blank clears) the user badge on the tracks.</summary>
+    Task SetTracksBadgeAsync(IReadOnlyList<Track> tracks, string? badge);
+    /// <summary>Badge names in use across the library, sorted, de-duplicated case-insensitively.</summary>
+    IReadOnlyList<string> GetBadgeNames();
 
     /// <summary>Sets the "not liked" flag on the given tracks, saves the library, and writes the file tags.</summary>
     Task SetTracksDislikedAsync(IReadOnlyList<Track> tracks, bool isDisliked);

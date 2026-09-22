@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Xml.Linq;
+using Avalonia.Headless.XUnit;
 using Noctis.Localization;
 using Xunit;
 
@@ -28,7 +29,10 @@ public class LocalizationTests : IDisposable
         Assert.Equal("Home", Loc.Instance["Nav.Home"]);
     }
 
-    [Fact]
+    // On the headless UI thread: leftover {loc:T} bindings from other UI tests are
+    // weak-subscribed to Loc.Instance, and Avalonia 12 rejects a property set from
+    // any other thread. The app only switches culture from the Settings picker.
+    [AvaloniaFact]
     public void SwitchingCulture_RaisesIndexerChange_AndFallsBackPerKey()
     {
         var raised = new List<string?>();
@@ -73,7 +77,8 @@ public class LocalizationTests : IDisposable
     {
         var root = FindRepoRoot();
         var english = ReadKeys(Path.Combine(root, "src", "Noctis", "Localization", "Strings.resx"));
-        var used = Directory.EnumerateFiles(Path.Combine(root, "src", "Noctis"), "*.axaml", SearchOption.AllDirectories)
+        var used = new[] { "Noctis", "Noctis.UI" }
+            .SelectMany(proj => Directory.EnumerateFiles(Path.Combine(root, "src", proj), "*.axaml", SearchOption.AllDirectories))
             .Where(p => !p.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}")
                      && !p.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}"))
             .SelectMany(p => Regex.Matches(File.ReadAllText(p), @"\{loc:T\s+([A-Za-z0-9_.]+)").Select(m => m.Groups[1].Value))

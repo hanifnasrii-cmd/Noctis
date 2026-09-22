@@ -103,4 +103,19 @@ public class SkiaArtworkDecoderTests : IDisposable
         Assert.True(bmp!.Width <= 150, $"width {bmp.Width}");
         Assert.Equal(100, bmp.Width); // 800 / 8
     }
+
+    [Theory]
+    [InlineData(SKEncodedImageFormat.Png)]
+    [InlineData(SKEncodedImageFormat.Webp)]
+    public void DecodeSubsampled_LargeCoverInACodecThatCannotScale_StillDecodes(SKEncodedImageFormat format)
+    {
+        // Discord, aaron 2026-09-21: Kawarp was a still image for one album. Its cover was a
+        // PNG over 640px; asking the PNG codec for a half-size decode fails (PNG only decodes
+        // at native size), the decoder returned null, and the layer drew nothing.
+        var path = Write("big." + format.ToString().ToLowerInvariant(), 1400, 1400, format);
+        using var bmp = SkiaArtworkDecoder.DecodeSubsampled(path, 640);
+        Assert.NotNull(bmp);
+        // PNG: native decode resized down to the bound. WebP: the codec's own 1/4 scale (350).
+        Assert.InRange(bmp!.Width, 320, 640);
+    }
 }

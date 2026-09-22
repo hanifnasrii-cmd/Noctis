@@ -8,7 +8,7 @@
         x:DataType="vm:AlbumDetailViewModel"
         Title="{loc:T AlbumDescription.AlbumDescription}"
         CanResize="False"
-        SystemDecorations="None"
+        WindowDecorations="None"
         Background="Transparent"
         TransparencyLevelHint="Transparent"
         ShowInTaskbar="False">

@@ -6,7 +6,7 @@
         x:DataType="vm:MetadataFinderViewModel"
         Title="{loc:T MetadataFinder.FindMetadata}"
         CanResize="False"
-        SystemDecorations="None"
+        WindowDecorations="None"
         TransparencyLevelHint="Transparent"
         Background="Transparent"
         ShowInTaskbar="False"

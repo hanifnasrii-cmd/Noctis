@@ -1,0 +1,48 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- The Android head: an Avalonia 12 activity hosting the shared Noctis.UI look over
+         Noctis.Core. Nothing from the desktop project (Windows TFM, LibVLC, WASAPI,
+         Whisper) is referenced here. Build with the Android Studio JDK and SDK:
+           dotnet build src/Noctis.Android/Noctis.Android.csproj -c Debug
+             -p:JavaSdkDirectory="C:/Program Files/Android/Android Studio/jbr"
+             -p:AndroidSdkDirectory="%LOCALAPPDATA%/Android/Sdk"  -->
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0-android</TargetFramework>
+    <SupportedOSPlatformVersion>26</SupportedOSPlatformVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>Noctis.Android</RootNamespace>
+    <AssemblyName>Noctis.Android</AssemblyName>
+    <ApplicationId>com.heartached.noctis</ApplicationId>
+    <ApplicationVersion>1</ApplicationVersion>
+    <ApplicationDisplayVersion>0.1.0</ApplicationDisplayVersion>
+    <AndroidPackageFormat>apk</AndroidPackageFormat>
+    <AndroidEnableProfiledAot>false</AndroidEnableProfiledAot>
+    <!-- Debug builds default to Fast Deployment (assemblies pushed over adb by the
+         Install target, not packed into the APK). We install the APK with adb ourselves,
+         so pack them; without this the runtime aborts with "No assemblies found". -->
+    <EmbedAssembliesIntoApk>true</EmbedAssembliesIntoApk>
+    <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+    <NoWarn>CS0067;MVVMTK0039;CA1416</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <AndroidResource Include="Icon.png">
+      <Link>Resources\drawable\Icon.png</Link>
+    </AndroidResource>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Avalonia.Android" Version="12.1.2" />
+    <PackageReference Include="Avalonia.Fonts.Inter" Version="12.1.2" />
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+    <PackageReference Include="Xamarin.AndroidX.Core.SplashScreen" Version="1.0.1.15" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Noctis.Core\Noctis.Core.csproj" />
+    <ProjectReference Include="..\Noctis.UI\Noctis.UI.csproj" />
+  </ItemGroup>
+
+</Project>

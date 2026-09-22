@@ -136,7 +136,7 @@ public class AutoplayQueueTests
         var (vm, player, library) = CreateVm();
         var seed = Trk("seed", genre: "", artist: "Foo feat. Bar");
         var solo = Trk("solo", genre: "", artist: "Foo");
-        var duet = Trk("duet", genre: "", artist: "Foo & Baz");
+        var duet = Trk("duet", genre: "", artist: "Foo, Baz");
         var prefix = Trk("prefix", genre: "", artist: "Foobar"); // prefix, not the same artist
         var other = Trk("other", genre: "", artist: "Qux");
         library.TrackList.AddRange(new[] { seed, solo, duet, prefix, other });

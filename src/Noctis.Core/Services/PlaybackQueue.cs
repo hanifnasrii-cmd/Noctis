@@ -1,0 +1,211 @@
+using Noctis.Models;
+
+namespace Noctis.Services;
+
+/// <summary>Why the queue is advancing; mirrors the desktop's QueueAdvanceReason.</summary>
+public enum QueueAdvance { Natural, UserSkip, Previous }
+
+/// <summary>Persisted shape of a <see cref="PlaybackQueue"/> (track ids only).</summary>
+public sealed record PlaybackQueueState(
+    Guid? CurrentId,
+    IReadOnlyList<Guid> UpNextIds,
+    IReadOnlyList<Guid> HistoryIds,
+    IReadOnlyList<Guid> RepeatCycleIds,
+    RepeatMode RepeatMode,
+    bool IsShuffleEnabled,
+    IReadOnlyList<Guid> OriginalOrderIds);
+
+/// <summary>
+/// Ordered playback state: what is playing, what is next, what played. Pure and
+/// synchronous; the caller starts the audio for whatever <see cref="Current"/> becomes.
+/// Semantics copied from the desktop PlayerViewModel (ReplaceQueueAndPlay, AddNext,
+/// AddToQueue, ToggleShuffle, AdvanceQueueCore, GoBackInQueue, TrimHistory), minus
+/// the desktop-only radio refill, autoplay, explicit-content parking and AutoMix.
+/// The desktop ViewModel keeps its own implementation; this one is for the Android
+/// player.
+/// </summary>
+public sealed class PlaybackQueue
+{
+    /// <summary>The desktop's TrimHistory cap.</summary>
+    public const int DefaultHistoryCap = 50;
+
+    private readonly int _historyCap;
+    private readonly List<Track> _upNext = new();
+    private readonly List<Track> _history = new();
+    private List<Track> _repeatCycle = new();
+    private List<Track> _originalOrder = new();
+
+    public PlaybackQueue(int historyCap = DefaultHistoryCap) => _historyCap = Math.Max(1, historyCap);
+
+    /// <summary>The playing track, or null when stopped.</summary>
+    public Track? Current { get; private set; }
+
+    /// <summary>Upcoming tracks, next-to-play first.</summary>
+    public IReadOnlyList<Track> UpNext => _upNext;
+
+    /// <summary>Played tracks, most recent first, capped.</summary>
+    public IReadOnlyList<Track> History => _history;
+
+    public RepeatMode RepeatMode { get; set; }
+
+    public bool IsShuffleEnabled { get; private set; }
+
+    /// <summary>
+    /// Replace everything and make <c>tracks[startIndex]</c> current. Records the repeat
+    /// cycle starting at that index so a Repeat All wrap replays the queue in the order
+    /// the user actually started it; clears shuffle state; the old current goes to history.
+    /// </summary>
+    public Track? ReplaceAll(IReadOnlyList<Track> tracks, int startIndex)
+    {
+        if (tracks.Count == 0) return Current;
+        if (startIndex < 0 || startIndex >= tracks.Count) startIndex = 0;
+
+        PushHistory(Current);
+
+        _originalOrder.Clear();
+        IsShuffleEnabled = false;
+        _repeatCycle = tracks.Skip(startIndex).Concat(tracks.Take(startIndex)).ToList();
+
+        _upNext.Clear();
+        for (int i = startIndex + 1; i < tracks.Count; i++)
+            _upNext.Add(tracks[i]);
+
+        Current = tracks[startIndex];
+        return Current;
+    }
+
+    /// <summary>"Play Next": front of UpNext.</summary>
+    public void AddNext(Track track) => _upNext.Insert(0, track);
+
+    /// <summary>"Add to Queue": end of UpNext.</summary>
+    public void Add(Track track) => _upNext.Add(track);
+
+    public void AddRange(IEnumerable<Track> tracks) => _upNext.AddRange(tracks);
+
+    public void RemoveAt(int upNextIndex)
+    {
+        if ((uint)upNextIndex < (uint)_upNext.Count)
+            _upNext.RemoveAt(upNextIndex);
+    }
+
+    public void Move(int fromUpNextIndex, int toUpNextIndex)
+    {
+        if ((uint)fromUpNextIndex >= (uint)_upNext.Count) return;
+        if ((uint)toUpNextIndex >= (uint)_upNext.Count) return;
+        if (fromUpNextIndex == toUpNextIndex) return;
+        var t = _upNext[fromUpNextIndex];
+        _upNext.RemoveAt(fromUpNextIndex);
+        _upNext.Insert(toUpNextIndex, t);
+    }
+
+    /// <summary>Clears UpNext only; Current keeps playing.</summary>
+    public void Clear() => _upNext.Clear();
+
+    /// <summary>
+    /// Toggle shuffle. On: remember the order and Fisher-Yates UpNext. Off: restore the
+    /// remembered order minus tracks that have since played or been removed.
+    /// </summary>
+    public void SetShuffle(bool enabled, Random? rng = null)
+    {
+        if (enabled == IsShuffleEnabled) return;
+        IsShuffleEnabled = enabled;
+
+        if (enabled)
+        {
+            _originalOrder = _upNext.ToList();
+            rng ??= Random.Shared;
+            for (int i = _upNext.Count - 1; i > 0; i--)
+            {
+                int j = rng.Next(i + 1);
+                (_upNext[i], _upNext[j]) = (_upNext[j], _upNext[i]);
+            }
+        }
+        else if (_originalOrder.Count > 0)
+        {
+            var stillQueued = new HashSet<Track>(_upNext, ReferenceEqualityComparer.Instance);
+            _upNext.Clear();
+            foreach (var t in _originalOrder)
+                if (stillQueued.Contains(t)) _upNext.Add(t);
+            _originalOrder.Clear();
+        }
+    }
+
+    /// <summary>
+    /// Advance per the desktop rules. A natural end with <see cref="RepeatMode.One"/> replays
+    /// Current (an explicit skip still advances). Otherwise Current goes to History and the
+    /// head of UpNext becomes Current; with UpNext empty and <see cref="RepeatMode.All"/> the
+    /// recorded cycle restarts (falling back to reversed History when no cycle was recorded,
+    /// e.g. a queue restored without one); else Current becomes null (stopped).
+    /// </summary>
+    public Track? Advance(QueueAdvance reason)
+    {
+        if (RepeatMode == RepeatMode.One && Current != null && reason == QueueAdvance.Natural)
+            return Current;
+
+        PushHistory(Current);
+
+        if (_upNext.Count > 0)
+        {
+            Current = _upNext[0];
+            _upNext.RemoveAt(0);
+            return Current;
+        }
+
+        if (RepeatMode == RepeatMode.All && (_repeatCycle.Count > 0 || _history.Count > 0))
+        {
+            var all = _repeatCycle.Count > 0
+                ? new List<Track>(_repeatCycle)
+                : Enumerable.Reverse(_history).ToList();
+            _history.Clear();
+            _originalOrder.Clear();
+            if (all.Count == 0) { Current = null; return null; }
+            _upNext.Clear();
+            _upNext.AddRange(all.Skip(1));
+            Current = all[0];
+            return Current;
+        }
+
+        Current = null;
+        return null;
+    }
+
+    /// <summary>Previous: pops History into Current and pushes the old Current to the front
+    /// of UpNext. With an empty History the current track stays (the caller restarts it).</summary>
+    public Track? Back()
+    {
+        if (_history.Count == 0) return Current;
+        if (Current != null) _upNext.Insert(0, Current);
+        Current = _history[0];
+        _history.RemoveAt(0);
+        return Current;
+    }
+
+    private void PushHistory(Track? t)
+    {
+        if (t == null) return;
+        _history.Insert(0, t);
+        if (_history.Count > _historyCap)
+            _history.RemoveRange(_historyCap, _history.Count - _historyCap);
+    }
+
+    public PlaybackQueueState Snapshot() => new(
+        Current?.Id,
+        _upNext.Select(t => t.Id).ToList(),
+        _history.Select(t => t.Id).ToList(),
+        _repeatCycle.Select(t => t.Id).ToList(),
+        RepeatMode,
+        IsShuffleEnabled,
+        _originalOrder.Select(t => t.Id).ToList());
+
+    /// <summary>Rebuild from a snapshot; ids that no longer resolve are dropped.</summary>
+    public static PlaybackQueue Restore(PlaybackQueueState s, Func<Guid, Track?> resolve, int historyCap = DefaultHistoryCap)
+    {
+        var q = new PlaybackQueue(historyCap) { RepeatMode = s.RepeatMode, IsShuffleEnabled = s.IsShuffleEnabled };
+        q.Current = s.CurrentId is { } id ? resolve(id) : null;
+        q._upNext.AddRange(s.UpNextIds.Select(resolve).OfType<Track>());
+        q._history.AddRange(s.HistoryIds.Select(resolve).OfType<Track>());
+        q._repeatCycle = s.RepeatCycleIds.Select(resolve).OfType<Track>().ToList();
+        q._originalOrder = s.OriginalOrderIds.Select(resolve).OfType<Track>().ToList();
+        return q;
+    }
+}

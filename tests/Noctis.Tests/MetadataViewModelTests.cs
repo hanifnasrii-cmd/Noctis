@@ -434,7 +434,7 @@ public class MetadataViewModelTests
         // Only the artist side is reduced to the primary credit; the album text is the
         // user's tag and goes through untouched.
         Assert.Equal("Rema Rave & Roses",
-            ITunesArtworkService.BuildAlbumSearchTerm("Rema & Selena Gomez", "Rave & Roses"));
+            ITunesArtworkService.BuildAlbumSearchTerm("Rema, Selena Gomez", "Rave & Roses"));
     }
 
     [Fact]
@@ -658,6 +658,8 @@ public class MetadataViewModelTests
         public Task SetTracksRatingAsync(IReadOnlyList<Track> tracks, int rating) => Task.CompletedTask;
         public Task SetTracksDislikedAsync(IReadOnlyList<Track> tracks, bool isDisliked) => Task.CompletedTask;
         public Task SetTracksSnoozedAsync(IReadOnlyList<Track> tracks, DateTime? until) => Task.CompletedTask;
+        public Task SetTracksBadgeAsync(IReadOnlyList<Track> tracks, string? badge) => Task.CompletedTask;
+        public IReadOnlyList<string> GetBadgeNames() => Array.Empty<string>();
         public void NotifyMetadataChanged() { }
         public Task<int> ApplyMergeFeaturedFromTitlesAsync(bool enabled, CancellationToken ct = default) => Task.FromResult(0);
         public Task<int> BackfillMissingArtworkAsync(CancellationToken ct = default) => Task.FromResult(0);

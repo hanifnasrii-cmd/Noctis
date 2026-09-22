@@ -772,7 +772,7 @@
                                         RenderOptions.BitmapInterpolationMode="HighQuality"
                                         IsVisible="{Binding RepeatMode, Converter={x:Static ObjectConverters.Equal}, ConverterParameter={x:Static m:RepeatMode.Off}}">
                                     <Border.OpacityMask>
-                                        <ImageBrush Source="avares://Noctis/Assets/Icons/Repeat%20ICON.png" Stretch="Uniform" />
+                                        <ImageBrush Source="avares://Noctis.UI/Assets/Icons/Repeat%20ICON.png" Stretch="Uniform" />
                                     </Border.OpacityMask>
                                 </Border>
                                 <!-- All / One: accent glyph -->
@@ -780,7 +780,7 @@
                                         RenderOptions.BitmapInterpolationMode="HighQuality"
                                         IsVisible="{Binding RepeatMode, Converter={x:Static ObjectConverters.NotEqual}, ConverterParameter={x:Static m:RepeatMode.Off}}">
                                     <Border.OpacityMask>
-                                        <ImageBrush Source="avares://Noctis/Assets/Icons/Repeat%20ICON.png" Stretch="Uniform" />
+                                        <ImageBrush Source="avares://Noctis.UI/Assets/Icons/Repeat%20ICON.png" Stretch="Uniform" />
                                     </Border.OpacityMask>
                                 </Border>
                                 <!-- "1" badge: repeat-one only -->
@@ -808,10 +808,17 @@
                                     Background="{DynamicResource AccentColorBrush}"
                                     Opacity="0.18"
                                     IsVisible="{Binding IsShuffleEnabled}" />
+                            <!-- Off: white glyph like the transport icons; on: accent glyph
+                                 like Repeat (Discord, Mistery 2026-09-21: arrows stayed white
+                                 on the accent wash). -->
                             <Viewbox Width="18" Height="18">
                                 <Canvas Width="24" Height="24">
                                     <Path Fill="{DynamicResource IslandIconFill}"
-                                          Data="{StaticResource ShuffleIcon}" />
+                                          Data="{StaticResource ShuffleIcon}"
+                                          IsVisible="{Binding !IsShuffleEnabled}" />
+                                    <Path Fill="{DynamicResource AccentColorBrush}"
+                                          Data="{StaticResource ShuffleIcon}"
+                                          IsVisible="{Binding IsShuffleEnabled}" />
                                 </Canvas>
                             </Viewbox>
                         </Panel>
@@ -848,7 +855,7 @@
                        left) like the reference LCD. Its corner radius is the card's minus
                        the inset (10 − 3 = 7) so the two corners run concentric — a smaller
                        radius left a bright sliver of card fill inside the card's corner. -->
-                  <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto" Margin="3,0,3,0">
+                  <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto,Auto" Margin="3,0,3,0">
 
                     <!-- Album art thumbnail (click opens the Mini Player) -->
                     <Border Grid.Column="0"
@@ -1054,12 +1061,36 @@
                         </StackPanel>
                     </Grid>
 
+                    <!-- Playback time (Settings → Player → Playback time; Discord, Luwi 09-21):
+                         elapsed over remaining, stacked like the LCD's own two text rows and
+                         right-aligned so the digits tick in place. The island grows by
+                         IslandTimeWidth while this is on (see ExtraTransportWidth) so the
+                         title/artist viewports keep their full width. -->
+                    <StackPanel Grid.Column="2"
+                                x:Name="TrackTimeStack"
+                                VerticalAlignment="Center"
+                                Margin="0,0,8,0"
+                                MinWidth="36"
+                                IsVisible="{Binding IslandShowTime}">
+                        <TextBlock Text="{Binding PositionText}"
+                                   FontSize="10"
+                                   FontWeight="SemiBold"
+                                   TextAlignment="Right"
+                                   HorizontalAlignment="Right"
+                                   Foreground="{DynamicResource IslandForeground}" />
+                        <TextBlock Text="{Binding RemainingTimeText, StringFormat='-{0}'}"
+                                   FontSize="10"
+                                   TextAlignment="Right"
+                                   HorizontalAlignment="Right"
+                                   Foreground="{DynamicResource IslandForegroundSecondary}" />
+                    </StackPanel>
+
                     <!-- Now-playing bars (the same EqVisualizer the album/track rows use,
                          accent-coloured by its default style) + the options button, on the
                          box's right edge. The MenuFlyout itself stays declared on the right
                          cluster's OptionsButton — the fallback shown only while this box is
                          hidden — and this button opens that same flyout anchored here. -->
-                    <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                    <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center">
                         <controls:EqVisualizer Width="22" Height="18"
                                                VerticalAlignment="Center"
                                                IsPlaying="{Binding IsPlaying}" />
@@ -1190,7 +1221,7 @@
                                                    FontFamily="{Binding $parent[MenuItem].FontFamily}" />
                                     </MenuItem.Header>
                                     <MenuItem.Icon>
-                                        <Border Width="14" Height="14" Background="{DynamicResource SystemControlForegroundBaseHighBrush}" RenderOptions.BitmapInterpolationMode="HighQuality"><Border.OpacityMask><ImageBrush Source="avares://Noctis/Assets/Icons/Play%20ICON.png" Stretch="Uniform" /></Border.OpacityMask></Border>
+                                        <Border Width="14" Height="14" Background="{DynamicResource SystemControlForegroundBaseHighBrush}" RenderOptions.BitmapInterpolationMode="HighQuality"><Border.OpacityMask><ImageBrush Source="avares://Noctis.UI/Assets/Icons/Play%20ICON.png" Stretch="Uniform" /></Border.OpacityMask></Border>
                                     </MenuItem.Icon>
                                 </MenuItem>
                                 <MenuItem Header="{loc:T PlaybackBar.ShuffleTip}"
@@ -1202,13 +1233,13 @@
                                 <MenuItem Header="{loc:T PlaybackBar.PlayNext}"
                                           Command="{Binding PlayNextCurrentTrackCommand}">
                                     <MenuItem.Icon>
-                                        <Border Width="14" Height="14" Background="{DynamicResource SystemControlForegroundBaseHighBrush}" RenderOptions.BitmapInterpolationMode="HighQuality"><Border.OpacityMask><ImageBrush Source="avares://Noctis/Assets/Icons/Forward%20ICON.png" Stretch="Uniform" /></Border.OpacityMask></Border>
+                                        <Border Width="14" Height="14" Background="{DynamicResource SystemControlForegroundBaseHighBrush}" RenderOptions.BitmapInterpolationMode="HighQuality"><Border.OpacityMask><ImageBrush Source="avares://Noctis.UI/Assets/Icons/Forward%20ICON.png" Stretch="Uniform" /></Border.OpacityMask></Border>
                                     </MenuItem.Icon>
                                 </MenuItem>
                                 <MenuItem Header="{loc:T PlaybackBar.AddQueue}"
                                           Command="{Binding AddCurrentTrackToQueueCommand}">
                                     <MenuItem.Icon>
-                                        <Border Width="17" Height="17" Background="{DynamicResource SystemControlForegroundBaseHighBrush}" RenderOptions.BitmapInterpolationMode="HighQuality"><Border.OpacityMask><ImageBrush Source="avares://Noctis/Assets/Icons/Queue%20ICON.png" Stretch="Uniform" /></Border.OpacityMask></Border>
+                                        <Border Width="17" Height="17" Background="{DynamicResource SystemControlForegroundBaseHighBrush}" RenderOptions.BitmapInterpolationMode="HighQuality"><Border.OpacityMask><ImageBrush Source="avares://Noctis.UI/Assets/Icons/Queue%20ICON.png" Stretch="Uniform" /></Border.OpacityMask></Border>
                                     </MenuItem.Icon>
                                 </MenuItem>
                                 <Separator />
@@ -1216,7 +1247,7 @@
                                           Header="{loc:T PlaybackBar.AddPlaylist}"
                                           Command="{Binding AddCurrentTrackToNewPlaylistCommand}">
                                     <MenuItem.Icon>
-                                        <Border Width="14" Height="14" Background="{DynamicResource SystemControlForegroundBaseHighBrush}" RenderOptions.BitmapInterpolationMode="HighQuality"><Border.OpacityMask><ImageBrush Source="avares://Noctis/Assets/Icons/Playlist%20icon.png" Stretch="Uniform" /></Border.OpacityMask></Border>
+                                        <Border Width="14" Height="14" Background="{DynamicResource SystemControlForegroundBaseHighBrush}" RenderOptions.BitmapInterpolationMode="HighQuality"><Border.OpacityMask><ImageBrush Source="avares://Noctis.UI/Assets/Icons/Playlist%20icon.png" Stretch="Uniform" /></Border.OpacityMask></Border>
                                     </MenuItem.Icon>
                                 </MenuItem>
                                 <Separator />
@@ -1224,7 +1255,7 @@
                                           Command="{Binding ToggleCurrentTrackFavoriteCommand}"
                                           IsVisible="{Binding CurrentTrack.IsFavorite, Converter={x:Static BoolConverters.Not}, FallbackValue=True}">
                                     <MenuItem.Icon>
-                                        <Border Width="14" Height="14" Background="{DynamicResource SystemControlForegroundBaseHighBrush}" RenderOptions.BitmapInterpolationMode="HighQuality"><Border.OpacityMask><ImageBrush Source="avares://Noctis/Assets/Icons/Favorites%20icon.png" Stretch="Uniform" /></Border.OpacityMask></Border>
+                                        <Border Width="14" Height="14" Background="{DynamicResource SystemControlForegroundBaseHighBrush}" RenderOptions.BitmapInterpolationMode="HighQuality"><Border.OpacityMask><ImageBrush Source="avares://Noctis.UI/Assets/Icons/Favorites%20icon.png" Stretch="Uniform" /></Border.OpacityMask></Border>
                                     </MenuItem.Icon>
                                 </MenuItem>
                                 <MenuItem Header="{loc:T PlaybackBar.RemoveFromFavorites}"
@@ -1237,13 +1268,13 @@
                                 <MenuItem Header="{loc:T PlaybackBar.Metadata}"
                                           Command="{Binding OpenCurrentTrackMetadataCommand}">
                                     <MenuItem.Icon>
-                                        <Border Width="14" Height="14" Background="{DynamicResource SystemControlForegroundBaseHighBrush}" RenderOptions.BitmapInterpolationMode="HighQuality"><Border.OpacityMask><ImageBrush Source="avares://Noctis/Assets/Icons/Metadata%20ICON.png" Stretch="Uniform" /></Border.OpacityMask></Border>
+                                        <Border Width="14" Height="14" Background="{DynamicResource SystemControlForegroundBaseHighBrush}" RenderOptions.BitmapInterpolationMode="HighQuality"><Border.OpacityMask><ImageBrush Source="avares://Noctis.UI/Assets/Icons/Metadata%20ICON.png" Stretch="Uniform" /></Border.OpacityMask></Border>
                                     </MenuItem.Icon>
                                 </MenuItem>
                                 <MenuItem Header="{loc:T PlaybackBar.SearchLyrics}"
                                           Command="{Binding SearchCurrentTrackLyricsCommand}">
                                     <MenuItem.Icon>
-                                        <Border Width="14" Height="14" Background="{DynamicResource SystemControlForegroundBaseHighBrush}" RenderOptions.BitmapInterpolationMode="HighQuality"><Border.OpacityMask><ImageBrush Source="avares://Noctis/Assets/Icons/Lyrics%20ICON.png" Stretch="Uniform" /></Border.OpacityMask></Border>
+                                        <Border Width="14" Height="14" Background="{DynamicResource SystemControlForegroundBaseHighBrush}" RenderOptions.BitmapInterpolationMode="HighQuality"><Border.OpacityMask><ImageBrush Source="avares://Noctis.UI/Assets/Icons/Lyrics%20ICON.png" Stretch="Uniform" /></Border.OpacityMask></Border>
                                     </MenuItem.Icon>
                                 </MenuItem>
                                 <!-- Lyrics side-panel toggle (everywhere but the lyrics full view). -->
@@ -1251,7 +1282,7 @@
                                           Click="OnLyricsPanelButtonClick"
                                           IsVisible="{Binding !IsLyricsPageActive}">
                                     <MenuItem.Icon>
-                                        <Border Width="14" Height="14" Background="{DynamicResource SystemControlForegroundBaseHighBrush}" RenderOptions.BitmapInterpolationMode="HighQuality"><Border.OpacityMask><ImageBrush Source="avares://Noctis/Assets/Icons/Lyrics%20Panel%20ICON.png" Stretch="Uniform" /></Border.OpacityMask></Border>
+                                        <Border Width="14" Height="14" Background="{DynamicResource SystemControlForegroundBaseHighBrush}" RenderOptions.BitmapInterpolationMode="HighQuality"><Border.OpacityMask><ImageBrush Source="avares://Noctis.UI/Assets/Icons/Lyrics%20Panel%20ICON.png" Stretch="Uniform" /></Border.OpacityMask></Border>
                                     </MenuItem.Icon>
                                 </MenuItem>
                                 <MenuItem Header="{loc:T PlaybackBar.RemoveLyrics}" Classes="danger"
@@ -1264,14 +1295,14 @@
                                 <MenuItem Header="{loc:T PlaybackBar.ShowFolder}"
                                           Command="{Binding ShowCurrentTrackInExplorerCommand}">
                                     <MenuItem.Icon>
-                                        <Border Width="14" Height="14" Background="{DynamicResource SystemControlForegroundBaseHighBrush}" RenderOptions.BitmapInterpolationMode="HighQuality"><Border.OpacityMask><ImageBrush Source="avares://Noctis/Assets/Icons/Folder%20ICON.png" Stretch="Uniform" /></Border.OpacityMask></Border>
+                                        <Border Width="14" Height="14" Background="{DynamicResource SystemControlForegroundBaseHighBrush}" RenderOptions.BitmapInterpolationMode="HighQuality"><Border.OpacityMask><ImageBrush Source="avares://Noctis.UI/Assets/Icons/Folder%20ICON.png" Stretch="Uniform" /></Border.OpacityMask></Border>
                                     </MenuItem.Icon>
                                 </MenuItem>
                                 <Separator />
                                 <MenuItem Header="{loc:T PlaybackBar.ViewAlbumTip}"
                                           Command="{Binding ViewCurrentTrackAlbumCommand}">
                                     <MenuItem.Icon>
-                                        <Border Width="14" Height="14" Background="{DynamicResource SystemControlForegroundBaseHighBrush}" RenderOptions.BitmapInterpolationMode="HighQuality"><Border.OpacityMask><ImageBrush Source="avares://Noctis/Assets/Icons/Albums%20ICON.png" Stretch="Uniform" /></Border.OpacityMask></Border>
+                                        <Border Width="14" Height="14" Background="{DynamicResource SystemControlForegroundBaseHighBrush}" RenderOptions.BitmapInterpolationMode="HighQuality"><Border.OpacityMask><ImageBrush Source="avares://Noctis.UI/Assets/Icons/Albums%20ICON.png" Stretch="Uniform" /></Border.OpacityMask></Border>
                                     </MenuItem.Icon>
                                 </MenuItem>
                                 <Separator />
@@ -1382,7 +1413,8 @@
                                 </MenuItem>
                                 <MenuItem Header="{loc:T PlaybackBar.MusicVideo}"
                                           Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).Settings.ToggleMusicVideosCommand}"
-                                          ToolTip.Tip="{loc:T Settings.MusicVideosHint}">
+                                          ToolTip.Tip="{loc:T Settings.MusicVideosHint}"
+                                          IsVisible="{Binding CurrentTrackHasMusicVideoFile}">
                                     <MenuItem.Icon>
                                         <PathIcon Data="{StaticResource CheckmarkIcon}"
                                                   Width="14" Height="14"
@@ -1421,7 +1453,7 @@
                                 Background="{DynamicResource IslandIconFill}"
                                 RenderOptions.BitmapInterpolationMode="HighQuality">
                             <Border.OpacityMask>
-                                <ImageBrush Source="avares://Noctis/Assets/Icons/Lyrics%20ICON.png" Stretch="Uniform" />
+                                <ImageBrush Source="avares://Noctis.UI/Assets/Icons/Lyrics%20ICON.png" Stretch="Uniform" />
                             </Border.OpacityMask>
                         </Border>
                     </Button>
@@ -1436,7 +1468,7 @@
                                 Background="{DynamicResource IslandIconFill}"
                                 RenderOptions.BitmapInterpolationMode="HighQuality">
                             <Border.OpacityMask>
-                                <ImageBrush Source="avares://Noctis/Assets/Icons/Queue%20ICON.png" Stretch="Uniform" />
+                                <ImageBrush Source="avares://Noctis.UI/Assets/Icons/Queue%20ICON.png" Stretch="Uniform" />
                             </Border.OpacityMask>
                         </Border>
                     </Button>

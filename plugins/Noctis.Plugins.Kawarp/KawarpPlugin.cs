@@ -96,7 +96,7 @@ public static class KawarpShader
     /// <summary>
     /// Domain warp: two layers of drifting sines displace the sample position; the cover is
     /// sampled with mirrored tiling so the edges never show. Then saturation and dimming.
-    /// Written against SkiaSharp 2.88's SkSL dialect (<c>uniform shader</c> + <c>sample()</c>).
+    /// Written against SkiaSharp 3's SkSL dialect (<c>uniform shader</c> + <c>shader.eval()</c>; 2.88 spelled it <c>sample()</c>).
     /// </summary>
     public const string Source = """
         uniform shader art;
@@ -119,7 +119,7 @@ public static class KawarpShader
             float2 w = uv + d * amount;
             // Slow drift so a still image never looks frozen even at zero warp.
             w += float2(0.03 * sin(t * 0.21), 0.03 * cos(t * 0.17));
-            half4 c = sample(art, w * iArtSize);
+            half4 c = art.eval(w * iArtSize);
             half l = dot(c.rgb, half3(0.299, 0.587, 0.114));
             c.rgb = mix(half3(l), c.rgb, half(iSaturation));
             c.rgb *= half(iDim);
@@ -135,7 +135,7 @@ public static class KawarpShader
     {
         if (_effect is null && _error is null)
         {
-            _effect = SKRuntimeEffect.Create(Source, out var err);
+            _effect = SKRuntimeEffect.CreateShader(Source, out var err);
             if (_effect is null) _error = string.IsNullOrEmpty(err) ? "unknown shader error" : err;
         }
         error = _error;
@@ -365,7 +365,7 @@ internal sealed class KawarpDrawOp : ICustomDrawOperation
             ["iBeat"] = _beat,
         };
         var children = new SKRuntimeEffectChildren(effect) { ["art"] = artShader };
-        using var shader = effect.ToShader(true, uniforms, children);
+        using var shader = effect.ToShader(uniforms, children);
         using var paint = new SKPaint { Shader = shader };
         canvas.DrawRect(new SKRect((float)Bounds.X, (float)Bounds.Y, (float)Bounds.Right, (float)Bounds.Bottom), paint);
     }

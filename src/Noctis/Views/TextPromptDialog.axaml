@@ -4,7 +4,7 @@
         x:Class="Noctis.Views.TextPromptDialog"
         Title="{loc:T TextPrompt.EnterName}"
         CanResize="False"
-        SystemDecorations="None"
+        WindowDecorations="None"
         Background="Transparent"
         TransparencyLevelHint="Transparent"
         ShowInTaskbar="False">

@@ -23,6 +23,32 @@ public class ExistingLyricsLoaderTests : IDisposable
     private static TimeSpan S(double sec) => TimeSpan.FromSeconds(sec);
 
     [Fact]
+    public void Detect_TimedTextInThePlainLyricsTag_CountsAsLrc()
+    {
+        // The scanner stores the file's USLT / LYRICS frame in Track.Lyrics; embedded LRC
+        // therefore arrives in the PLAIN field and used to be labelled "plain only".
+        Assert.Equal(LyricsFormat.Lrc, LyricsFormatDetector.Detect(Lrc, null));
+        Assert.Equal(LyricsFormat.Elrc, LyricsFormatDetector.Detect(Elrc, null));
+        Assert.Equal(LyricsFormat.Plain, LyricsFormatDetector.Detect("just words\nno times", null));
+    }
+
+    [Fact]
+    public void Load_EmbeddedLrcInThePlainField_IsExistingLyrics()
+    {
+        var track = NewTrack();
+        track.Lyrics = Lrc;
+
+        var existing = ExistingLyricsLoader.Load(track);
+
+        Assert.NotNull(existing);
+        Assert.Equal(LyricsFormat.Lrc, existing!.Format);
+        Assert.Equal("embedded tags", existing.Origin);
+        Assert.Equal(2, existing.Lines.Count);
+        Assert.Equal(LyricsFormat.Lrc, ExistingLyricsLoader.DetectFormat(track));
+        Assert.Equal(new[] { LyricsFormat.Lrc }, ExistingLyricsLoader.DetectFormats(new[] { track }));
+    }
+
+    [Fact]
     public void ParseTimed_LineLevel_KeepsLinesWithoutWords_EndIsNextStart()
     {
         var lines = ExistingLyricsLoader.ParseTimed(Lrc);

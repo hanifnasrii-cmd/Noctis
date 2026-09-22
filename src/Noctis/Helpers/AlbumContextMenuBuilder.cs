@@ -45,31 +45,31 @@ public sealed class AlbumContextMenuBuilder
         var items = Menu.Items;
 
         Play = new MenuItem { Header = "Play", MaxWidth = 400 };
-        Play.Icon = TrackContextMenuBuilder.CreatePngIcon("avares://Noctis/Assets/Icons/Play%20ICON.png");
+        Play.Icon = TrackContextMenuBuilder.CreatePngIcon("avares://Noctis.UI/Assets/Icons/Play%20ICON.png");
         items.Add(Play);
 
         Shuffle = new MenuItem { Header = "Shuffle" };
-        Shuffle.Icon = TrackContextMenuBuilder.CreatePngIcon("avares://Noctis/Assets/Icons/Shuffle%20ICON.png");
+        Shuffle.Icon = TrackContextMenuBuilder.CreatePngIcon("avares://Noctis.UI/Assets/Icons/Shuffle%20ICON.png");
         items.Add(Shuffle);
 
         PlayNext = new MenuItem { Header = "Play Next" };
-        PlayNext.Icon = TrackContextMenuBuilder.CreatePngIcon("avares://Noctis/Assets/Icons/Forward%20ICON.png");
+        PlayNext.Icon = TrackContextMenuBuilder.CreatePngIcon("avares://Noctis.UI/Assets/Icons/Forward%20ICON.png");
         items.Add(PlayNext);
 
         AddToQueue = new MenuItem { Header = "Add to Queue" };
-        AddToQueue.Icon = TrackContextMenuBuilder.CreatePngIcon("avares://Noctis/Assets/Icons/Queue%20ICON.png", 17);
+        AddToQueue.Icon = TrackContextMenuBuilder.CreatePngIcon("avares://Noctis.UI/Assets/Icons/Queue%20ICON.png", 17);
         items.Add(AddToQueue);
 
         items.Add(new Separator());
 
         AddToPlaylist = new MenuItem { Header = "Add to Playlist" };
-        AddToPlaylist.Icon = TrackContextMenuBuilder.CreatePngIcon("avares://Noctis/Assets/Icons/Playlist%20icon.png");
+        AddToPlaylist.Icon = TrackContextMenuBuilder.CreatePngIcon("avares://Noctis.UI/Assets/Icons/Playlist%20icon.png");
         items.Add(AddToPlaylist);
 
         items.Add(new Separator());
 
         Favorite = new MenuItem { Header = "Favorites" };
-        Favorite.Icon = TrackContextMenuBuilder.CreatePngIcon("avares://Noctis/Assets/Icons/Favorites%20icon.png");
+        Favorite.Icon = TrackContextMenuBuilder.CreatePngIcon("avares://Noctis.UI/Assets/Icons/Favorites%20icon.png");
         items.Add(Favorite);
 
         Unfavorite = new MenuItem { Header = "Remove from Favorites" };
@@ -82,29 +82,29 @@ public sealed class AlbumContextMenuBuilder
         items.Add(Unfavorite);
 
         Metadata = new MenuItem { Header = "Metadata" };
-        Metadata.Icon = TrackContextMenuBuilder.CreatePngIcon("avares://Noctis/Assets/Icons/Metadata%20ICON.png");
+        Metadata.Icon = TrackContextMenuBuilder.CreatePngIcon("avares://Noctis.UI/Assets/Icons/Metadata%20ICON.png");
         items.Add(Metadata);
 
         EditDescription = new MenuItem { Header = "Update Description", IsVisible = false };
-        EditDescription.Icon = TrackContextMenuBuilder.CreatePngIcon("avares://Noctis/Assets/Icons/Metadata%20ICON.png");
+        EditDescription.Icon = TrackContextMenuBuilder.CreatePngIcon("avares://Noctis.UI/Assets/Icons/Metadata%20ICON.png");
         items.Add(EditDescription);
 
         Convert = new MenuItem { Header = "Convert Album", IsVisible = false };
-        Convert.Icon = TrackContextMenuBuilder.CreatePngIcon("avares://Noctis/Assets/Icons/Metadata%20ICON.png");
+        Convert.Icon = TrackContextMenuBuilder.CreatePngIcon("avares://Noctis.UI/Assets/Icons/Metadata%20ICON.png");
         items.Add(Convert);
 
         ScanReplayGain = new MenuItem { Header = "Scan ReplayGain", IsVisible = false };
-        ScanReplayGain.Icon = TrackContextMenuBuilder.CreatePngIcon("avares://Noctis/Assets/Icons/Metadata%20ICON.png");
+        ScanReplayGain.Icon = TrackContextMenuBuilder.CreatePngIcon("avares://Noctis.UI/Assets/Icons/Metadata%20ICON.png");
         items.Add(ScanReplayGain);
 
         SearchLyrics = new MenuItem { Header = "Search Lyrics", IsVisible = false };
-        SearchLyrics.Icon = TrackContextMenuBuilder.CreatePngIcon("avares://Noctis/Assets/Icons/Lyrics%20ICON.png");
+        SearchLyrics.Icon = TrackContextMenuBuilder.CreatePngIcon("avares://Noctis.UI/Assets/Icons/Lyrics%20ICON.png");
         items.Add(SearchLyrics);
 
         // Lyrics Background Video ▸ — one clip for every song on this album (a song's own
         // clip still wins). Static commands; see Helpers.LyricsBackgroundOverrides.
         LyricsBackground = new MenuItem { Header = "Lyrics Background Video" };
-        LyricsBackground.Icon = TrackContextMenuBuilder.CreatePngIcon("avares://Noctis/Assets/Icons/Lyrics%20ICON.png");
+        LyricsBackground.Icon = TrackContextMenuBuilder.CreatePngIcon("avares://Noctis.UI/Assets/Icons/Lyrics%20ICON.png");
         LyricsBackgroundChoose = new MenuItem { Header = "Choose video for this album…", Command = LyricsBackgroundOverrides.ChooseForAlbumCommand };
         LyricsBackground.Items.Add(LyricsBackgroundChoose);
         LyricsBackgroundClear = new MenuItem { Header = "Use default video", Command = LyricsBackgroundOverrides.ClearForAlbumCommand };
@@ -112,7 +112,7 @@ public sealed class AlbumContextMenuBuilder
         items.Add(LyricsBackground);
 
         ShowFolder = new MenuItem { Header = "Show Folder" };
-        ShowFolder.Icon = TrackContextMenuBuilder.CreatePngIcon("avares://Noctis/Assets/Icons/Folder%20ICON.png");
+        ShowFolder.Icon = TrackContextMenuBuilder.CreatePngIcon("avares://Noctis.UI/Assets/Icons/Folder%20ICON.png");
         items.Add(ShowFolder);
 
         items.Add(new Separator());

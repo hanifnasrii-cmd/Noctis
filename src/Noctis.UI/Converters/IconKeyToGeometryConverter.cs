@@ -20,30 +20,30 @@ public class IconKeyToGeometryConverter : IValueConverter
     private static readonly IReadOnlyDictionary<string, string> IconMap =
         new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         {
-            ["HomeIcon"] = "avares://Noctis/Assets/Icons/Home%20ICON.png",
-            ["SongsIcon"] = "avares://Noctis/Assets/Icons/Songs%20ICON.png",
-            ["AlbumsIcon"] = "avares://Noctis/Assets/Icons/Albums%20ICON.png",
-            ["ArtistsIcon"] = "avares://Noctis/Assets/Icons/Artists%20ICON.png",
-            ["FoldersIcon"] = "avares://Noctis/Assets/Icons/Folder%20ICON.png",
+            ["HomeIcon"] = "avares://Noctis.UI/Assets/Icons/Home%20ICON.png",
+            ["SongsIcon"] = "avares://Noctis.UI/Assets/Icons/Songs%20ICON.png",
+            ["AlbumsIcon"] = "avares://Noctis.UI/Assets/Icons/Albums%20ICON.png",
+            ["ArtistsIcon"] = "avares://Noctis.UI/Assets/Icons/Artists%20ICON.png",
+            ["FoldersIcon"] = "avares://Noctis.UI/Assets/Icons/Folder%20ICON.png",
 
-            ["PlaylistsIcon"] = "avares://Noctis/Assets/Icons/Playlist%20icon.png",
-            ["FavoritesIcon"] = "avares://Noctis/Assets/Icons/Favorites%20icon.png",
-            ["SettingsIcon"] = "avares://Noctis/Assets/Icons/Settings%20ICON.png",
-            ["ServerIcon"] = "avares://Noctis/Assets/Icons/Server%20ICON.png",
-            ["CdIcon"] = "avares://Noctis/Assets/Icons/Albums%20ICON.png",
+            ["PlaylistsIcon"] = "avares://Noctis.UI/Assets/Icons/Playlist%20icon.png",
+            ["FavoritesIcon"] = "avares://Noctis.UI/Assets/Icons/Favorites%20icon.png",
+            ["SettingsIcon"] = "avares://Noctis.UI/Assets/Icons/Settings%20ICON.png",
+            ["ServerIcon"] = "avares://Noctis.UI/Assets/Icons/Server%20ICON.png",
+            ["CdIcon"] = "avares://Noctis.UI/Assets/Icons/Albums%20ICON.png",
             // The player island's lyrics bubble, reused by the Settings rail for the Lyrics page.
-            ["LyricsBubbleIcon"] = "avares://Noctis/Assets/Icons/Lyrics%20ICON.png",
+            ["LyricsBubbleIcon"] = "avares://Noctis.UI/Assets/Icons/Lyrics%20ICON.png",
             // Sidebar Lyrics Studio entry: lyric sheet + note, same stroke as the other rail masks.
-            ["LyricsStudioIcon"] = "avares://Noctis/Assets/Icons/Lyrics%20Panel%20ICON.png",
+            ["LyricsStudioIcon"] = "avares://Noctis.UI/Assets/Icons/Lyrics%20Panel%20ICON.png",
             // Fallback for smart playlist rows in sidebar.
-            ["SmartPlaylistIcon"] = "avares://Noctis/Assets/Icons/Playlist%20icon.png"
+            ["SmartPlaylistIcon"] = "avares://Noctis.UI/Assets/Icons/Playlist%20icon.png"
         };
 
     /// <summary>True when <paramref name="key"/> names one of the bitmap sidebar icons (the Settings rail mixes these with geometry icons).</summary>
     public static bool HasKey(string? key) => !string.IsNullOrWhiteSpace(key) && IconMap.ContainsKey(key);
 
     private static readonly ConcurrentDictionary<string, Bitmap?> BitmapCache = new();
-    private const string FallbackUri = "avares://Noctis/Assets/Icons/Playlist%20icon.png";
+    private const string FallbackUri = "avares://Noctis.UI/Assets/Icons/Playlist%20icon.png";
 
     /// <summary>
     /// Target pixel size for pre-scaled icons.

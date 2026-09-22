@@ -17,15 +17,15 @@
 
          3. Define FontFamily resources in this section:
             <Application.Resources>
-                <FontFamily x:Key="CustomFont">avares://Noctis/Assets/Fonts/YourFont.ttf#Font Name</FontFamily>
-                <FontFamily x:Key="IconFont">avares://Noctis/Assets/Fonts/Icons.ttf#Icons</FontFamily>
+                <FontFamily x:Key="CustomFont">avares://Noctis.UI/Assets/Fonts/YourFont.ttf#Font Name</FontFamily>
+                <FontFamily x:Key="IconFont">avares://Noctis.UI/Assets/Fonts/Icons.ttf#Icons</FontFamily>
             </Application.Resources>
 
          4. Use the font in XAML:
             <TextBlock FontFamily="{StaticResource CustomFont}" Text="Sample Text" />
 
          5. Or use directly:
-            <TextBlock FontFamily="avares://Noctis/Assets/Fonts/YourFont.ttf#Font Name" />
+            <TextBlock FontFamily="avares://Noctis.UI/Assets/Fonts/YourFont.ttf#Font Name" />
 
          Note: The #Font Name part should match the PostScript name of the font.
          You can find this in the font file properties or using font inspection tools.
@@ -35,9 +35,9 @@
     <Application.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
-                <ResourceInclude Source="avares://Noctis/Assets/Icons.axaml" />
+                <ResourceInclude Source="avares://Noctis.UI/Assets/Icons.axaml" />
             </ResourceDictionary.MergedDictionaries>
-            <FontFamily x:Key="InterSemiBold">avares://Noctis/Assets/Fonts/Inter-SemiBold.ttf#Inter SemiBold</FontFamily>
+            <FontFamily x:Key="InterSemiBold">avares://Noctis.UI/Assets/Fonts/Inter-SemiBold.ttf#Inter SemiBold</FontFamily>
             <!-- Do NOT declare fallbacks for accent-overlay keys here. A ResourceDictionary
                  resolves its OWN entries before its merged dictionaries, so a literal in
                  Application.Resources permanently shadows the entry App.SetAccent merges on
@@ -51,7 +51,7 @@
         <FluentTheme />
 
         <!-- Global style overrides -->
-        <StyleInclude Source="avares://Noctis/Assets/Styles.axaml" />
+        <StyleInclude Source="avares://Noctis.UI/Assets/Styles.axaml" />
 
         <!-- Custom controls -->
         <StyleInclude Source="avares://Noctis/Controls/EqVisualizer.axaml" />

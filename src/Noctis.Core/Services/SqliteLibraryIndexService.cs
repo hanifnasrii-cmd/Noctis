@@ -67,19 +67,38 @@ public sealed class SqliteLibraryIndexService : ISqliteLibraryIndexService
                     is_favorite INTEGER NOT NULL,
                     favorited_at_utc TEXT NULL,
                     snoozed_until_utc TEXT NULL,
-                    saved_position_ms INTEGER NOT NULL
+                    saved_position_ms INTEGER NOT NULL,
+                    badge TEXT NULL
                 );
                 """;
 
             await using var cmd = conn.CreateCommand();
             cmd.CommandText = sql;
             await cmd.ExecuteNonQueryAsync(ct);
+            await AddColumnIfMissingAsync(conn, "track_user_state", "badge", "TEXT NULL", ct);
             _initialized = true;
         }
         finally
         {
             _schemaGate.Release();
         }
+    }
+
+    /// <summary>Schema upgrade for databases created before <paramref name="column"/>
+    /// existed (SQLite has no ADD COLUMN IF NOT EXISTS).</summary>
+    private static async Task AddColumnIfMissingAsync(SqliteConnection conn, string table, string column, string decl, CancellationToken ct)
+    {
+        await using (var probe = conn.CreateCommand())
+        {
+            probe.CommandText = $"PRAGMA table_info({table});";
+            await using var reader = await probe.ExecuteReaderAsync(ct);
+            while (await reader.ReadAsync(ct))
+                if (string.Equals(reader.GetString(1), column, StringComparison.OrdinalIgnoreCase))
+                    return;
+        }
+        await using var alter = conn.CreateCommand();
+        alter.CommandText = $"ALTER TABLE {table} ADD COLUMN {column} {decl};";
+        await alter.ExecuteNonQueryAsync(ct);
     }
 
     public async Task MigrateFromJsonIfEmptyAsync(IEnumerable<Track> tracks, CancellationToken ct = default)
@@ -260,10 +279,10 @@ public sealed class SqliteLibraryIndexService : ISqliteLibraryIndexService
         const string upsertSql = """
             INSERT INTO track_user_state (
                 id,play_count,last_played_utc,rating,is_disliked,is_favorite,
-                favorited_at_utc,snoozed_until_utc,saved_position_ms
+                favorited_at_utc,snoozed_until_utc,saved_position_ms,badge
             ) VALUES (
                 $id,$play_count,$last_played_utc,$rating,$is_disliked,$is_favorite,
-                $favorited_at_utc,$snoozed_until_utc,$saved_position_ms
+                $favorited_at_utc,$snoozed_until_utc,$saved_position_ms,$badge
             )
             ON CONFLICT(id) DO UPDATE SET
                 play_count=excluded.play_count,
@@ -273,7 +292,8 @@ public sealed class SqliteLibraryIndexService : ISqliteLibraryIndexService
                 is_favorite=excluded.is_favorite,
                 favorited_at_utc=excluded.favorited_at_utc,
                 snoozed_until_utc=excluded.snoozed_until_utc,
-                saved_position_ms=excluded.saved_position_ms;
+                saved_position_ms=excluded.saved_position_ms,
+                badge=excluded.badge;
             """;
 
         await using var cmd = conn.CreateCommand();
@@ -289,6 +309,7 @@ public sealed class SqliteLibraryIndexService : ISqliteLibraryIndexService
         var pFavoritedAt = cmd.Parameters.Add("$favorited_at_utc", SqliteType.Text);
         var pSnoozedUntil = cmd.Parameters.Add("$snoozed_until_utc", SqliteType.Text);
         var pSavedPosition = cmd.Parameters.Add("$saved_position_ms", SqliteType.Integer);
+        var pBadge = cmd.Parameters.Add("$badge", SqliteType.Text);
 
         foreach (var track in tracks)
         {
@@ -302,6 +323,7 @@ public sealed class SqliteLibraryIndexService : ISqliteLibraryIndexService
             pFavoritedAt.Value = track.FavoritedAt?.ToUniversalTime().ToString("O") ?? (object)DBNull.Value;
             pSnoozedUntil.Value = track.SnoozedUntil?.ToUniversalTime().ToString("O") ?? (object)DBNull.Value;
             pSavedPosition.Value = track.SavedPositionMs;
+            pBadge.Value = string.IsNullOrWhiteSpace(track.Badge) ? DBNull.Value : track.Badge.Trim();
             await cmd.ExecuteNonQueryAsync(ct);
         }
 
@@ -317,7 +339,7 @@ public sealed class SqliteLibraryIndexService : ISqliteLibraryIndexService
         await using var cmd = conn.CreateCommand();
         cmd.CommandText = """
             SELECT id,play_count,last_played_utc,rating,is_disliked,is_favorite,
-                   favorited_at_utc,snoozed_until_utc,saved_position_ms
+                   favorited_at_utc,snoozed_until_utc,saved_position_ms,badge
             FROM track_user_state;
             """;
 
@@ -336,7 +358,8 @@ public sealed class SqliteLibraryIndexService : ISqliteLibraryIndexService
                 IsFavorite: reader.GetInt32(5) != 0,
                 FavoritedAt: ReadUtc(reader, 6),
                 SnoozedUntil: ReadUtc(reader, 7),
-                SavedPositionMs: reader.GetInt64(8));
+                SavedPositionMs: reader.GetInt64(8),
+                Badge: reader.IsDBNull(9) ? null : reader.GetString(9));
         }
         return result;
 

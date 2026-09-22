@@ -11,7 +11,6 @@ using Noctis.ViewModels;
 using Noctis.Views;
 using SkiaSharp;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace Noctis.Tests;
 
@@ -52,8 +51,8 @@ public class AlbumPageTintProbeTests
         var app = Application.Current!;
         if (app.Resources.TryGetResource("HeartFillIcon", null, out _)) return;
         app.Resources["InterSemiBold"] = FontFamily.Default;
-        app.Resources.MergedDictionaries.Add(new ResourceInclude(new Uri("avares://Noctis/")) { Source = new Uri("avares://Noctis/Assets/Icons.axaml") });
-        app.Styles.Add(new StyleInclude(new Uri("avares://Noctis/")) { Source = new Uri("avares://Noctis/Assets/Styles.axaml") });
+        app.Resources.MergedDictionaries.Add(new ResourceInclude(new Uri("avares://Noctis/")) { Source = new Uri("avares://Noctis.UI/Assets/Icons.axaml") });
+        app.Styles.Add(new StyleInclude(new Uri("avares://Noctis/")) { Source = new Uri("avares://Noctis.UI/Assets/Styles.axaml") });
     }
 
     [AvaloniaFact]
@@ -80,7 +79,7 @@ public class AlbumPageTintProbeTests
             using var fs = File.Create(artPath); data.SaveTo(fs);
         }
         var settings = new SettingsViewModel(persistence, lib, new NoOpPlayHistory());
-        Assert.True(settings.AlbumPageTintEnabled);
+        settings.AlbumPageTintEnabled = true; // default is off; this probe exercises the tint itself
         var player = new PlayerViewModel(new FakeAudioPlayer(), lib, persistence, new FakeAnimatedCoverService());
         var vm = new AlbumDetailViewModel(album, player, persistence, lib, new SidebarViewModel(persistence, lib), new FakeLastFm(), settings);
         Assert.Equal(artPath, vm.HeaderArtPath);

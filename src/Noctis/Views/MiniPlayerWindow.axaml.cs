@@ -424,7 +424,8 @@ public partial class MiniPlayerWindow : Window
         if (e.PropertyName == nameof(PlayerViewModel.State))
             UpdatePillSpin();
         // The layers' visibility is bound in XAML; this only parks/resumes the loop.
-        if (e.PropertyName == nameof(PlayerViewModel.LyricsFlowingLightEnabled))
+        if (e.PropertyName is nameof(PlayerViewModel.LyricsFlowingLightEnabled)
+                or nameof(PlayerViewModel.LyricsFlowingStyle))
             UpdateFlowAnimationState();
     }
 
@@ -435,6 +436,8 @@ public partial class MiniPlayerWindow : Window
     private void UpdateFlowAnimationState()
     {
         if (_flow == null) return;
+        _flow.BeatReactive = Noctis.Models.FlowingStyles.IsBeatReactive(
+            Noctis.Models.FlowingStyles.Normalize(Vm?.Player.LyricsFlowingStyle));
         _flow.Enabled = Vm is { IsLyricsForm: true } vm && vm.Lyrics.IsColorModeArtwork &&
                         vm.Player.LyricsFlowingLightEnabled;
     }
@@ -1053,7 +1056,7 @@ public partial class MiniPlayerWindow : Window
             return true;
         if (visual == MenuCard || MenuCard.IsVisualAncestorOf(visual))
             return false;
-        if (visual.GetVisualRoot() is Visual root && !ReferenceEquals(root, this))
+        if (TopLevel.GetTopLevel(visual) is { } root && !ReferenceEquals(root, this))
             return false;
 
         foreach (var ancestor in visual.GetSelfAndVisualAncestors())

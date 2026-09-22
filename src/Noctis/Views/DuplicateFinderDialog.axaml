@@ -6,7 +6,7 @@
         x:DataType="vm:DuplicateFinderViewModel"
         Title="{loc:T DuplicateFinder.FindDuplicates}"
         CanResize="False"
-        SystemDecorations="None"
+        WindowDecorations="None"
         TransparencyLevelHint="Transparent"
         Background="Transparent"
         ShowInTaskbar="False"

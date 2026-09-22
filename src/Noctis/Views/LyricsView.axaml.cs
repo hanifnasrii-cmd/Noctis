@@ -511,14 +511,14 @@ public partial class LyricsView : UserControl
     {
         // Subscribed-but-not-yet-attached window (first creation): don't animate
         // a tree that isn't on screen.
-        if (this.GetVisualRoot() == null) return;
+        if (this.VisualRoot == null) return;
         _lyricsSwapInProgress = true;
         FadeLyricsHost(0.0, LyricsViewModel.LyricsSwapFadeOutMs);
     }
 
     private void OnLyricsSwapped(object? sender, EventArgs e)
     {
-        if (this.GetVisualRoot() == null) return;
+        if (this.VisualRoot == null) return;
         // Re-anchor from scratch while still invisible: a glide from the old
         // track's offset is meaningless on new content, so jump.
         if (DataContext is LyricsViewModel vm)
@@ -695,6 +695,7 @@ public partial class LyricsView : UserControl
 
         FlowLayerHost.IsVisible = builtIn;
         BeatGlow.IsVisible = builtIn;
+        _flow.BeatReactive = FlowingStyles.IsBeatReactive(style);
         _flow.Enabled = builtIn && vm.IsColorModeArtwork;
         KawarpLayer.BeatReactive = style == FlowingStyles.Kawarp;
         KawarpLayer.IsVisible = kawarp;
@@ -705,7 +706,7 @@ public partial class LyricsView : UserControl
     private Noctis.Plugins.IVisualLayerProvider? SelectedPluginLayer(LyricsViewModel vm)
     {
         var style = FlowingStyles.Normalize(vm.Player.LyricsFlowingStyle);
-        if (style == FlowingStyles.Drift || _pluginHost is null) return null;
+        if (FlowingStyles.IsDrift(style) || _pluginHost is null) return null;
         return _pluginHost.VisualLayers.FirstOrDefault(p => string.Equals(p.Name, style, StringComparison.Ordinal));
     }
 

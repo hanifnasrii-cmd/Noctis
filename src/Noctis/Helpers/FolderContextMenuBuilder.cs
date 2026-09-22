@@ -30,31 +30,31 @@ public sealed class FolderContextMenuBuilder
         var items = Menu.Items;
 
         Play = new MenuItem { Header = "Play", MaxWidth = 400 };
-        Play.Icon = TrackContextMenuBuilder.CreatePngIcon("avares://Noctis/Assets/Icons/Play%20ICON.png");
+        Play.Icon = TrackContextMenuBuilder.CreatePngIcon("avares://Noctis.UI/Assets/Icons/Play%20ICON.png");
         items.Add(Play);
 
         Shuffle = new MenuItem { Header = "Shuffle" };
-        Shuffle.Icon = TrackContextMenuBuilder.CreatePngIcon("avares://Noctis/Assets/Icons/Shuffle%20ICON.png");
+        Shuffle.Icon = TrackContextMenuBuilder.CreatePngIcon("avares://Noctis.UI/Assets/Icons/Shuffle%20ICON.png");
         items.Add(Shuffle);
 
         PlayNext = new MenuItem { Header = "Play Next" };
-        PlayNext.Icon = TrackContextMenuBuilder.CreatePngIcon("avares://Noctis/Assets/Icons/Forward%20ICON.png");
+        PlayNext.Icon = TrackContextMenuBuilder.CreatePngIcon("avares://Noctis.UI/Assets/Icons/Forward%20ICON.png");
         items.Add(PlayNext);
 
         AddToQueue = new MenuItem { Header = "Add to Queue" };
-        AddToQueue.Icon = TrackContextMenuBuilder.CreatePngIcon("avares://Noctis/Assets/Icons/Queue%20ICON.png", 17);
+        AddToQueue.Icon = TrackContextMenuBuilder.CreatePngIcon("avares://Noctis.UI/Assets/Icons/Queue%20ICON.png", 17);
         items.Add(AddToQueue);
 
         items.Add(new Separator());
 
         AddToPlaylist = new MenuItem { Header = "Add to Playlist" };
-        AddToPlaylist.Icon = TrackContextMenuBuilder.CreatePngIcon("avares://Noctis/Assets/Icons/Playlist%20icon.png");
+        AddToPlaylist.Icon = TrackContextMenuBuilder.CreatePngIcon("avares://Noctis.UI/Assets/Icons/Playlist%20icon.png");
         items.Add(AddToPlaylist);
 
         items.Add(new Separator());
 
         ShowFolder = new MenuItem { Header = "Show Folder" };
-        ShowFolder.Icon = TrackContextMenuBuilder.CreatePngIcon("avares://Noctis/Assets/Icons/Folder%20ICON.png");
+        ShowFolder.Icon = TrackContextMenuBuilder.CreatePngIcon("avares://Noctis.UI/Assets/Icons/Folder%20ICON.png");
         items.Add(ShowFolder);
 
         return Menu;
