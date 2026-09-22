@@ -1,4 +1,5 @@
 using Android.Content;
+using Android.Database;
 using Android.Provider;
 using AndroidX.DocumentFile.Provider;
 using Microsoft.Win32.SafeHandles;
@@ -57,11 +58,18 @@ public sealed class AndroidFileSystemSource : IFileSystemSource
     {
         var treeUri = AUri.Parse(root)!;
         var stack = new Stack<string>();
+        // Cycle guard keyed on document id: mirrors LocalFileSystemSource's resolved-path
+        // "visited" set. A provider that reports a directory as its own descendant (or a
+        // malformed tree) would otherwise loop the DFS forever, re-yielding the same files
+        // with the track list growing unbounded.
+        var visited = new HashSet<string>(StringComparer.Ordinal);
         stack.Push(DocumentsContract.GetTreeDocumentId(treeUri)!);
 
         while (stack.Count > 0)
         {
             var docId = stack.Pop();
+            if (!visited.Add(docId)) continue;
+
             var childrenUri = DocumentsContract.BuildChildDocumentsUriUsingTree(treeUri, docId)!;
             // Reported on failure as the directory's DOCUMENT uri: every track under it has a
             // document uri starting with this one, which is how LibraryService.PathIsUnder
@@ -71,22 +79,35 @@ public sealed class AndroidFileSystemSource : IFileSystemSource
             // Materialize the listing first: a yield inside try/catch is not allowed, and a
             // cursor error mid-listing must be reported, not thrown into the scan.
             var rows = new List<(string Id, string Name, string Mime, long Size, long ModifiedMs)>();
+            ICursor? cursor = null;
             try
             {
-                using var cursor = _resolver.Query(childrenUri, Projection, null, null, null);
+                cursor = _resolver.Query(childrenUri, Projection, null, null, null);
                 if (cursor == null)
                 {
                     reportFailedDirectory(directoryUri);
                     continue;
                 }
+
+                // GetColumnIndexOrThrow, not positional Projection indices: AOSP providers
+                // honour the requested projection, but a provider that ignores it and returns
+                // its own default columns would otherwise hand back garbage document ids
+                // (unplayable tracks) and zero sizes with no error. A missing column throws
+                // here and is caught below, turning it into a reported (skipped) directory
+                // instead of silently corrupt entries.
+                var idxId = cursor.GetColumnIndexOrThrow(DocumentsContract.Document.ColumnDocumentId);
+                var idxName = cursor.GetColumnIndexOrThrow(DocumentsContract.Document.ColumnDisplayName);
+                var idxMime = cursor.GetColumnIndexOrThrow(DocumentsContract.Document.ColumnMimeType);
+                var idxSize = cursor.GetColumnIndexOrThrow(DocumentsContract.Document.ColumnSize);
+                var idxModified = cursor.GetColumnIndexOrThrow(DocumentsContract.Document.ColumnLastModified);
                 while (cursor.MoveToNext())
                 {
                     rows.Add((
-                        cursor.GetString(0) ?? string.Empty,
-                        cursor.GetString(1) ?? string.Empty,
-                        cursor.GetString(2) ?? string.Empty,
-                        cursor.IsNull(3) ? 0 : cursor.GetLong(3),
-                        cursor.IsNull(4) ? 0 : cursor.GetLong(4)));
+                        cursor.GetString(idxId) ?? string.Empty,
+                        cursor.GetString(idxName) ?? string.Empty,
+                        cursor.GetString(idxMime) ?? string.Empty,
+                        cursor.IsNull(idxSize) ? 0 : cursor.GetLong(idxSize),
+                        cursor.IsNull(idxModified) ? 0 : cursor.GetLong(idxModified)));
                 }
             }
             catch (Exception ex)
@@ -97,6 +118,17 @@ public sealed class AndroidFileSystemSource : IFileSystemSource
                 // LibraryService.PathIsUnder matches to keep those known tracks.
                 reportFailedDirectory(directoryUri);
                 continue;
+            }
+            finally
+            {
+                // Close(), not just Dispose(): ICursor is a Java interface binding, and
+                // Dispose() only releases the JNI peer reference — it does not call the
+                // Java-side Cursor.close(). Without an explicit Close() the remote provider's
+                // CursorWindow (ashmem) stays pinned until the Java GC happens to finalize it,
+                // which .NET's Dispose never drives; a few hundred un-closed directory cursors
+                // is enough to exhaust CursorWindow memory mid-scan.
+                cursor?.Close();
+                cursor?.Dispose();
             }
 
             foreach (var row in rows)
@@ -109,12 +141,31 @@ public sealed class AndroidFileSystemSource : IFileSystemSource
                     continue;
                 }
                 if (!MetadataService.SupportedExtensions.Contains(Path.GetExtension(row.Name))) continue;
+                // A provider returning an out-of-range COLUMN_LAST_MODIFIED (microseconds
+                // instead of milliseconds is the classic case) must be a per-file skip, not
+                // abort the whole root: same discipline as the FileInfo read in
+                // LocalFileSystemSource.EnumerateAudioFiles, which wraps its per-file stat in
+                // try/catch for exactly this reason.
+                if (!TryConvertModified(row.ModifiedMs, out var modified)) continue;
 
                 var docUri = DocumentsContract.BuildDocumentUriUsingTree(treeUri, row.Id)!;
                 var path = docUri.ToString()!;
-                var modified = DateTimeOffset.FromUnixTimeMilliseconds(row.ModifiedMs).UtcDateTime;
                 yield return new ScanEntry(path, row.Name, row.Size, modified, LocalPath: null, OpenRead: () => OpenSeekable(docUri));
             }
+        }
+    }
+
+    private static bool TryConvertModified(long modifiedMs, out DateTime utc)
+    {
+        try
+        {
+            utc = DateTimeOffset.FromUnixTimeMilliseconds(modifiedMs).UtcDateTime;
+            return true;
+        }
+        catch (ArgumentOutOfRangeException)
+        {
+            utc = default;
+            return false;
         }
     }
 

@@ -38,6 +38,15 @@ public class MainActivity : AvaloniaMainActivity
 
     protected override void OnDestroy()
     {
+        // A config change or low-memory kill while the system picker is foreground (our
+        // ConfigurationChanges only covers orientation/screen size/UI mode; a locale or
+        // density change still recreates us) recreates the activity before
+        // OnActivityResult fires. That callback lands on the new instance, where
+        // _pickFolder is null, so the old completion source would otherwise be abandoned
+        // unresolved and the caller (LibraryViewModel.AddFolderAsync, an AsyncRelayCommand
+        // that disallows concurrent execution) would stay stuck "running" forever.
+        // Resolving with null here — before Current is cleared — keeps that button usable.
+        _pickFolder?.TrySetResult(null);
         if (ReferenceEquals(Current, this)) Current = null;
         base.OnDestroy();
     }
@@ -58,14 +67,24 @@ public class MainActivity : AvaloniaMainActivity
         base.OnActivityResult(requestCode, resultCode, data);
         if (requestCode != PickFolderRequest) return;
 
+        // Take the field before doing anything else: if the activity was recreated mid-pick,
+        // OnDestroy already resolved (and nulled) the old completion source, and this result
+        // is landing on a fresh instance that never issued the request. In that case there is
+        // no one left to hand the URI to, so the grant below must not be taken either.
+        var pending = _pickFolder;
+        _pickFolder = null;
+        if (pending == null) return;
+
         var uri = resultCode == Result.Ok ? data?.Data : null;
         if (uri != null)
         {
+            // Only taken when a URI is actually about to be returned: Android caps persisted
+            // grants per app (128 pre-12, 512 on 12+), and taking one for a result that gets
+            // discarded (see above) would slowly burn slots with nothing referencing them.
             // Without this the grant dies with the activity and the next launch's scan
             // finds an unreadable root.
             ContentResolver!.TakePersistableUriPermission(uri, ActivityFlags.GrantReadUriPermission);
         }
-        _pickFolder?.TrySetResult(uri?.ToString());
-        _pickFolder = null;
+        pending.TrySetResult(uri?.ToString());
     }
 }
