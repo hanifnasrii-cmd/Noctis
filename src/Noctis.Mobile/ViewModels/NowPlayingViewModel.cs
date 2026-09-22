@@ -33,6 +33,7 @@ public sealed partial class NowPlayingViewModel : ObservableObject, IDisposable
     private bool _gapless = true;
     private int _consecutiveErrors;
     private bool _seeking;
+    private int _seekIdleTicks;
     private bool _disposed;
 
     public NowPlayingViewModel(IAudioPlayer player, ILibraryService library, IPersistenceService persistence,
@@ -177,11 +178,32 @@ public sealed partial class NowPlayingViewModel : ObservableObject, IDisposable
     /// back to the real playback position mid-drag and the release seeks to wherever the last
     /// tick landed — intermittently, since a short drag between ticks works fine.
     /// </summary>
-    public void BeginSeek() => _seeking = true;
+    public void BeginSeek()
+    {
+        _seeking = true;
+        _seekIdleTicks = 0;
+    }
+
+    /// <summary>
+    /// The gesture is still alive — called for every pointer move over the seek bar, which is
+    /// what keeps a slow deliberate drag from tripping the watchdog below.
+    /// </summary>
+    public void KeepSeekAlive() => _seekIdleTicks = 0;
 
     /// <summary>The drag is over (or was cancelled): let position ticks move the thumb again.
     /// Idempotent, so a PointerCaptureLost after a normal release is harmless.</summary>
     public void EndSeek() => _seeking = false;
+
+    /// <summary>
+    /// Position ticks a held seek may survive without any pointer activity before it cancels
+    /// itself — about three seconds at the Android player's 4 Hz poll. Android device run,
+    /// 2026-09-22: a drag abandoned by pulling the notification shade down over it delivers
+    /// neither a release nor a capture-lost — no further pointer event of any kind reaches the
+    /// app — so no handler can end the seek, and the elapsed label, the thumb and the position
+    /// written into queue.json all freeze while playback carries on. This is the only escape
+    /// that does not depend on an input event the app may never get.
+    /// </summary>
+    private const int SeekWatchdogTicks = 12;
 
     public void Seek(TimeSpan position)
     {
@@ -280,6 +302,7 @@ public sealed partial class NowPlayingViewModel : ObservableObject, IDisposable
         if (_disposed) return;
         // Everything else in this tick still runs mid-drag — the engine keeps playing, so the
         // IsPlaying resync and the save cadence must not stall while the thumb is held.
+        if (_seeking && ++_seekIdleTicks > SeekWatchdogTicks) EndSeek();
         if (!_seeking) Position = position;
         // Lock-screen pause, audio-focus loss and headphone unplug pause the engine
         // without going through TogglePlayPause; the tick is where the UI catches up.

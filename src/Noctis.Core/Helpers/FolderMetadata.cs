@@ -74,6 +74,15 @@ public static partial class FolderMetadata
     /// </summary>
     public static bool TryApplyToTrack(Track track, IReadOnlyList<string> musicRoots)
     {
+        // Everything below reads the path's shape — parent folders, a "NN " filename prefix —
+        // so it is meaningful only for a real filesystem path. On Android every track is a
+        // content:// document URI, whose percent-encoded segments would be read as
+        // <Artist>/<Album> and written back as tags ("primary%3AMusic%2FTones" / "document"),
+        // re-keying AlbumId into a phantom album as well. The scan already skips this for
+        // stream-backed entries (MetadataService.BuildTrack, localPath == null); guarding here
+        // covers the load-time backfill in LibraryService, which has no localPath to test.
+        if (!track.HasFilesystemPath) return false;
+
         var changed = false;
         var artistMissing = IsPlaceholderArtist(track.Artist);
         var albumMissing = !Track.IsRealAlbumName(track.Album);

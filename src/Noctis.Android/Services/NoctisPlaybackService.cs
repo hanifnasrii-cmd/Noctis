@@ -47,6 +47,19 @@ public sealed class NoctisPlaybackService : MediaSessionService
         _session = new MediaSession.Builder(this, player)
             .SetSessionActivity(sessionActivity)
             .Build();
+
+        // MediaSessionService only manages the sessions it has been handed. Normally that
+        // happens by itself — MediaSessionServiceStub.connect() calls onGetSession() and then
+        // addSession() when a MediaController binds — but this app drives ExoPlayer directly
+        // and never builds a controller, so nothing ever bound and the session stayed private
+        // to us. Device run 2026-09-22: media buttons worked (they reach the session through
+        // the framework) while startForegroundCount stayed 0, there was no notification, no
+        // lock-screen card, and the process sat at oom_score_adj=700 while playing.
+        // addSession is the public API for exactly this: it hands the session to Media3's
+        // MediaNotificationManager, which connects its own controller, renders the
+        // notification from the MediaItem metadata and promotes this service to the
+        // foreground while the player is playing.
+        AddSession(_session);
     }
 
     public override MediaSession? OnGetSession(MediaSession.ControllerInfo controllerInfo)
@@ -65,6 +78,9 @@ public sealed class NoctisPlaybackService : MediaSessionService
 
     public override void OnDestroy()
     {
+        // Mirrors the AddSession in OnCreate: drop it before releasing it, so Media3's
+        // notification manager tears its controller down against a live session.
+        if (_session != null) RemoveSession(_session);
         _session?.Release();
         _session = null;
         base.OnDestroy();

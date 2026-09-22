@@ -145,6 +145,27 @@ public partial class Track : ObservableObject
     [System.Text.Json.Serialization.JsonIgnore]
     public bool IsRemoteStream => SourceType is SourceType.Navidrome or SourceType.Jellyfin or SourceType.Plex or SourceType.AudioCd;
 
+    /// <summary>
+    /// True when <see cref="FilePath"/> is a real filesystem path rather than a URI.
+    /// <see cref="SourceType"/> cannot answer this: an Android SAF track is
+    /// <see cref="SourceType.Local"/> yet its path is a <c>content://</c> document URI.
+    /// Anything that reads the path's *shape* — folder-derived metadata above all — must
+    /// ask first, because a URI's percent-encoded segments parse as directory names and
+    /// yield credits like "primary%3AMusic%2FTones". The scan already draws this line with
+    /// MetadataService.BuildTrack's <c>localPath</c> (null for stream-backed entries); this
+    /// is the same line for code that only has a Track.
+    /// </summary>
+    [System.Text.Json.Serialization.JsonIgnore]
+    public bool HasFilesystemPath => IsFilesystemPath(FilePath);
+
+    /// <summary>
+    /// Path-shape test behind <see cref="HasFilesystemPath"/>. The marker is "://", not a
+    /// bare ":", so a Windows drive letter ("C:\Music\…") stays a path while
+    /// "content://…", "http://…" and "cdda://…" do not.
+    /// </summary>
+    public static bool IsFilesystemPath(string? path) =>
+        !string.IsNullOrWhiteSpace(path) && !path.Contains("://", StringComparison.Ordinal);
+
     /// <summary>Timestamp of when this track was first discovered by a library scan.</summary>
     public DateTime DateAdded { get; set; } = DateTime.UtcNow;
 

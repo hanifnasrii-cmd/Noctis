@@ -22,9 +22,17 @@
                 </MultiBinding>
             </Border.IsVisible>
             <Grid ColumnDefinitions="*,Auto,Auto">
+                <!-- HorizontalAlignment: Fluent's Button theme sets it to Left, so without
+                     this the button shrinks to the width of the title text and everything
+                     right of it is dead to touch — measured on device at ~190 px of a 730 px
+                     row. A mini player is expected to open Now Playing from anywhere in the
+                     title area, so the button must fill its star column. VerticalAlignment
+                     for the same reason (Fluent sets Center), so the artist line's full
+                     height is tappable too. -->
                 <Button Grid.Column="0" Background="Transparent" Padding="0" HorizontalContentAlignment="Stretch"
+                        HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
                         Command="{Binding OpenNowPlayingCommand}">
-                    <StackPanel>
+                    <StackPanel VerticalAlignment="Center">
                         <TextBlock Text="{Binding Player.CurrentTrack.Title}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
                         <TextBlock Text="{Binding Player.CurrentTrack.Artist}" Opacity="0.6" FontSize="12" TextTrimming="CharacterEllipsis" />
                     </StackPanel>

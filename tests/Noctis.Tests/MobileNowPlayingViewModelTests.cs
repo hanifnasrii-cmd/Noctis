@@ -241,6 +241,42 @@ public class MobileNowPlayingViewModelTests : IDisposable
         Assert.Equal(TimeSpan.FromSeconds(20), vm.Position);
     }
 
+    /// <summary>
+    /// Android device run, 2026-09-22: a drag abandoned by pulling the notification shade
+    /// down over it delivers no release, no capture-lost and no further pointer event at all,
+    /// so nothing called EndSeek and the elapsed label, the thumb and the saved resume
+    /// position stayed frozen at 0 for as long as the app was watched. A held seek must
+    /// therefore time itself out on the position tick — while a drag that keeps moving
+    /// (KeepSeekAlive, wired to PointerMoved on the bar) is never cut short.
+    /// </summary>
+    [Fact]
+    public void AbandonedSeek_SelfCancels_ButALiveDragIsNeverCutShort()
+    {
+        var t = Tracks(1);
+        var (vm, player, _, _) = Make(t);
+        vm.PlayTracks(t, 0);
+
+        // A long but live drag: the finger keeps moving, so the freeze holds indefinitely.
+        vm.BeginSeek();
+        for (var i = 0; i < 40; i++)
+        {
+            if (i % 4 == 0) vm.KeepSeekAlive();
+            player.RaisePositionChanged(TimeSpan.FromSeconds(1 + i));
+        }
+        Assert.Equal(TimeSpan.Zero, vm.Position);
+
+        // Same drag, now abandoned. The window is generous enough that a pause in the drag is
+        // not mistaken for one...
+        vm.KeepSeekAlive();
+        for (var i = 0; i < 12; i++) player.RaisePositionChanged(TimeSpan.FromSeconds(50 + i));
+        Assert.Equal(TimeSpan.Zero, vm.Position);
+
+        // ...and past it the watchdog releases the seek, so the display and the saved resume
+        // position start tracking playback again without the user touching anything.
+        player.RaisePositionChanged(TimeSpan.FromSeconds(70));
+        Assert.Equal(TimeSpan.FromSeconds(70), vm.Position);
+    }
+
     [Fact]
     public void QueueAvailability_DrivesTheNotificationTransportButtons()
     {

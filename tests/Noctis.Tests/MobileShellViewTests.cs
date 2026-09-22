@@ -95,4 +95,41 @@ public class MobileShellViewTests
         window.Close();
         try { Directory.Delete(root, recursive: true); } catch { }
     }
+
+    /// <summary>
+    /// Android device run, 2026-09-22: an x-sweep across the mini bar found only x≈80–270 of
+    /// the ~730 px row opened Now Playing — Fluent's Button theme sets HorizontalAlignment to
+    /// Left, so the title button collapsed onto its text and the rest of the bar swallowed
+    /// taps. Measures the button against its own star column rather than a pixel count, so it
+    /// holds at any width.
+    /// </summary>
+    [AvaloniaFact]
+    public void MiniBar_TitleButton_FillsTheWholeRow()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "NoctisTests", Guid.NewGuid().ToString("N"));
+        var track = new Track { Id = Guid.NewGuid(), Title = "Tone A", Artist = "Noctis Test", FilePath = "content://x/1", Duration = TimeSpan.FromSeconds(8) };
+        var shell = MakeShell(root, out _, track);
+        shell.Library.InitializeAsync().GetAwaiter().GetResult();
+
+        var view = new ShellView { DataContext = shell };
+        var window = new Window { Width = 412, Height = 915, Content = view };
+        window.Show();
+        shell.PlaySongCommand.Execute(track);
+        window.UpdateLayout();
+
+        var miniBar = view.FindControl<Border>("MiniBar")!;
+        var grid = (Grid)miniBar.Child!;
+        var title = grid.Children.OfType<Button>().First(b => Grid.GetColumn(b) == 0);
+
+        // The star column's own width, from the first fixed-width sibling's left edge.
+        var transports = grid.Children.OfType<Button>().Where(b => Grid.GetColumn(b) > 0).ToList();
+        var columnWidth = transports.Min(b => b.Bounds.Left);
+
+        Assert.Equal(columnWidth, title.Bounds.Width, 1);
+        Assert.True(title.Bounds.Height >= grid.Bounds.Height - 1,
+            $"title button is {title.Bounds.Height} tall in a {grid.Bounds.Height} row");
+
+        window.Close();
+        try { Directory.Delete(root, recursive: true); } catch { }
+    }
 }

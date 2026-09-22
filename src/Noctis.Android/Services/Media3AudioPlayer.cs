@@ -340,6 +340,20 @@ public sealed class Media3AudioPlayer : IAudioPlayer
         // already-running service is cheap. API 26+ throws if called while the app has no
         // visible activity in the foreground (background start restriction); log and carry
         // on rather than crash playback over a missing notification.
+        //
+        // StartService, NOT StartForegroundService, now that the service really does go
+        // foreground. Media3 owns that promotion: MediaNotificationManager.startForeground()
+        // calls ContextCompat.startForegroundService() and Util.setForegroundServiceNotification()
+        // back to back itself (verified against the 1.11.0 bytecode), so the 5-second
+        // startForegroundService → startForeground contract is opened and honoured in one
+        // synchronous step, with its own start intent that MediaSessionService.onStartCommand
+        // recognises. If we opened that contract here instead, we would owe the system a
+        // startForeground() that only arrives after Media3's internal MediaController has
+        // connected and decided the player should be in the foreground — asynchronous, and
+        // never at all for a paused player — so a background start would trade a missing
+        // notification for a ForegroundServiceDidNotStartInTime kill. All this call has to do
+        // is get the service instantiated so OnCreate can AddSession; it runs right after
+        // _player.Play() from a visible activity, which is exactly when a plain start is legal.
         try
         {
             _context.StartService(new Intent(_context, typeof(NoctisPlaybackService)));

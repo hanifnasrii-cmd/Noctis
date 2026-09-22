@@ -8,5 +8,10 @@
 	<uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
 	<uses-permission android:name="android.permission.WAKE_LOCK" />
 	<uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
+	<!-- The media notification itself. Declaring it is necessary but not sufficient: from
+	     API 33 this is a runtime permission, so MainActivity asks for it as well. Refusal
+	     only costs the notification and the lock-screen card — the service still runs in the
+	     foreground and playback is unaffected. -->
+	<uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 	<application android:label="Noctis" android:icon="@drawable/icon" />
 </manifest>

@@ -3,6 +3,7 @@ using Android.Content;
 using Android.Content.PM;
 using Android.OS;
 using Avalonia.Android;
+using Noctis.Services;
 
 namespace Noctis.Android;
 
@@ -16,6 +17,7 @@ namespace Noctis.Android;
 public class MainActivity : AvaloniaMainActivity
 {
     private const int PickFolderRequest = 4242;
+    private const int PostNotificationsRequest = 4243;
 
     /// <summary>The live activity, for services that need to start system UI (the SAF picker).</summary>
     public static MainActivity? Current { get; private set; }
@@ -26,6 +28,34 @@ public class MainActivity : AvaloniaMainActivity
     {
         Current = this;
         base.OnCreate(savedInstanceState);
+        RequestNotificationPermission();
+    }
+
+    /// <summary>
+    /// Asks for POST_NOTIFICATIONS, which from API 33 is a runtime permission: declaring it in
+    /// the manifest is not enough, and without it Media3's media notification and the
+    /// lock-screen card it backs are silently dropped. The activity is the only place that can
+    /// ask — a service cannot show the dialog — and this is the earliest point it exists.
+    /// Refusal is not handled beyond this: the service still runs in the foreground (a
+    /// foreground service whose notification cannot be shown is still a foreground service),
+    /// so playback and its process priority are unaffected, only the card is missing. Android
+    /// itself auto-denies after two refusals, so re-asking on a later launch costs nothing and
+    /// picks the permission up if the user grants it in Settings.
+    /// </summary>
+    private void RequestNotificationPermission()
+    {
+        if (Build.VERSION.SdkInt < BuildVersionCodes.Tiramisu) return;   // install-granted before 33
+        try
+        {
+            if (CheckSelfPermission(global::Android.Manifest.Permission.PostNotifications) == Permission.Granted) return;
+            RequestPermissions(new[] { global::Android.Manifest.Permission.PostNotifications }, PostNotificationsRequest);
+        }
+        catch (Exception ex)
+        {
+            // Never take the app down over a notification: a permission request can throw if
+            // the activity is already finishing when it lands here.
+            DebugLog.Write("Android", $"POST_NOTIFICATIONS request failed: {ex.Message}");
+        }
     }
 
     /// <summary>

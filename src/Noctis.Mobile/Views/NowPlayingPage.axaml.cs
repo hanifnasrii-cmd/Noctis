@@ -19,9 +19,18 @@ public partial class NowPlayingPage : UserControl
         // release handled at the end of a drag would silently skip the commit entirely.
         SeekBar.AddHandler(InputElement.PointerPressedEvent, OnSeekPressed, RoutingStrategies.Tunnel);
         SeekBar.AddHandler(InputElement.PointerReleasedEvent, OnSeekReleased, RoutingStrategies.Tunnel);
+        // Feeds the ViewModel's seek watchdog. Tunnel again, and for the same reason: during a
+        // drag Avalonia's Thumb holds the pointer capture, so the moves are routed to the
+        // Thumb's route — this Slider is on it as an ancestor, but only a tunnel/bubble
+        // handler sees them, and a Thumb that marks a move handled would hide it from bubble.
+        SeekBar.AddHandler(InputElement.PointerMovedEvent, OnSeekMoved, RoutingStrategies.Tunnel);
         // A gesture cancelled by something stealing the pointer (a notification, a system
         // gesture) never reaches the release handler; without this the ViewModel would stay
-        // in "seeking" and the thumb would sit frozen for the rest of the track.
+        // in "seeking" and the thumb would sit frozen for the rest of the track. Not
+        // sufficient on its own: PointerCaptureLost is a Direct event raised on whatever held
+        // the capture (the Thumb, not this Slider — the press handler deliberately does not
+        // capture, so the Slider's own drag logic still runs), and the shade-cancel case
+        // observed on device delivers no pointer event at all. The watchdog is the backstop.
         SeekBar.PointerCaptureLost += OnSeekCaptureLost;
     }
 
@@ -29,6 +38,10 @@ public partial class NowPlayingPage : UserControl
     // each tick would otherwise overwrite the value the drag is putting into the Slider.
     private void OnSeekPressed(object? sender, PointerPressedEventArgs e)
         => (DataContext as ShellViewModel)?.Player.BeginSeek();
+
+    // Proof the finger is still on the bar, so the watchdog does not cut a slow drag short.
+    private void OnSeekMoved(object? sender, PointerEventArgs e)
+        => (DataContext as ShellViewModel)?.Player.KeepSeekAlive();
 
     // Seek on release only: seeking per pixel during a drag stutters the decoder.
     private void OnSeekReleased(object? sender, PointerReleasedEventArgs e)
