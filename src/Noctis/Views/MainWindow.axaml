@@ -969,21 +969,6 @@
                                 </ListBox.ItemTemplate>
                             </ListBox>
 
-                            <!-- Drop indicator line for drag reorder -->
-                            <Border x:Name="QueueDropIndicator"
-                                    IsHitTestVisible="False"
-                                    IsVisible="False"
-                                    Height="2"
-                                    VerticalAlignment="Top"
-                                    HorizontalAlignment="Stretch"
-                                    Margin="20,0"
-                                    CornerRadius="1"
-                                    Background="{DynamicResource AccentColorBrush}">
-                                <Border.RenderTransform>
-                                    <TranslateTransform Y="0"/>
-                                </Border.RenderTransform>
-                            </Border>
-
                             <!-- Floating drag preview: follows the pointer Y while reordering.
                                  DataContext starts pinned to null (the state ResetQueueDragState
                                  restores after every drag) so the Track-typed bindings inside never
@@ -1001,9 +986,15 @@
                                     Background="{DynamicResource AccentColorBrush}"
                                     HorizontalAlignment="Stretch"
                                     VerticalAlignment="Top"
-                                    BoxShadow="0 6 22 0 #80000000">
+                                    BoxShadow="0 10 28 0 #80000000"
+                                    RenderTransformOrigin="50%,50%">
+                                <!-- Scale = lift + velocity stretch, Translate = eased position
+                                     (both driven per frame from code-behind). -->
                                 <Border.RenderTransform>
-                                    <TranslateTransform Y="0"/>
+                                    <TransformGroup>
+                                        <ScaleTransform />
+                                        <TranslateTransform />
+                                    </TransformGroup>
                                 </Border.RenderTransform>
                                 <Grid ColumnDefinitions="Auto,*,Auto" Height="48">
                                     <Border Grid.Column="0"
@@ -1278,6 +1269,76 @@
             </Border>
         </Border>
       </Panel>
+    </Border>
+
+    <!-- Drag chip: follows the pointer while tracks / an album are dragged (the OS drag
+         shows no picture of what is moving). Artwork, title, artist, and a count badge
+         when more than one song rides along. Filled and positioned from code-behind
+         (DragFileBehavior.DragPreviewStarted + the window's DragOver). Never hit-testable,
+         so it can't steal the drop from what is under the pointer. -->
+    <Border x:Name="DragChip"
+            IsVisible="False"
+            IsHitTestVisible="False"
+            ZIndex="100"
+            HorizontalAlignment="Left"
+            VerticalAlignment="Top"
+            MaxWidth="260"
+            Padding="6,6,14,6"
+            CornerRadius="12"
+            Background="{DynamicResource IslandBackground}"
+            BorderBrush="#26FFFFFF"
+            BorderThickness="1"
+            BoxShadow="0 10 30 0 #80000000"
+            Opacity="0">
+        <Border.Transitions>
+            <Transitions>
+                <DoubleTransition Property="Opacity" Duration="0:0:0.12" />
+            </Transitions>
+        </Border.Transitions>
+        <Border.RenderTransform>
+            <TranslateTransform />
+        </Border.RenderTransform>
+        <Grid ColumnDefinitions="Auto,*">
+            <Panel Width="40" Height="40">
+                <Border CornerRadius="7" ClipToBounds="True" Background="#22FFFFFF">
+                    <controls:CachedImage x:Name="DragChipArt"
+                                          DecodeWidth="128"
+                                          Stretch="UniformToFill"
+                                          RenderOptions.BitmapInterpolationMode="HighQuality" />
+                </Border>
+                <Border x:Name="DragChipCount"
+                        IsVisible="False"
+                        MinWidth="18" Height="18"
+                        Padding="5,0"
+                        CornerRadius="9"
+                        Margin="0,-6,-7,0"
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Top"
+                        Background="{DynamicResource AccentColorBrush}">
+                    <TextBlock x:Name="DragChipCountText"
+                               FontSize="10"
+                               FontWeight="Bold"
+                               Foreground="{DynamicResource AccentForegroundBrush}"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center" />
+                </Border>
+            </Panel>
+            <StackPanel Grid.Column="1" Margin="10,0,0,0" VerticalAlignment="Center" Spacing="1">
+                <TextBlock x:Name="DragChipTitle"
+                           FontSize="13"
+                           FontWeight="SemiBold"
+                           Foreground="{DynamicResource IslandForeground}"
+                           TextTrimming="CharacterEllipsis"
+                           MaxLines="1" />
+                <TextBlock x:Name="DragChipSubtitle"
+                           FontSize="11"
+                           FontWeight="SemiBold"
+                           Opacity="0.55"
+                           Foreground="{DynamicResource IslandForeground}"
+                           TextTrimming="CharacterEllipsis"
+                           MaxLines="1" />
+            </StackPanel>
+        </Grid>
     </Border>
 
     </Panel>

@@ -1236,6 +1236,8 @@ public partial class MainWindow : Window
 
     private void OnWindowDragOver(object? sender, DragEventArgs e)
     {
+        MoveDragChip(e);
+
         // Don't show import overlay for internal drags (album/track tiles dragged within the app)
         if (Helpers.DragFileBehavior.IsInternalDrag(e.DataTransfer))
             return;
@@ -1250,6 +1252,69 @@ public partial class MainWindow : Window
     private void OnWindowDragLeave(object? sender, DragEventArgs e)
     {
         ShowDragOverlay(false);
+        // DragLeave also arrives for every element-to-element crossing inside the window;
+        // only a real exit hides the chip (it comes back on the next DragOver in here).
+        if (!new Rect(Bounds.Size).Contains(e.GetPosition(this)))
+            SetDragChipShown(false);
+    }
+
+    // ── Drag chip (a picture of what is being dragged) ──
+
+    private bool _dragChipActive;
+
+    private void OnDragPreviewStarted(TopLevel top, Helpers.DragFileBehavior.DragPreview preview)
+    {
+        if (!ReferenceEquals(top, this)) return;
+        if (this.FindControl<TextBlock>("DragChipTitle") is { } title) title.Text = preview.Title;
+        if (this.FindControl<TextBlock>("DragChipSubtitle") is { } subtitle)
+        {
+            subtitle.Text = preview.Subtitle;
+            subtitle.IsVisible = !string.IsNullOrWhiteSpace(preview.Subtitle);
+        }
+        if (this.FindControl<Controls.CachedImage>("DragChipArt") is { } art) art.SourcePath = preview.ArtworkPath;
+        if (this.FindControl<Border>("DragChipCount") is { } badge) badge.IsVisible = preview.Count > 1;
+        if (this.FindControl<TextBlock>("DragChipCountText") is { } count) count.Text = preview.Count.ToString();
+        // Shown by the first DragOver, which is the first time the pointer position is known.
+        _dragChipActive = true;
+    }
+
+    private void OnDragPreviewEnded(TopLevel top)
+    {
+        if (!ReferenceEquals(top, this)) return;
+        _dragChipActive = false;
+        SetDragChipShown(false);
+    }
+
+    /// <summary>Keeps the chip just below-right of the pointer, like a cursor label.</summary>
+    private void MoveDragChip(DragEventArgs e)
+    {
+        if (!_dragChipActive || this.FindControl<Border>("DragChip") is not { } chip) return;
+        if (chip.GetVisualParent() is not Visual parent) return;
+        var p = e.GetPosition(parent);
+        if (chip.RenderTransform is TranslateTransform tt)
+        {
+            tt.X = p.X + 16;
+            tt.Y = p.Y + 18;
+        }
+        SetDragChipShown(true);
+    }
+
+    private void SetDragChipShown(bool shown)
+    {
+        if (this.FindControl<Border>("DragChip") is not { } chip) return;
+        if (shown)
+        {
+            if (chip.IsVisible && chip.Opacity > 0) return;
+            chip.IsVisible = true;
+            // Next frame, so the opacity transition animates the fade-in.
+            Dispatcher.UIThread.Post(() => { if (_dragChipActive) chip.Opacity = 1; }, DispatcherPriority.Render);
+            return;
+        }
+        chip.Opacity = 0;
+        DispatcherTimer.RunOnce(() =>
+        {
+            if (chip.Opacity == 0) chip.IsVisible = false;
+        }, TimeSpan.FromMilliseconds(130));
     }
 
     private async void OnWindowDrop(object? sender, DragEventArgs e)
@@ -1585,10 +1650,10 @@ public partial class MainWindow : Window
 
     // ── Queue drag-to-reorder (pointer-tracked, Apple Music style) ──
     //
-    // The dragged row is rendered as a floating preview (#QueueDragPreview) that follows
-    // the pointer's Y position. The original ListBoxItem is hidden via Opacity=0 while the
-    // drag is active so its slot in the list stays reserved (no surrounding shift).
-    // On release we compute the target index and call Player.MoveInQueue.
+    // The dragged row is rendered as a floating preview (#QueueDragPreview) that lifts and
+    // springs after the pointer. Its own slot stays reserved but empty, and the other rows
+    // slide apart to open a gap where it will land. On release the card glides into the
+    // gap and then Player.MoveInQueue commits the move.
     //
     // Notes:
     // - No DragDrop.DoDragDrop. All tracking is via PointerPressed/Moved/Released on the row Border.
@@ -1660,19 +1725,32 @@ public partial class MainWindow : Window
     private Point _queueDragStartPos;
     private bool _queueDragActive;
     private Track? _queueDragTrack;
-    private int _queueDragSourceIndex = -1;
     private double _queueDragRowOffsetY;
-    private ListBoxItem? _queueDragHiddenItem;
+    private LiquidReorder? _queueLiquid;
+
+    private LiquidReorder? QueueLiquid
+    {
+        get
+        {
+            if (_queueLiquid != null) return _queueLiquid;
+            var listBox = this.FindControl<ListBox>("QueuePopupListBox");
+            var preview = this.FindControl<Border>("QueueDragPreview");
+            if (listBox == null || preview == null) return null;
+            return _queueLiquid = new LiquidReorder(this, listBox, preview, () => preview.DataContext = null);
+        }
+    }
 
     private void OnQueueItemPointerPressed(object? sender, PointerPressedEventArgs e)
     {
         if (sender is not Control rowControl) return;
         if (rowControl.Tag is not Track track) return;
         if (!e.GetCurrentPoint(rowControl).Properties.IsLeftButtonPressed) return;
-        if (DataContext is not MainWindowViewModel vm) return;
+        if (DataContext is not MainWindowViewModel) return;
+
+        // A new press lands before the last drop's glide finished: commit it now.
+        QueueLiquid?.FinishNow();
 
         _queueDragTrack = track;
-        _queueDragSourceIndex = vm.Player.UpNext.IndexOf(track);
         _queueDragRowOffsetY = e.GetPosition(rowControl).Y;
         _queueDragStartPos = e.GetPosition(this);
         _queueDragActive = false;
@@ -1680,9 +1758,10 @@ public partial class MainWindow : Window
 
     private void OnQueueItemPointerMoved(object? sender, PointerEventArgs e)
     {
-        if (_queueDragTrack == null) return;
+        if (_queueDragTrack == null || QueueLiquid is not { IsSettling: false } liquid) return;
         if (sender is not Control rowControl) return;
         if (!e.GetCurrentPoint(this).Properties.IsLeftButtonPressed) return;
+        if (DataContext is not MainWindowViewModel vm) return;
 
         var pos = e.GetPosition(this);
         if (!_queueDragActive)
@@ -1691,31 +1770,40 @@ public partial class MainWindow : Window
                 Math.Abs(pos.Y - _queueDragStartPos.Y) < QueueDragThreshold)
                 return;
 
-            StartQueueDrag(rowControl, e);
+            StartQueueDrag(rowControl, e, liquid);
         }
 
-        UpdateQueueDragPreviewPosition(e);
-        UpdateQueueDropIndicator(e);
+        var wrapper = this.FindControl<Grid>("QueueListWrapper");
+        var listBox = this.FindControl<ListBox>("QueuePopupListBox");
+        if (wrapper == null || listBox == null) return;
+
+        // Re-resolved every move: a track transition (UpNext.RemoveAt(0)) or a radio refill
+        // can shift the dragged track mid-drag.
+        liquid.SourceIndex = vm.Player.UpNext.IndexOf(_queueDragTrack);
+        var cardTop = e.GetPosition(wrapper).Y - _queueDragRowOffsetY;
+        liquid.MoveCardTo(cardTop);
+        var target = LiquidReorder.NearestSlot(listBox, wrapper, cardTop + rowControl.Bounds.Height / 2);
+        if (target >= 0) liquid.TargetIndex = target;
     }
 
     private void OnQueueItemPointerReleased(object? sender, PointerReleasedEventArgs e)
     {
         if (_queueDragActive)
-        {
-            CommitQueueDrop(e);
-        }
-        ResetQueueDragState();
-        if (sender is Control rowControl)
-            e.Pointer.Capture(null);
+            BeginQueueSettle();
+        else
+            ResetQueueDragState();
+        e.Pointer.Capture(null);
     }
 
     private void OnQueueItemPointerCaptureLost(object? sender, PointerCaptureLostEventArgs e)
     {
-        // Treat lost capture as a cancel — restore visuals without performing the move.
+        // Releasing the capture on drop raises this too; the glide owns cleanup then.
+        if (QueueLiquid is { IsSettling: true }) return;
+        // Otherwise lost capture is a cancel: restore visuals without performing the move.
         ResetQueueDragState();
     }
 
-    private void StartQueueDrag(Control rowControl, PointerEventArgs e)
+    private void StartQueueDrag(Control rowControl, PointerEventArgs e, LiquidReorder liquid)
     {
         _queueDragActive = true;
 
@@ -1723,156 +1811,80 @@ public partial class MainWindow : Window
         // leaves the row's hit area.
         e.Pointer.Capture(rowControl);
 
-        // Populate the floating preview with the dragged track and show it.
-        var preview = this.FindControl<Border>("QueueDragPreview");
-        if (preview != null && _queueDragTrack != null)
-        {
-            preview.DataContext = _queueDragTrack;
-            preview.IsVisible = true;
-        }
-
-        // Hide the original row container so its slot stays reserved without showing
-        // a duplicate of the dragged track.
+        var wrapper = this.FindControl<Grid>("QueueListWrapper");
         var listBox = this.FindControl<ListBox>("QueuePopupListBox");
-        if (listBox != null && _queueDragSourceIndex >= 0)
-        {
-            _queueDragHiddenItem = listBox.ContainerFromIndex(_queueDragSourceIndex) as ListBoxItem;
-            if (_queueDragHiddenItem != null)
-                _queueDragHiddenItem.Opacity = 0;
-        }
+        var preview = this.FindControl<Border>("QueueDragPreview");
+        if (wrapper == null || listBox == null || preview == null || _queueDragTrack == null) return;
+
+        preview.DataContext = _queueDragTrack;
+        var first = listBox.GetRealizedContainers().FirstOrDefault();
+        liquid.Pitch = first == null ? 0 : first.Bounds.Height + first.Margin.Top + first.Margin.Bottom;
+        liquid.SourceIndex = liquid.TargetIndex =
+            DataContext is MainWindowViewModel vm ? vm.Player.UpNext.IndexOf(_queueDragTrack) : -1;
+        // Start exactly over the grabbed row so the lift reads as the row rising.
+        var rowTop = rowControl.TranslatePoint(new Point(0, 0), wrapper)?.Y
+                     ?? e.GetPosition(wrapper).Y - _queueDragRowOffsetY;
+        liquid.Begin(rowTop);
     }
 
-    private void UpdateQueueDragPreviewPosition(PointerEventArgs e)
+    /// <summary>Release: glide the card into the open gap; the move commits when it lands.</summary>
+    private void BeginQueueSettle()
     {
         var wrapper = this.FindControl<Grid>("QueueListWrapper");
-        var preview = this.FindControl<Border>("QueueDragPreview");
-        if (wrapper == null || preview == null) return;
-        if (preview.RenderTransform is not TranslateTransform tt) return;
-
-        // Track the same point inside the row that the user initially grabbed.
-        var pointerInWrapper = e.GetPosition(wrapper).Y;
-        tt.Y = pointerInWrapper - _queueDragRowOffsetY;
-    }
-
-    private void UpdateQueueDropIndicator(PointerEventArgs e)
-    {
         var listBox = this.FindControl<ListBox>("QueuePopupListBox");
-        var indicator = this.FindControl<Border>("QueueDropIndicator");
-        var wrapper = this.FindControl<Grid>("QueueListWrapper");
-        if (listBox == null || indicator == null || wrapper == null) return;
-
-        var pointerInWrapper = e.GetPosition(wrapper);
-        double? indicatorY = null;
-
-        for (int i = 0; i < listBox.ItemCount; i++)
+        if (DataContext is not MainWindowViewModel vm || wrapper == null || listBox == null
+            || _queueDragTrack == null || QueueLiquid is not { } liquid)
         {
-            var container = listBox.ContainerFromIndex(i);
-            if (container == null) continue;
-
-            var itemPos = container.TranslatePoint(new Point(0, 0), wrapper);
-            if (itemPos == null) continue;
-
-            var top = itemPos.Value.Y;
-            var bottom = top + container.Bounds.Height;
-            var mid = (top + bottom) / 2;
-
-            if (pointerInWrapper.Y >= top && pointerInWrapper.Y < mid)
-            {
-                indicatorY = top;
-                break;
-            }
-            if (pointerInWrapper.Y >= mid && pointerInWrapper.Y < bottom)
-            {
-                indicatorY = bottom;
-                break;
-            }
+            ResetQueueDragState();
+            return;
         }
-
-        if (indicatorY != null)
-        {
-            if (indicator.RenderTransform is TranslateTransform transform)
-                transform.Y = indicatorY.Value;
-            indicator.IsVisible = true;
-        }
-        else
-        {
-            indicator.IsVisible = false;
-        }
-    }
-
-    private void CommitQueueDrop(PointerEventArgs e)
-    {
-        if (DataContext is not MainWindowViewModel vm) return;
-        var listBox = this.FindControl<ListBox>("QueuePopupListBox");
-        if (listBox == null) return;
-        if (_queueDragTrack == null) return;
 
         // Re-resolve the source index from the tracked object at drop time. The
         // press-time index goes stale: a drag lasts long enough for a track transition
         // (UpNext.RemoveAt(0)) or a queued radio refill to shift everything, and the
         // trusted index then moved the wrong track — the bounds checks prevented a crash
         // but not the wrong move.
-        var fromIndex = vm.Player.UpNext.IndexOf(_queueDragTrack);
-        if (fromIndex < 0) return;
+        var track = _queueDragTrack;
+        var from = vm.Player.UpNext.IndexOf(track);
+        if (from < 0)
+        {
+            ResetQueueDragState();
+            return;
+        }
+        var to = Math.Clamp(liquid.TargetIndex, 0, Math.Max(0, vm.Player.UpNext.Count - 1));
+        liquid.SourceIndex = from;
+        liquid.TargetIndex = to;
 
-        var posInListBox = e.GetPosition(listBox);
-        var toIndex = GetQueueDropTargetIndex(listBox, posInListBox);
-        if (toIndex < 0) toIndex = vm.Player.UpNext.Count - 1;
-        if (toIndex >= vm.Player.UpNext.Count) toIndex = vm.Player.UpNext.Count - 1;
-
-        if (fromIndex != toIndex)
-            vm.Player.MoveInQueue(fromIndex, toIndex);
+        // The landing spot is the target slot's layout position (its row is sliding away
+        // from it), plus the row card's own 1px top margin inside the item.
+        var landing = LiquidReorder.SlotTop(listBox, to, wrapper) is { } top ? top + 1 : liquid.CardY;
+        _queueDragActive = false;
+        _queueDragTrack = null;
+        liquid.Settle(landing, () =>
+        {
+            if (from != to && vm.Player.UpNext.IndexOf(track) == from)
+                vm.Player.MoveInQueue(from, to);
+        });
     }
 
     private void ResetQueueDragState()
     {
-        var preview = this.FindControl<Border>("QueueDragPreview");
-        if (preview != null)
-        {
-            preview.IsVisible = false;
-            preview.DataContext = null;
-        }
-
-        if (_queueDragHiddenItem != null)
-        {
-            _queueDragHiddenItem.Opacity = 1.0;
-            _queueDragHiddenItem = null;
-        }
-
-        var indicator = this.FindControl<Border>("QueueDropIndicator");
-        if (indicator != null)
-            indicator.IsVisible = false;
-
+        QueueLiquid?.Cancel();
         _queueDragActive = false;
         _queueDragTrack = null;
-        _queueDragSourceIndex = -1;
-    }
-
-    private static int GetQueueDropTargetIndex(ListBox listBox, Point posInListBox)
-    {
-        for (int i = 0; i < listBox.ItemCount; i++)
-        {
-            var container = listBox.ContainerFromIndex(i);
-            if (container == null) continue;
-
-            var itemPos = container.TranslatePoint(new Point(0, 0), listBox);
-            if (itemPos == null) continue;
-
-            var top = itemPos.Value.Y;
-            var bottom = top + container.Bounds.Height;
-            var midpoint = top + container.Bounds.Height / 2;
-
-            if (posInListBox.Y < midpoint && posInListBox.Y >= top)
-                return i;
-            if (posInListBox.Y >= midpoint && posInListBox.Y < bottom)
-                return i;
-        }
-        return listBox.ItemCount - 1;
     }
 
     protected override void OnLoaded(RoutedEventArgs e)
     {
         base.OnLoaded(e);
+
+        Helpers.DragFileBehavior.DragPreviewStarted += OnDragPreviewStarted;
+        Helpers.DragFileBehavior.DragPreviewEnded += OnDragPreviewEnded;
+        Closed += (_, _) =>
+        {
+            Helpers.DragFileBehavior.DragPreviewStarted -= OnDragPreviewStarted;
+            Helpers.DragFileBehavior.DragPreviewEnded -= OnDragPreviewEnded;
+        };
 
         // Register drag-drop for file import on both the Window and root Panel.
         // AllowDrop must be set on the actual hit-test target, not just the Window.
