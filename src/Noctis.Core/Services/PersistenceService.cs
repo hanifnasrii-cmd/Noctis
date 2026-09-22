@@ -330,6 +330,14 @@ public class PersistenceService : IPersistenceService
         // serialize-and-fsync.) The write below carries the position it replaced.
         try { File.Delete(QueuePositionPath); }
         catch (Exception ex) { DebugLog.Write("Persistence", $"Could not clear the queue position checkpoint: {ex.Message}"); }
+        // The checkpoint's own temp file must go too: LoadJsonWithOutcomeAsync promotes
+        // "<path>.tmp" to "<path>" whenever the main file is absent and the temp parses. A
+        // checkpoint write killed between its fsync and its rename leaves a complete,
+        // parseable orphan .tmp — deleting only the main file above lets a later load
+        // resurrect that stale checkpoint and fold a previous session's position onto the
+        // current queue.
+        try { File.Delete(QueuePositionPath + ".tmp"); }
+        catch (Exception ex) { DebugLog.Write("Persistence", $"Could not clear the queue position checkpoint's temp file: {ex.Message}"); }
         await SaveJsonAsync(QueuePath, state);
     }
 

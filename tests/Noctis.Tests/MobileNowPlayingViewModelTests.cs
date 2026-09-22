@@ -374,6 +374,55 @@ public class MobileNowPlayingViewModelTests : IDisposable
         Assert.Equal(TimeSpan.Zero, restored.Position);
     }
 
+    /// <summary>
+    /// PersistenceService-level cover for the track-id guard in LoadQueueStateAsync. The two
+    /// tests above only reach it through the ViewModel's own save, which deletes the checkpoint
+    /// first — so the guard never actually runs in either of them. This drives the checkpoint
+    /// straight through PersistenceService instead, for a track other than the queue's current
+    /// one, and the restored position must stay the queue's own.
+    /// </summary>
+    [Fact]
+    public async Task LoadQueueStateAsync_DiscardsTheCheckpoint_WhenItsTrackDoesNotMatchTheQueue()
+    {
+        var t = Tracks(2);
+        var persistence = new PersistenceService(_root);
+        await persistence.SaveQueueStateAsync(new QueueState
+        {
+            CurrentTrackId = t[0].Id,
+            PositionSeconds = 10,
+            UpNextIds = { t[1].Id }
+        });
+        await persistence.SaveQueuePositionAsync(t[1].Id, 999); // checkpoint for a DIFFERENT track
+
+        var loaded = await persistence.LoadQueueStateAsync();
+
+        Assert.NotNull(loaded);
+        Assert.Equal(t[0].Id, loaded!.CurrentTrackId);
+        Assert.Equal(10, loaded.PositionSeconds);                // the queue's own position, untouched
+    }
+
+    /// <summary>The positive half of the guard above: a checkpoint for the SAME track is folded
+    /// in, proving the guard discriminates rather than simply ignoring the checkpoint file.</summary>
+    [Fact]
+    public async Task LoadQueueStateAsync_AppliesTheCheckpoint_WhenItsTrackMatchesTheQueue()
+    {
+        var t = Tracks(2);
+        var persistence = new PersistenceService(_root);
+        await persistence.SaveQueueStateAsync(new QueueState
+        {
+            CurrentTrackId = t[0].Id,
+            PositionSeconds = 10,
+            UpNextIds = { t[1].Id }
+        });
+        await persistence.SaveQueuePositionAsync(t[0].Id, 42);  // checkpoint for the SAME track
+
+        var loaded = await persistence.LoadQueueStateAsync();
+
+        Assert.NotNull(loaded);
+        Assert.Equal(t[0].Id, loaded!.CurrentTrackId);
+        Assert.Equal(42, loaded.PositionSeconds);                // folded in from the checkpoint
+    }
+
     // The save cadence is wall-clock, so drive the clock rather than sleeping five seconds.
     private static void ForcePeriodicSaveDue(NowPlayingViewModel vm) =>
         typeof(NowPlayingViewModel).GetField("_lastSaveUtc", BindingFlags.Instance | BindingFlags.NonPublic)!
