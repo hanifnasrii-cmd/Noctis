@@ -111,6 +111,7 @@ public class FolderMetadataBackfillTests : IDisposable
         public Task SavePlaylistsAsync(List<Playlist> playlists) => Task.CompletedTask;
         public Task<QueueState?> LoadQueueStateAsync() => Task.FromResult<QueueState?>(null);
         public Task SaveQueueStateAsync(QueueState state) => Task.CompletedTask;
+        public Task SaveQueuePositionAsync(Guid? currentTrackId, double positionSeconds) => Task.CompletedTask;
         public Task<LibraryIndexCache?> LoadIndexCacheAsync() => Task.FromResult<LibraryIndexCache?>(null);
         public Task SaveIndexCacheAsync(LibraryIndexCache cache) => Task.CompletedTask;
         public string GetArtworkPath(Guid albumId) => Path.Combine(DataDirectory, "artwork", $"{albumId}.jpg");

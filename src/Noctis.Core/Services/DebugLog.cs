@@ -60,7 +60,7 @@ public static class DebugLog
             Lines.Add(line);
             if (Lines.Count > MaxLines)
                 Lines.RemoveRange(0, Lines.Count - MaxLines);
-            _sink?.Invoke(line);
+            InvokeSinkLocked(line);
         }
         Changed?.Invoke();
     }
@@ -96,11 +96,30 @@ public static class DebugLog
         lock (Lock)
         {
             SeedLocked();
-            foreach (var line in Lines)
-                sink(line);
+            // Installed before the replay so a sink that throws on its very first line is
+            // dropped by the guard below instead of taking down whatever was starting up.
             _sink = sink;
             _sinkReset = reset;
+            foreach (var line in Lines)
+                InvokeSinkLocked(line);
         }
+    }
+
+    /// <summary>
+    /// Runs the sink and swallows anything it throws, dropping it for the rest of the session.
+    /// A sink is only a *mirror* of the ring — the desktop's crash.log, Android's logcat — so an
+    /// exception from one must never escape <see cref="Write"/> into the catch block that was
+    /// doing the logging: that would invert the containment of every guarded failure path in
+    /// Core at exactly the moment things are already going wrong. The desktop sink
+    /// (CrashJournal.AppendLine) guards itself and falls back to memory-only; guarding here
+    /// instead of there means every sink gets that, not just the one that remembered to.
+    /// Callers hold <see cref="Lock"/>.
+    /// </summary>
+    private static void InvokeSinkLocked(string line)
+    {
+        if (_sink == null) return;
+        try { _sink(line); }
+        catch { _sink = null; /* a mirror that cannot write: stay memory-only */ }
     }
 
     /// <summary>Current log contents as one string (oldest first).</summary>
@@ -121,11 +140,13 @@ public static class DebugLog
             Lines.Clear();
             OnceKeys.Clear();
             _seeded = false;
-            _sinkReset?.Invoke();
+            // Same containment as InvokeSinkLocked: Clear is a user action from Settings and
+            // must not throw because the mirror's reset failed.
+            try { _sinkReset?.Invoke(); }
+            catch { _sink = null; _sinkReset = null; }
             SeedLocked();
-            if (_sink != null)
-                foreach (var line in Lines)
-                    _sink(line);
+            foreach (var line in Lines)
+                InvokeSinkLocked(line);
         }
         Changed?.Invoke();
     }

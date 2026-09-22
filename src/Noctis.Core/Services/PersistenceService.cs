@@ -47,6 +47,7 @@ public class PersistenceService : IPersistenceService
     private string LibraryPath => Path.Combine(DataDirectory, "library.json");
     private string PlaylistsPath => Path.Combine(DataDirectory, "playlists.json");
     private string QueuePath => Path.Combine(DataDirectory, "queue.json");
+    private string QueuePositionPath => Path.Combine(DataDirectory, "queue-position.json");
     private string IndexCachePath => Path.Combine(DataDirectory, "indexes.json");
     private string ArtworkDirectory => Path.Combine(DataDirectory, "artwork");
     private string AnimatedCoverDirectory => Path.Combine(DataDirectory, "animated_covers");
@@ -304,12 +305,38 @@ public class PersistenceService : IPersistenceService
 
     public async Task<QueueState?> LoadQueueStateAsync()
     {
-        return await LoadJsonAsync<QueueState>(QueuePath);
+        var state = await LoadJsonAsync<QueueState>(QueuePath);
+        if (state == null) return null;
+
+        // Fold in the position checkpoint, if this host writes them (the desktop does not, so
+        // the file is absent and this is a single miss). The track guard is what makes a
+        // checkpoint that raced a track change harmless: it is dropped, not applied to the
+        // wrong track. A checkpoint that raced a *queue* save can be up to one checkpoint
+        // interval behind the queue's own position — which is exactly the bound the interval
+        // already promises, so it costs nothing extra.
+        var checkpoint = await LoadJsonAsync<QueuePositionState>(QueuePositionPath);
+        if (checkpoint != null && checkpoint.CurrentTrackId == state.CurrentTrackId)
+            state.PositionSeconds = checkpoint.PositionSeconds;
+        return state;
     }
 
     public async Task SaveQueueStateAsync(QueueState state)
     {
+        // The queue carries its own position, so any existing checkpoint is superseded. Dropped
+        // *before* the write, and synchronously — so a save that has already been issued can
+        // never reach back and remove a checkpoint written after it. (One DeleteFile syscall on
+        // a path that normally does not exist; this runs a handful of times per session, not in
+        // any loop, so it does not need the thread-pool hop SaveJsonAsync takes for the
+        // serialize-and-fsync.) The write below carries the position it replaced.
+        try { File.Delete(QueuePositionPath); }
+        catch (Exception ex) { DebugLog.Write("Persistence", $"Could not clear the queue position checkpoint: {ex.Message}"); }
         await SaveJsonAsync(QueuePath, state);
+    }
+
+    public async Task SaveQueuePositionAsync(Guid? currentTrackId, double positionSeconds)
+    {
+        await SaveJsonAsync(QueuePositionPath,
+            new QueuePositionState { CurrentTrackId = currentTrackId, PositionSeconds = positionSeconds });
     }
 
     // ── Index Cache ───────────────────────────────────────────

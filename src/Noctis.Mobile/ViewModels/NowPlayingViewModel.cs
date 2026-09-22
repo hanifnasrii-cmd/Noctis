@@ -11,9 +11,10 @@ namespace Noctis.Mobile.ViewModels;
 /// <see cref="IAudioPlayer"/> for sound. The next queued file is handed to
 /// <see cref="IAudioPlayer.PrepareNext"/> so the Media3 player can chain it gaplessly; on
 /// that automatic transition the player raises TrackEnded and our Play(next) is a no-op
-/// restart (the player recognises the path). Queue and position are saved every
-/// <see cref="SaveIntervalSeconds"/> and on pause, and restored paused on launch, so
-/// process death costs at most five seconds. Player events may arrive on any thread;
+/// restart (the player recognises the path). The queue is saved the moment it changes; on top
+/// of that the position alone is checkpointed every <see cref="SaveIntervalSeconds"/>, and the
+/// two are restored together, paused, on launch — so process death costs at most five seconds
+/// of position without rewriting the queue for it. Player events may arrive on any thread;
 /// <c>marshal</c> hops them to the UI thread (tests pass a direct call).
 /// </summary>
 public sealed partial class NowPlayingViewModel : ObservableObject, IDisposable
@@ -196,14 +197,23 @@ public sealed partial class NowPlayingViewModel : ObservableObject, IDisposable
 
     /// <summary>
     /// Position ticks a held seek may survive without any pointer activity before it cancels
-    /// itself — about three seconds at the Android player's 4 Hz poll. Android device run,
+    /// itself — thirty seconds at the Android player's 4 Hz poll. Android device run,
     /// 2026-09-22: a drag abandoned by pulling the notification shade down over it delivers
     /// neither a release nor a capture-lost — no further pointer event of any kind reaches the
     /// app — so no handler can end the seek, and the elapsed label, the thumb and the position
     /// written into queue.json all freeze while playback carries on. This is the only escape
     /// that does not depend on an input event the app may never get.
+    ///
+    /// The window is deliberately far longer than a gesture, because firing during a *live*
+    /// gesture re-creates the exact bug <see cref="BeginSeek"/> exists to prevent: clearing
+    /// _seeking lets the same tick push live playback position into the Slider's Value, so the
+    /// thumb jumps out from under the finger and the release seeks to a stale value. Android
+    /// emits no ACTION_MOVE for a stationary finger, so a press-and-hold while deciding where
+    /// to drop the thumb produces no keepalive at all — at the original three seconds that was
+    /// well inside human range. The defect being bounded here was an *unbounded* freeze, so
+    /// what matters is that it ends unattended, not that it ends quickly.
     /// </summary>
-    private const int SeekWatchdogTicks = 12;
+    private const int SeekWatchdogTicks = 120;
 
     public void Seek(TimeSpan position)
     {
@@ -300,19 +310,26 @@ public sealed partial class NowPlayingViewModel : ObservableObject, IDisposable
     private void OnPlayerPosition(object? sender, TimeSpan position) => _marshal(() =>
     {
         if (_disposed) return;
-        // Everything else in this tick still runs mid-drag — the engine keeps playing, so the
-        // IsPlaying resync and the save cadence must not stall while the thumb is held.
-        if (_seeking && ++_seekIdleTicks > SeekWatchdogTicks) EndSeek();
-        if (!_seeking) Position = position;
         // Lock-screen pause, audio-focus loss and headphone unplug pause the engine
         // without going through TogglePlayPause; the tick is where the UI catches up.
         var playing = _player.State == PlaybackState.Playing;
+        // Everything else in this tick still runs mid-drag — the engine keeps playing, so the
+        // IsPlaying resync and the save cadence must not stall while the thumb is held.
+        // Armed only while the engine is actually advancing: the freeze this bounds is a dead
+        // display over live playback, and an externally paused engine has nothing to un-freeze,
+        // so counting ticks there would only put a careful scrub made while paused-by-lock-screen
+        // on the same clock for no benefit.
+        if (_seeking && playing && ++_seekIdleTicks > SeekWatchdogTicks) EndSeek();
+        if (!_seeking) Position = position;
         IsPlaying = playing;
         // Only a tick that arrives while actually playing proves the stream is healthy;
         // a timer-driven poll firing while paused/stopped must not clear a live streak.
         if (playing) _consecutiveErrors = 0;
+        // Position only: the queue *structure* is written by its own mutators, so rewriting it
+        // here would re-serialize and fsync the whole queue every five seconds for a value
+        // that did not change. See SavePositionNow.
         if ((DateTime.UtcNow - _lastSaveUtc).TotalSeconds >= SaveIntervalSeconds)
-            SaveStateNow();
+            SavePositionNow();
     });
 
     private void OnPlayerDuration(object? sender, TimeSpan duration) => _marshal(() =>
@@ -366,6 +383,24 @@ public sealed partial class NowPlayingViewModel : ObservableObject, IDisposable
         _lastSaveUtc = DateTime.UtcNow;
         _ = SaveStateAsync().ContinueWith(
             t => DebugLog.Write("Queue", $"Save failed: {t.Exception?.GetBaseException().Message}"),
+            TaskContinuationOptions.OnlyOnFaulted);
+    }
+
+    /// <summary>
+    /// The periodic checkpoint: two numbers, not the queue. Every genuine mutator — track
+    /// change, queue edit, repeat/shuffle change, pause, seek-while-paused — already calls
+    /// <see cref="SaveStateNow"/> the moment it happens, so between them the only thing that
+    /// moves is the position, and re-serializing the queue for it wrote hundreds of KB (a
+    /// queue started from the library holds the whole library) through an fsync every five
+    /// seconds — on the order of 260 MB per hour of playback onto phone flash. The five-second
+    /// resume guarantee is unchanged: the position still reaches disk on the same cadence, and
+    /// PersistenceService folds the checkpoint back into the queue it loads.
+    /// </summary>
+    private void SavePositionNow()
+    {
+        _lastSaveUtc = DateTime.UtcNow;
+        _ = _persistence.SaveQueuePositionAsync(CurrentTrack?.Id, Position.TotalSeconds).ContinueWith(
+            t => DebugLog.Write("Queue", $"Position save failed: {t.Exception?.GetBaseException().Message}"),
             TaskContinuationOptions.OnlyOnFaulted);
     }
 

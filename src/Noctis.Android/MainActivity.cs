@@ -28,7 +28,31 @@ public class MainActivity : AvaloniaMainActivity
     {
         Current = this;
         base.OnCreate(savedInstanceState);
+        // After base.OnCreate: AvaloniaActivity registers its OnBackPressedCallback there, and
+        // this event is raised from it.
+        BackRequested += OnBackRequested;
         RequestNotificationPermission();
+    }
+
+    /// <summary>
+    /// Now Playing and Queue are full-screen overlays inside the one activity, not activities of
+    /// their own, so the system default — finish() — makes Back from either look like the app
+    /// quit. Hand the press to the shell first; it consumes one if an overlay is open, and
+    /// leaving <see cref="AndroidBackRequestedEventArgs.Handled"/> false falls through to the
+    /// platform default unchanged.
+    ///
+    /// This replaced an <c>OnBackPressed</c> override, which was wrong on Android 16: predictive
+    /// back is enabled by default for apps targeting SDK 36 (net10.0-android resolves to 36), and
+    /// the system then dispatches Back through OnBackInvokedDispatcher and never calls
+    /// <c>onBackPressed()</c> at all — so Back would have closed the app instead of the overlay,
+    /// silently, on every Android 16 device. AvaloniaActivity already owns both routes (an
+    /// AndroidX OnBackPressedCallback, which ComponentActivity forwards to the system dispatcher
+    /// on API 33+) and funnels both into this one event, so subscribing here is correct from
+    /// minSdk 26 upwards without a version check of our own.
+    /// </summary>
+    private void OnBackRequested(object? sender, AndroidBackRequestedEventArgs e)
+    {
+        if (AndroidApp.Current?.TryHandleBack() == true) e.Handled = true;
     }
 
     /// <summary>
@@ -58,25 +82,6 @@ public class MainActivity : AvaloniaMainActivity
         }
     }
 
-    /// <summary>
-    /// Now Playing and Queue are full-screen overlays inside the one activity, not activities
-    /// of their own, so the system default — finish() — makes Back from either look like the
-    /// app quit. Hand the press to the shell first; it consumes one if an overlay is open.
-    /// Deprecated from API 33 in favour of OnBackInvokedCallback, but predictive back is
-    /// opt-in (android:enableOnBackInvokedCallback, which we do not set), so this is still
-    /// the callback the system routes Back through for us on every version we support.
-    /// </summary>
-    public override void OnBackPressed()
-    {
-        if (AndroidApp.Current?.TryHandleBack() == true) return;
-        // CA1422 flags the base call as obsoleted on 33+. Scoped rather than added to the
-        // project's NoWarn so the analyzer keeps working everywhere else; the day predictive
-        // back is enabled this becomes an OnBackPressedDispatcher callback instead.
-#pragma warning disable CA1422
-        base.OnBackPressed();
-#pragma warning restore CA1422
-    }
-
     protected override void OnPause()
     {
         base.OnPause();
@@ -97,6 +102,7 @@ public class MainActivity : AvaloniaMainActivity
         // Resolving with null here — before Current is cleared — keeps that button usable.
         _pickFolder?.TrySetResult(null);
         _pickFolder = null;
+        BackRequested -= OnBackRequested;
         if (ReferenceEquals(Current, this)) Current = null;
         base.OnDestroy();
     }

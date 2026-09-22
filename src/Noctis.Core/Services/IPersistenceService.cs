@@ -44,8 +44,23 @@ public interface IPersistenceService
     Task SavePlaylistsAsync(List<Playlist> playlists);
 
     // --- Queue ---
+
+    /// <summary>
+    /// The saved queue, with any newer <see cref="SaveQueuePositionAsync"/> checkpoint for the
+    /// same track already folded into <see cref="QueueState.PositionSeconds"/>.
+    /// </summary>
     Task<QueueState?> LoadQueueStateAsync();
+
+    /// <summary>Writes the queue and supersedes any position checkpoint.</summary>
     Task SaveQueueStateAsync(QueueState state);
+
+    /// <summary>
+    /// Checkpoints the playback position alone, without rewriting the queue. For hosts that
+    /// checkpoint on a timer (the phone, every five seconds) where re-serializing and fsyncing
+    /// the whole queue for a moved position would cost hundreds of MB of flash writes an hour.
+    /// Superseded by the next <see cref="SaveQueueStateAsync"/>.
+    /// </summary>
+    Task SaveQueuePositionAsync(Guid? currentTrackId, double positionSeconds);
 
     // --- Index Cache ---
     Task<LibraryIndexCache?> LoadIndexCacheAsync();

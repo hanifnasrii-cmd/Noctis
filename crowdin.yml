@@ -1,8 +1,8 @@
 # Keep the src/... path on Crowdin; without this the CLI uploads a flat Strings.resx at the branch root.
 preserve_hierarchy: true
 files:
-  - source: /src/Noctis/Localization/Strings.resx
-    translation: /src/Noctis/Localization/Strings.%locale%.resx
+  - source: /src/Noctis.UI/Localization/Strings.resx
+    translation: /src/Noctis.UI/Localization/Strings.%locale%.resx
     # Plain codes match the existing Strings.es.resx and .NET's neutral cultures;
     # Chinese keeps its script so Simplified and Traditional stay separate files.
     languages_mapping:

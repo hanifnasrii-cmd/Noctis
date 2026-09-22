@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using Noctis.Mobile.ViewModels;
 using Noctis.Models;
@@ -246,11 +247,19 @@ public class MobileNowPlayingViewModelTests : IDisposable
     /// down over it delivers no release, no capture-lost and no further pointer event at all,
     /// so nothing called EndSeek and the elapsed label, the thumb and the saved resume
     /// position stayed frozen at 0 for as long as the app was watched. A held seek must
-    /// therefore time itself out on the position tick — while a drag that keeps moving
-    /// (KeepSeekAlive, wired to PointerMoved on the bar) is never cut short.
+    /// therefore time itself out on the position tick.
+    ///
+    /// The window is 120 ticks — thirty seconds at the player's 4 Hz poll — and the length is
+    /// the point, not an accident. Firing during a gesture the user is still making re-creates
+    /// the bug BeginSeek exists to prevent: the same tick that clears _seeking then pushes live
+    /// playback position into the Slider's Value, so the thumb jumps out from under the finger.
+    /// Android emits no ACTION_MOVE for a stationary finger, so press-and-hold while deciding
+    /// produces no keepalive at all — which is why the window has to be longer than any real
+    /// gesture rather than merely longer than a drag's tick gaps. What the watchdog owes the
+    /// original defect is that the freeze ends unattended, not that it ends quickly.
     /// </summary>
     [Fact]
-    public void AbandonedSeek_SelfCancels_ButALiveDragIsNeverCutShort()
+    public void AbandonedSeek_SelfCancels_ButOnlyLongAfterAnyRealGestureCouldStillBeRunning()
     {
         var t = Tracks(1);
         var (vm, player, _, _) = Make(t);
@@ -258,23 +267,126 @@ public class MobileNowPlayingViewModelTests : IDisposable
 
         // A long but live drag: the finger keeps moving, so the freeze holds indefinitely.
         vm.BeginSeek();
-        for (var i = 0; i < 40; i++)
+        for (var i = 0; i < 400; i++)
         {
             if (i % 4 == 0) vm.KeepSeekAlive();
             player.RaisePositionChanged(TimeSpan.FromSeconds(1 + i));
         }
         Assert.Equal(TimeSpan.Zero, vm.Position);
 
-        // Same drag, now abandoned. The window is generous enough that a pause in the drag is
-        // not mistaken for one...
+        // Same drag, now held perfectly still — no PointerMoved, so no keepalive. Twenty-five
+        // seconds of that is still a gesture as far as this VM is concerned.
         vm.KeepSeekAlive();
-        for (var i = 0; i < 12; i++) player.RaisePositionChanged(TimeSpan.FromSeconds(50 + i));
+        for (var i = 0; i < 100; i++) player.RaisePositionChanged(TimeSpan.FromSeconds(500 + i));
         Assert.Equal(TimeSpan.Zero, vm.Position);
 
-        // ...and past it the watchdog releases the seek, so the display and the saved resume
-        // position start tracking playback again without the user touching anything.
-        player.RaisePositionChanged(TimeSpan.FromSeconds(70));
-        Assert.Equal(TimeSpan.FromSeconds(70), vm.Position);
+        // Past thirty seconds the watchdog releases the seek, so the display and the saved
+        // resume position start tracking playback again without the user touching anything.
+        for (var i = 0; i < 21; i++) player.RaisePositionChanged(TimeSpan.FromSeconds(600 + i));
+        Assert.Equal(TimeSpan.FromSeconds(620), vm.Position);
+    }
+
+    /// <summary>
+    /// The watchdog is armed only while the engine is actually advancing. An external pause
+    /// (lock-screen, headphone unplug, audio-focus loss) deliberately keeps the 4 Hz tick
+    /// running, so without this a careful scrub made while paused-by-lock-screen would be on
+    /// the same clock — with nothing playing, so with nothing to un-freeze and no upside to
+    /// cutting the gesture short.
+    /// </summary>
+    [Fact]
+    public void SeekWhileExternallyPaused_IsNeverCutShortByTheWatchdog()
+    {
+        var t = Tracks(1);
+        var (vm, player, _, _) = Make(t);
+        vm.PlayTracks(t, 0);
+        vm.Seek(TimeSpan.FromSeconds(5));
+        player.Pause();                                    // lock-screen pause, bypassing the VM
+
+        vm.BeginSeek();
+        for (var i = 0; i < 400; i++) player.RaisePositionChanged(TimeSpan.FromSeconds(50 + i));
+
+        Assert.Equal(TimeSpan.FromSeconds(5), vm.Position); // the thumb stayed where the drag put it
+        Assert.False(vm.IsPlaying);                        // ...and the rest of the tick still ran
+    }
+
+    /// <summary>
+    /// The periodic tick checkpoints the position only. Tapping one song queues the whole song
+    /// list, and PlaybackQueue also records the full repeat cycle and the pre-shuffle order, so
+    /// a QueueState is roughly 3N GUIDs — hundreds of KB for a real library, fsync'd, and on the
+    /// old code rewritten every five seconds for as long as music played (~260 MB/hour onto
+    /// phone flash) even though nothing in it had changed. Every genuine mutator saves the queue
+    /// the moment it happens, so between them there is nothing new to write but the position.
+    /// </summary>
+    [Fact]
+    public async Task PeriodicTick_CheckpointsThePositionWithoutRewritingTheUnchangedQueue()
+    {
+        var t = Tracks(3);
+        var (vm, player, library, persistence) = Make(t);
+        vm.PlayTracks(t, 0);                               // a real mutation: writes queue.json
+        // PlayTracks saves fire-and-forget; this one goes through the same per-file write gate,
+        // so awaiting it settles that write too and leaves no queue save in flight to confuse
+        // the byte/mtime comparison below.
+        await vm.SaveStateAsync();
+
+        var queueFile = Path.Combine(_root, "queue.json");
+        var beforeBytes = File.ReadAllBytes(queueFile);
+        var beforeWrite = File.GetLastWriteTimeUtc(queueFile);
+
+        // Six seconds of playback, position moving, queue untouched.
+        ForcePeriodicSaveDue(vm);
+        player.RaisePositionChanged(TimeSpan.FromSeconds(6));
+        await WaitForAsync(() => File.Exists(Path.Combine(_root, "queue-position.json")));
+
+        Assert.Equal(beforeBytes, File.ReadAllBytes(queueFile));
+        Assert.Equal(beforeWrite, File.GetLastWriteTimeUtc(queueFile));
+
+        // ...and the five-second resume guarantee still holds: the checkpoint is folded back in.
+        var restored = new NowPlayingViewModel(new FakeAudioPlayer(), library, persistence, marshal: a => a());
+        await restored.RestoreStateAsync();
+        Assert.Same(t[0], restored.CurrentTrack);
+        Assert.Equal(new[] { t[1], t[2] }, restored.UpNext);
+        Assert.Equal(TimeSpan.FromSeconds(6), restored.Position);
+    }
+
+    /// <summary>A checkpoint left over from the previous track must not be applied to the new
+    /// one — the queue save that changed tracks supersedes it.</summary>
+    [Fact]
+    public async Task ATrackChange_SupersedesTheStalePositionCheckpoint()
+    {
+        var t = Tracks(2);
+        var (vm, player, library, persistence) = Make(t);
+        vm.PlayTracks(t, 0);
+        await vm.SaveStateAsync();
+        ForcePeriodicSaveDue(vm);
+        player.RaisePositionChanged(TimeSpan.FromSeconds(90));
+        await WaitForAsync(() => File.Exists(Path.Combine(_root, "queue-position.json")));
+
+        vm.NextCommand.Execute(null);                      // writes queue.json at position 0
+        // The checkpoint is dropped synchronously, before the new queue is written, so it is
+        // already gone the moment the command returns — no polling needed, and nothing that
+        // was already in flight can put it back.
+        Assert.False(File.Exists(Path.Combine(_root, "queue-position.json")));
+        await vm.SaveStateAsync();                         // settle the queue write read back below
+
+        var restored = new NowPlayingViewModel(new FakeAudioPlayer(), library, persistence, marshal: a => a());
+        await restored.RestoreStateAsync();
+        Assert.Same(t[1], restored.CurrentTrack);
+        Assert.Equal(TimeSpan.Zero, restored.Position);
+    }
+
+    // The save cadence is wall-clock, so drive the clock rather than sleeping five seconds.
+    private static void ForcePeriodicSaveDue(NowPlayingViewModel vm) =>
+        typeof(NowPlayingViewModel).GetField("_lastSaveUtc", BindingFlags.Instance | BindingFlags.NonPublic)!
+            .SetValue(vm, DateTime.MinValue);
+
+    // The periodic position checkpoint is fire-and-forget onto the thread pool, with no handle
+    // to await, and under the full parallel suite that pool can be busy enough to delay one by
+    // seconds — so poll to a generous deadline rather than guess a fixed delay.
+    private static async Task WaitForAsync(Func<bool> condition)
+    {
+        var deadline = DateTime.UtcNow + TimeSpan.FromSeconds(30);
+        while (!condition() && DateTime.UtcNow < deadline) await Task.Delay(15);
+        Assert.True(condition());
     }
 
     [Fact]
