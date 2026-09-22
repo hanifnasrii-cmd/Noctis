@@ -34,4 +34,11 @@ public class QueueState
     /// restored session could not wrap a longer queue correctly without this.
     /// </summary>
     public List<Guid> RepeatCycleIds { get; set; } = new();
+
+    /// <summary>
+    /// Pre-shuffle order, so turning shuffle off after a cold start restores the album
+    /// order instead of leaving the queue scrambled. PlaybackQueue.Snapshot carries it;
+    /// the desktop player writes its own QueueState and simply leaves this empty.
+    /// </summary>
+    public List<Guid> OriginalOrderIds { get; set; } = new();
 }

@@ -148,4 +148,51 @@ public class MobileNowPlayingViewModelTests : IDisposable
         Assert.Equal(5, player.PlayedPaths.Count);         // t0 + four skips, then stop
         Assert.NotEqual(string.Empty, vm.ErrorText);
     }
+
+    [Fact]
+    public async Task SaveAndRestore_ShuffleOn_TogglingOffAfterwardsRestoresAlbumOrder()
+    {
+        var t = Tracks(4);
+        var (vm, _, library, persistence) = Make(t);
+        vm.PlayTracks(t, 0);
+        vm.ToggleShuffleCommand.Execute(null);             // scrambles UpNext, remembers album order
+        await vm.SaveStateAsync();
+
+        var restored = new NowPlayingViewModel(new FakeAudioPlayer(), library, persistence, marshal: a => a());
+        await restored.RestoreStateAsync();
+        Assert.True(restored.IsShuffleEnabled);
+
+        restored.ToggleShuffleCommand.Execute(null);       // off → restores the pre-shuffle order
+
+        Assert.False(restored.IsShuffleEnabled);
+        Assert.Equal(new[] { t[1], t[2], t[3] }, restored.UpNext);
+    }
+
+    [Fact]
+    public void SetGapless_False_CancelsInsteadOfPreparing()
+    {
+        var t = Tracks(3);
+        var (vm, player, _, _) = Make(t);
+        vm.SetGapless(false);
+
+        vm.PlayTracks(t, 0);
+
+        Assert.False(player.GaplessEnabled);
+        Assert.Empty(player.PreparedPaths);
+        Assert.True(player.CancelledCount > 0);
+    }
+
+    [Fact]
+    public void FocusLoss_PlayerPausedExternally_SyncsIsPlayingOnTheNextPositionTick()
+    {
+        var t = Tracks(1);
+        var (vm, player, _, _) = Make(t);
+        vm.PlayTracks(t, 0);
+        Assert.True(vm.IsPlaying);
+
+        player.Pause();                                    // audio-focus loss / lock-screen pause, bypassing the VM
+        player.RaisePositionChanged(TimeSpan.FromSeconds(1));
+
+        Assert.False(vm.IsPlaying);
+    }
 }

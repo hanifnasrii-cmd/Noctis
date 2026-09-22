@@ -34,6 +34,7 @@ internal sealed class FakeAudioPlayer : IAudioPlayer
 
     public void RaiseTrackEnded() => TrackEnded?.Invoke(this, EventArgs.Empty);
     public void RaisePlaybackError(string msg) => PlaybackError?.Invoke(this, msg);
+    public void RaisePositionChanged(TimeSpan position) => PositionChanged?.Invoke(this, position);
 
     public void Play(string filePath)
     {
@@ -52,7 +53,8 @@ internal sealed class FakeAudioPlayer : IAudioPlayer
     public void SetExclusiveMode(bool enabled) { }
     public void ApplyReplayGain(string mode, double preampDb) { }
     public void SetCrossfade(bool enabled, int durationSeconds, AutoMixFadeCurve fadeCurve = AutoMixFadeCurve.SmoothEase, bool fadeOut = true, bool overlap = false) { }
-    public void SetGapless(bool enabled) { }
+    public bool GaplessEnabled { get; private set; } = true;
+    public void SetGapless(bool enabled) => GaplessEnabled = enabled;
     public (bool Enabled, int DurationMs) PlayPauseFade { get; private set; }
     public void SetPlayPauseFade(bool enabled, int durationMs) => PlayPauseFade = (enabled, durationMs);
     public double PlaybackRate { get; private set; } = 1.0;
@@ -62,7 +64,8 @@ internal sealed class FakeAudioPlayer : IAudioPlayer
     public string UpmixMode { get; private set; } = "Off";
     public void SetUpmixMode(string mode) => UpmixMode = mode;
     public void PrepareNext(string filePath, long startPositionMs = -1) => PreparedPaths.Add(filePath);
-    public void CancelPreparedNext() { }
+    public int CancelledCount { get; private set; }
+    public void CancelPreparedNext() => CancelledCount++;
     public void SetAdvancedEqualizer(bool enabled, float[] bands, float preampDb) { }
     public void Dispose() { }
 }

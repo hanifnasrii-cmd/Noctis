@@ -32,6 +32,7 @@ public sealed partial class NowPlayingViewModel : ObservableObject, IDisposable
     private DateTime _lastSaveUtc = DateTime.MinValue;
     private bool _gapless = true;
     private int _consecutiveErrors;
+    private bool _disposed;
 
     public NowPlayingViewModel(IAudioPlayer player, ILibraryService library, IPersistenceService persistence,
         IPlayHistoryService? history = null, Action<Action>? marshal = null)
@@ -84,9 +85,16 @@ public sealed partial class NowPlayingViewModel : ObservableObject, IDisposable
     /// <summary>Replace the queue with <paramref name="tracks"/> and start at <paramref name="startIndex"/>.</summary>
     public void PlayTracks(IReadOnlyList<Track> tracks, int startIndex)
     {
+        // ReplaceAll returns the still-playing Current (not null) for an empty list, so
+        // without this guard tapping Play on an empty/filtered-to-nothing list would
+        // restart the currently playing track from zero.
+        if (tracks.Count == 0) return;
         var first = _queue.ReplaceAll(tracks, startIndex);
         IsShuffleEnabled = _queue.IsShuffleEnabled;
         if (first == null) return;
+        // A new queue is a new chance: a stale failure streak from a previous queue must
+        // not immediately trip the breaker on this one's very first track.
+        _consecutiveErrors = 0;
         StartTrack(first, fromPosition: null);
     }
 
@@ -107,7 +115,9 @@ public sealed partial class NowPlayingViewModel : ObservableObject, IDisposable
                 break;
             default:
                 // Stopped: a queue restored after process death (or a finished queue) — start
-                // the loaded track from the position we are showing.
+                // the loaded track from the position we are showing. A deliberate user action
+                // always clears the error streak, even one the breaker itself just stopped.
+                _consecutiveErrors = 0;
                 StartTrack(CurrentTrack, fromPosition: Position);
                 break;
         }
@@ -116,6 +126,9 @@ public sealed partial class NowPlayingViewModel : ObservableObject, IDisposable
     [RelayCommand]
     private void Next()
     {
+        // A deliberate skip is a user action, not part of the automatic error cascade the
+        // breaker bounds — clear the streak so an unrelated later failure gets its own count.
+        _consecutiveErrors = 0;
         var next = _queue.Advance(QueueAdvance.UserSkip);
         if (next == null) StopPlayback(); else StartTrack(next, null);
     }
@@ -138,6 +151,10 @@ public sealed partial class NowPlayingViewModel : ObservableObject, IDisposable
         Position = position;
         if (_player.State != PlaybackState.Stopped)
             _player.Seek(position);
+        // While paused there are no position ticks to carry this to disk on the usual
+        // 5-second cadence, so a seek made just before process death would otherwise be lost.
+        if (_player.State != PlaybackState.Playing)
+            SaveStateNow();
     }
 
     [RelayCommand]
@@ -151,6 +168,7 @@ public sealed partial class NowPlayingViewModel : ObservableObject, IDisposable
         };
         _queue.RepeatMode = RepeatMode;
         PrepareUpcoming();
+        SaveStateNow();
     }
 
     [RelayCommand]
@@ -215,25 +233,35 @@ public sealed partial class NowPlayingViewModel : ObservableObject, IDisposable
 
     private void OnPlayerPosition(object? sender, TimeSpan position) => _marshal(() =>
     {
+        if (_disposed) return;
         Position = position;
         // Lock-screen pause, audio-focus loss and headphone unplug pause the engine
         // without going through TogglePlayPause; the tick is where the UI catches up.
-        IsPlaying = _player.State == PlaybackState.Playing;
-        _consecutiveErrors = 0;
+        var playing = _player.State == PlaybackState.Playing;
+        IsPlaying = playing;
+        // Only a tick that arrives while actually playing proves the stream is healthy;
+        // a timer-driven poll firing while paused/stopped must not clear a live streak.
+        if (playing) _consecutiveErrors = 0;
         if ((DateTime.UtcNow - _lastSaveUtc).TotalSeconds >= SaveIntervalSeconds)
             SaveStateNow();
     });
 
-    private void OnPlayerDuration(object? sender, TimeSpan duration) => _marshal(() => Duration = duration);
+    private void OnPlayerDuration(object? sender, TimeSpan duration) => _marshal(() =>
+    {
+        if (_disposed) return;
+        Duration = duration;
+    });
 
     private void OnPlayerTrackEnded(object? sender, EventArgs e) => _marshal(() =>
     {
+        if (_disposed) return;
         var next = _queue.Advance(QueueAdvance.Natural);
         if (next == null) StopPlayback(); else StartTrack(next, null);
     });
 
     private void OnPlayerError(object? sender, string message) => _marshal(() =>
     {
+        if (_disposed) return;
         DebugLog.Write("Audio", $"Playback error: {message} — track: {CurrentTrack?.Title ?? "(none)"}");
         ErrorText = message;
         if (++_consecutiveErrors >= MaxConsecutiveErrors)
@@ -259,6 +287,7 @@ public sealed partial class NowPlayingViewModel : ObservableObject, IDisposable
             RepeatMode = snapshot.RepeatMode,
             IsShuffleEnabled = snapshot.IsShuffleEnabled,
             IsMuted = _player.IsMuted,
+            OriginalOrderIds = snapshot.OriginalOrderIds.ToList(),
         };
         return _persistence.SaveQueueStateAsync(state);
     }
@@ -279,7 +308,7 @@ public sealed partial class NowPlayingViewModel : ObservableObject, IDisposable
 
         _queue = PlaybackQueue.Restore(
             new PlaybackQueueState(state.CurrentTrackId, state.UpNextIds, state.HistoryIds, state.RepeatCycleIds,
-                state.RepeatMode, state.IsShuffleEnabled, Array.Empty<Guid>()),
+                state.RepeatMode, state.IsShuffleEnabled, state.OriginalOrderIds),
             id => _library.GetTrackById(id));
         RepeatMode = state.RepeatMode;
         IsShuffleEnabled = state.IsShuffleEnabled;
@@ -292,6 +321,7 @@ public sealed partial class NowPlayingViewModel : ObservableObject, IDisposable
 
     public void Dispose()
     {
+        _disposed = true;
         _player.PositionChanged -= OnPlayerPosition;
         _player.DurationResolved -= OnPlayerDuration;
         _player.TrackEnded -= OnPlayerTrackEnded;
