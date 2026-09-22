@@ -60,6 +60,16 @@ public sealed class Media3AudioPlayer : IAudioPlayer
     /// <summary>Raised for the session's own Previous transport command. See <see cref="SessionNextRequested"/>.</summary>
     public event EventHandler? SessionPreviousRequested;
 
+    /// <summary>Whether the app queue has a next/previous track, for the media session's
+    /// transport buttons. ExoPlayer's own item list holds at most the current track plus a
+    /// prepared gapless successor, so it is not the right source: under Repeat One it never
+    /// has a next item, yet the queue always does. The Task 9 wiring points these at the
+    /// ViewModel's queue.</summary>
+    public Func<bool>? HasNextInQueue { get; set; }
+
+    /// <summary>See <see cref="HasNextInQueue"/>.</summary>
+    public Func<bool>? HasPreviousInQueue { get; set; }
+
     public Media3AudioPlayer(Context context, ILibraryService library, IPersistenceService persistence)
     {
         _context = context;
@@ -277,9 +287,23 @@ public sealed class Media3AudioPlayer : IAudioPlayer
         // it is what stops our own Stop() (which drives the state to Idle) from re-entering
         // here and being misread as an external pause.
         if (!isPlaying && State == PlaybackState.Playing && _player.PlaybackState == BasePlayer.InterfaceConsts.StateReady)
+        {
+            // Deliberately do NOT stop the poll timer here (unlike our own Pause()): it must
+            // keep ticking through an external pause, because PollPosition's tick is the only
+            // thing that drives OnPlayerPosition, which is how the ViewModel notices this
+            // state change happened at all.
             State = PlaybackState.Paused;
+        }
         else if (isPlaying && State == PlaybackState.Paused)
+        {
+            // Mirror image of our own Resume(): a session Play (notification, lock screen,
+            // Bluetooth) reaches ExoPlayer directly — SessionForwardingPlayer only intercepts
+            // seek-to-next/previous, not play/pause — so nothing else here restarts the timer.
+            // Without this the UI freezes (no more PositionChanged ticks) and IsPlaying/State
+            // silently disagree until the next unrelated tick, if any.
             State = PlaybackState.Playing;
+            _positionTimer.Start();
+        }
     }
 
     private void PollPosition()
@@ -468,6 +492,18 @@ public sealed class Media3AudioPlayer : IAudioPlayer
     /// Overriding these four methods to raise events instead keeps every transport path —
     /// in-app buttons and session controls alike — flowing through PlaybackQueue. Task 9's
     /// ViewModel wiring subscribes to SessionNextRequested/SessionPreviousRequested.
+    ///
+    /// Media3 derives the notification's Next/Previous buttons (and the media-button dispatch
+    /// gate) from THIS player's AvailableCommands/IsCommandAvailable/HasNextMediaItem/
+    /// HasPreviousMediaItem, which ForwardingPlayer forwards straight to the wrapped ExoPlayer
+    /// by default. But ExoPlayer's own item list holds at most the current track plus one
+    /// prepared gapless successor — "has next" there means "a gapless item happens to be
+    /// queued right now", not "the app queue has a next track". Left unoverridden, the button
+    /// vanishes whenever gapless is off, on the last prepared item, and permanently under
+    /// Repeat One (PrepareUpcoming never queues a successor in that mode). Overriding all four
+    /// to consult _owner.HasNextInQueue/HasPreviousInQueue instead keeps the notification in
+    /// sync with what Next/Previous will actually do. Falls back to the base (ExoPlayer-driven)
+    /// answer when a predicate is unset, so nothing regresses before Task 9 wires them.
     /// </summary>
     private sealed class SessionForwardingPlayer : ForwardingPlayer
     {
@@ -478,5 +514,42 @@ public sealed class Media3AudioPlayer : IAudioPlayer
         public override void SeekToNextMediaItem() => _owner.RaiseSessionNextRequested();
         public override void SeekToPrevious() => _owner.RaiseSessionPreviousRequested();
         public override void SeekToPreviousMediaItem() => _owner.RaiseSessionPreviousRequested();
+
+        public override bool HasNextMediaItem => _owner.HasNextInQueue?.Invoke() ?? base.HasNextMediaItem;
+        public override bool HasPreviousMediaItem => _owner.HasPreviousInQueue?.Invoke() ?? base.HasPreviousMediaItem;
+
+        public override bool IsCommandAvailable(int command)
+        {
+            if (IsNextCommand(command) && _owner.HasNextInQueue is { } hasNext) return hasNext();
+            if (IsPreviousCommand(command) && _owner.HasPreviousInQueue is { } hasPrevious) return hasPrevious();
+            return base.IsCommandAvailable(command);
+        }
+
+        public override PlayerCommands AvailableCommands
+        {
+            get
+            {
+                var commands = base.AvailableCommands;
+                if (_owner.HasNextInQueue == null && _owner.HasPreviousInQueue == null) return commands;
+                var builder = commands.BuildUpon();
+                ApplyOverride(builder, BasePlayer.InterfaceConsts.CommandSeekToNext, _owner.HasNextInQueue);
+                ApplyOverride(builder, BasePlayer.InterfaceConsts.CommandSeekToNextMediaItem, _owner.HasNextInQueue);
+                ApplyOverride(builder, BasePlayer.InterfaceConsts.CommandSeekToPrevious, _owner.HasPreviousInQueue);
+                ApplyOverride(builder, BasePlayer.InterfaceConsts.CommandSeekToPreviousMediaItem, _owner.HasPreviousInQueue);
+                return builder.Build();
+            }
+        }
+
+        private static void ApplyOverride(PlayerCommands.Builder builder, int command, Func<bool>? predicate)
+        {
+            if (predicate == null) return;
+            if (predicate()) builder.Add(command); else builder.Remove(command);
+        }
+
+        private static bool IsNextCommand(int command) =>
+            command == BasePlayer.InterfaceConsts.CommandSeekToNext || command == BasePlayer.InterfaceConsts.CommandSeekToNextMediaItem;
+
+        private static bool IsPreviousCommand(int command) =>
+            command == BasePlayer.InterfaceConsts.CommandSeekToPrevious || command == BasePlayer.InterfaceConsts.CommandSeekToPreviousMediaItem;
     }
 }

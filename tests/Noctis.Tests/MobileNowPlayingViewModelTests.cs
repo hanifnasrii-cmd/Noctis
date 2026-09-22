@@ -190,11 +190,15 @@ public class MobileNowPlayingViewModelTests : IDisposable
         vm.CycleRepeatCommand.Execute(null);               // Off → All
         vm.CycleRepeatCommand.Execute(null);               // All → One
         Assert.Equal(RepeatMode.One, vm.RepeatMode);
+        // Each CycleRepeat above already ran PrepareUpcoming with no current track, which
+        // calls CancelPreparedNext regardless of repeat mode — snapshot after those so the
+        // assertion below is actually load-bearing on PlayTracks's own PrepareUpcoming call.
+        var cancelledBeforePlay = player.CancelledCount;
 
         vm.PlayTracks(t, 0);
 
         Assert.Empty(player.PreparedPaths);
-        Assert.True(player.CancelledCount > 0);
+        Assert.True(player.CancelledCount > cancelledBeforePlay);
     }
 
     [Fact]
