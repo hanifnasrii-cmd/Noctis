@@ -127,9 +127,27 @@ public sealed class AndroidFileSystemSource : IFileSystemSource
                 // CursorWindow (ashmem) stays pinned until the Java GC happens to finalize it,
                 // which .NET's Dispose never drives; a few hundred un-closed directory cursors
                 // is enough to exhaust CursorWindow memory mid-scan.
-                cursor?.Close();
+                //
+                // Close() itself is wrapped so a throwing Close() (a misbehaving provider)
+                // cannot skip Dispose() and cannot escape this iterator past
+                // Partitioner/Parallel.ForEach and kill the whole root's scan — the same
+                // containment shape as every other failure in this method.
+                try
+                {
+                    cursor?.Close();
+                }
+                catch (Exception ex)
+                {
+                    DebugLog.Write("Library", $"SAF cursor close failed for {childrenUri}: {ex.Message}");
+                }
                 cursor?.Dispose();
             }
+
+            // Logged/reported at most once per directory: a provider misreporting
+            // COLUMN_LAST_MODIFIED (microseconds instead of milliseconds is the classic case)
+            // fails this the same way for every file under the directory, and 500 identical
+            // log lines would tell the reader nothing that one didn't.
+            var timestampFailureReported = false;
 
             foreach (var row in rows)
             {
@@ -141,12 +159,26 @@ public sealed class AndroidFileSystemSource : IFileSystemSource
                     continue;
                 }
                 if (!MetadataService.SupportedExtensions.Contains(Path.GetExtension(row.Name))) continue;
-                // A provider returning an out-of-range COLUMN_LAST_MODIFIED (microseconds
-                // instead of milliseconds is the classic case) must be a per-file skip, not
-                // abort the whole root: same discipline as the FileInfo read in
-                // LocalFileSystemSource.EnumerateAudioFiles, which wraps its per-file stat in
-                // try/catch for exactly this reason.
-                if (!TryConvertModified(row.ModifiedMs, out var modified)) continue;
+                if (!TryConvertModified(row.ModifiedMs, out var modified))
+                {
+                    // A silent per-file skip here is wrong: if a provider is systematically
+                    // out of range (the microseconds case), every file under this directory
+                    // fails the same way, the scan "succeeds" having yielded nothing, and
+                    // LibraryService then wipes every known track under this root — ratings,
+                    // favourites, play counts, DateAdded included — with nothing in the log to
+                    // explain it. Reporting the directory failed routes it through
+                    // LibraryService.SelectTracksUnderFailedDirectories instead (the same path
+                    // the GetColumnIndexOrThrow failure above uses), which keeps the known
+                    // tracks under directoryUri rather than dropping them.
+                    if (!timestampFailureReported)
+                    {
+                        DebugLog.Write("Library",
+                            $"SAF entry '{row.Name}' under {directoryUri} has an unreadable last-modified value ({row.ModifiedMs}); reporting directory as failed.");
+                        reportFailedDirectory(directoryUri);
+                        timestampFailureReported = true;
+                    }
+                    continue;
+                }
 
                 var docUri = DocumentsContract.BuildDocumentUriUsingTree(treeUri, row.Id)!;
                 var path = docUri.ToString()!;

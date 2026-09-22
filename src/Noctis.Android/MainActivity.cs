@@ -47,6 +47,7 @@ public class MainActivity : AvaloniaMainActivity
         // that disallows concurrent execution) would stay stuck "running" forever.
         // Resolving with null here — before Current is cleared — keeps that button usable.
         _pickFolder?.TrySetResult(null);
+        _pickFolder = null;
         if (ReferenceEquals(Current, this)) Current = null;
         base.OnDestroy();
     }
