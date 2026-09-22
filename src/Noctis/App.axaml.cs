@@ -147,6 +147,10 @@ public partial class App : Application
             var analysisCoordinator = Services!.GetRequiredService<Noctis.Services.AudioAnalysis.AudioAnalysisCoordinator>();
             var library = Services!.GetRequiredService<ILibraryService>();
             library.LibraryUpdated += (_, _) => analysisCoordinator.StartBackfill();
+            // No-op on Windows (the output chain taps the meters); elsewhere this is the
+            // only thing that makes the visualizer / beat-reactive backdrops move.
+            var sideFeed = Services!.GetRequiredService<Noctis.Services.AudioAnalysis.SideDecodeMeterFeed>();
+            sideFeed.Start();
 
             // Clear temp export directories orphaned by a previous crash/kill.
             _ = Task.Run(Helpers.PngExportHelper.SweepStaleTempDirs);
@@ -190,6 +194,8 @@ public partial class App : Application
                 {
                     DebugLogger.Error(DebugLogger.Category.Error, "ShutdownSave", ex.Message);
                 }
+                // The provider is never disposed: stop the feed thread and its ffmpeg child here.
+                sideFeed.Dispose();
                 desktop.Shutdown();
             };
         }
