@@ -208,7 +208,13 @@ public sealed partial class NowPlayingViewModel : ObservableObject, IDisposable
 
     private void PrepareUpcoming()
     {
-        if (!_gapless || _queue.UpNext.Count == 0 || CurrentTrack == null)
+        // Repeat-one: the current track is its own successor (PlaybackQueue.Advance returns
+        // Current for RepeatMode.One + Natural), so ExoPlayer must not chain past it. Without
+        // this, PrepareUpcoming would gaplessly queue UpNext[0] behind the looping track; on
+        // every natural end ExoPlayer auto-advances into that queued item and its audio
+        // reaches the speaker before TrackEnded fires and our Play(current) restarts the loop
+        // — an audible blip of the next track on every repeat.
+        if (!_gapless || RepeatMode == RepeatMode.One || _queue.UpNext.Count == 0 || CurrentTrack == null)
         {
             _player.CancelPreparedNext();
             return;

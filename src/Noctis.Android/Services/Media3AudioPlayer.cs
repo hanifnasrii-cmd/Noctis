@@ -31,12 +31,12 @@ public sealed class Media3AudioPlayer : IAudioPlayer
     private readonly IPersistenceService _persistence;
     private readonly IExoPlayer _player;
     private readonly Listener _listener;
+    private readonly SessionForwardingPlayer _sessionPlayer;
     private readonly DispatcherTimer _positionTimer;
 
     private Dictionary<string, Track>? _byPath;
     private bool _gapless = true;
     private bool _autoTransitionPending;
-    private bool _serviceStarted;
     private bool _disposed;
     private int _volume = 100;
     private int _volumeAdjust;
@@ -47,6 +47,18 @@ public sealed class Media3AudioPlayer : IAudioPlayer
     public event EventHandler<string>? PlaybackError;
     public event EventHandler<TimeSpan>? DurationResolved;
     public event EventHandler<string>? OutputModeChanged;
+
+    /// <summary>
+    /// Raised when the MediaSession's own Next transport command arrives (notification,
+    /// lock screen, Bluetooth) — see <see cref="SessionForwardingPlayer"/>. Android-specific:
+    /// deliberately not on <see cref="IAudioPlayer"/> since desktop has no out-of-process
+    /// transport to route. The Task 9 ViewModel wiring subscribes to this to advance the
+    /// queue the same way the in-app Next button does.
+    /// </summary>
+    public event EventHandler? SessionNextRequested;
+
+    /// <summary>Raised for the session's own Previous transport command. See <see cref="SessionNextRequested"/>.</summary>
+    public event EventHandler? SessionPreviousRequested;
 
     public Media3AudioPlayer(Context context, ILibraryService library, IPersistenceService persistence)
     {
@@ -67,8 +79,19 @@ public sealed class Media3AudioPlayer : IAudioPlayer
         _player.AddListener(_listener);
         PlaybackEngine.Player = _player;
 
+        // Wraps _player for the MediaSession only (PlaybackEngine.SessionPlayer): intercepts
+        // the session's own Next/Previous so they route through the queue instead of seeking
+        // ExoPlayer's item list directly. See SessionForwardingPlayer's doc comment.
+        _sessionPlayer = new SessionForwardingPlayer(this, _player);
+        PlaybackEngine.SessionPlayer = _sessionPlayer;
+
         OutputLatency = EstimateOutputLatency(context);
-        _positionTimer = new DispatcherTimer(TimeSpan.FromMilliseconds(PositionPollMs), DispatcherPriority.Background, (_, _) => PollPosition());
+        // The 3-arg (interval, priority, callback) constructor auto-starts (confirmed by
+        // disassembling it — it chains to the 4-arg ctor, which calls Start()). We don't want
+        // the poll running before the first Play(), so build with the priority-only ctor and
+        // start it ourselves.
+        _positionTimer = new DispatcherTimer(DispatcherPriority.Background) { Interval = TimeSpan.FromMilliseconds(PositionPollMs) };
+        _positionTimer.Tick += (_, _) => PollPosition();
         _library.LibraryUpdated += OnLibraryUpdated;
     }
 
@@ -129,6 +152,10 @@ public sealed class Media3AudioPlayer : IAudioPlayer
         if (_disposed || State != PlaybackState.Playing) return;
         _player.Pause();
         State = PlaybackState.Paused;
+        // Only our own Pause() stops the poll: an externally-caused pause (audio focus,
+        // headphone unplug, lock-screen) never calls this, so the timer keeps ticking and
+        // OnPlayerPosition's "the tick is where the UI catches up" resync still fires.
+        _positionTimer.Stop();
     }
 
     public void Resume()
@@ -136,6 +163,7 @@ public sealed class Media3AudioPlayer : IAudioPlayer
         if (_disposed || State != PlaybackState.Paused) return;
         _player.Play();
         State = PlaybackState.Playing;
+        _positionTimer.Start();
     }
 
     public void Stop()
@@ -168,7 +196,7 @@ public sealed class Media3AudioPlayer : IAudioPlayer
     {
         if (_disposed || !_gapless || _player.MediaItemCount == 0) return;
         var current = _player.CurrentMediaItemIndex;
-        if (_player.MediaItemCount > current + 1 && _player.GetMediaItemAt(current + 1).MediaId == filePath)
+        if (_player.MediaItemCount > current + 1 && _player.GetMediaItemAt(current + 1)?.MediaId == filePath)
             return; // already queued
         TrimAfterCurrent();
         _player.AddMediaItem(BuildItem(filePath));
@@ -242,7 +270,13 @@ public sealed class Media3AudioPlayer : IAudioPlayer
     {
         // Audio focus loss, headphone unplug and lock-screen Pause all land here without a
         // Pause() call from us. Mirror it so the ViewModel's next toggle does the right thing.
-        if (!isPlaying && State == PlaybackState.Playing && _player.PlaybackState == BasePlayer.InterfaceConsts.StateReady && !_player.PlayWhenReady)
+        // No PlayWhenReady check: Media3 only clears it for a PERMANENT focus loss. A
+        // transient loss (e.g. an incoming call) is signalled as a playback-suppression
+        // reason with PlayWhenReady left true — requiring it false here would miss that case
+        // and leave State stuck on Playing over a frozen clock. StateReady is still required:
+        // it is what stops our own Stop() (which drives the state to Idle) from re-entering
+        // here and being misread as an external pause.
+        if (!isPlaying && State == PlaybackState.Playing && _player.PlaybackState == BasePlayer.InterfaceConsts.StateReady)
             State = PlaybackState.Paused;
         else if (isPlaying && State == PlaybackState.Paused)
             State = PlaybackState.Playing;
@@ -274,11 +308,21 @@ public sealed class Media3AudioPlayer : IAudioPlayer
 
     private void EnsureServiceStarted()
     {
-        if (_serviceStarted) return;
-        // Plain StartService while the activity is visible; Media3 promotes the service to
-        // a foreground media service itself once the session's player is playing.
-        _context.StartService(new Intent(_context, typeof(NoctisPlaybackService)));
-        _serviceStarted = true;
+        // No one-way latch: OnTaskRemoved stops the service whenever the app is swiped away
+        // while not playing (the normal case) while this player instance lives on across a
+        // reopen, so a latch here would leave the next Play() with no MediaSession, no
+        // notification and no foreground-service protection. StartService on an
+        // already-running service is cheap. API 26+ throws if called while the app has no
+        // visible activity in the foreground (background start restriction); log and carry
+        // on rather than crash playback over a missing notification.
+        try
+        {
+            _context.StartService(new Intent(_context, typeof(NoctisPlaybackService)));
+        }
+        catch (Exception ex)
+        {
+            DebugLog.Write("Audio", $"StartService failed: {ex.Message}");
+        }
     }
 
     private MediaItem BuildItem(string path)
@@ -298,7 +342,7 @@ public sealed class Media3AudioPlayer : IAudioPlayer
         }
         else
         {
-            meta.SetTitle(Path.GetFileNameWithoutExtension(path));
+            meta.SetTitle(FallbackTitle(path));
         }
 
         return new MediaItem.Builder()
@@ -308,9 +352,41 @@ public sealed class Media3AudioPlayer : IAudioPlayer
             .Build();
     }
 
+    /// <summary>
+    /// Title for a path with no library match. GetFileNameWithoutExtension is meaningless for
+    /// a SAF/MediaStore content:// URI like "content://…/document/…1234" (no file name, just
+    /// an opaque id in the path) — decode the URI's last path segment instead, or fall back to
+    /// a plain label when even that is empty.
+    /// </summary>
+    private static string FallbackTitle(string path)
+    {
+        if (path.StartsWith("content://", StringComparison.Ordinal))
+        {
+            var last = AUri.Parse(path)?.LastPathSegment;
+            var decoded = string.IsNullOrEmpty(last) ? null : AUri.Decode(last);
+            return string.IsNullOrWhiteSpace(decoded) ? "Unknown track" : decoded;
+        }
+        return Path.GetFileNameWithoutExtension(path);
+    }
+
     private Track? Lookup(string path)
     {
-        _byPath ??= _library.Tracks.GroupBy(t => t.FilePath).ToDictionary(g => g.Key, g => g.First());
+        if (_byPath == null)
+        {
+            try
+            {
+                // Tracks is the live backing list; a background scan can mutate it mid-enumeration
+                // on this same UI thread's track-change path. Snapshot before grouping and, if the
+                // snapshot itself races a mutation, fall back to no metadata for this item rather
+                // than crashing the transition — _byPath stays null so the next call retries.
+                _byPath = _library.Tracks.ToArray().GroupBy(t => t.FilePath).ToDictionary(g => g.Key, g => g.First());
+            }
+            catch (InvalidOperationException ex)
+            {
+                DebugLog.Write("Audio", $"Track lookup snapshot raced a library update: {ex.Message}");
+                return null;
+            }
+        }
         return _byPath.GetValueOrDefault(path);
     }
 
@@ -345,9 +421,29 @@ public sealed class Media3AudioPlayer : IAudioPlayer
         _positionTimer.Stop();
         _library.LibraryUpdated -= OnLibraryUpdated;
         _player.RemoveListener(_listener);
+        // NoctisPlaybackService may still hold a MediaSession wrapping _sessionPlayer (which
+        // wraps _player): stop it before releasing the player so its OnDestroy releases the
+        // session while the player it wraps is still alive, instead of the session touching a
+        // released Java object later. StopService is a request, not a synchronous wait for
+        // OnDestroy, but ordering it first is the best this process can do.
+        try
+        {
+            _context.StopService(new Intent(_context, typeof(NoctisPlaybackService)));
+        }
+        catch (Exception ex)
+        {
+            DebugLog.Write("Audio", $"StopService failed: {ex.Message}");
+        }
         _player.Release();
         if (ReferenceEquals(PlaybackEngine.Player, _player)) PlaybackEngine.Player = null;
+        if (ReferenceEquals(PlaybackEngine.SessionPlayer, _sessionPlayer)) PlaybackEngine.SessionPlayer = null;
+        // Deterministic JNI global-ref release rather than waiting on finalization.
+        _listener.Dispose();
+        _sessionPlayer.Dispose();
     }
+
+    private void RaiseSessionNextRequested() => SessionNextRequested?.Invoke(this, EventArgs.Empty);
+    private void RaiseSessionPreviousRequested() => SessionPreviousRequested?.Invoke(this, EventArgs.Empty);
 
     /// <summary>Java-side listener; every IPlayerListener method has a default body, so only these four are overridden.</summary>
     private sealed class Listener : Java.Lang.Object, IPlayerListener
@@ -358,5 +454,29 @@ public sealed class Media3AudioPlayer : IAudioPlayer
         public void OnMediaItemTransition(MediaItem? mediaItem, int reason) => _owner.OnMediaItemTransition(mediaItem, reason);
         public void OnPlayerError(PlaybackException error) => _owner.OnPlayerError(error);
         public void OnIsPlayingChanged(bool isPlaying) => _owner.OnIsPlayingChanged(isPlaying);
+    }
+
+    /// <summary>
+    /// Wraps _player for the MediaSession only. MediaSession.Builder(context, player) hands
+    /// session-originated transport commands — the notification, lock screen and Bluetooth
+    /// Next/Previous — straight to the wrapped player's SeekToNextMediaItem/
+    /// SeekToPreviousMediaItem. That jumps ExoPlayer's own media-item list with a SEEK
+    /// transition reason, which OnMediaItemTransition ignores (only AUTO drives TrackEnded),
+    /// so CurrentMediaPath, the ViewModel's CurrentTrack and the queue cursor all stay on the
+    /// old track while a different one plays; when it then ends, TrackEnded advances the
+    /// untouched cursor onto the same old track and plays it a second time from zero.
+    /// Overriding these four methods to raise events instead keeps every transport path —
+    /// in-app buttons and session controls alike — flowing through PlaybackQueue. Task 9's
+    /// ViewModel wiring subscribes to SessionNextRequested/SessionPreviousRequested.
+    /// </summary>
+    private sealed class SessionForwardingPlayer : ForwardingPlayer
+    {
+        private readonly Media3AudioPlayer _owner;
+        public SessionForwardingPlayer(Media3AudioPlayer owner, IPlayer player) : base(player) => _owner = owner;
+
+        public override void SeekToNext() => _owner.RaiseSessionNextRequested();
+        public override void SeekToNextMediaItem() => _owner.RaiseSessionNextRequested();
+        public override void SeekToPrevious() => _owner.RaiseSessionPreviousRequested();
+        public override void SeekToPreviousMediaItem() => _owner.RaiseSessionPreviousRequested();
     }
 }

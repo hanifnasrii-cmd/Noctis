@@ -183,6 +183,21 @@ public class MobileNowPlayingViewModelTests : IDisposable
     }
 
     [Fact]
+    public void RepeatOne_PlayTracks_CancelsPreparedNextInsteadOfPreparingIt()
+    {
+        var t = Tracks(3);
+        var (vm, player, _, _) = Make(t);
+        vm.CycleRepeatCommand.Execute(null);               // Off → All
+        vm.CycleRepeatCommand.Execute(null);               // All → One
+        Assert.Equal(RepeatMode.One, vm.RepeatMode);
+
+        vm.PlayTracks(t, 0);
+
+        Assert.Empty(player.PreparedPaths);
+        Assert.True(player.CancelledCount > 0);
+    }
+
+    [Fact]
     public void FocusLoss_PlayerPausedExternally_SyncsIsPlayingOnTheNextPositionTick()
     {
         var t = Tracks(1);
