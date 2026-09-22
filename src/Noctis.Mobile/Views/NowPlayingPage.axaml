@@ -1,0 +1,55 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Noctis.Mobile.ViewModels"
+             xmlns:views="using:Noctis.Mobile.Views"
+             x:Class="Noctis.Mobile.Views.NowPlayingPage"
+             x:DataType="vm:ShellViewModel"
+             Background="#121214">
+
+    <Grid RowDefinitions="Auto,*,Auto,Auto,Auto,Auto" Margin="24,40,24,32">
+        <Button Grid.Row="0" Content="⌄" FontSize="24" Background="Transparent" Command="{Binding CloseNowPlayingCommand}" HorizontalAlignment="Left" />
+
+        <Border Grid.Row="1" Margin="0,24" CornerRadius="20" Background="#26262A" MaxWidth="320" MaxHeight="320" />
+
+        <StackPanel Grid.Row="2" Spacing="2">
+            <TextBlock Text="{Binding Player.CurrentTrack.Title}" FontSize="22" FontWeight="Bold" TextTrimming="CharacterEllipsis" />
+            <TextBlock Text="{Binding Player.CurrentTrack.Artist}" FontSize="16" Opacity="0.65" TextTrimming="CharacterEllipsis" />
+        </StackPanel>
+
+        <Grid Grid.Row="3" Margin="0,16,0,0" RowDefinitions="Auto,Auto">
+            <Slider Name="SeekBar" Minimum="0" Maximum="{Binding Player.Duration.TotalSeconds}"
+                    Value="{Binding Player.Position.TotalSeconds, Mode=OneWay}"
+                    PointerReleased="OnSeekReleased" />
+            <Grid Grid.Row="1" ColumnDefinitions="*,*">
+                <!-- The colon is a reserved character in a custom TimeSpan format string, so it
+                     has to reach the formatter as \: — hence the {} escape and the explicit
+                     {0:...} form rather than a bare StringFormat=mm\:ss. -->
+                <TextBlock FontSize="12" Opacity="0.6">
+                    <TextBlock.Text>
+                        <Binding Path="Player.Position" StringFormat="{}{0:mm\:ss}" />
+                    </TextBlock.Text>
+                </TextBlock>
+                <TextBlock Grid.Column="1" FontSize="12" Opacity="0.6" HorizontalAlignment="Right">
+                    <TextBlock.Text>
+                        <Binding Path="Player.Duration" StringFormat="{}{0:mm\:ss}" />
+                    </TextBlock.Text>
+                </TextBlock>
+            </Grid>
+        </Grid>
+
+        <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Center" Spacing="18" Margin="0,16">
+            <Button Width="48" Height="48" Content="{Binding Player.IsShuffleEnabled, Converter={x:Static views:Glyphs.ShuffleGlyph}}" Command="{Binding Player.ToggleShuffleCommand}" />
+            <Button Width="56" Height="56" Content="⏮" FontSize="20" Command="{Binding Player.PreviousCommand}" />
+            <Button Width="72" Height="72" FontSize="26" CornerRadius="36"
+                    Content="{Binding Player.IsPlaying, Converter={x:Static views:Glyphs.PlayPause}}"
+                    Command="{Binding Player.TogglePlayPauseCommand}" />
+            <Button Width="56" Height="56" Content="⏭" FontSize="20" Command="{Binding Player.NextCommand}" />
+            <Button Width="48" Height="48" Content="{Binding Player.RepeatMode, Converter={x:Static views:Glyphs.Repeat}}" Command="{Binding Player.CycleRepeatCommand}" />
+        </StackPanel>
+
+        <Grid Grid.Row="5" ColumnDefinitions="*,Auto">
+            <TextBlock Text="{Binding Player.ErrorText}" Foreground="#E74856" FontSize="12" VerticalAlignment="Center" TextWrapping="Wrap" />
+            <Button Grid.Column="1" Content="Queue" Command="{Binding ToggleQueueCommand}" />
+        </Grid>
+    </Grid>
+</UserControl>

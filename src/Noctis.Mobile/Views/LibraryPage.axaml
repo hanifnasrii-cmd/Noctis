@@ -1,0 +1,64 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Noctis.Mobile.ViewModels"
+             xmlns:models="using:Noctis.Models"
+             xmlns:loc="using:Noctis.Localization"
+             x:Class="Noctis.Mobile.Views.LibraryPage"
+             x:DataType="vm:ShellViewModel">
+
+    <Grid RowDefinitions="Auto,Auto,Auto,*" Margin="20,48,20,0">
+        <Grid Grid.Row="0" ColumnDefinitions="*,Auto">
+            <TextBlock Text="{loc:T Nav.Songs}" FontSize="34" FontWeight="Bold" />
+            <Button Grid.Column="1" Content="Rescan" Command="{Binding Library.RescanCommand}"
+                    IsVisible="{Binding Library.HasFolders}" VerticalAlignment="Center" />
+        </Grid>
+
+        <Grid Grid.Row="1" Margin="0,16,0,12" ColumnDefinitions="*,12,*" RowDefinitions="Auto,12,Auto,12,Auto">
+            <Grid.Styles>
+                <Style Selector="Border.tile">
+                    <Setter Property="Background" Value="#1E1E20" />
+                    <Setter Property="CornerRadius" Value="14" />
+                    <Setter Property="Padding" Value="14,12" />
+                    <Setter Property="Height" Value="76" />
+                </Style>
+                <Style Selector="Border.tile TextBlock.count">
+                    <Setter Property="FontSize" Value="24" />
+                    <Setter Property="FontWeight" Value="Bold" />
+                    <Setter Property="HorizontalAlignment" Value="Right" />
+                    <Setter Property="VerticalAlignment" Value="Top" />
+                </Style>
+                <Style Selector="Border.tile TextBlock.label">
+                    <Setter Property="FontSize" Value="15" />
+                    <Setter Property="Opacity" Value="0.8" />
+                    <Setter Property="VerticalAlignment" Value="Bottom" />
+                </Style>
+            </Grid.Styles>
+            <Border Classes="tile" Grid.Row="0" Grid.Column="0"><Grid><TextBlock Classes="count" Text="{Binding Library.SongCount}" /><TextBlock Classes="label" Text="{loc:T Nav.Songs}" /></Grid></Border>
+            <Border Classes="tile" Grid.Row="0" Grid.Column="2"><Grid><TextBlock Classes="count" Text="{Binding Library.AlbumCount}" /><TextBlock Classes="label" Text="{loc:T Nav.Albums}" /></Grid></Border>
+            <Border Classes="tile" Grid.Row="2" Grid.Column="0"><Grid><TextBlock Classes="count" Text="{Binding Library.ArtistCount}" /><TextBlock Classes="label" Text="{loc:T Nav.Artists}" /></Grid></Border>
+            <Border Classes="tile" Grid.Row="2" Grid.Column="2"><Grid><TextBlock Classes="count" Text="{Binding Library.FavoriteCount}" /><TextBlock Classes="label" Text="{loc:T Nav.Favorites}" /></Grid></Border>
+            <Border Classes="tile" Grid.Row="4" Grid.Column="0"><Grid><TextBlock Classes="count" Text="{Binding Library.RecentlyAddedCount}" /><TextBlock Classes="label" Text="Recently Added" /></Grid></Border>
+            <Border Classes="tile" Grid.Row="4" Grid.Column="2">
+                <Button Content="Add folder" Command="{Binding Library.AddFolderCommand}" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" />
+            </Border>
+        </Grid>
+
+        <StackPanel Grid.Row="2" Spacing="4" Margin="0,0,0,8">
+            <ProgressBar IsIndeterminate="True" IsVisible="{Binding Library.IsScanning}" />
+            <TextBlock Text="{Binding Library.StatusText}" Opacity="0.7" FontSize="12"
+                       IsVisible="{Binding Library.StatusText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+        </StackPanel>
+
+        <ListBox Grid.Row="3" Name="SongList" ItemsSource="{Binding Library.Songs}" Background="Transparent"
+                 SelectionChanged="OnSongSelected">
+            <ListBox.ItemTemplate>
+                <DataTemplate x:DataType="models:Track">
+                    <StackPanel Margin="0,6">
+                        <TextBlock Text="{Binding Title}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                        <TextBlock Text="{Binding Artist}" Opacity="0.6" FontSize="12" TextTrimming="CharacterEllipsis" />
+                    </StackPanel>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+    </Grid>
+</UserControl>

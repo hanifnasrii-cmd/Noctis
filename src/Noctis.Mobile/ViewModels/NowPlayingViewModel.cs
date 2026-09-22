@@ -72,6 +72,29 @@ public sealed partial class NowPlayingViewModel : ObservableObject, IDisposable
 
     public bool HasTrack => CurrentTrack != null;
 
+    /// <summary>
+    /// Whether <see cref="NextCommand"/> would land on a track, for the media notification's
+    /// Next button (Android reads this off a Java binder thread, so it must stay a couple of
+    /// field reads — no Avalonia, no allocation, no locking). Mirrors
+    /// <see cref="PlaybackQueue.Advance"/> with <see cref="QueueAdvance.UserSkip"/>: the head
+    /// of UpNext, or a Repeat All wrap. The wrap is approximated by "a track is loaded"
+    /// because the cycle PlaybackQueue replays is recorded by ReplaceAll — the only way the
+    /// phone ever starts a queue — and is not otherwise observable from here. Erring towards
+    /// enabled is the cheap direction: an enabled button that stops is far milder than a
+    /// hidden button for a skip that would have worked.
+    /// </summary>
+    public bool HasNext => _queue.UpNext.Count > 0 || (RepeatMode == RepeatMode.All && CurrentTrack != null);
+
+    /// <summary>
+    /// Whether <see cref="PreviousCommand"/> would do something, for the notification's
+    /// Previous button. True whenever a track is loaded: past three seconds Previous restarts
+    /// the current track, and before that <see cref="PlaybackQueue.Back"/> steps into history
+    /// or — with history empty — returns Current and the restart happens anyway. Only a
+    /// stopped, empty queue has nothing to go back to. Same thread caveat as
+    /// <see cref="HasNext"/>.
+    /// </summary>
+    public bool HasPrevious => CurrentTrack != null;
+
     /// <summary>0..1 for the seek bar.</summary>
     public double ProgressFraction => Duration > TimeSpan.Zero ? Math.Clamp(Position / Duration, 0, 1) : 0;
 
