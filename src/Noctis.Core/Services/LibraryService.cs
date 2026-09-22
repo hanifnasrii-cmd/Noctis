@@ -11,7 +11,7 @@ namespace Noctis.Services;
 /// </summary>
 public class LibraryService : ILibraryService
 {
-    private const int CurrentMetadataSchemaVersion = 8;
+    private const int CurrentMetadataSchemaVersion = 9;
     // v3: album track order normalized (disc 0 → 1, missing track numbers last)
     private const int CurrentIndexCacheVersion = 3;
     // Throttle scan progress so a large library (tens of thousands of files)
@@ -1915,6 +1915,12 @@ public class LibraryService : ILibraryService
         if (settings.MetadataSchemaVersion < 8)
             didBackfillMetadata |= BackfillFolderMetadata(_tracks, settings);
 
+        // v9: featured artists merged in from titles were joined with " & ", which no
+        // longer splits since "&" left the default separators (1.5.1) — re-join them with
+        // an active separator. Pure string work against the indexed artist/title.
+        if (settings.MetadataSchemaVersion < 9)
+            didBackfillMetadata |= BackfillRejoinMergedFeatured(_tracks);
+
         // Only advance the recorded schema version when the pass actually completed.
         // Cancelling at shutdown mid-backfill and still stamping it done would leave the
         // remaining tracks permanently un-backfilled.
@@ -2244,6 +2250,21 @@ public class LibraryService : ILibraryService
             if (track.SourceType != SourceType.Local) continue;
             if (Helpers.FolderMetadata.TryApplyToTrack(track, roots))
                 changedCount++;
+        }
+        return changedCount > 0;
+    }
+
+    private static bool BackfillRejoinMergedFeatured(List<Track> tracks)
+    {
+        var changedCount = 0;
+        foreach (var track in tracks)
+        {
+            var rejoined = MetadataService.RejoinMergedFeaturedCredit(track.Artist, track.Title);
+            if (!string.Equals(rejoined, track.Artist, StringComparison.Ordinal))
+            {
+                track.Artist = rejoined;
+                changedCount++;
+            }
         }
         return changedCount > 0;
     }
