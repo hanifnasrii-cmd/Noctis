@@ -1,7 +1,8 @@
 {
-  "total": 9401,
+  "total": 9402,
   "byRelease": {
-    "v1.5.0": 158,
+    "v1.5.1": 0,
+    "v1.5.0": 159,
     "v1.4.7": 1366,
     "v1.4.6": 196,
     "v1.4.5": 142,
@@ -51,73 +52,73 @@
     "v1.0.1": 22,
     "v1.0.0": 11
   },
-  "latestVersion": "1.5.0",
-  "latestTag": "v1.5.0",
-  "latestUrl": "https://github.com/heartached/Noctis/releases/tag/v1.5.0",
-  "publishedAt": "2026-09-20T23:06:27Z",
-  "releaseCount": 49,
+  "latestVersion": "1.5.1",
+  "latestTag": "v1.5.1",
+  "latestUrl": "https://github.com/heartached/Noctis/releases/tag/v1.5.1",
+  "publishedAt": "2026-09-22T04:59:23Z",
+  "releaseCount": 50,
   "stars": 224,
-  "openIssues": 17,
+  "openIssues": 13,
   "assets": {
     "windowsInstaller": {
-      "name": "Noctis-v1.5.0-Setup.exe",
-      "url": "https://github.com/heartached/Noctis/releases/download/v1.5.0/Noctis-v1.5.0-Setup.exe",
-      "size": 149284866,
-      "downloads": 94
+      "name": "Noctis-v1.5.1-Setup.exe",
+      "url": "https://github.com/heartached/Noctis/releases/download/v1.5.1/Noctis-v1.5.1-Setup.exe",
+      "size": 151130442,
+      "downloads": 0
     },
     "windowsPortable": {
       "name": "Noctis-windows-x64.zip",
-      "url": "https://github.com/heartached/Noctis/releases/download/v1.5.0/Noctis-windows-x64.zip",
-      "size": 268866089,
-      "downloads": 11
+      "url": "https://github.com/heartached/Noctis/releases/download/v1.5.1/Noctis-windows-x64.zip",
+      "size": 271623683,
+      "downloads": 0
     },
     "macosArm": {
       "name": "Noctis-osx-arm64.dmg",
-      "url": "https://github.com/heartached/Noctis/releases/download/v1.5.0/Noctis-osx-arm64.dmg",
-      "size": 204041946,
-      "downloads": 4
+      "url": "https://github.com/heartached/Noctis/releases/download/v1.5.1/Noctis-osx-arm64.dmg",
+      "size": 204877530,
+      "downloads": 0
     },
     "macosIntel": {
       "name": "Noctis-osx-x64.dmg",
-      "url": "https://github.com/heartached/Noctis/releases/download/v1.5.0/Noctis-osx-x64.dmg",
-      "size": 206583325,
-      "downloads": 1
+      "url": "https://github.com/heartached/Noctis/releases/download/v1.5.1/Noctis-osx-x64.dmg",
+      "size": 208161519,
+      "downloads": 0
     },
     "linuxAppImage": {
       "name": "Noctis-x86_64.AppImage",
-      "url": "https://github.com/heartached/Noctis/releases/download/v1.5.0/Noctis-x86_64.AppImage",
-      "size": 210045432,
-      "downloads": 16
+      "url": "https://github.com/heartached/Noctis/releases/download/v1.5.1/Noctis-x86_64.AppImage",
+      "size": 212240888,
+      "downloads": 0
     },
     "linuxArm": {
       "name": "Noctis-linux-arm64.tar.gz",
-      "url": "https://github.com/heartached/Noctis/releases/download/v1.5.0/Noctis-linux-arm64.tar.gz",
-      "size": 139678301,
-      "downloads": 1
+      "url": "https://github.com/heartached/Noctis/releases/download/v1.5.1/Noctis-linux-arm64.tar.gz",
+      "size": 142205015,
+      "downloads": 0
     },
     "linuxTar": {
       "name": "Noctis-linux-x64.tar.gz",
-      "url": "https://github.com/heartached/Noctis/releases/download/v1.5.0/Noctis-linux-x64.tar.gz",
-      "size": 151059540,
+      "url": "https://github.com/heartached/Noctis/releases/download/v1.5.1/Noctis-linux-x64.tar.gz",
+      "size": 153507362,
       "downloads": 0
     },
     "checksums": {
       "name": "SHA256SUMS",
-      "url": "https://github.com/heartached/Noctis/releases/download/v1.5.0/SHA256SUMS",
+      "url": "https://github.com/heartached/Noctis/releases/download/v1.5.1/SHA256SUMS",
       "size": 990,
-      "downloads": 31
+      "downloads": 0
     }
   },
   "sizes": {
-    "windowsInstaller": "142 MB",
-    "windowsPortable": "256 MB",
+    "windowsInstaller": "144 MB",
+    "windowsPortable": "259 MB",
     "macosArm": "195 MB",
-    "macosIntel": "197 MB",
-    "linuxAppImage": "200 MB",
-    "linuxArm": "133 MB",
-    "linuxTar": "144 MB",
+    "macosIntel": "199 MB",
+    "linuxAppImage": "202 MB",
+    "linuxArm": "136 MB",
+    "linuxTar": "146 MB",
     "checksums": "0 MB"
   },
-  "updatedAt": "2026-09-22T04:18:24.812Z",
+  "updatedAt": "2026-09-22T05:06:33.768Z",
   "degraded": false
 }
