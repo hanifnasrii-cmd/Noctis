@@ -1,7 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android" android:installLocation="auto">
-	<!-- Bootstrap set. Playback adds FOREGROUND_SERVICE, FOREGROUND_SERVICE_MEDIA_PLAYBACK,
-	     WAKE_LOCK and READ_MEDIA_AUDIO when the Media3 service lands. -->
 	<uses-permission android:name="android.permission.INTERNET" />
+	<!-- Background playback: the MediaSessionService runs as a mediaPlayback foreground
+	     service (Android 14+ requires the typed permission) and holds a partial wake lock
+	     through ExoPlayer's WakeMode while the screen is off. -->
+	<uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+	<uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+	<uses-permission android:name="android.permission.WAKE_LOCK" />
+	<uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
 	<application android:label="Noctis" android:icon="@drawable/icon" />
 </manifest>
