@@ -33,6 +33,7 @@ internal sealed class FakeAudioPlayer : IAudioPlayer
     public string? CurrentMediaPath { get; private set; }
 
     public void RaiseTrackEnded() => TrackEnded?.Invoke(this, EventArgs.Empty);
+    public void RaisePlaybackError(string msg) => PlaybackError?.Invoke(this, msg);
 
     public void Play(string filePath)
     {
