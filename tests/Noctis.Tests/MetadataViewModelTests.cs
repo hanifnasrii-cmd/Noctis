@@ -434,7 +434,7 @@ public class MetadataViewModelTests
         // Only the artist side is reduced to the primary credit; the album text is the
         // user's tag and goes through untouched.
         Assert.Equal("Rema Rave & Roses",
-            ITunesArtworkService.BuildAlbumSearchTerm("Rema & Selena Gomez", "Rave & Roses"));
+            ITunesArtworkService.BuildAlbumSearchTerm("Rema, Selena Gomez", "Rave & Roses"));
     }
 
     [Fact]
