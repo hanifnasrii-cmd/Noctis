@@ -57,7 +57,7 @@ public class LocalizationTests : IDisposable
     [Fact]
     public void Supported_IsDiscoveredFromSatelliteAssemblies()
     {
-        // The test output carries es/Noctis.resources.dll from Strings.es.resx.
+        // The test output carries es/Noctis.UI.resources.dll from Strings.es.resx.
         Assert.Equal("en", Loc.Supported[0]);
         Assert.Contains("es", Loc.Supported);
     }
@@ -76,9 +76,11 @@ public class LocalizationTests : IDisposable
     public void EveryXamlLocKey_ExistsInEnglishStrings()
     {
         var root = FindRepoRoot();
-        var english = ReadKeys(Path.Combine(root, "src", "Noctis", "Localization", "Strings.resx"));
-        var used = new[] { "Noctis", "Noctis.UI" }
-            .SelectMany(proj => Directory.EnumerateFiles(Path.Combine(root, "src", proj), "*.axaml", SearchOption.AllDirectories))
+        var english = ReadKeys(Path.Combine(root, "src", "Noctis.UI", "Localization", "Strings.resx"));
+        var used = new[] { "Noctis", "Noctis.UI", "Noctis.Mobile" }
+            .Select(proj => Path.Combine(root, "src", proj))
+            .Where(Directory.Exists)
+            .SelectMany(dir => Directory.EnumerateFiles(dir, "*.axaml", SearchOption.AllDirectories))
             .Where(p => !p.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}")
                      && !p.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}"))
             .SelectMany(p => Regex.Matches(File.ReadAllText(p), @"\{loc:T\s+([A-Za-z0-9_.]+)").Select(m => m.Groups[1].Value))
@@ -98,7 +100,7 @@ public class LocalizationTests : IDisposable
     [Fact]
     public void EnglishKeys_AreUniqueIgnoringCase()
     {
-        var path = Path.Combine(FindRepoRoot(), "src", "Noctis", "Localization", "Strings.resx");
+        var path = Path.Combine(FindRepoRoot(), "src", "Noctis.UI", "Localization", "Strings.resx");
         var clashes = ReadKeys(path)
             .GroupBy(k => k, StringComparer.OrdinalIgnoreCase)
             .Where(g => g.Count() > 1)
@@ -110,7 +112,7 @@ public class LocalizationTests : IDisposable
     [Fact]
     public void TranslationFiles_OnlyContainEnglishKeys()
     {
-        var dir = Path.Combine(FindRepoRoot(), "src", "Noctis", "Localization");
+        var dir = Path.Combine(FindRepoRoot(), "src", "Noctis.UI", "Localization");
         var english = ReadKeys(Path.Combine(dir, "Strings.resx"));
         foreach (var file in Directory.GetFiles(dir, "Strings.*.resx"))
         {
@@ -119,6 +121,19 @@ public class LocalizationTests : IDisposable
             var culture = Path.GetFileNameWithoutExtension(file).Split('.')[1];
             Assert.NotNull(System.Globalization.CultureInfo.GetCultureInfo(culture)); // a real culture name, so the satellite loads
         }
+    }
+
+    [Fact]
+    public void KnownCultures_ListsEveryShippedTranslation()
+    {
+        // Android has no satellite directory to scan (assemblies are embedded in the APK),
+        // so Loc.Supported falls back to this compiled-in list. It must name every
+        // Strings.<culture>.resx in the tree or that language is missing from the phone's picker.
+        var dir = Path.Combine(FindRepoRoot(), "src", "Noctis.UI", "Localization");
+        var shipped = Directory.GetFiles(dir, "Strings.*.resx")
+            .Select(f => Path.GetFileNameWithoutExtension(f)["Strings.".Length..])
+            .OrderBy(c => c, StringComparer.OrdinalIgnoreCase).ToList();
+        Assert.Equal(shipped, Loc.KnownCultures.OrderBy(c => c, StringComparer.OrdinalIgnoreCase).ToList());
     }
 
     private static HashSet<string> ReadKeys(string resxPath)

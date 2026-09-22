@@ -30,21 +30,51 @@ public sealed class Loc : INotifyPropertyChanged
     public static IReadOnlyList<string> Supported => _supported ??= DiscoverSupported();
     private static IReadOnlyList<string>? _supported;
 
+    /// <summary>
+    /// Cultures compiled in as a fallback for hosts with no satellite directory to scan
+    /// (Android embeds the satellite assemblies in the APK). Kept in sync with the
+    /// Strings.*.resx files by LocalizationTests.KnownCultures_ListsEveryShippedTranslation.
+    /// </summary>
+    public static IReadOnlyList<string> KnownCultures { get; } =
+        new[] { "ar", "es", "fr", "ja", "ko", "tr", "zh-Hans", "zh-Hant" };
+
     private static IReadOnlyList<string> DiscoverSupported()
     {
         var found = new List<string> { "en" };
+        var assembly = typeof(Loc).Assembly;
+        var satelliteName = assembly.GetName().Name + ".resources.dll";
         try
         {
             var baseDir = AppContext.BaseDirectory;
-            foreach (var dir in Directory.EnumerateDirectories(baseDir))
+            if (Directory.Exists(baseDir))
             {
-                if (!File.Exists(Path.Combine(dir, "Noctis.resources.dll"))) continue;
-                var name = Path.GetFileName(dir);
-                try { _ = CultureInfo.GetCultureInfo(name); } catch (CultureNotFoundException) { continue; }
-                if (!found.Contains(name, StringComparer.OrdinalIgnoreCase)) found.Add(name);
+                foreach (var dir in Directory.EnumerateDirectories(baseDir))
+                {
+                    if (!File.Exists(Path.Combine(dir, satelliteName))) continue;
+                    var name = Path.GetFileName(dir);
+                    try { _ = CultureInfo.GetCultureInfo(name); } catch (CultureNotFoundException) { continue; }
+                    if (!found.Contains(name, StringComparer.OrdinalIgnoreCase)) found.Add(name);
+                }
             }
         }
-        catch (IOException) { /* unreadable install dir: English only */ }
+        catch (Exception) { /* unreadable install dir: fall through to the probe */ }
+
+        if (found.Count == 1)
+        {
+            // No satellite folders on disk (Android): ask the runtime for each known
+            // culture's satellite assembly instead. GetSatelliteAssembly throws when the
+            // culture did not ship, so the list stays honest about what is loadable.
+            foreach (var name in KnownCultures)
+            {
+                try
+                {
+                    assembly.GetSatelliteAssembly(CultureInfo.GetCultureInfo(name));
+                    found.Add(name);
+                }
+                catch (Exception) { /* not shipped in this build */ }
+            }
+        }
+
         return found.Skip(1).OrderBy(c => CultureInfo.GetCultureInfo(c).NativeName, StringComparer.CurrentCultureIgnoreCase).Prepend("en").ToList();
     }
 
