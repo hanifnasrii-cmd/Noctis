@@ -32,6 +32,7 @@ public sealed partial class NowPlayingViewModel : ObservableObject, IDisposable
     private DateTime _lastSaveUtc = DateTime.MinValue;
     private bool _gapless = true;
     private int _consecutiveErrors;
+    private bool _seeking;
     private bool _disposed;
 
     public NowPlayingViewModel(IAudioPlayer player, ILibraryService library, IPersistenceService persistence,
@@ -168,6 +169,20 @@ public sealed partial class NowPlayingViewModel : ObservableObject, IDisposable
         if (previous != null) StartTrack(previous, null);
     }
 
+    /// <summary>
+    /// The user grabbed the seek thumb. Suspends the position push until <see cref="EndSeek"/>:
+    /// the player ticks four times a second, and each tick republishes <see cref="Position"/>
+    /// into the Slider's Value, overwriting the value the drag put there (Slider writes its own
+    /// Value with SetCurrentValue, which a binding update beats). Without this the thumb snaps
+    /// back to the real playback position mid-drag and the release seeks to wherever the last
+    /// tick landed — intermittently, since a short drag between ticks works fine.
+    /// </summary>
+    public void BeginSeek() => _seeking = true;
+
+    /// <summary>The drag is over (or was cancelled): let position ticks move the thumb again.
+    /// Idempotent, so a PointerCaptureLost after a normal release is harmless.</summary>
+    public void EndSeek() => _seeking = false;
+
     public void Seek(TimeSpan position)
     {
         if (CurrentTrack == null) return;
@@ -263,7 +278,9 @@ public sealed partial class NowPlayingViewModel : ObservableObject, IDisposable
     private void OnPlayerPosition(object? sender, TimeSpan position) => _marshal(() =>
     {
         if (_disposed) return;
-        Position = position;
+        // Everything else in this tick still runs mid-drag — the engine keeps playing, so the
+        // IsPlaying resync and the save cadence must not stall while the thumb is held.
+        if (!_seeking) Position = position;
         // Lock-screen pause, audio-focus loss and headphone unplug pause the engine
         // without going through TogglePlayPause; the tick is where the UI catches up.
         var playing = _player.State == PlaybackState.Playing;

@@ -17,9 +17,10 @@
         </StackPanel>
 
         <Grid Grid.Row="3" Margin="0,16,0,0" RowDefinitions="Auto,Auto">
+            <!-- The pointer handlers are registered in the code-behind with Tunnel routing,
+                 not as XAML event attributes; see NowPlayingPage.axaml.cs for why. -->
             <Slider Name="SeekBar" Minimum="0" Maximum="{Binding Player.Duration.TotalSeconds}"
-                    Value="{Binding Player.Position.TotalSeconds, Mode=OneWay}"
-                    PointerReleased="OnSeekReleased" />
+                    Value="{Binding Player.Position.TotalSeconds, Mode=OneWay}" />
             <Grid Grid.Row="1" ColumnDefinitions="*,*">
                 <!-- The colon is a reserved character in a custom TimeSpan format string, so it
                      has to reach the formatter as \: — hence the {} escape and the explicit

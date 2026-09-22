@@ -6,16 +6,12 @@
              x:DataType="vm:ShellViewModel">
 
     <!-- Library underneath; Now Playing and Queue slide over it (Phase 4 adds the motion);
-         the mini bar sits at the bottom whenever a track is loaded and Now Playing is closed. -->
+         the mini bar sits at the bottom whenever a track is loaded and Now Playing is closed.
+         Declaration order is z-order: the mini bar belongs to the Library layer, so it is
+         declared before the overlays — after them it would paint over the Queue page the
+         moment anything other than Now Playing opens the queue. -->
     <Grid RowDefinitions="*,Auto">
         <views:LibraryPage Grid.Row="0" DataContext="{Binding}" />
-
-        <views:NowPlayingPage Grid.Row="0" Grid.RowSpan="2" Name="NowPlaying"
-                              DataContext="{Binding}"
-                              IsVisible="{Binding IsNowPlayingOpen}" />
-
-        <views:QueuePage Grid.Row="0" Grid.RowSpan="2" DataContext="{Binding}"
-                         IsVisible="{Binding IsQueueOpen}" />
 
         <Border Grid.Row="1" Name="MiniBar" Margin="12,0,12,12" Padding="12,10" CornerRadius="16"
                 Background="#1E1E20">
@@ -38,5 +34,12 @@
                 <Button Grid.Column="2" Width="40" Height="40" Content="⏭" Command="{Binding Player.NextCommand}" />
             </Grid>
         </Border>
+
+        <views:NowPlayingPage Grid.Row="0" Grid.RowSpan="2" Name="NowPlaying"
+                              DataContext="{Binding}"
+                              IsVisible="{Binding IsNowPlayingOpen}" />
+
+        <views:QueuePage Grid.Row="0" Grid.RowSpan="2" DataContext="{Binding}"
+                         IsVisible="{Binding IsQueueOpen}" />
     </Grid>
 </UserControl>

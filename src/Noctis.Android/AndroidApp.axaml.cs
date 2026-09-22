@@ -10,11 +10,15 @@ using Noctis.Mobile.ViewModels;
 using Noctis.Mobile.Views;
 using Noctis.Services;
 using AApplication = Android.App.Application;
+using ALog = Android.Util.Log;
 
 namespace Noctis.Android;
 
 public partial class AndroidApp : Avalonia.Application
 {
+    /// <summary>logcat tag for the mirrored <see cref="DebugLog"/>: `adb logcat -s Noctis`.</summary>
+    private const string LogTag = "Noctis";
+
     private ResourceInclude? _activeThemeOverlay;
     private ShellViewModel? _shell;
     private Media3AudioPlayer? _player;
@@ -43,6 +47,13 @@ public partial class AndroidApp : Avalonia.Application
         // service construction — nothing above may touch PersistenceService, PlayHistoryService
         // or AppWrittenSidecarRegistry.
         AppPaths.OverrideDataRoot(context.FilesDir!.AbsolutePath);
+
+        // DebugLog is an in-memory ring with no output of its own, so every handled error the
+        // app logs — startup, library scan, playback, SAF listing — would be invisible on a
+        // phone. Mirror it to logcat, where `adb logcat -s Noctis` can read it. AttachSink
+        // replays what is already buffered, so attaching here loses nothing logged earlier;
+        // the reset callback exists for the desktop's disk mirror and has no analogue here.
+        DebugLog.AttachSink(line => ALog.Info(LogTag, line), static () => { });
 
         var persistence = new PersistenceService();
         var metadata = new MetadataService();
@@ -99,12 +110,25 @@ public partial class AndroidApp : Avalonia.Application
         }
     }
 
-    /// <summary>Activity paused: checkpoint the queue and position. Android may kill the
-    /// process after this with no further callback, so there is no later chance to save.</summary>
+    /// <summary>
+    /// Activity paused: checkpoint the queue and position. Best-effort only — this is
+    /// fire-and-forget and the process can be killed before the write lands. What actually
+    /// bounds the loss is NowPlayingViewModel's five-second save cadence plus its save on
+    /// pause; this call just shortens the window on the common home/screen-off path.
+    /// </summary>
     public void OnBackgrounded()
     {
-        _ = _shell?.SaveStateAsync();
+        var save = _shell?.SaveStateAsync();
+        // Matches NowPlayingViewModel.SaveStateNow: a background save that throws would
+        // otherwise be an unobserved exception nobody ever sees.
+        _ = save?.ContinueWith(
+            t => DebugLog.Write("Queue", $"Background save failed: {t.Exception?.GetBaseException().Message}"),
+            TaskContinuationOptions.OnlyOnFaulted);
     }
+
+    /// <summary>Activity Back: give the shell first refusal so a full-screen overlay closes
+    /// instead of the activity finishing. See <see cref="ShellViewModel.TryHandleBack"/>.</summary>
+    public bool TryHandleBack() => _shell?.TryHandleBack() ?? false;
 
     /// <summary>
     /// Merge one of the shared theme overlays (Dark, Midnight, Ink, Smoke) on top of the

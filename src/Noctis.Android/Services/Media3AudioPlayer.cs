@@ -7,6 +7,7 @@ using Noctis.Models;
 using Noctis.Services;
 using AUri = Android.Net.Uri;
 using JFile = Java.IO.File;
+using JInteger = Java.Lang.Integer;
 // Android.Media also defines AudioAttributes and MediaMetadata; alias the Media3 ones we
 // mean (same pattern as AUri/JFile above) rather than fully-qualifying every use.
 using AudioAttributes = AndroidX.Media3.Common.AudioAttributes;
@@ -360,9 +361,25 @@ public sealed class Media3AudioPlayer : IAudioPlayer
         if (track != null)
         {
             meta.SetTitle(track.Title).SetArtist(track.Artist).SetAlbumTitle(track.Album);
+            // The bytes, not a file:// artworkUri. SystemUI draws the notification and the
+            // lock screen in its own process and cannot read a path inside our private files
+            // dir, so a URI there renders as a blank cover. Cached covers are small and this
+            // is a private-storage read, so it stays cheap enough for the track-change path;
+            // a missing or unreadable file must never take the rest of the metadata down
+            // with it, hence the guard and the catch.
             var art = _persistence.GetArtworkPath(track.AlbumId);
             if (File.Exists(art))
-                meta.SetArtworkUri(AUri.FromFile(new JFile(art)));
+            {
+                try
+                {
+                    meta.SetArtworkData(File.ReadAllBytes(art),
+                        JInteger.ValueOf(MediaMetadata.PictureTypeFrontCover));
+                }
+                catch (Exception ex)
+                {
+                    DebugLog.Write("Audio", $"Artwork read failed for '{track.Title}': {ex.Message}");
+                }
+            }
         }
         else
         {

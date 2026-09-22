@@ -32,6 +32,20 @@ public sealed partial class ShellViewModel : ObservableObject
 
     [RelayCommand] private void ToggleQueue() => IsQueueOpen = !IsQueueOpen;
 
+    /// <summary>
+    /// Android Back: close the topmost overlay, innermost first. Returns whether the press was
+    /// consumed — the activity only falls through to the system default (finish) from the
+    /// Library page. Without it, Back from the full-screen Now Playing or Queue page exits the
+    /// app, which reads as a crash. The decision lives here rather than in the activity so it
+    /// is testable on Windows.
+    /// </summary>
+    public bool TryHandleBack()
+    {
+        if (IsQueueOpen) { IsQueueOpen = false; return true; }
+        if (IsNowPlayingOpen) { IsNowPlayingOpen = false; return true; }
+        return false;
+    }
+
     /// <summary>Tap on a song row: play the song list from that row.</summary>
     [RelayCommand]
     private void PlaySong(Track? track)

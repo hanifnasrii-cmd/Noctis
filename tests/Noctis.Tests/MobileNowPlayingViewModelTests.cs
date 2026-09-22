@@ -214,4 +214,62 @@ public class MobileNowPlayingViewModelTests : IDisposable
 
         Assert.False(vm.IsPlaying);
     }
+
+    [Fact]
+    public void SeekDrag_SuspendsThePositionPush_UntilTheDragEnds()
+    {
+        // The drag itself cannot be simulated headlessly, so this pins the mechanism the
+        // pointer handlers drive: while a seek is in progress the 4 Hz position tick must not
+        // move Position, because that value is bound into the Slider and would overwrite what
+        // the user's finger put there. Everything else the tick does must keep working.
+        var t = Tracks(1);
+        var (vm, player, _, _) = Make(t);
+        vm.PlayTracks(t, 0);
+
+        vm.BeginSeek();
+        player.RaisePositionChanged(TimeSpan.FromSeconds(12));
+        Assert.Equal(TimeSpan.Zero, vm.Position);
+
+        // ...while the rest of the tick still runs: an external pause mid-drag is still caught.
+        player.Pause();
+        player.RaisePositionChanged(TimeSpan.FromSeconds(13));
+        Assert.False(vm.IsPlaying);
+
+        vm.EndSeek();
+        player.Resume();
+        player.RaisePositionChanged(TimeSpan.FromSeconds(20));
+        Assert.Equal(TimeSpan.FromSeconds(20), vm.Position);
+    }
+
+    [Fact]
+    public void QueueAvailability_DrivesTheNotificationTransportButtons()
+    {
+        // These two feed Media3's HasNext/HasPreviousMediaItem, which decide whether the
+        // notification draws Next/Previous enabled. ExoPlayer's own item list is the wrong
+        // source, so they are computed from the app queue instead — pinned here.
+        var t = Tracks(2);
+        var (vm, _, _, _) = Make(t);
+
+        Assert.False(vm.HasNext);                          // stopped, empty queue
+        Assert.False(vm.HasPrevious);
+
+        vm.PlayTracks(t, 0);
+        Assert.True(vm.HasNext);                           // t[1] is up next
+        Assert.True(vm.HasPrevious);                       // Previous restarts the track
+
+        vm.NextCommand.Execute(null);
+        Assert.Empty(vm.UpNext);
+        Assert.False(vm.HasNext);                          // last track, repeat off
+        Assert.True(vm.HasPrevious);                       // history has t[0]
+
+        vm.CycleRepeatCommand.Execute(null);               // Off -> All
+        Assert.Equal(RepeatMode.All, vm.RepeatMode);
+        // The widening this task added: Repeat All wraps to the recorded cycle even with
+        // UpNext empty, so the notification's Next must stay enabled on the last track.
+        Assert.True(vm.HasNext);
+
+        vm.CycleRepeatCommand.Execute(null);               // All -> One
+        Assert.Equal(RepeatMode.One, vm.RepeatMode);
+        Assert.False(vm.HasNext);                          // One does not wrap on a user skip
+    }
 }

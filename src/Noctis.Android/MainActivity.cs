@@ -28,6 +28,25 @@ public class MainActivity : AvaloniaMainActivity
         base.OnCreate(savedInstanceState);
     }
 
+    /// <summary>
+    /// Now Playing and Queue are full-screen overlays inside the one activity, not activities
+    /// of their own, so the system default — finish() — makes Back from either look like the
+    /// app quit. Hand the press to the shell first; it consumes one if an overlay is open.
+    /// Deprecated from API 33 in favour of OnBackInvokedCallback, but predictive back is
+    /// opt-in (android:enableOnBackInvokedCallback, which we do not set), so this is still
+    /// the callback the system routes Back through for us on every version we support.
+    /// </summary>
+    public override void OnBackPressed()
+    {
+        if (AndroidApp.Current?.TryHandleBack() == true) return;
+        // CA1422 flags the base call as obsoleted on 33+. Scoped rather than added to the
+        // project's NoWarn so the analyzer keeps working everywhere else; the day predictive
+        // back is enabled this becomes an OnBackPressedDispatcher callback instead.
+#pragma warning disable CA1422
+        base.OnBackPressed();
+#pragma warning restore CA1422
+    }
+
     protected override void OnPause()
     {
         base.OnPause();

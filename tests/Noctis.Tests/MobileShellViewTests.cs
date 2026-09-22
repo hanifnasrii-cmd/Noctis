@@ -21,17 +21,50 @@ public class MobileShellViewTests
         public System.Threading.Tasks.Task<string?> PickFolderAsync() => System.Threading.Tasks.Task.FromResult<string?>(null);
     }
 
+    private static ShellViewModel MakeShell(string root, out FakeLibraryService library, params Track[] tracks)
+    {
+        library = new FakeLibraryService();
+        library.TrackList.AddRange(tracks);
+        var persistence = new PersistenceService(root);
+        return new ShellViewModel(
+            new LibraryViewModel(library, persistence, new NoPicker(), marshal: a => a()),
+            new NowPlayingViewModel(new FakeAudioPlayer(), library, persistence, marshal: a => a()));
+    }
+
+    /// <summary>
+    /// Android Back must close the topmost overlay rather than finish the activity — both
+    /// pages are full-screen overlays inside the single activity, so the system default reads
+    /// as the app quitting. The activity delegates the whole decision here.
+    /// </summary>
+    [Fact]
+    public void TryHandleBack_ClosesTheTopmostOverlay_ThenFallsThrough()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "NoctisTests", Guid.NewGuid().ToString("N"));
+        var shell = MakeShell(root, out _);
+
+        Assert.False(shell.TryHandleBack());               // Library page: the system handles it
+
+        shell.OpenNowPlayingCommand.Execute(null);
+        shell.ToggleQueueCommand.Execute(null);
+        Assert.True(shell.IsQueueOpen);
+
+        Assert.True(shell.TryHandleBack());                // innermost first
+        Assert.False(shell.IsQueueOpen);
+        Assert.True(shell.IsNowPlayingOpen);
+
+        Assert.True(shell.TryHandleBack());
+        Assert.False(shell.IsNowPlayingOpen);
+
+        Assert.False(shell.TryHandleBack());               // back at the Library page
+        try { Directory.Delete(root, recursive: true); } catch { }
+    }
+
     [AvaloniaFact]
     public void Shell_Mounts_AndMiniBarFollowsPlayback()
     {
         var root = Path.Combine(Path.GetTempPath(), "NoctisTests", Guid.NewGuid().ToString("N"));
-        var library = new FakeLibraryService();
         var track = new Track { Id = Guid.NewGuid(), Title = "Mounted Song", Artist = "Tester", FilePath = "content://x/1", Duration = TimeSpan.FromSeconds(90) };
-        library.TrackList.Add(track);
-        var persistence = new PersistenceService(root);
-        var shell = new ShellViewModel(
-            new LibraryViewModel(library, persistence, new NoPicker(), marshal: a => a()),
-            new NowPlayingViewModel(new FakeAudioPlayer(), library, persistence, marshal: a => a()));
+        var shell = MakeShell(root, out _, track);
         shell.Library.InitializeAsync().GetAwaiter().GetResult();
 
         var view = new ShellView { DataContext = shell };
