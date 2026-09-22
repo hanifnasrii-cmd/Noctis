@@ -82,7 +82,8 @@ public class LibraryService : ILibraryService
         ISqliteLibraryIndexService sqliteIndex,
         IAuditTrailService auditTrail,
         IDeferredTagWriter? tagWriter = null,
-        Sync.ITrackStateRecorder? syncRecorder = null)
+        Sync.ITrackStateRecorder? syncRecorder = null,
+        IFileSystemSource? fileSystem = null)
     {
         _metadata = metadata;
         _persistence = persistence;
@@ -90,6 +91,7 @@ public class LibraryService : ILibraryService
         _auditTrail = auditTrail;
         _tagWriter = tagWriter;
         _syncRecorder = syncRecorder;
+        _fileSystem = fileSystem ?? new LocalFileSystemSource();
     }
 
     /// <summary>Batches rating/lyrics tag writes until the user is idle (null = write immediately).</summary>
@@ -97,6 +99,9 @@ public class LibraryService : ILibraryService
 
     /// <summary>Mirrors user-state saves into the sync ledger (null = sync not wired).</summary>
     private readonly Sync.ITrackStateRecorder? _syncRecorder;
+
+    /// <summary>Where scans enumerate and open files (desktop: directory walk; Android: SAF).</summary>
+    private readonly IFileSystemSource _fileSystem;
 
     public async Task ScanAsync(IEnumerable<string> folders, CancellationToken ct = default)
     {
@@ -259,7 +264,7 @@ public class LibraryService : ILibraryService
 
             foreach (var folder in includeRoots)
             {
-                if (!Directory.Exists(folder))
+                if (!_fileSystem.RootExists(folder))
                 {
                     unavailableRoots.Add(folder);
                     continue;
@@ -271,13 +276,14 @@ public class LibraryService : ILibraryService
                 // enumeration with metadata reads and starts reporting progress
                 // immediately instead of after a long silent listing phase.
                 // NoBuffering dispatches one file at a time so the count moves right away.
-                var files = EnumerateAudioFiles(folder, excludedRoots, ignoredNames, failedDirs)
-                    .Where(f => !excludedFiles.Contains(f));
+                var files = _fileSystem.EnumerateAudioFiles(folder, excludedRoots, ignoredNames, failedDirs.Add)
+                    .Where(e => !excludedFiles.Contains(e.Path));
                 var partitioner = Partitioner.Create(files, EnumerablePartitionerOptions.NoBuffering);
 
-                Parallel.ForEach(partitioner, options, filePath =>
+                Parallel.ForEach(partitioner, options, entry =>
                 {
                     if (ct.IsCancellationRequested) return;
+                    var filePath = entry.Path;
 
                     // Declared outside the try so the failure paths below can tell a
                     // known-but-unreadable file apart from an unreadable new file.
@@ -288,8 +294,7 @@ public class LibraryService : ILibraryService
                         // Skip files we already have that haven't changed
                         if (trackIndexSnapshot.TryGetValue(ComputeFileId(filePath), out existing))
                         {
-                            var fi = new FileInfo(filePath);
-                            if (fi.LastWriteTimeUtc == existing.LastModified && fi.Length == existing.FileSize)
+                            if (entry.LastWriteTimeUtc == existing.LastModified && entry.Length == existing.FileSize)
                             {
                                 newTracks.Add(existing);
                                 Interlocked.Increment(ref unchangedCount);
@@ -299,7 +304,7 @@ public class LibraryService : ILibraryService
                         }
 
                         // Read metadata (and the embedded cover, already in memory) for new/changed files
-                        var track = _metadata.ReadTrackMetadata(filePath, out var embeddedArt);
+                        var track = _metadata.ReadTrackMetadata(entry, out var embeddedArt);
                         if (track != null)
                         {
                             // Use file path hash as stable ID so rescans don't create duplicates
@@ -403,20 +408,7 @@ public class LibraryService : ILibraryService
         // only safe response is to abort the scan and keep what we already have.
         if (unavailableRoots.Count > 0)
         {
-            var normalizedMissing = unavailableRoots
-                .Select(TryNormalizePath)
-                .Where(p => !string.IsNullOrEmpty(p))
-                .Select(p => p!)
-                .ToArray();
-
-            var strandedTracks = normalizedMissing.Length == 0
-                ? 0
-                : originalTracks.Count(t =>
-                {
-                    var normalized = TryNormalizePath(t.FilePath);
-                    return normalized != null &&
-                           normalizedMissing.Any(root => IsUnderRoot(normalized, root));
-                });
+            var strandedTracks = originalTracks.Count(t => unavailableRoots.Any(root => PathIsUnder(t.FilePath, root)));
 
             if (strandedTracks > 0)
             {
@@ -1847,7 +1839,7 @@ public class LibraryService : ILibraryService
     {
         var input = folders
             .Where(f => !string.IsNullOrWhiteSpace(f))
-            .Select(TryNormalizePath)
+            .Select(f => IsUriRoot(f) ? f : TryNormalizePath(f))
             .Where(p => !string.IsNullOrWhiteSpace(p))
             .Select(p => p!);
 
@@ -2408,62 +2400,6 @@ public class LibraryService : ILibraryService
         return Math.Min(Environment.ProcessorCount, 8);
     }
 
-    private static IEnumerable<string> EnumerateAudioFiles(
-        string root,
-        IReadOnlyCollection<string> excludedRoots,
-        HashSet<string> ignoredNames,
-        ConcurrentBag<string> failedDirs)
-    {
-        var stack = new Stack<string>();
-        // Cycle guard keyed on the RESOLVED path: a junction/symlink pointing at
-        // an ancestor re-enters the tree under an ever-growing logical path, so
-        // the walked path alone never repeats and the DFS loops forever.
-        var visited = new HashSet<string>(
-            OperatingSystem.IsLinux() ? StringComparer.Ordinal : StringComparer.OrdinalIgnoreCase);
-        stack.Push(root);
-
-        while (stack.Count > 0)
-        {
-            var current = stack.Pop();
-            if (IsUnderAnyRoot(current, excludedRoots)) continue;
-            if (!visited.Add(ResolveRealPath(current))) continue;
-
-            List<string> directories;
-            List<string> files;
-            try
-            {
-                // Materialized inside the try: the enumerables are lazy, so an I/O error
-                // surfacing mid-listing (not just at open) would otherwise escape this
-                // catch and abort the entire scan pipeline.
-                directories = Directory.EnumerateDirectories(current).ToList();
-                files = Directory.EnumerateFiles(current).ToList();
-            }
-            catch
-            {
-                // "Couldn't list" is not "doesn't exist". Silently skipping here made the
-                // scan treat the whole subtree as deleted; record it so ScanCoreAsync can
-                // keep the known tracks under it (see the failed-directories guard there).
-                failedDirs.Add(current);
-                continue;
-            }
-
-            foreach (var dir in directories)
-            {
-                var name = Path.GetFileName(dir);
-                if (ignoredNames.Contains(name.ToLowerInvariant())) continue;
-                if (IsUnderAnyRoot(dir, excludedRoots)) continue;
-                stack.Push(dir);
-            }
-
-            foreach (var file in files)
-            {
-                var ext = Path.GetExtension(file);
-                if (MetadataService.SupportedExtensions.Contains(ext))
-                    yield return file;
-            }
-        }
-    }
-
     /// <summary>
     /// Existing tracks that live under a directory whose listing failed this scan and
     /// that the scan did not see — i.e. tracks that would otherwise be dropped because
@@ -2475,55 +2411,41 @@ public class LibraryService : ILibraryService
         HashSet<Guid> scannedIds,
         IEnumerable<string> failedDirectories)
     {
-        var failedPrefixes = failedDirectories
-            .Select(TryNormalizePath)
-            .Where(p => !string.IsNullOrWhiteSpace(p))
-            .Select(p => p!)
-            .Distinct(PathComparison.Comparer)
-            .ToArray();
+        var failedPrefixes = failedDirectories.Distinct(StringComparer.Ordinal).ToArray();
         if (failedPrefixes.Length == 0)
             return new List<Track>();
 
         return existingTracks
-            .Where(t =>
-            {
-                if (scannedIds.Contains(t.Id)) return false;
-                var normalized = TryNormalizePath(t.FilePath);
-                return normalized != null && failedPrefixes.Any(p => IsUnderRoot(normalized, p));
-            })
+            .Where(t => !scannedIds.Contains(t.Id) && failedPrefixes.Any(p => PathIsUnder(t.FilePath, p)))
             .ToList();
     }
 
-    // Symlinked/junctioned directories are followed (symlinked music libraries are
-    // legitimate); resolving to the final target is what makes the visited-set
-    // above detect a loop regardless of the logical path it was reached through.
-    private static string ResolveRealPath(string dir)
+    /// <summary>
+    /// True when a root is not a filesystem path (a SAF tree URI on Android). Such roots
+    /// are compared as opaque strings: Path.GetFullPath would rewrite them into nonsense.
+    /// </summary>
+    private static bool IsUriRoot(string root) => root.Contains("://", StringComparison.Ordinal);
+
+    /// <summary>
+    /// Is <paramref name="filePath"/> under <paramref name="root"/>? Filesystem roots are
+    /// normalized and compared as paths; URI roots by ordinal prefix — a SAF document URI
+    /// starts with its tree URI, and a document under a directory document starts with
+    /// that directory's URI followed by an encoded separator.
+    /// </summary>
+    internal static bool PathIsUnder(string filePath, string root)
     {
-        try
+        if (IsUriRoot(root))
         {
-            var info = new DirectoryInfo(dir);
-            if ((info.Attributes & FileAttributes.ReparsePoint) != 0)
-                return info.ResolveLinkTarget(returnFinalTarget: true)?.FullName ?? info.FullName;
-            return info.FullName;
+            return filePath.Equals(root, StringComparison.Ordinal)
+                || filePath.StartsWith(root + "/", StringComparison.Ordinal)
+                || filePath.StartsWith(root + "%2F", StringComparison.Ordinal);
         }
-        catch
-        {
-            return dir;
-        }
+        var normalizedRoot = TryNormalizePath(root);
+        var normalizedPath = TryNormalizePath(filePath);
+        return normalizedRoot != null && normalizedPath != null && IsUnderRoot(normalizedPath, normalizedRoot);
     }
 
-    private static bool IsUnderAnyRoot(string path, IReadOnlyCollection<string> roots)
-    {
-        var normalized = NormalizePath(path);
-        foreach (var root in roots)
-        {
-            if (IsUnderRoot(normalized, root))
-                return true;
-        }
-        return false;
-    }
-
-    private static bool IsUnderRoot(string normalizedPath, string root)
+    internal static bool IsUnderRoot(string normalizedPath, string root)
     {
         if (normalizedPath.Equals(root, PathComparison.Comparison))
             return true;
@@ -2532,7 +2454,7 @@ public class LibraryService : ILibraryService
                normalizedPath.StartsWith(root + Path.AltDirectorySeparatorChar, PathComparison.Comparison);
     }
 
-    private static string NormalizePath(string path)
+    internal static string NormalizePath(string path)
     {
         var full = Path.GetFullPath(path);
         return full.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
