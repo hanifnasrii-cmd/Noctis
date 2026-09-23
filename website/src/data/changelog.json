@@ -1,6 +1,59 @@
 {
   "releases": [
     {
+      "tag": "v1.5.2",
+      "version": "1.5.2",
+      "name": "v1.5.2",
+      "publishedAt": "2026-09-23T02:21:30Z",
+      "url": "https://github.com/heartached/Noctis/releases/tag/v1.5.2",
+      "prerelease": false,
+      "sections": [
+        {
+          "title": "New Features",
+          "items": [
+            "Added Liquid drag-to-reorder for queue, playlists, sidebar",
+            "Added drag card preview (artwork, title, artist) while dragging",
+            "Added Queue selection (Ctrl/Shift+click, Delete, Ctrl+A, Esc)",
+            "Added Queue right-click remove selection",
+            "Added Mini player button on player island",
+            "Added Frosted Background toggle for mini player",
+            "Added Lyrics translation and romanization support",
+            "Added Show Translations/Romanization/Background Vocals toggles",
+            "Added Per-track covers (differing embedded covers per song)",
+            "Added Cover Flow redesign (15 cards, no overlap, straight line)"
+          ]
+        },
+        {
+          "title": "Improvements",
+          "items": [
+            "Improved Album page colour picking (band sampling, tone-down neons)",
+            "Improved Album page layout (full screen colour, facts at bottom)",
+            "Improved Other Versions/More By section (hidden when empty)",
+            "Improved mini player opacity slider for Pill/Sleeve designs",
+            "Improved Cover Flow captions and glass background"
+          ]
+        },
+        {
+          "title": "Bug Fixes",
+          "items": [
+            "Fixed featured artists no longer splitting with default separators",
+            "Fixed sidebar rows shifting during drags",
+            "Fixed playlist pill flickering during drag",
+            "Fixed album page artist name disappearing with accent color",
+            "Fixed pause with fades ending in a volume burst",
+            "Fixed Linux AppImage audio dropouts on first play/idle",
+            "Fixed Playlists grid flickering between tile sizes",
+            "Fixed dropped files clearing from queue on library change",
+            "Fixed island title opening album for non-library files",
+            "Fixed Liquid Glass menus/tooltips being too transparent",
+            "Fixed mini player going off-screen when switching styles",
+            "Fixed metadata panel showing wrong artwork size",
+            "Fixed album cover picking wrong track's cover on scan"
+          ]
+        }
+      ]
+    },
+    {
       "tag": "v1.5.1",
       "version": "1.5.1",
       "name": "v1.5.1",
@@ -2611,6 +2664,6 @@
       "sections": []
     }
   ],
-  "updatedAt": "2026-09-22T05:06:34.345Z",
+  "updatedAt": "2026-09-23T02:22:28.181Z",
   "degraded": false
 }

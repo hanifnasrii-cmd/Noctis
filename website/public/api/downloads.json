@@ -1,7 +1,8 @@
 {
-  "total": 9577,
+  "total": 9582,
   "byRelease": {
-    "v1.5.1": 154,
+    "v1.5.2": 0,
+    "v1.5.1": 159,
     "v1.5.0": 166,
     "v1.4.7": 1366,
     "v1.4.6": 196,
@@ -52,73 +53,73 @@
     "v1.0.1": 22,
     "v1.0.0": 11
   },
-  "latestVersion": "1.5.1",
-  "latestTag": "v1.5.1",
-  "latestUrl": "https://github.com/heartached/Noctis/releases/tag/v1.5.1",
-  "publishedAt": "2026-09-22T04:59:23Z",
-  "releaseCount": 50,
+  "latestVersion": "1.5.2",
+  "latestTag": "v1.5.2",
+  "latestUrl": "https://github.com/heartached/Noctis/releases/tag/v1.5.2",
+  "publishedAt": "2026-09-23T02:21:30Z",
+  "releaseCount": 51,
   "stars": 227,
   "openIssues": 12,
   "assets": {
     "windowsInstaller": {
-      "name": "Noctis-v1.5.1-Setup.exe",
-      "url": "https://github.com/heartached/Noctis/releases/download/v1.5.1/Noctis-v1.5.1-Setup.exe",
-      "size": 151130442,
-      "downloads": 82
+      "name": "Noctis-v1.5.2-Setup.exe",
+      "url": "https://github.com/heartached/Noctis/releases/download/v1.5.2/Noctis-v1.5.2-Setup.exe",
+      "size": 151232713,
+      "downloads": 0
     },
     "windowsPortable": {
       "name": "Noctis-windows-x64.zip",
-      "url": "https://github.com/heartached/Noctis/releases/download/v1.5.1/Noctis-windows-x64.zip",
-      "size": 271623683,
-      "downloads": 10
+      "url": "https://github.com/heartached/Noctis/releases/download/v1.5.2/Noctis-windows-x64.zip",
+      "size": 271765865,
+      "downloads": 0
     },
     "macosArm": {
       "name": "Noctis-osx-arm64.dmg",
-      "url": "https://github.com/heartached/Noctis/releases/download/v1.5.1/Noctis-osx-arm64.dmg",
-      "size": 204877530,
-      "downloads": 4
+      "url": "https://github.com/heartached/Noctis/releases/download/v1.5.2/Noctis-osx-arm64.dmg",
+      "size": 205553565,
+      "downloads": 0
     },
     "macosIntel": {
       "name": "Noctis-osx-x64.dmg",
-      "url": "https://github.com/heartached/Noctis/releases/download/v1.5.1/Noctis-osx-x64.dmg",
-      "size": 208161519,
-      "downloads": 1
+      "url": "https://github.com/heartached/Noctis/releases/download/v1.5.2/Noctis-osx-x64.dmg",
+      "size": 208609173,
+      "downloads": 0
     },
     "linuxAppImage": {
       "name": "Noctis-x86_64.AppImage",
-      "url": "https://github.com/heartached/Noctis/releases/download/v1.5.1/Noctis-x86_64.AppImage",
-      "size": 212240888,
-      "downloads": 15
+      "url": "https://github.com/heartached/Noctis/releases/download/v1.5.2/Noctis-x86_64.AppImage",
+      "size": 212417016,
+      "downloads": 0
     },
     "linuxArm": {
       "name": "Noctis-linux-arm64.tar.gz",
-      "url": "https://github.com/heartached/Noctis/releases/download/v1.5.1/Noctis-linux-arm64.tar.gz",
-      "size": 142205015,
-      "downloads": 1
+      "url": "https://github.com/heartached/Noctis/releases/download/v1.5.2/Noctis-linux-arm64.tar.gz",
+      "size": 142338657,
+      "downloads": 0
     },
     "linuxTar": {
       "name": "Noctis-linux-x64.tar.gz",
-      "url": "https://github.com/heartached/Noctis/releases/download/v1.5.1/Noctis-linux-x64.tar.gz",
-      "size": 153507362,
-      "downloads": 1
+      "url": "https://github.com/heartached/Noctis/releases/download/v1.5.2/Noctis-linux-x64.tar.gz",
+      "size": 153643951,
+      "downloads": 0
     },
     "checksums": {
       "name": "SHA256SUMS",
-      "url": "https://github.com/heartached/Noctis/releases/download/v1.5.1/SHA256SUMS",
+      "url": "https://github.com/heartached/Noctis/releases/download/v1.5.2/SHA256SUMS",
       "size": 990,
-      "downloads": 37
+      "downloads": 0
     }
   },
   "sizes": {
     "windowsInstaller": "144 MB",
     "windowsPortable": "259 MB",
-    "macosArm": "195 MB",
+    "macosArm": "196 MB",
     "macosIntel": "199 MB",
-    "linuxAppImage": "202 MB",
+    "linuxAppImage": "203 MB",
     "linuxArm": "136 MB",
-    "linuxTar": "146 MB",
+    "linuxTar": "147 MB",
     "checksums": "0 MB"
   },
-  "updatedAt": "2026-09-23T00:41:09.809Z",
+  "updatedAt": "2026-09-23T02:22:27.325Z",
   "degraded": false
 }
