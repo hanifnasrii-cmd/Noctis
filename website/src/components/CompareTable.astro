@@ -59,13 +59,7 @@ const { caption, columns, groups, id } = Astro.props;
 
     {
       groups.map((g, gi) => (
-        <tbody>
-          <tr class="cmp__grouprow">
-            <th scope="colgroup" colspan={columns.length + 1} class="cmp__group">
-              <span class="eyebrow">{g.heading}</span>
-            </th>
-          </tr>
-
+        <tbody aria-label={g.heading}>
           {g.rows.map((row, ri) => (
             <tr>
               <th scope="row" class="cmp__rowhead">
