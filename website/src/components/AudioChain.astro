@@ -1,363 +1,413 @@
 ---
 /**
- * The signal path. The SVG is decorative (aria-hidden) — the <ol> beneath it
- * is the accessible content and the visual fallback below 760px, where a
- * 1100-unit-wide diagram would render its labels at four pixels. From 760px
- * the <ol> is visually hidden rather than restyled as a breadcrumb: on screen
- * it would only repeat the diagram word for word.
+ * The signal path, as five numbered stage cards on a lit track, then three
+ * fact cards. Plain HTML rather than an SVG diagram: the cards can carry real
+ * type, icons and glow, the list IS the accessible content, and below 900px
+ * the same list simply turns vertical with the track running down its edge.
  *
  * Every stage here is verified against the app SOURCE, not the README — see
  * src/data/verified-claims.md. LibVLC decodes, ReplayGain levels, the EQ is
  * parametric (never "10-band"), and exclusive output is Windows-only, a
- * qualifier that is load-bearing and so is carried in the diagram, the list
- * AND the fact row.
+ * qualifier that is load-bearing and so is carried on the card AND the fact.
  */
 
-/* --- Diagram geometry ----------------------------------------------------
-   Laid out in code rather than by hand so a label change cannot silently
-   overflow its box. Node widths are derived from the label; x positions
-   accumulate. Every number below is a viewBox user unit, not a CSS pixel. */
-const GAP = 92;
-const NODE_Y = 22;
-const NODE_H = 68;
-const MID = NODE_Y + NODE_H / 2; // the spine, and the lane the pulse travels
-const LABEL_Y = 49;
-const HINT_Y = 70;
-const RAIL_H = 112;
+type Icon = 'file' | 'decode' | 'gain' | 'eq' | 'output';
 
-const stages = [
-  { name: 'File', hint: 'ON DISK', qualifier: null },
-  { name: 'Decode', hint: 'LIBVLC', qualifier: 'LibVLC' },
-  { name: 'ReplayGain', hint: 'LEVELLING', qualifier: null },
-  { name: 'Parametric EQ', hint: 'PRESETS', qualifier: null },
-  { name: 'Exclusive output', hint: 'WINDOWS ONLY', qualifier: 'Windows only' },
+const stages: { name: string; hint: string; icon: Icon }[] = [
+  { name: 'File', hint: 'On disk', icon: 'file' },
+  { name: 'Decode', hint: 'LibVLC', icon: 'decode' },
+  { name: 'ReplayGain', hint: 'Levelling', icon: 'gain' },
+  { name: 'Parametric EQ', hint: '18 presets', icon: 'eq' },
+  { name: 'Exclusive output', hint: 'Windows only', icon: 'output' },
 ];
 
-let cursor = 0;
-const nodes = stages.map((s) => {
-  /* 8.4u/char is Inter 600 at 15u measured across these five labels; the 150u
-     floor stops the short names collapsing into stubs. */
-  const w = Math.max(150, Math.round(s.name.length * 8.4 + 44));
-  const node = { ...s, x: cursor, w, cx: cursor + w / 2 };
-  cursor += w + GAP;
-  return node;
-});
-const RAIL_W = cursor - GAP;
-
-/* Chevron at the centre of each gap. */
-const arrows = nodes.slice(0, -1).map((n) => n.x + n.w + GAP / 2);
+const icons: Record<Icon, string> = {
+  file: 'M7 3h7l5 5v13H7zM14 3v5h5M10 13h6M10 17h4',
+  decode: 'M3 12h2l2-5 3 10 3-12 3 9 2-2h3',
+  gain: 'M5 20V10M10 20V4M15 20v-7M20 20V8',
+  eq: 'M6 4v16M12 4v16M18 4v16M3.5 9h5M9.5 15h5M15.5 7h5',
+  output: 'M4 9v6h4l5 4V5L8 9zM16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12',
+};
 
 const facts = [
   {
     /* Deliberately NOT "bit-perfect". Verified in source: LibVLC 3.x's audio
        callback delivers 16-bit PCM, so anything above 16 bits is truncated
        before it reaches the exclusive sink, and the claim also breaks at any
-       volume below 100. What IS true is the sample rate and the mixer bypass.
-       The README's "live signal-path badge" is also dropped — it is computed in
-       PlayerViewModel but bound by no XAML, so nothing renders it. */
+       volume below 100. What IS true is the sample rate and the mixer bypass. */
     label: 'Exclusive output',
     note: 'Windows only. Bypasses the system mixer and opens your device at the track’s own rate; 16-bit sources pass through untouched.',
+    icon: 'output' as Icon,
   },
-  { label: 'Gapless playback', note: 'One album side, no seam between tracks.' },
-  { label: 'Crossfade and AutoMix', note: 'Blend one track into the next, by hand or automatically.' },
-  /* ReplayGain and the parametric EQ are not repeated here — the diagram
-     already names both stages, hints included. */
+  {
+    label: 'Gapless playback',
+    note: 'One album side, no seam between tracks.',
+    icon: 'decode' as Icon,
+  },
+  {
+    label: 'Crossfade and AutoMix',
+    note: 'Blend one track into the next, by hand or automatically.',
+    icon: 'eq' as Icon,
+  },
 ];
 ---
 
 <section class="section audio" id="audio" aria-labelledby="audio-title">
   <div class="container">
-    <header class="audio__head" data-reveal>
+    <header class="sec-head" data-reveal>
       <h2 class="h2" id="audio-title">See the whole chain</h2>
-      <p class="lede">
-        Five stages sit between the file on your disk and your output device.
-      </p>
+      <p class="lede">Five stages sit between the file on your disk and your output device.</p>
     </header>
 
-    <figure class="rail" data-reveal>
-      <svg
-        class="rail__svg"
-        viewBox={`0 0 ${RAIL_W} ${RAIL_H}`}
-        width={RAIL_W}
-        height={RAIL_H}
-        style={`--rail-w:${RAIL_W}px`}
-        aria-hidden="true"
-        focusable="false"
-      >
-        <line class="rail__spine" x1="0" y1={MID} x2={RAIL_W} y2={MID}></line>
+    <div class="chain" data-reveal>
+      <div class="chain__track" aria-hidden="true">
+        <span class="chain__beam"><span class="chain__dot"></span></span>
+      </div>
 
-        {
-          arrows.map((gx) => (
-            <path
-              class="rail__arrow"
-              d={`M${gx - 4} ${MID - 5} L${gx + 3} ${MID} L${gx - 4} ${MID + 5}`}
-            />
-          ))
-        }
-
-        {
-          nodes.map((n) => (
-            <g class="rail__node">
-              <rect class="rail__box" x={n.x} y={NODE_Y} width={n.w} height={NODE_H} rx="14" />
-              {/* No whitespace inside <text>: xml:space="default" trimming is
-                  inconsistent enough that a stray space can shift a
-                  text-anchor="middle" label off centre. */}
-              <text class="rail__name" x={n.cx} y={LABEL_Y} text-anchor="middle">{n.name}</text>
-              <text class="rail__hint" x={n.cx} y={HINT_Y} text-anchor="middle">{n.hint}</text>
-            </g>
-          ))
-        }
-
-        {
-          /* Drawn last so it reads as the signal lighting each stage as it
-             passes, rather than vanishing behind four fifths of the diagram.
-             The dot rides the clear band between the two label lines. */
-        }
-        <g class="rail__pulse">
-          <circle class="rail__halo" cx="0" cy={MID} r="11" />
-          <circle class="rail__dot" cx="0" cy={MID} r="4" />
-        </g>
-      </svg>
-
-      <figcaption class="rail__legend">
-        <ol class="rail__steps">
-          {
-            stages.map((s, i) => (
-              <li class="rail__step">
-                <span class="rail__n mono" aria-hidden="true">
-                  {String(i + 1).padStart(2, '0')}
-                </span>
-                <span class="rail__step-name">{s.name}</span>
-                {s.qualifier && <span class="rail__step-q mono">{s.qualifier}</span>}
-              </li>
-            ))
-          }
-        </ol>
-      </figcaption>
-    </figure>
+      <ol class="chain__list">
+        {stages.map((s, i) => (
+          <li class="stage" data-last={i === stages.length - 1 ? '' : undefined}>
+            <span class="stage__top">
+              <span class="stage__n mono">{String(i + 1).padStart(2, '0')}</span>
+              <span class="stage__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                  <path d={icons[s.icon]} />
+                </svg>
+              </span>
+            </span>
+            <span class="stage__name">{s.name}</span>
+            <span class="stage__hint mono">{s.hint}</span>
+          </li>
+        ))}
+      </ol>
+    </div>
 
     <ul class="facts" data-reveal-group>
-      {
-        facts.map((f) => (
-          <li class="fact" data-reveal>
-            <h3 class="fact__label mono">{f.label}</h3>
-            <p class="fact__note">{f.note}</p>
-          </li>
-        ))
-      }
+      {facts.map((f) => (
+        <li class="fact" data-reveal>
+          <span class="fact__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d={icons[f.icon]} />
+            </svg>
+          </span>
+          <h3 class="fact__label">{f.label}</h3>
+          <p class="fact__note">{f.note}</p>
+        </li>
+      ))}
     </ul>
   </div>
 </section>
 
 <style>
-  /* --- Header -------------------------------------------------------------- */
+  /* --- The chain -----------------------------------------------------------
+     Five cards in a row with a track running behind them through the gaps.
+     The track is a hairline that brightens towards the output end, and a
+     single accent dot travels it — the signal moving through the stages. */
 
-  /* Centred, like the comparison and download heads: the diagram below is one
-     symmetric object, so the heading sits over its middle. */
-  .audio__head {
-    max-width: 46rem;
-    margin-inline: auto;
-    text-align: center;
+  .chain {
+    position: relative;
+    --gap: clamp(14px, 2vw, 28px);
   }
 
-  .audio__head .lede {
-    margin-top: var(--s-5);
-    margin-inline: auto;
+  .chain__list {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: var(--gap);
+    margin: 0;
+    padding: 0;
+    list-style: none;
   }
 
-  /* --- The diagram --------------------------------------------------------- */
-
-  .rail {
-    margin: clamp(2rem, 4vw, 3.25rem) 0 0;
+  .chain__track {
+    position: absolute;
+    inset-inline: 10%;
+    top: 50%;
+    height: 2px;
+    translate: 0 -50%;
+    border-radius: 2px;
+    background: linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--ink-0) 10%, transparent),
+      color-mix(in srgb, var(--accent-500) 60%, transparent)
+    );
   }
 
-  /* Below this the viewBox scales the 15u labels under 10px. The <ol> already
-     carries every word, so the diagram simply steps aside. */
-  .rail__svg {
-    display: none;
-    width: 100%;
-    height: auto;
+  .chain__beam {
+    position: absolute;
+    inset: 0;
   }
 
-  .rail__spine {
-    stroke: var(--ink-2);
-    stroke-width: 1.5;
-    opacity: 0.5;
-  }
-
-  .rail__arrow {
-    fill: none;
-    stroke: var(--ink-2);
-    stroke-width: 1.5;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-    opacity: 0.8;
-  }
-
-  .rail__box {
-    fill: var(--bg-1);
-    stroke: var(--line);
-    stroke-width: 1;
-  }
-
-  .rail__name {
-    fill: var(--ink-0);
-    font-family: var(--font-body);
-    font-size: 15px;
-    font-weight: 600;
-    letter-spacing: -0.01em;
-  }
-
-  .rail__hint {
-    fill: var(--ink-2);
-    font-family: var(--font-mono);
-    font-size: 10.5px;
-    letter-spacing: 0.1em;
-  }
-
-  /* --- The pulse ----------------------------------------------------------- --
-
-     A time-based loop, not a scroll-driven one: the diagram is a steady state,
-     not a reveal. Pausing it off-screen would need a registered custom property
-     animated on a view() timeline to feed animation-play-state — a lot of
-     machinery for one 4-unit dot. It is kept slow and low-contrast instead,
-     which is the cheaper half of the same trade. */
-
-  .rail__halo {
-    fill: var(--accent-500);
-    opacity: 0.16;
-  }
-
-  .rail__dot {
-    fill: var(--accent-500);
-  }
-
-  /* No motion, no pulse — the path is legible without it. */
-  .rail__pulse {
+  .chain__dot {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    width: 10px;
+    height: 10px;
+    translate: -50% -50%;
+    border-radius: 50%;
+    background: var(--accent-500);
+    box-shadow:
+      0 0 0 5px color-mix(in srgb, var(--accent-500) 20%, transparent),
+      0 0 22px 4px var(--accent-glow);
     opacity: 0;
   }
 
   @media (prefers-reduced-motion: no-preference) {
-    .rail__pulse {
-      animation: rail-pulse 7s linear infinite;
+    .chain__beam {
+      animation: beam-x 6s cubic-bezier(0.45, 0, 0.25, 1) infinite;
+    }
+
+    .chain__dot {
+      animation: beam-fade 6s linear infinite;
     }
   }
 
-  @keyframes rail-pulse {
-    0% {
+  @keyframes beam-x {
+    from {
       transform: translateX(0);
-      opacity: 0;
     }
-    6% {
-      opacity: 1;
+    to {
+      transform: translateX(100%);
     }
-    74% {
-      opacity: 1;
-    }
-    80% {
-      transform: translateX(var(--rail-w));
-      opacity: 0;
-    }
-    /* Held, then reset across the loop boundary while invisible. */
+  }
+
+  @keyframes beam-fade {
+    0%,
     100% {
-      transform: translateX(var(--rail-w));
       opacity: 0;
+    }
+    8%,
+    88% {
+      opacity: 1;
     }
   }
 
-  /* --- The same path, as text ---------------------------------------------- */
+  /* --- Stage cards --------------------------------------------------------- */
 
-  .rail__steps {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    display: grid;
-    gap: var(--s-3);
-    /* On narrow screens the rule IS the diagram. */
-    padding-inline-start: var(--s-5);
-    border-inline-start: 1px solid var(--line);
-  }
-
-  .rail__step {
+  .stage {
     position: relative;
     display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    gap: 0 var(--s-3);
-    font-size: var(--step--1);
-    --dot: var(--line);
+    flex-direction: column;
+    gap: var(--s-2);
+    padding: var(--s-4) var(--s-4) var(--s-5);
+    border: 1px solid color-mix(in srgb, var(--ink-0) 9%, transparent);
+    border-radius: 20px;
+    background:
+      linear-gradient(180deg, color-mix(in srgb, var(--ink-0) 5%, transparent), transparent 60%),
+      var(--bg-1);
+    box-shadow: var(--shadow-card);
+    transition:
+      transform var(--t-base) var(--ease),
+      border-color var(--t-base) var(--ease);
   }
 
-  .rail__step::before {
-    content: '';
-    position: absolute;
-    inset-inline-start: calc(var(--s-5) * -1);
-    top: 0.55em;
-    width: 5px;
-    height: 5px;
-    border-radius: 50%;
-    background: var(--dot);
-    translate: -50% 0;
+  @media (hover: hover) and (prefers-reduced-motion: no-preference) {
+    .stage:hover {
+      transform: translateY(-3px);
+      border-color: color-mix(in srgb, var(--ink-0) 18%, transparent);
+    }
   }
 
-  .rail__n {
+  .stage__top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--s-4);
+  }
+
+  .stage__n {
     font-size: var(--step--2);
-    color: var(--accent-text);
-  }
-
-  .rail__step-name {
-    color: var(--ink-0);
-    font-weight: 500;
-  }
-
-  .rail__step-q {
-    font-size: var(--step--2);
+    font-weight: 600;
+    letter-spacing: 0.08em;
     color: var(--ink-2);
   }
 
-  @media (min-width: 760px) {
-    .rail__svg {
-      display: block;
+  .stage__icon {
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 11px;
+    background: color-mix(in srgb, var(--ink-0) 7%, transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink-0) 10%, transparent);
+    color: var(--ink-0);
+  }
+
+  .stage__icon svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .stage__name {
+    font-family: var(--font-display);
+    font-size: var(--step-0);
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+    color: var(--ink-0);
+  }
+
+  .stage__hint {
+    width: fit-content;
+    padding: 3px 9px;
+    border-radius: var(--r-pill);
+    background: color-mix(in srgb, var(--ink-0) 6%, transparent);
+    color: var(--ink-1);
+    font-size: 0.7rem;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+  }
+
+  /* The output stage is where the chain lands, so it carries the accent. */
+  .stage[data-last] {
+    border-color: color-mix(in srgb, var(--accent-500) 40%, transparent);
+    background:
+      radial-gradient(120% 90% at 100% 0%, color-mix(in srgb, var(--accent-500) 18%, transparent), transparent 65%),
+      var(--bg-1);
+    box-shadow:
+      var(--shadow-card),
+      0 0 0 4px color-mix(in srgb, var(--accent-500) 8%, transparent);
+  }
+
+  .stage[data-last] .stage__n {
+    color: var(--accent-text);
+  }
+
+  .stage[data-last] .stage__icon {
+    background: linear-gradient(150deg, #ff7a86, var(--accent-500) 50%, var(--accent-600));
+    box-shadow: 0 6px 16px -4px var(--accent-glow);
+    color: #fff;
+  }
+
+  .stage[data-last] .stage__hint {
+    background: color-mix(in srgb, var(--accent-500) 16%, transparent);
+    color: var(--accent-text);
+  }
+
+  /* --- Narrow: vertical ----------------------------------------------------
+     The row stacks and the track turns to run down the left edge, through
+     every card's icon column, with the dot travelling downward. */
+
+  @media (max-width: 899.98px) {
+    .chain__list {
+      grid-template-columns: minmax(0, 1fr);
+      gap: var(--s-3);
+      padding-inline-start: var(--s-6);
     }
 
-    /* Visually hidden, not display:none — screen readers still get the list
-       (the SVG is aria-hidden), the screen just stops saying it twice. */
-    .rail__steps {
+    .chain__track {
+      inset-inline: auto;
+      left: 11px;
+      top: 8%;
+      bottom: 8%;
+      width: 2px;
+      height: auto;
+      translate: 0 0;
+      background: linear-gradient(
+        180deg,
+        color-mix(in srgb, var(--ink-0) 10%, transparent),
+        color-mix(in srgb, var(--accent-500) 60%, transparent)
+      );
+    }
+
+    .chain__dot {
+      top: 0;
+      left: 50%;
+    }
+
+    @media (prefers-reduced-motion: no-preference) {
+      .chain__beam {
+        animation-name: beam-y;
+      }
+    }
+
+    .stage {
+      flex-direction: row;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: var(--s-2) var(--s-3);
+      padding: var(--s-3) var(--s-4);
+    }
+
+    /* A node on the track beside each card. */
+    .stage::before {
+      content: '';
       position: absolute;
-      width: 1px;
-      height: 1px;
-      margin: -1px;
-      padding: 0;
-      border: 0;
-      overflow: hidden;
-      clip-path: inset(50%);
-      white-space: nowrap;
+      left: calc(var(--s-6) * -1 + 7px);
+      top: 50%;
+      width: 10px;
+      height: 10px;
+      translate: 0 -50%;
+      border-radius: 50%;
+      background: var(--bg-0);
+      box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--ink-0) 30%, transparent);
+    }
+
+    .stage[data-last]::before {
+      box-shadow: inset 0 0 0 2px var(--accent-500);
+    }
+
+    .stage__top {
+      margin: 0;
+      flex-direction: row-reverse;
+      gap: var(--s-3);
+    }
+
+    .stage__name {
+      flex: 1;
+    }
+  }
+
+  @keyframes beam-y {
+    from {
+      transform: translateY(0);
+    }
+    to {
+      transform: translateY(100%);
     }
   }
 
   /* --- Facts --------------------------------------------------------------- */
 
   .facts {
-    list-style: none;
-    margin: clamp(2rem, 4vw, 3.25rem) 0 0;
-    padding: 0;
     display: grid;
-    gap: var(--s-6);
-    /* min() keeps the track from demanding 17rem inside a 280px column. */
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr));
+    gap: var(--s-4);
+    margin: clamp(2rem, 4vw, 3rem) 0 0;
+    padding: 0;
+    list-style: none;
   }
 
   .fact {
-    padding-top: var(--s-4);
-    border-top: 1px solid var(--line);
+    padding: var(--s-5);
+    border: 1px solid color-mix(in srgb, var(--ink-0) 7%, transparent);
+    border-radius: 20px;
+    background: var(--bg-1);
+  }
+
+  .fact__icon {
+    display: grid;
+    place-items: center;
+    width: 38px;
+    height: 38px;
+    margin-bottom: var(--s-4);
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--accent-500) 14%, transparent);
+    color: var(--accent-text);
+  }
+
+  .fact__icon svg {
+    width: 19px;
+    height: 19px;
   }
 
   .fact__label {
-    font-size: var(--step--2);
-    font-weight: 500;
-    line-height: 1.45;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
+    font-family: var(--font-display);
+    font-size: var(--step-0);
+    font-weight: 700;
+    letter-spacing: -0.02em;
     color: var(--ink-0);
   }
 
