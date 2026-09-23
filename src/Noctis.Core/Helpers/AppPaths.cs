@@ -9,7 +9,32 @@ namespace Noctis.Helpers;
 /// </summary>
 public static class AppPaths
 {
-    public static string DataRoot { get; } = ResolveDataRoot();
+    private static readonly object _rootLock = new();
+    private static string? _dataRoot;
+
+    /// <summary>Resolved lazily so a host can <see cref="OverrideDataRoot"/> first.</summary>
+    public static string DataRoot
+    {
+        get { lock (_rootLock) return _dataRoot ??= ResolveDataRoot(); }
+    }
+
+    /// <summary>
+    /// Points the data root somewhere else (the Android head passes Context.FilesDir).
+    /// Must run before any service reads <see cref="DataRoot"/>: a later call with a
+    /// different root throws, because half the services would already be writing to
+    /// the old one. Re-asserting the current root is a no-op.
+    /// </summary>
+    public static void OverrideDataRoot(string root)
+    {
+        var full = Path.GetFullPath(root);
+        lock (_rootLock)
+        {
+            if (_dataRoot != null && !string.Equals(_dataRoot, full, StringComparison.Ordinal))
+                throw new InvalidOperationException(
+                    $"AppPaths.DataRoot is already '{_dataRoot}'; override it before any service touches it.");
+            _dataRoot = full;
+        }
+    }
 
     private static string ResolveDataRoot()
     {

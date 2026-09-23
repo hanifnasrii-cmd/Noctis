@@ -17,6 +17,8 @@ namespace Noctis.Services;
 /// spans, see <see cref="UsesAuthoredSpaces"/>.
 /// Untimed wrapper spans (e.g. Apple background vocals, ttm:role="x-bg") are
 /// recursed into so their timed descendants still contribute.
+/// Apple's translation and romanization layers (&lt;iTunesMetadata&gt; in the head,
+/// keyed by each &lt;p&gt;'s itunes:key) attach to their lines — issue #78.
 /// </summary>
 public static class TtmlParser
 {
@@ -37,7 +39,13 @@ public static class TtmlParser
     /// indentation stops counting as a word boundary, so a word split across several
     /// timed spans renders unbroken — see <see cref="UsesAuthoredSpaces"/> (issue #32).
     /// </param>
-    public static (List<LyricLine>? Lines, string? Plain) Parse(string? content, bool joinSplitWords = true)
+    /// <param name="preferredLanguage">
+    /// UI language tag ("en", "es-MX"). When the document carries several translations
+    /// (or transliterations), the one whose xml:lang shares its primary subtag wins;
+    /// otherwise the first in the file.
+    /// </param>
+    public static (List<LyricLine>? Lines, string? Plain) Parse(
+        string? content, bool joinSplitWords = true, string? preferredLanguage = null)
     {
         if (string.IsNullOrWhiteSpace(content)) return (null, null);
 
@@ -62,12 +70,19 @@ public static class TtmlParser
 
         var ignoreFormattingWhitespace = joinSplitWords && UsesAuthoredSpaces(root);
 
+        var translations = LayerEntries(root, "translation", preferredLanguage);
+        var transliterations = LayerEntries(root, "transliteration", preferredLanguage);
+
         var lines = new List<LyricLine>();
-        foreach (var p in root.Descendants().Where(e => LocalNameIs(e, "p")))
+        // Lines come from the body only — header metadata never renders or reaches the plain text.
+        foreach (var p in root.Descendants().Where(e => LocalNameIs(e, "p") && !IsInHead(e)))
         {
             var line = ParseLine(p, ignoreFormattingWhitespace);
             if (line != null)
+            {
+                AttachLayers(line, p, translations, transliterations, ignoreFormattingWhitespace);
                 lines.Add(line);
+            }
         }
 
         if (lines.Count == 0) return (null, null);
@@ -143,6 +158,103 @@ public static class TtmlParser
         }
 
         return line;
+    }
+
+    private static bool IsInHead(XElement e) => e.Ancestors().Any(a => LocalNameIs(a, "head"));
+
+    /// <summary>
+    /// Maps one Apple layer's &lt;text for="L#"&gt; entries by key. The layer elements
+    /// (&lt;translation&gt; / &lt;transliteration&gt;) sit under &lt;iTunesMetadata&gt;;
+    /// with several languages the one matching <paramref name="preferredLanguage"/>'s
+    /// primary subtag is used, else the first in the file. Empty when there is none.
+    /// </summary>
+    private static Dictionary<string, XElement> LayerEntries(
+        XElement root, string layerName, string? preferredLanguage)
+    {
+        var entries = new Dictionary<string, XElement>(StringComparer.Ordinal);
+        var layers = root.Descendants()
+            .Where(e => LocalNameIs(e, "iTunesMetadata"))
+            .SelectMany(m => m.Descendants().Where(e => LocalNameIs(e, layerName)))
+            .ToList();
+        if (layers.Count == 0) return entries;
+
+        var chosen = layers.FirstOrDefault(l =>
+                         SamePrimaryLanguage(l.Attribute(XNamespace.Xml + "lang")?.Value, preferredLanguage))
+                     ?? layers[0];
+        foreach (var text in chosen.Elements().Where(e => LocalNameIs(e, "text")))
+        {
+            if (text.Attribute("for")?.Value.Trim() is { Length: > 0 } key)
+                entries.TryAdd(key, text);
+        }
+        return entries;
+    }
+
+    private static bool SamePrimaryLanguage(string? a, string? b)
+    {
+        if (string.IsNullOrWhiteSpace(a) || string.IsNullOrWhiteSpace(b)) return false;
+        return string.Equals(PrimarySubtag(a), PrimarySubtag(b), StringComparison.OrdinalIgnoreCase);
+
+        static string PrimarySubtag(string tag)
+        {
+            tag = tag.Trim();
+            var cut = tag.IndexOfAny(new[] { '-', '_' });
+            return cut < 0 ? tag : tag[..cut];
+        }
+    }
+
+    /// <summary>
+    /// Attaches the translation / romanization entries keyed by the paragraph's
+    /// itunes:key. Entries are walked like a line body, so romaji syllable spans
+    /// ("fu","ri") join into words exactly as the main line's spans do.
+    /// </summary>
+    private static void AttachLayers(
+        LyricLine line, XElement p,
+        Dictionary<string, XElement> translations, Dictionary<string, XElement> transliterations,
+        bool ignoreFormattingWhitespace)
+    {
+        if (translations.Count == 0 && transliterations.Count == 0) return;
+        var key = p.Attributes()
+            .FirstOrDefault(a => string.Equals(a.Name.LocalName, "key", StringComparison.OrdinalIgnoreCase))
+            ?.Value.Trim();
+        if (string.IsNullOrEmpty(key)) return;
+
+        if (translations.TryGetValue(key, out var translation))
+        {
+            var (text, _) = CollectLayer(translation, ignoreFormattingWhitespace);
+            if (text.Length > 0) line.Translation = text;
+        }
+
+        if (transliterations.TryGetValue(key, out var transliteration))
+        {
+            var (text, words) = CollectLayer(transliteration, ignoreFormattingWhitespace);
+            if (text.Length > 0) line.Transliteration = text;
+            if (words.Count > 0)
+            {
+                var finished = FinishWords(words, line.EndTimestamp);
+                line.TransliterationEndTimestamp = finished[^1].End;
+                line.TransliterationWords = finished;
+            }
+        }
+    }
+
+    /// <summary>
+    /// One layer entry's text and timed words. Background-role text inside the entry
+    /// follows the main text; its timed words are only used when the entry has no
+    /// main-role words (a background-only line), since the row is a single clock.
+    /// </summary>
+    private static (string Text, List<WordTiming> Words) CollectLayer(XElement entry, bool ignoreFormattingWhitespace)
+    {
+        var text = new StringBuilder();
+        var words = new List<WordTiming>();
+        var bgText = new StringBuilder();
+        var bgWords = new List<WordTiming>();
+        CollectContent(entry, text, words, bgText, bgWords, inBackground: false,
+            ignoreFormattingWhitespace: ignoreFormattingWhitespace);
+
+        var main = text.ToString().Trim();
+        var bg = bgText.ToString().Trim();
+        var joined = main.Length == 0 ? bg : bg.Length == 0 ? main : main + " " + bg;
+        return (joined, words.Count > 0 ? words : bgWords);
     }
 
     private static List<WordTiming> FinishWords(List<WordTiming> words, TimeSpan? end)

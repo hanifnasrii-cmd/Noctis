@@ -1,5 +1,9 @@
+using System;
+using System.Collections.Generic;
+using System.Reflection;
 using Noctis.Helpers;
 using Noctis.Models;
+using Noctis.Services;
 using Xunit;
 
 namespace Noctis.Tests;
@@ -180,5 +184,51 @@ public class FolderMetadataTests
         Assert.Equal("Unknown Artist", track.Artist);
         Assert.Equal("Unknown Album", track.Album);
         Assert.Equal(Track.UnknownAlbumBucketId, track.AlbumId);
+    }
+
+    /// <summary>
+    /// Android device run, 2026-09-22: every SAF track's FilePath is a content:// document
+    /// URI, and the load-time backfill fed it to this path-shape heuristic, which read the
+    /// URI's percent-encoded segments as folders and wrote artist/albumArtist
+    /// "primary%3AMusic%2FTones" and album "document" into the library — inventing a phantom
+    /// album on the way. Driven through LibraryService.BackfillFolderMetadata itself, the
+    /// method that had no localPath guard, so the regression is pinned where it happened.
+    /// </summary>
+    [Fact]
+    public void SafContentUri_IsSkippedByTheBackfill_KeepingItsOwnMetadata()
+    {
+        const string uri = "content://com.android.externalstorage.documents/tree/" +
+                           "primary%3AMusic%2FTones/document/primary%3AMusic%2FTones%2F01%20broken.mp3";
+        var tagged = new Track
+        {
+            Id = Guid.NewGuid(),
+            FilePath = uri,
+            Title = "Tone A",
+            Artist = "Noctis Test",
+            AlbumArtist = "Noctis Test",
+            Album = "Tones",
+            AlbumId = Track.ComputeAlbumId("Noctis Test", "Tones"),
+            TrackNumber = 1,
+        };
+        // The untagged case is the one that actually corrupted on device: placeholders are
+        // exactly what invites the heuristic in.
+        var untagged = UntaggedWav(uri);
+
+        var settings = new AppSettings();
+        settings.MusicFolders.Add(Root);
+        var backfill = typeof(LibraryService).GetMethod("BackfillFolderMetadata",
+            BindingFlags.NonPublic | BindingFlags.Static)!;
+        var changed = (bool)backfill.Invoke(null, new object[] { new List<Track> { tagged, untagged }, settings })!;
+
+        Assert.False(changed);
+        Assert.Equal("Noctis Test", tagged.Artist);
+        Assert.Equal("Noctis Test", tagged.AlbumArtist);
+        Assert.Equal("Tones", tagged.Album);
+        Assert.Equal(Track.ComputeAlbumId("Noctis Test", "Tones"), tagged.AlbumId);
+
+        Assert.Equal("Unknown Artist", untagged.Artist);
+        Assert.Equal("Unknown Album", untagged.Album);
+        Assert.Equal(Track.UnknownAlbumBucketId, untagged.AlbumId);
+        Assert.Equal(0, untagged.TrackNumber);
     }
 }

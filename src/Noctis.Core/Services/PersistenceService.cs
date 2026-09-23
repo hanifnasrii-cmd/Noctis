@@ -47,6 +47,7 @@ public class PersistenceService : IPersistenceService
     private string LibraryPath => Path.Combine(DataDirectory, "library.json");
     private string PlaylistsPath => Path.Combine(DataDirectory, "playlists.json");
     private string QueuePath => Path.Combine(DataDirectory, "queue.json");
+    private string QueuePositionPath => Path.Combine(DataDirectory, "queue-position.json");
     private string IndexCachePath => Path.Combine(DataDirectory, "indexes.json");
     private string ArtworkDirectory => Path.Combine(DataDirectory, "artwork");
     private string AnimatedCoverDirectory => Path.Combine(DataDirectory, "animated_covers");
@@ -304,12 +305,46 @@ public class PersistenceService : IPersistenceService
 
     public async Task<QueueState?> LoadQueueStateAsync()
     {
-        return await LoadJsonAsync<QueueState>(QueuePath);
+        var state = await LoadJsonAsync<QueueState>(QueuePath);
+        if (state == null) return null;
+
+        // Fold in the position checkpoint, if this host writes them (the desktop does not, so
+        // the file is absent and this is a single miss). The track guard is what makes a
+        // checkpoint that raced a track change harmless: it is dropped, not applied to the
+        // wrong track. A checkpoint that raced a *queue* save can be up to one checkpoint
+        // interval behind the queue's own position — which is exactly the bound the interval
+        // already promises, so it costs nothing extra.
+        var checkpoint = await LoadJsonAsync<QueuePositionState>(QueuePositionPath);
+        if (checkpoint != null && checkpoint.CurrentTrackId == state.CurrentTrackId)
+            state.PositionSeconds = checkpoint.PositionSeconds;
+        return state;
     }
 
     public async Task SaveQueueStateAsync(QueueState state)
     {
+        // The queue carries its own position, so any existing checkpoint is superseded. Dropped
+        // *before* the write, and synchronously — so a save that has already been issued can
+        // never reach back and remove a checkpoint written after it. (One DeleteFile syscall on
+        // a path that normally does not exist; this runs a handful of times per session, not in
+        // any loop, so it does not need the thread-pool hop SaveJsonAsync takes for the
+        // serialize-and-fsync.) The write below carries the position it replaced.
+        try { File.Delete(QueuePositionPath); }
+        catch (Exception ex) { DebugLog.Write("Persistence", $"Could not clear the queue position checkpoint: {ex.Message}"); }
+        // The checkpoint's own temp file must go too: LoadJsonWithOutcomeAsync promotes
+        // "<path>.tmp" to "<path>" whenever the main file is absent and the temp parses. A
+        // checkpoint write killed between its fsync and its rename leaves a complete,
+        // parseable orphan .tmp — deleting only the main file above lets a later load
+        // resurrect that stale checkpoint and fold a previous session's position onto the
+        // current queue.
+        try { File.Delete(QueuePositionPath + ".tmp"); }
+        catch (Exception ex) { DebugLog.Write("Persistence", $"Could not clear the queue position checkpoint's temp file: {ex.Message}"); }
         await SaveJsonAsync(QueuePath, state);
+    }
+
+    public async Task SaveQueuePositionAsync(Guid? currentTrackId, double positionSeconds)
+    {
+        await SaveJsonAsync(QueuePositionPath,
+            new QueuePositionState { CurrentTrackId = currentTrackId, PositionSeconds = positionSeconds });
     }
 
     // ── Index Cache ───────────────────────────────────────────
@@ -512,26 +547,29 @@ public class PersistenceService : IPersistenceService
         }
     }
 
-    // Serializing large payloads (library.json) is CPU-heavy, and awaits inside
-    // SaveJsonCoreAsync would otherwise resume on the calling (UI) thread —
-    // fire-and-forget saves from the play path measurably stalled rendering.
-    // Task.Run keeps the whole save on the thread pool.
-    private static Task SaveJsonAsync<T>(string path, T data, JsonSerializerOptions? options = null)
-        => Task.Run(() => SaveJsonCoreAsync(path, data, options ?? JsonOptions));
-
     // One writer per target file: two overlapping saves share the fixed ".tmp"
     // name (opened FileShare.None), so the loser threw a sharing violation —
     // unobserved on fire-and-forget paths — or the temp was renamed mid-write.
     private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, SemaphoreSlim> _writeGates =
         new(StringComparer.OrdinalIgnoreCase);
 
-    private static async Task SaveJsonCoreAsync<T>(string path, T data, JsonSerializerOptions options)
+    // Serializing large payloads (library.json) is CPU-heavy, and awaits inside
+    // SaveJsonSerializedAsync would otherwise resume on the calling (UI) thread —
+    // fire-and-forget saves from the play path measurably stalled rendering.
+    // Task.Run keeps the serialize-and-fsync on the thread pool.
+    //
+    // The gate is entered HERE, on the calling thread, before that hop: SemaphoreSlim
+    // serves async waiters first-in first-out, so saves to one file land in the order
+    // they were issued. Entering it inside the Task.Run let two back-to-back saves race
+    // for the gate, and the older snapshot could be written last (a stale queue.json
+    // over the newer one). ConfigureAwait(false) keeps the continuation off the UI thread.
+    private static async Task SaveJsonAsync<T>(string path, T data, JsonSerializerOptions? options = null)
     {
         var gate = _writeGates.GetOrAdd(path, _ => new SemaphoreSlim(1, 1));
-        await gate.WaitAsync();
+        await gate.WaitAsync().ConfigureAwait(false);
         try
         {
-            await SaveJsonSerializedAsync(path, data, options);
+            await Task.Run(() => SaveJsonSerializedAsync(path, data, options ?? JsonOptions)).ConfigureAwait(false);
         }
         finally
         {

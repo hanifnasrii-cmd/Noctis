@@ -1,0 +1,53 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Noctis.Mobile.ViewModels"
+             xmlns:views="using:Noctis.Mobile.Views"
+             x:Class="Noctis.Mobile.Views.ShellView"
+             x:DataType="vm:ShellViewModel">
+
+    <!-- Library underneath; Now Playing and Queue slide over it (Phase 4 adds the motion);
+         the mini bar sits at the bottom whenever a track is loaded and Now Playing is closed.
+         Declaration order is z-order: the mini bar belongs to the Library layer, so it is
+         declared before the overlays — after them it would paint over the Queue page the
+         moment anything other than Now Playing opens the queue. -->
+    <Grid RowDefinitions="*,Auto">
+        <views:LibraryPage Grid.Row="0" DataContext="{Binding}" />
+
+        <Border Grid.Row="1" Name="MiniBar" Margin="12,0,12,12" Padding="12,10" CornerRadius="16"
+                Background="#1E1E20">
+            <Border.IsVisible>
+                <MultiBinding Converter="{x:Static BoolConverters.And}">
+                    <Binding Path="Player.HasTrack" />
+                    <Binding Path="!IsNowPlayingOpen" />
+                </MultiBinding>
+            </Border.IsVisible>
+            <Grid ColumnDefinitions="*,Auto,Auto">
+                <!-- HorizontalAlignment: Fluent's Button theme sets it to Left, so without
+                     this the button shrinks to the width of the title text and everything
+                     right of it is dead to touch — measured on device at ~190 px of a 730 px
+                     row. A mini player is expected to open Now Playing from anywhere in the
+                     title area, so the button must fill its star column. VerticalAlignment
+                     for the same reason (Fluent sets Center), so the artist line's full
+                     height is tappable too. -->
+                <Button Grid.Column="0" Background="Transparent" Padding="0" HorizontalContentAlignment="Stretch"
+                        HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                        Command="{Binding OpenNowPlayingCommand}">
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="{Binding Player.CurrentTrack.Title}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                        <TextBlock Text="{Binding Player.CurrentTrack.Artist}" Opacity="0.6" FontSize="12" TextTrimming="CharacterEllipsis" />
+                    </StackPanel>
+                </Button>
+                <Button Grid.Column="1" Width="40" Height="40" Command="{Binding Player.TogglePlayPauseCommand}"
+                        Content="{Binding Player.IsPlaying, Converter={x:Static views:Glyphs.PlayPause}}" />
+                <Button Grid.Column="2" Width="40" Height="40" Content="⏭" Command="{Binding Player.NextCommand}" />
+            </Grid>
+        </Border>
+
+        <views:NowPlayingPage Grid.Row="0" Grid.RowSpan="2" Name="NowPlaying"
+                              DataContext="{Binding}"
+                              IsVisible="{Binding IsNowPlayingOpen}" />
+
+        <views:QueuePage Grid.Row="0" Grid.RowSpan="2" DataContext="{Binding}"
+                         IsVisible="{Binding IsQueueOpen}" />
+    </Grid>
+</UserControl>

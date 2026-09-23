@@ -11,7 +11,7 @@ namespace Noctis.Services;
 /// </summary>
 public class LibraryService : ILibraryService
 {
-    private const int CurrentMetadataSchemaVersion = 8;
+    private const int CurrentMetadataSchemaVersion = 10;
     // v3: album track order normalized (disc 0 → 1, missing track numbers last)
     private const int CurrentIndexCacheVersion = 3;
     // Throttle scan progress so a large library (tens of thousands of files)
@@ -82,7 +82,8 @@ public class LibraryService : ILibraryService
         ISqliteLibraryIndexService sqliteIndex,
         IAuditTrailService auditTrail,
         IDeferredTagWriter? tagWriter = null,
-        Sync.ITrackStateRecorder? syncRecorder = null)
+        Sync.ITrackStateRecorder? syncRecorder = null,
+        IFileSystemSource? fileSystem = null)
     {
         _metadata = metadata;
         _persistence = persistence;
@@ -90,6 +91,7 @@ public class LibraryService : ILibraryService
         _auditTrail = auditTrail;
         _tagWriter = tagWriter;
         _syncRecorder = syncRecorder;
+        _fileSystem = fileSystem ?? new LocalFileSystemSource();
     }
 
     /// <summary>Batches rating/lyrics tag writes until the user is idle (null = write immediately).</summary>
@@ -97,6 +99,9 @@ public class LibraryService : ILibraryService
 
     /// <summary>Mirrors user-state saves into the sync ledger (null = sync not wired).</summary>
     private readonly Sync.ITrackStateRecorder? _syncRecorder;
+
+    /// <summary>Where scans enumerate and open files (desktop: directory walk; Android: SAF).</summary>
+    private readonly IFileSystemSource _fileSystem;
 
     public async Task ScanAsync(IEnumerable<string> folders, CancellationToken ct = default)
     {
@@ -164,6 +169,9 @@ public class LibraryService : ILibraryService
         // Tracks which albums have already had a cover cached during this scan, so we
         // save each album's art exactly once (first track wins).
         var albumArtClaimed = new ConcurrentDictionary<Guid, bool>();
+        // Tracks re-read this scan: their embedded cover may have changed, so the
+        // per-track cover pass after the scan re-decides their albums.
+        var freshlyRead = new ConcurrentDictionary<Guid, byte>();
         var fileCount = 0;
         var unchangedCount = 0;
         var changedCount = 0;
@@ -259,7 +267,7 @@ public class LibraryService : ILibraryService
 
             foreach (var folder in includeRoots)
             {
-                if (!Directory.Exists(folder))
+                if (!_fileSystem.RootExists(folder))
                 {
                     unavailableRoots.Add(folder);
                     continue;
@@ -271,13 +279,14 @@ public class LibraryService : ILibraryService
                 // enumeration with metadata reads and starts reporting progress
                 // immediately instead of after a long silent listing phase.
                 // NoBuffering dispatches one file at a time so the count moves right away.
-                var files = EnumerateAudioFiles(folder, excludedRoots, ignoredNames, failedDirs)
-                    .Where(f => !excludedFiles.Contains(f));
+                var files = _fileSystem.EnumerateAudioFiles(folder, excludedRoots, ignoredNames, failedDirs.Add)
+                    .Where(e => !excludedFiles.Contains(e.Path));
                 var partitioner = Partitioner.Create(files, EnumerablePartitionerOptions.NoBuffering);
 
-                Parallel.ForEach(partitioner, options, filePath =>
+                Parallel.ForEach(partitioner, options, entry =>
                 {
                     if (ct.IsCancellationRequested) return;
+                    var filePath = entry.Path;
 
                     // Declared outside the try so the failure paths below can tell a
                     // known-but-unreadable file apart from an unreadable new file.
@@ -288,8 +297,7 @@ public class LibraryService : ILibraryService
                         // Skip files we already have that haven't changed
                         if (trackIndexSnapshot.TryGetValue(ComputeFileId(filePath), out existing))
                         {
-                            var fi = new FileInfo(filePath);
-                            if (fi.LastWriteTimeUtc == existing.LastModified && fi.Length == existing.FileSize)
+                            if (entry.LastWriteTimeUtc == existing.LastModified && entry.Length == existing.FileSize)
                             {
                                 newTracks.Add(existing);
                                 Interlocked.Increment(ref unchangedCount);
@@ -299,7 +307,7 @@ public class LibraryService : ILibraryService
                         }
 
                         // Read metadata (and the embedded cover, already in memory) for new/changed files
-                        var track = _metadata.ReadTrackMetadata(filePath, out var embeddedArt);
+                        var track = _metadata.ReadTrackMetadata(entry, out var embeddedArt);
                         if (track != null)
                         {
                             // Use file path hash as stable ID so rescans don't create duplicates
@@ -311,6 +319,8 @@ public class LibraryService : ILibraryService
                                 CopyMutableTrackState(existing, track);
                             else
                                 track.SourceType = SourceType.Local;
+                            track.ArtworkHash = TrackArtwork.Fingerprint(embeddedArt);
+                            freshlyRead.TryAdd(track.Id, 0);
                             newTracks.Add(track);
                             Interlocked.Increment(ref changedCount);
 
@@ -403,20 +413,7 @@ public class LibraryService : ILibraryService
         // only safe response is to abort the scan and keep what we already have.
         if (unavailableRoots.Count > 0)
         {
-            var normalizedMissing = unavailableRoots
-                .Select(TryNormalizePath)
-                .Where(p => !string.IsNullOrEmpty(p))
-                .Select(p => p!)
-                .ToArray();
-
-            var strandedTracks = normalizedMissing.Length == 0
-                ? 0
-                : originalTracks.Count(t =>
-                {
-                    var normalized = TryNormalizePath(t.FilePath);
-                    return normalized != null &&
-                           normalizedMissing.Any(root => IsUnderRoot(normalized, root));
-                });
+            var strandedTracks = originalTracks.Count(t => unavailableRoots.Any(root => PathIsUnder(t.FilePath, root)));
 
             if (strandedTracks > 0)
             {
@@ -562,6 +559,14 @@ public class LibraryService : ILibraryService
         await ExtractArtworkProgressivelyAsync(newTracks, ct);
         if (!ct.IsCancellationRequested)
             await RefreshStaleFolderArtworkAsync(newTracks, ct);
+        // Per-track covers for the albums a re-read file belongs to (before the final
+        // rebuild below, which points each odd track at its own cover).
+        if (!ct.IsCancellationRequested && !freshlyRead.IsEmpty)
+        {
+            var fresh = new HashSet<Guid>(freshlyRead.Keys);
+            var albums = _tracks.Where(t => fresh.Contains(t.Id)).Select(t => t.AlbumId).ToList();
+            await Task.Run(() => ResolveTrackArtwork(_tracks, albums, fresh, ct));
+        }
         if (ct.IsCancellationRequested)
         {
             if (_checkpointRequested)
@@ -820,6 +825,157 @@ public class LibraryService : ILibraryService
         return refreshed;
     }
 
+    /// <summary>
+    /// Per-track covers (<see cref="TrackArtwork"/>): re-decides the given albums from their
+    /// tracks' <see cref="Track.ArtworkHash"/>es. An album whose tracks all carry the same
+    /// embedded cover (the usual case) costs nothing but a lookup; in a mixed album the
+    /// most common cover is the album's (fixing the scan's first-track-wins cache when the
+    /// odd track happened to be read first) and every other track gets its own cover file.
+    /// A track that no longer differs loses its file. Blocking file I/O: run off the UI
+    /// thread. Returns how many cover files changed.
+    /// </summary>
+    internal int ResolveTrackArtwork(IReadOnlyCollection<Track> tracks, IEnumerable<Guid> albumIds,
+        IReadOnlySet<Guid> freshlyRead, CancellationToken ct)
+    {
+        if (!MetadataService.UseEmbeddedArtwork) return 0;
+        var wanted = new HashSet<Guid>(albumIds);
+        wanted.Remove(Track.UnknownAlbumBucketId);
+        if (wanted.Count == 0) return 0;
+
+        var ownDir = Path.GetDirectoryName(_persistence.GetTrackArtworkPath(Guid.Empty));
+        var ownFiles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        try
+        {
+            if (ownDir != null && Directory.Exists(ownDir))
+                foreach (var f in Directory.EnumerateFiles(ownDir, "*.jpg")) ownFiles.Add(f);
+        }
+        catch { /* unreadable folder: treat as empty */ }
+
+        var changed = 0;
+        foreach (var album in tracks.Where(t => wanted.Contains(t.AlbumId)).GroupBy(t => t.AlbumId))
+        {
+            if (ct.IsCancellationRequested) break;
+            var albumTracks = album.ToList();
+            var mixed = albumTracks.Select(t => t.ArtworkHash).Where(h => h != null).Distinct().Skip(1).Any();
+
+            HashSet<Guid> odd = new();
+            if (mixed)
+            {
+                var albumPath = _persistence.GetArtworkPath(album.Key);
+                string? current = null;
+                try { if (File.Exists(albumPath)) current = TrackArtwork.Fingerprint(File.ReadAllBytes(albumPath)); }
+                catch { /* unreadable cache: let the majority decide */ }
+
+                var (albumHash, oddTracks) = TrackArtwork.Resolve(albumTracks.Select(t => (t.Id, t.ArtworkHash)), current);
+                odd = oddTracks.ToHashSet();
+
+                if (albumHash != null && albumHash != current)
+                {
+                    var rep = albumTracks.FirstOrDefault(t => t.ArtworkHash == albumHash);
+                    var bytes = rep == null ? null : _metadata.ExtractEmbeddedArt(rep.FilePath);
+                    if (bytes != null && TrackArtwork.Fingerprint(bytes) == albumHash)
+                    {
+                        _persistence.SaveArtwork(album.Key, bytes);
+                        changed++;
+                    }
+                }
+            }
+
+            foreach (var t in albumTracks)
+            {
+                var own = _persistence.GetTrackArtworkPath(t.Id);
+                var hasOwn = ownFiles.Contains(own);
+                if (odd.Contains(t.Id))
+                {
+                    // An unchanged odd track keeps the file it already has.
+                    if (hasOwn && !freshlyRead.Contains(t.Id)) continue;
+                    var bytes = _metadata.ExtractEmbeddedArt(t.FilePath);
+                    if (bytes == null) continue;
+                    _persistence.SaveTrackArtwork(t.Id, bytes);
+                    changed++;
+                }
+                else if (hasOwn)
+                {
+                    _persistence.DeleteTrackArtwork(t.Id);
+                    changed++;
+                }
+            }
+        }
+        return changed;
+    }
+
+    /// <summary>
+    /// Points every track that has its own cover file (<see cref="ResolveTrackArtwork"/>)
+    /// at it, over the album cover the index build just assigned. One directory listing,
+    /// no per-track probes. Off with embedded artwork: every track shows its album's.
+    /// </summary>
+    private static void ApplyOwnTrackArtwork(IPersistenceService persistence, IEnumerable<Track> tracks)
+    {
+        if (!MetadataService.UseEmbeddedArtwork) return;
+        var dir = Path.GetDirectoryName(persistence.GetTrackArtworkPath(Guid.Empty));
+        var own = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        try
+        {
+            if (dir == null || !Directory.Exists(dir)) return;
+            foreach (var f in Directory.EnumerateFiles(dir, "*.jpg")) own.Add(f);
+        }
+        catch { return; }
+        if (own.Count == 0) return;
+
+        foreach (var t in tracks)
+        {
+            var path = persistence.GetTrackArtworkPath(t.Id);
+            if (own.Contains(path)) t.AlbumArtworkPath = path;
+        }
+    }
+
+    /// <summary>
+    /// Schema v10: fingerprints every local file's embedded cover once (libraries indexed
+    /// before per-track covers never recorded one), then gives the odd tracks of mixed
+    /// albums their own covers. Returns true when anything changed.
+    /// </summary>
+    private async Task<bool> BackfillTrackArtworkAsync(List<Track> tracks)
+    {
+        if (!MetadataService.UseEmbeddedArtwork) return false;
+        var candidates = tracks
+            .Where(t => t.SourceType == SourceType.Local && !string.IsNullOrWhiteSpace(t.FilePath)
+                        && t.AlbumId != Track.UnknownAlbumBucketId && File.Exists(t.FilePath))
+            .ToList();
+        if (candidates.Count == 0) return false;
+
+        var hashed = 0;
+        var files = 0;
+        await Task.Run(() =>
+        {
+            try
+            {
+                Parallel.ForEach(
+                    candidates,
+                    new ParallelOptions
+                    {
+                        MaxDegreeOfParallelism = Math.Max(1, Environment.ProcessorCount / 2),
+                        CancellationToken = _shutdownCts.Token
+                    },
+                    track =>
+                    {
+                        var hash = TrackArtwork.Fingerprint(_metadata.ExtractEmbeddedArt(track.FilePath));
+                        if (hash != track.ArtworkHash)
+                        {
+                            track.ArtworkHash = hash;
+                            Interlocked.Increment(ref hashed);
+                        }
+                    });
+            }
+            catch (OperationCanceledException) { /* shutdown: the schema stamp is skipped */ }
+
+            if (!_shutdownCts.IsCancellationRequested)
+                files = ResolveTrackArtwork(tracks, candidates.Select(t => t.AlbumId).Distinct().ToList(),
+                    new HashSet<Guid>(), _shutdownCts.Token);
+        });
+
+        return hashed > 0 || files > 0;
+    }
+
     // Single-flight guard for BackfillMissingArtworkAsync: the startup heal, a
     // no-change scan and a settings-toggle flip can all request one concurrently,
     // and two passes at once would just read the same files twice.
@@ -978,7 +1134,7 @@ public class LibraryService : ILibraryService
                 continue;
             }
 
-            var track = _metadata.ReadTrackMetadata(filePath);
+            var track = _metadata.ReadTrackMetadata(filePath, out var embeddedArt);
             if (track == null) continue;
 
             track.Id = trackId;
@@ -986,6 +1142,7 @@ public class LibraryService : ILibraryService
                 CopyMutableTrackState(existing, track);
             else
                 track.SourceType = SourceType.Local;
+            track.ArtworkHash = TrackArtwork.Fingerprint(embeddedArt);
 
             var artPath = _persistence.GetArtworkPath(track.AlbumId);
             if (!File.Exists(artPath))
@@ -1043,6 +1200,11 @@ public class LibraryService : ILibraryService
             .OrderBy(t => t.Artist).ThenBy(t => t.Album)
             .ThenBy(t => t.DiscNumber).ThenBy(t => t.TrackNumber)
             .ToList();
+
+        // Per-track covers for the albums the imported / re-tagged files belong to.
+        var importedIds = new HashSet<Guid>(imported.Select(t => t.Id));
+        var allTracks = _tracks;
+        await Task.Run(() => ResolveTrackArtwork(allTracks, imported.Select(t => t.AlbumId).ToList(), importedIds, ct));
 
         await RebuildIndexesAsync();
         await SaveAsync();
@@ -1770,10 +1932,12 @@ public class LibraryService : ILibraryService
                 .OrderBy(a => a.Name, StringComparer.OrdinalIgnoreCase)
                 .ToList();
 
-            // Populate track artwork paths from their parent albums
+            // Populate track artwork paths from their parent albums, then each
+            // odd-one-out track's own cover over its album's.
             foreach (var a in albs)
                 foreach (var t in a.Tracks)
                     t.AlbumArtworkPath = a.ArtworkPath;
+            ApplyOwnTrackArtwork(persistence, tracks);
 
             return (albs, arts, ti, ai, groupingSignature);
         });
@@ -1847,7 +2011,7 @@ public class LibraryService : ILibraryService
     {
         var input = folders
             .Where(f => !string.IsNullOrWhiteSpace(f))
-            .Select(TryNormalizePath)
+            .Select(f => IsUriRoot(f) ? f : TryNormalizePath(f))
             .Where(p => !string.IsNullOrWhiteSpace(p))
             .Select(p => p!);
 
@@ -1922,6 +2086,17 @@ public class LibraryService : ILibraryService
         // for new imports. Pure string work against stored paths — no file reads.
         if (settings.MetadataSchemaVersion < 8)
             didBackfillMetadata |= BackfillFolderMetadata(_tracks, settings);
+
+        // v9: featured artists merged in from titles were joined with " & ", which no
+        // longer splits since "&" left the default separators (1.5.1) — re-join them with
+        // an active separator. Pure string work against the indexed artist/title.
+        if (settings.MetadataSchemaVersion < 9)
+            didBackfillMetadata |= BackfillRejoinMergedFeatured(_tracks);
+
+        // v10: per-track covers — record every file's embedded-cover fingerprint and give
+        // the odd tracks of mixed albums their own cover (Discord, veil 2026-09-22).
+        if (settings.MetadataSchemaVersion < 10)
+            didBackfillMetadata |= await BackfillTrackArtworkAsync(_tracks);
 
         // Only advance the recorded schema version when the pass actually completed.
         // Cancelling at shutdown mid-backfill and still stamping it done would leave the
@@ -2256,6 +2431,21 @@ public class LibraryService : ILibraryService
         return changedCount > 0;
     }
 
+    private static bool BackfillRejoinMergedFeatured(List<Track> tracks)
+    {
+        var changedCount = 0;
+        foreach (var track in tracks)
+        {
+            var rejoined = MetadataService.RejoinMergedFeaturedCredit(track.Artist, track.Title);
+            if (!string.Equals(rejoined, track.Artist, StringComparison.Ordinal))
+            {
+                track.Artist = rejoined;
+                changedCount++;
+            }
+        }
+        return changedCount > 0;
+    }
+
     private bool BackfillArtistFromTitle(List<Track> tracks)
     {
         var changedCount = 0;
@@ -2408,62 +2598,6 @@ public class LibraryService : ILibraryService
         return Math.Min(Environment.ProcessorCount, 8);
     }
 
-    private static IEnumerable<string> EnumerateAudioFiles(
-        string root,
-        IReadOnlyCollection<string> excludedRoots,
-        HashSet<string> ignoredNames,
-        ConcurrentBag<string> failedDirs)
-    {
-        var stack = new Stack<string>();
-        // Cycle guard keyed on the RESOLVED path: a junction/symlink pointing at
-        // an ancestor re-enters the tree under an ever-growing logical path, so
-        // the walked path alone never repeats and the DFS loops forever.
-        var visited = new HashSet<string>(
-            OperatingSystem.IsLinux() ? StringComparer.Ordinal : StringComparer.OrdinalIgnoreCase);
-        stack.Push(root);
-
-        while (stack.Count > 0)
-        {
-            var current = stack.Pop();
-            if (IsUnderAnyRoot(current, excludedRoots)) continue;
-            if (!visited.Add(ResolveRealPath(current))) continue;
-
-            List<string> directories;
-            List<string> files;
-            try
-            {
-                // Materialized inside the try: the enumerables are lazy, so an I/O error
-                // surfacing mid-listing (not just at open) would otherwise escape this
-                // catch and abort the entire scan pipeline.
-                directories = Directory.EnumerateDirectories(current).ToList();
-                files = Directory.EnumerateFiles(current).ToList();
-            }
-            catch
-            {
-                // "Couldn't list" is not "doesn't exist". Silently skipping here made the
-                // scan treat the whole subtree as deleted; record it so ScanCoreAsync can
-                // keep the known tracks under it (see the failed-directories guard there).
-                failedDirs.Add(current);
-                continue;
-            }
-
-            foreach (var dir in directories)
-            {
-                var name = Path.GetFileName(dir);
-                if (ignoredNames.Contains(name.ToLowerInvariant())) continue;
-                if (IsUnderAnyRoot(dir, excludedRoots)) continue;
-                stack.Push(dir);
-            }
-
-            foreach (var file in files)
-            {
-                var ext = Path.GetExtension(file);
-                if (MetadataService.SupportedExtensions.Contains(ext))
-                    yield return file;
-            }
-        }
-    }
-
     /// <summary>
     /// Existing tracks that live under a directory whose listing failed this scan and
     /// that the scan did not see — i.e. tracks that would otherwise be dropped because
@@ -2475,55 +2609,41 @@ public class LibraryService : ILibraryService
         HashSet<Guid> scannedIds,
         IEnumerable<string> failedDirectories)
     {
-        var failedPrefixes = failedDirectories
-            .Select(TryNormalizePath)
-            .Where(p => !string.IsNullOrWhiteSpace(p))
-            .Select(p => p!)
-            .Distinct(PathComparison.Comparer)
-            .ToArray();
+        var failedPrefixes = failedDirectories.Distinct(StringComparer.Ordinal).ToArray();
         if (failedPrefixes.Length == 0)
             return new List<Track>();
 
         return existingTracks
-            .Where(t =>
-            {
-                if (scannedIds.Contains(t.Id)) return false;
-                var normalized = TryNormalizePath(t.FilePath);
-                return normalized != null && failedPrefixes.Any(p => IsUnderRoot(normalized, p));
-            })
+            .Where(t => !scannedIds.Contains(t.Id) && failedPrefixes.Any(p => PathIsUnder(t.FilePath, p)))
             .ToList();
     }
 
-    // Symlinked/junctioned directories are followed (symlinked music libraries are
-    // legitimate); resolving to the final target is what makes the visited-set
-    // above detect a loop regardless of the logical path it was reached through.
-    private static string ResolveRealPath(string dir)
+    /// <summary>
+    /// True when a root is not a filesystem path (a SAF tree URI on Android). Such roots
+    /// are compared as opaque strings: Path.GetFullPath would rewrite them into nonsense.
+    /// </summary>
+    private static bool IsUriRoot(string root) => root.Contains("://", StringComparison.Ordinal);
+
+    /// <summary>
+    /// Is <paramref name="filePath"/> under <paramref name="root"/>? Filesystem roots are
+    /// normalized and compared as paths; URI roots by ordinal prefix — a SAF document URI
+    /// starts with its tree URI, and a document under a directory document starts with
+    /// that directory's URI followed by an encoded separator.
+    /// </summary>
+    internal static bool PathIsUnder(string filePath, string root)
     {
-        try
+        if (IsUriRoot(root))
         {
-            var info = new DirectoryInfo(dir);
-            if ((info.Attributes & FileAttributes.ReparsePoint) != 0)
-                return info.ResolveLinkTarget(returnFinalTarget: true)?.FullName ?? info.FullName;
-            return info.FullName;
+            return filePath.Equals(root, StringComparison.Ordinal)
+                || filePath.StartsWith(root + "/", StringComparison.Ordinal)
+                || filePath.StartsWith(root + "%2F", StringComparison.Ordinal);
         }
-        catch
-        {
-            return dir;
-        }
+        var normalizedRoot = TryNormalizePath(root);
+        var normalizedPath = TryNormalizePath(filePath);
+        return normalizedRoot != null && normalizedPath != null && IsUnderRoot(normalizedPath, normalizedRoot);
     }
 
-    private static bool IsUnderAnyRoot(string path, IReadOnlyCollection<string> roots)
-    {
-        var normalized = NormalizePath(path);
-        foreach (var root in roots)
-        {
-            if (IsUnderRoot(normalized, root))
-                return true;
-        }
-        return false;
-    }
-
-    private static bool IsUnderRoot(string normalizedPath, string root)
+    internal static bool IsUnderRoot(string normalizedPath, string root)
     {
         if (normalizedPath.Equals(root, PathComparison.Comparison))
             return true;
@@ -2532,7 +2652,7 @@ public class LibraryService : ILibraryService
                normalizedPath.StartsWith(root + Path.AltDirectorySeparatorChar, PathComparison.Comparison);
     }
 
-    private static string NormalizePath(string path)
+    internal static string NormalizePath(string path)
     {
         var full = Path.GetFullPath(path);
         return full.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
@@ -2642,6 +2762,7 @@ public class LibraryService : ILibraryService
                     foreach (var t in albumTracks)
                         t.AlbumArtworkPath = album.ArtworkPath;
                 }
+                ApplyOwnTrackArtwork(_persistence, tracks);
 
                 newAlbums = albums
                     .OrderBy(a => GetPrimaryArtist(a.Artist), StringComparer.OrdinalIgnoreCase)

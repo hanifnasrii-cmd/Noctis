@@ -109,113 +109,167 @@ public class MetadataService : IMetadataService
             // their bytes below, so a file whose art is not wanted (embedded artwork
             // off) never materialises it.
             using var file = TagLib.File.Create(filePath, TagLib.ReadStyle.Average | TagLib.ReadStyle.PictureLazy);
-
-            var tag = file.Tag;
-            var props = file.Properties;
             var fileInfo = new FileInfo(filePath);
-            var ext = Path.GetExtension(filePath).ToLowerInvariant();
-
-            var codec = DetermineCodec(file, ext);
-            var sampleRate = NormalizeSampleRate(props.AudioSampleRate);
-            var bitsPerSample = NormalizeBitsPerSample(props.BitsPerSample, file, ext, sampleRate, codec);
-            var bitrate = NormalizeBitrate(props.AudioBitrate, fileInfo.Length, props.Duration);
-
-            // ALAC fallback: TagLib# often returns 0 for sample rate on M4A/ALAC files.
-            // Read it directly from the ALAC decoder config atom.
-            if (sampleRate < 8000 && ext is ".m4a" or ".mp4" or ".alac")
-            {
-                var codecLower = (codec ?? "").ToLowerInvariant();
-                if (codecLower.Contains("alac") || codecLower.Contains("lossless"))
-                {
-                    var (_, sr) = TryReadAlacConfigFromFile(filePath);
-                    if (sr >= 8000) sampleRate = sr;
-                }
-            }
-
-            var duration = props.Duration;
-            if (NeedsFfprobeFallback(sampleRate, bitsPerSample, bitrate, duration, IsLosslessFormat(codec ?? string.Empty, ext)))
-                TryPopulateAudioMetricsWithFfprobe(filePath, ref sampleRate, ref bitsPerSample, ref bitrate, ref duration);
-
-            // Preserve all credited performers so featured artists show in track rows.
-            var artist = FirstNonEmpty(JoinTagValues(tag.Performers), tag.FirstPerformer, tag.FirstAlbumArtist, "Unknown Artist");
-            // Resolve the album-artist used for grouping/display. A compilation with no
-            // explicit album-artist tag is filed under "Various Artists" so the release
-            // stays as one album instead of fragmenting into one album per performer.
-            var isCompilation = ExtendedTagIO.ReadIsCompilation(file);
-            var explicitAlbumArtist = JoinTagValues(tag.AlbumArtists);
-            if (string.IsNullOrWhiteSpace(explicitAlbumArtist))
-                explicitAlbumArtist = tag.FirstAlbumArtist ?? string.Empty;
-            var albumArtist = Track.ResolveAlbumArtist(explicitAlbumArtist, tag.FirstPerformer, isCompilation);
-            var album = string.IsNullOrWhiteSpace(tag.Album) ? "Unknown Album" : tag.Album;
-            var title = string.IsNullOrWhiteSpace(tag.Title)
-                ? Path.GetFileNameWithoutExtension(filePath)
-                : tag.Title;
-
-            // Merge featured artists from title into artist field when Performers tag is incomplete
-            artist = EnrichArtistFromTitle(artist, title);
-
-            var track = new Track
-            {
-                FilePath = filePath,
-                Title = title,
-                Artist = artist,
-                AlbumArtist = albumArtist,
-                Album = album,
-                Genre = tag.FirstGenre ?? string.Empty,
-                TrackNumber = (int)tag.Track,
-                TrackCount = (int)tag.TrackCount,
-                DiscNumber = tag.Disc > 0 ? (int)tag.Disc : 1,
-                DiscCount = tag.DiscCount > 0 ? (int)tag.DiscCount : 1,
-                Bpm = (int)tag.BeatsPerMinute,
-                MusicalKey = ReadMusicalKey(file),
-                Year = (int)tag.Year,
-                Duration = duration,
-                AlbumId = Track.ComputeAlbumId(albumArtist, album),
-                FileSize = fileInfo.Length,
-                LastModified = fileInfo.LastWriteTimeUtc,
-                DateAdded = DateTime.UtcNow,
-                IsExplicit = DetectExplicit(file),
-                Composer = tag.FirstComposer ?? string.Empty,
-                Lyrics = tag.Lyrics ?? string.Empty,
-                Comment = tag.Comment ?? string.Empty,
-                Copyright = ReadCopyright(file),
-                ReleaseDate = ReadReleaseDate(file, tag),
-                IsCompilation = isCompilation,
-                Grouping = tag.Grouping ?? string.Empty,
-                ShowComposerInAllViews = ExtendedTagIO.ReadShowComposer(file),
-                UseWorkAndMovement = ExtendedTagIO.ReadUseWorkAndMovement(file),
-                WorkName = ExtendedTagIO.ReadWorkName(file),
-                MovementName = ExtendedTagIO.ReadMovementName(file),
-                MovementNumber = ExtendedTagIO.ReadMovementNumber(file),
-                MovementCount = ExtendedTagIO.ReadMovementCount(file),
-                Rating = ExtendedTagIO.ReadRating(file),
-                IsDisliked = ExtendedTagIO.ReadIsDisliked(file),
-                // Audio quality properties
-                Bitrate = bitrate,
-                SampleRate = sampleRate,
-                BitsPerSample = bitsPerSample,
-                Codec = codec ?? string.Empty
-            };
-
-            PopulateReleaseType(track, file);
-
-            // Untagged files (iTunes WAV rips most notably) fall back to the folder
-            // structure for artist/album and the "NN " filename prefix for the track
-            // number, instead of all merging into the shared Unknown-Album bucket.
-            // No-op when the tags are real.
-            Helpers.FolderMetadata.TryApplyToTrack(track, MusicRootFolders);
-
-            // Pull the embedded cover from the already-parsed tag (no extra I/O) so a
-            // scan can cache album art inline instead of re-opening every file later.
-            embeddedArt = UseEmbeddedArtwork ? SelectBestEmbeddedPicture(file.Tag.Pictures) : null;
-
-            return track;
+            return BuildTrack(file, filePath, fileInfo.Name, fileInfo.Length, fileInfo.LastWriteTimeUtc, localPath: filePath, out embeddedArt);
         }
         catch (Exception)
         {
             // File is corrupted, unsupported, or locked — skip it
             return null;
         }
+    }
+
+    /// <summary>
+    /// Reads a scan entry: by path when the entry has one (the desktop path with its
+    /// ffprobe/ALAC/DSDIFF extras), otherwise through the entry's stream (Android SAF,
+    /// where TagLib.File.Create(path) has nothing to open).
+    /// </summary>
+    public Track? ReadTrackMetadata(ScanEntry entry, out byte[]? embeddedArt)
+    {
+        if (entry.LocalPath is { } local)
+            return ReadTrackMetadata(local, out embeddedArt);
+
+        embeddedArt = null;
+        var ext = Path.GetExtension(entry.Name);
+        // DSDIFF has no TagLib reader and the DsdiffReader path is file-based; not on Android in v1.
+        if (!SupportedExtensions.Contains(ext) || ext.Equals(".dff", StringComparison.OrdinalIgnoreCase))
+            return null;
+        try
+        {
+            using var abstraction = new StreamFileAbstraction(entry.Name, entry.OpenRead());
+            using var file = TagLib.File.Create(abstraction, null, TagLib.ReadStyle.Average | TagLib.ReadStyle.PictureLazy);
+            return BuildTrack(file, entry.Path, entry.Name, entry.Length, entry.LastWriteTimeUtc, localPath: null, out embeddedArt);
+        }
+        catch (Exception)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>Read-only TagLib file abstraction over a caller-supplied seekable stream.</summary>
+    private sealed class StreamFileAbstraction : TagLib.File.IFileAbstraction, IDisposable
+    {
+        private readonly Stream _stream;
+        public StreamFileAbstraction(string name, Stream stream) { Name = name; _stream = stream; }
+        public string Name { get; }
+        public Stream ReadStream => _stream;
+        public Stream WriteStream => throw new NotSupportedException("Scan entries are read-only.");
+        public void CloseStream(Stream stream) { /* owned here; disposed once in Dispose */ }
+        public void Dispose() => _stream.Dispose();
+    }
+
+    /// <summary>
+    /// Builds the Track from an opened TagLib file. <paramref name="localPath"/> is null
+    /// for stream-backed entries (Android SAF): those skip the path-only extras (ffprobe
+    /// metrics, the ALAC atom re-read, folder-derived metadata) rather than throwing on a
+    /// content:// string.
+    /// </summary>
+    private Track? BuildTrack(TagLib.File file, string filePath, string fileName, long length, DateTime lastWriteUtc,
+        string? localPath, out byte[]? embeddedArt)
+    {
+        embeddedArt = null;
+        var tag = file.Tag;
+        var props = file.Properties;
+        var ext = Path.GetExtension(fileName).ToLowerInvariant();
+
+        var codec = DetermineCodec(file, ext);
+        var sampleRate = NormalizeSampleRate(props.AudioSampleRate);
+        var bitsPerSample = NormalizeBitsPerSample(props.BitsPerSample, file, ext, sampleRate, codec);
+        var bitrate = NormalizeBitrate(props.AudioBitrate, length, props.Duration);
+
+        // ALAC fallback: TagLib# often returns 0 for sample rate on M4A/ALAC files.
+        // Read it directly from the ALAC decoder config atom. Path-based, so it only
+        // runs for entries reachable by path.
+        if (localPath != null && sampleRate < 8000 && ext is ".m4a" or ".mp4" or ".alac")
+        {
+            var codecLower = (codec ?? "").ToLowerInvariant();
+            if (codecLower.Contains("alac") || codecLower.Contains("lossless"))
+            {
+                var (_, sr) = TryReadAlacConfigFromFile(localPath);
+                if (sr >= 8000) sampleRate = sr;
+            }
+        }
+
+        var duration = props.Duration;
+        if (localPath != null && NeedsFfprobeFallback(sampleRate, bitsPerSample, bitrate, duration, IsLosslessFormat(codec ?? string.Empty, ext)))
+            TryPopulateAudioMetricsWithFfprobe(localPath, ref sampleRate, ref bitsPerSample, ref bitrate, ref duration);
+
+        // Preserve all credited performers so featured artists show in track rows.
+        var artist = FirstNonEmpty(JoinTagValues(tag.Performers), tag.FirstPerformer, tag.FirstAlbumArtist, "Unknown Artist");
+        // Resolve the album-artist used for grouping/display. A compilation with no
+        // explicit album-artist tag is filed under "Various Artists" so the release
+        // stays as one album instead of fragmenting into one album per performer.
+        var isCompilation = ExtendedTagIO.ReadIsCompilation(file);
+        var explicitAlbumArtist = JoinTagValues(tag.AlbumArtists);
+        if (string.IsNullOrWhiteSpace(explicitAlbumArtist))
+            explicitAlbumArtist = tag.FirstAlbumArtist ?? string.Empty;
+        var albumArtist = Track.ResolveAlbumArtist(explicitAlbumArtist, tag.FirstPerformer, isCompilation);
+        var album = string.IsNullOrWhiteSpace(tag.Album) ? "Unknown Album" : tag.Album;
+        var title = string.IsNullOrWhiteSpace(tag.Title)
+            ? Path.GetFileNameWithoutExtension(fileName)
+            : tag.Title;
+
+        // Merge featured artists from title into artist field when Performers tag is incomplete
+        artist = EnrichArtistFromTitle(artist, title);
+
+        var track = new Track
+        {
+            FilePath = filePath,
+            Title = title,
+            Artist = artist,
+            AlbumArtist = albumArtist,
+            Album = album,
+            Genre = tag.FirstGenre ?? string.Empty,
+            TrackNumber = (int)tag.Track,
+            TrackCount = (int)tag.TrackCount,
+            DiscNumber = tag.Disc > 0 ? (int)tag.Disc : 1,
+            DiscCount = tag.DiscCount > 0 ? (int)tag.DiscCount : 1,
+            Bpm = (int)tag.BeatsPerMinute,
+            MusicalKey = ReadMusicalKey(file),
+            Year = (int)tag.Year,
+            Duration = duration,
+            AlbumId = Track.ComputeAlbumId(albumArtist, album),
+            FileSize = length,
+            LastModified = lastWriteUtc,
+            DateAdded = DateTime.UtcNow,
+            IsExplicit = DetectExplicit(file),
+            Composer = tag.FirstComposer ?? string.Empty,
+            Lyrics = tag.Lyrics ?? string.Empty,
+            Comment = tag.Comment ?? string.Empty,
+            Copyright = ReadCopyright(file),
+            ReleaseDate = ReadReleaseDate(file, tag),
+            IsCompilation = isCompilation,
+            Grouping = tag.Grouping ?? string.Empty,
+            ShowComposerInAllViews = ExtendedTagIO.ReadShowComposer(file),
+            UseWorkAndMovement = ExtendedTagIO.ReadUseWorkAndMovement(file),
+            WorkName = ExtendedTagIO.ReadWorkName(file),
+            MovementName = ExtendedTagIO.ReadMovementName(file),
+            MovementNumber = ExtendedTagIO.ReadMovementNumber(file),
+            MovementCount = ExtendedTagIO.ReadMovementCount(file),
+            Rating = ExtendedTagIO.ReadRating(file),
+            IsDisliked = ExtendedTagIO.ReadIsDisliked(file),
+            // Audio quality properties
+            Bitrate = bitrate,
+            SampleRate = sampleRate,
+            BitsPerSample = bitsPerSample,
+            Codec = codec ?? string.Empty
+        };
+
+        PopulateReleaseType(track, file);
+
+        // Untagged files (iTunes WAV rips most notably) fall back to the folder
+        // structure for artist/album and the "NN " filename prefix for the track
+        // number, instead of all merging into the shared Unknown-Album bucket.
+        // No-op when the tags are real. Path-based (folder structure), so it only
+        // runs for entries reachable by path.
+        if (localPath != null)
+            Helpers.FolderMetadata.TryApplyToTrack(track, MusicRootFolders);
+
+        // Pull the embedded cover from the already-parsed tag (no extra I/O) so a
+        // scan can cache album art inline instead of re-opening every file later.
+        embeddedArt = UseEmbeddedArtwork ? SelectBestEmbeddedPicture(file.Tag.Pictures) : null;
+
+        return track;
     }
 
     /// <summary>
@@ -260,6 +314,20 @@ public class MetadataService : IMetadataService
             // Same folder/filename fallback as the TagLib path above.
             Helpers.FolderMetadata.TryApplyToTrack(track, MusicRootFolders);
             return track;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    public byte[]? ExtractEmbeddedArt(string filePath)
+    {
+        if (!UseEmbeddedArtwork) return null;
+        try
+        {
+            using var file = TagLib.File.Create(filePath);
+            return SelectBestEmbeddedPicture(file.Tag.Pictures);
         }
         catch
         {
@@ -1058,7 +1126,42 @@ public class MetadataService : IMetadataService
         if (missing.Length == 0)
             return artist;
 
-        return artist + " & " + string.Join(" & ", missing);
+        var join = ArtistCredit.JoinText;
+        return artist + join + string.Join(join, missing);
+    }
+
+    /// <summary>
+    /// Rewrites featured names that an older build merged in with a hard-coded " &amp; "
+    /// ("Rihanna &amp; Drake" from "Work (feat. Drake)") to the active separator, so they
+    /// split into separate credits again now that "&amp;" is no longer a default separator.
+    /// Only a " &amp; " directly in front of a name the TITLE credits as featured is touched;
+    /// a band's own "&amp;" ("Simon &amp; Garfunkel") is left alone.
+    /// </summary>
+    internal static string RejoinMergedFeaturedCredit(string artist, string title)
+    {
+        if (string.IsNullOrWhiteSpace(artist) || !artist.Contains(" & ", StringComparison.Ordinal))
+            return artist;
+
+        var featNames = ExtractFeaturedNamesFromTitle(title);
+        if (featNames.Length == 0)
+            return artist;
+
+        var join = ArtistCredit.JoinText;
+        if (join == " & ")
+            return artist;
+
+        var result = artist;
+        foreach (var name in featNames)
+        {
+            var merged = " & " + name;
+            var idx = result.LastIndexOf(merged, StringComparison.OrdinalIgnoreCase);
+            // Only a whole-name match: "& Drake" must not rewrite "& Drakeo".
+            if (idx < 0) continue;
+            var end = idx + merged.Length;
+            if (end < result.Length && (char.IsLetterOrDigit(result[end]) || result[end] == '_')) continue;
+            result = result[..idx] + join + result[(idx + 3)..];
+        }
+        return result;
     }
 
     /// <summary>

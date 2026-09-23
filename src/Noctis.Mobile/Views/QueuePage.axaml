@@ -1,0 +1,29 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Noctis.Mobile.ViewModels"
+             xmlns:models="using:Noctis.Models"
+             xmlns:loc="using:Noctis.Localization"
+             x:Class="Noctis.Mobile.Views.QueuePage"
+             x:DataType="vm:ShellViewModel"
+             Background="#121214">
+
+    <Grid RowDefinitions="Auto,*" Margin="20,40,20,24">
+        <Grid ColumnDefinitions="*,Auto">
+            <TextBlock Text="{loc:T Tab.Queue}" FontSize="28" FontWeight="Bold" />
+            <Button Grid.Column="1" Content="Done" Command="{Binding ToggleQueueCommand}" />
+        </Grid>
+        <ListBox Grid.Row="1" Name="QueueList" ItemsSource="{Binding Player.UpNext}" Background="Transparent" Margin="0,12,0,0">
+            <ListBox.ItemTemplate>
+                <DataTemplate x:DataType="models:Track">
+                    <Grid ColumnDefinitions="*,Auto" Margin="0,6">
+                        <StackPanel>
+                            <TextBlock Text="{Binding Title}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                            <TextBlock Text="{Binding Artist}" Opacity="0.6" FontSize="12" TextTrimming="CharacterEllipsis" />
+                        </StackPanel>
+                        <Button Grid.Column="1" Content="✕" Background="Transparent" Click="OnRemoveClick" />
+                    </Grid>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+    </Grid>
+</UserControl>

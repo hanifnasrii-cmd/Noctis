@@ -44,8 +44,23 @@ public interface IPersistenceService
     Task SavePlaylistsAsync(List<Playlist> playlists);
 
     // --- Queue ---
+
+    /// <summary>
+    /// The saved queue, with any newer <see cref="SaveQueuePositionAsync"/> checkpoint for the
+    /// same track already folded into <see cref="QueueState.PositionSeconds"/>.
+    /// </summary>
     Task<QueueState?> LoadQueueStateAsync();
+
+    /// <summary>Writes the queue and supersedes any position checkpoint.</summary>
     Task SaveQueueStateAsync(QueueState state);
+
+    /// <summary>
+    /// Checkpoints the playback position alone, without rewriting the queue. For hosts that
+    /// checkpoint on a timer (the phone, every five seconds) where re-serializing and fsyncing
+    /// the whole queue for a moved position would cost hundreds of MB of flash writes an hour.
+    /// Superseded by the next <see cref="SaveQueueStateAsync"/>.
+    /// </summary>
+    Task SaveQueuePositionAsync(Guid? currentTrackId, double positionSeconds);
 
     // --- Index Cache ---
     Task<LibraryIndexCache?> LoadIndexCacheAsync();
@@ -57,6 +72,30 @@ public interface IPersistenceService
 
     /// <summary>Saves raw image bytes as the cached artwork for an album.</summary>
     void SaveArtwork(Guid albumId, byte[] imageData);
+
+    /// <summary>Cache path of a track's OWN cover (<see cref="TrackArtwork"/>): the
+    /// "tracks" folder beside the album covers.</summary>
+    string GetTrackArtworkPath(Guid trackId) =>
+        Path.Combine(Path.GetDirectoryName(GetArtworkPath(Guid.Empty)) ?? string.Empty, "tracks", $"{trackId}.jpg");
+
+    /// <summary>Saves a track's own cover (best effort, like <see cref="SaveArtwork"/>).</summary>
+    void SaveTrackArtwork(Guid trackId, byte[] imageData)
+    {
+        try
+        {
+            var path = GetTrackArtworkPath(trackId);
+            Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+            File.WriteAllBytes(path, imageData);
+        }
+        catch { /* Non-critical: the track just shows its album's cover */ }
+    }
+
+    /// <summary>Drops a track's own cover so it shows its album's again.</summary>
+    void DeleteTrackArtwork(Guid trackId)
+    {
+        try { File.Delete(GetTrackArtworkPath(trackId)); }
+        catch { /* Non-critical */ }
+    }
 
     /// <summary>
     /// Returns the cache path for an animated cover.

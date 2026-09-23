@@ -145,12 +145,38 @@ public partial class Track : ObservableObject
     [System.Text.Json.Serialization.JsonIgnore]
     public bool IsRemoteStream => SourceType is SourceType.Navidrome or SourceType.Jellyfin or SourceType.Plex or SourceType.AudioCd;
 
+    /// <summary>
+    /// True when <see cref="FilePath"/> is a real filesystem path rather than a URI.
+    /// <see cref="SourceType"/> cannot answer this: an Android SAF track is
+    /// <see cref="SourceType.Local"/> yet its path is a <c>content://</c> document URI.
+    /// Anything that reads the path's *shape* — folder-derived metadata above all — must
+    /// ask first, because a URI's percent-encoded segments parse as directory names and
+    /// yield credits like "primary%3AMusic%2FTones". The scan already draws this line with
+    /// MetadataService.BuildTrack's <c>localPath</c> (null for stream-backed entries); this
+    /// is the same line for code that only has a Track.
+    /// </summary>
+    [System.Text.Json.Serialization.JsonIgnore]
+    public bool HasFilesystemPath => IsFilesystemPath(FilePath);
+
+    /// <summary>
+    /// Path-shape test behind <see cref="HasFilesystemPath"/>. The marker is "://", not a
+    /// bare ":", so a Windows drive letter ("C:\Music\…") stays a path while
+    /// "content://…", "http://…" and "cdda://…" do not.
+    /// </summary>
+    public static bool IsFilesystemPath(string? path) =>
+        !string.IsNullOrWhiteSpace(path) && !path.Contains("://", StringComparison.Ordinal);
+
     /// <summary>Timestamp of when this track was first discovered by a library scan.</summary>
     public DateTime DateAdded { get; set; } = DateTime.UtcNow;
 
     /// <summary>Transient flag: true when the track was just drag-and-drop imported this session.</summary>
     [System.Text.Json.Serialization.JsonIgnore]
     public bool IsRecentImport { get; set; }
+
+    /// <summary>Transient flag: true for a dropped file played from where it is, outside the
+    /// library (GitHub #71). Library reconciles must not prune it as "deleted" (#84). Not persisted.</summary>
+    [System.Text.Json.Serialization.JsonIgnore]
+    public bool IsExternal { get; set; }
 
     /// <summary>Transient flag: true when this track is the one currently loaded in the player.
     /// Drives the now-playing row highlight in flat track lists. Not persisted.</summary>
@@ -447,9 +473,16 @@ public partial class Track : ObservableObject
     /// </summary>
     public void NotifyMetadataUpdated() => OnPropertyChanged(string.Empty);
 
-    /// <summary>Cached album artwork path, populated from album data during index build. Not persisted.</summary>
+    /// <summary>Cached artwork path, populated during index build: the track's OWN cover
+    /// when its embedded art differs from its album's (<see cref="Services.TrackArtwork"/>),
+    /// the album cover otherwise. Not persisted.</summary>
     [System.Text.Json.Serialization.JsonIgnore]
     public string? AlbumArtworkPath { get; set; }
+
+    /// <summary>Fingerprint of this file's embedded cover (<see cref="Services.TrackArtwork.Fingerprint"/>),
+    /// null when it has none. Persisted so a rescan can tell an odd-one-out track from its
+    /// album without re-reading every unchanged file.</summary>
+    public string? ArtworkHash { get; set; }
 
     /// <summary>Whether this track has album artwork available.</summary>
     [System.Text.Json.Serialization.JsonIgnore]

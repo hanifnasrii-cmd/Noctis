@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- Phone ViewModels and pages. Plain net10.0 (no Android SDK) so tests/Noctis.Tests
+         drives them headlessly on Windows; Noctis.Android references this and adds only
+         the Android-only services (Media3 player, MediaSessionService, SAF, picker). -->
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>Noctis.Mobile</RootNamespace>
+    <AssemblyName>Noctis.Mobile</AssemblyName>
+    <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+    <NoWarn>CS0067;MVVMTK0039;CA1416</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Noctis.Tests" />
+    <InternalsVisibleTo Include="Noctis.Android" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Avalonia" Version="12.1.2" />
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Noctis.Core\Noctis.Core.csproj" />
+    <ProjectReference Include="..\Noctis.UI\Noctis.UI.csproj" />
+  </ItemGroup>
+
+</Project>

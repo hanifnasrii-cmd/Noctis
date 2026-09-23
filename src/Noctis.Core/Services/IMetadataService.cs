@@ -22,6 +22,17 @@ public interface IMetadataService
     Track? ReadTrackMetadata(string filePath, out byte[]? embeddedArt);
 
     /// <summary>
+    /// Reads a scan entry: by path when the entry has one (the desktop path with its
+    /// ffprobe/ALAC/DSDIFF extras), otherwise through the entry's stream (Android SAF).
+    /// The default handles only the path case so test stubs keep compiling.
+    /// </summary>
+    Track? ReadTrackMetadata(ScanEntry entry, out byte[]? embeddedArt)
+    {
+        embeddedArt = null;
+        return entry.LocalPath is { } local ? ReadTrackMetadata(local, out embeddedArt) : null;
+    }
+
+    /// <summary>
     /// Extracts album artwork for an audio file: the embedded cover if there is one,
     /// otherwise a cover image sitting next to it — the latter only when the file
     /// names an album, since art for the shared "Unknown Album" bucket would be
@@ -29,6 +40,13 @@ public interface IMetadataService
     /// Returns the raw image bytes, or null when no artwork applies.
     /// </summary>
     byte[]? ExtractAlbumArt(string filePath);
+
+    /// <summary>
+    /// The file's own embedded cover only (no folder fallback) — what per-track covers
+    /// (<see cref="TrackArtwork"/>) compare. Null when it has none or embedded artwork is
+    /// off in Settings.
+    /// </summary>
+    byte[]? ExtractEmbeddedArt(string filePath) => null;
 
     /// <summary>
     /// Writes metadata tags back to the audio file.
