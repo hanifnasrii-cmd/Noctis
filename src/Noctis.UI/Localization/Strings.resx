@@ -984,6 +984,7 @@
   <data name="Metadata.CopyPath" xml:space="preserve"><value>Copy path</value><comment>Text in MetadataWindow.axaml</comment></data>
   <data name="Metadata.DoubleClickToReset" xml:space="preserve"><value>Double-click the slider to reset</value><comment>Text in MetadataWindow.axaml</comment></data>
   <data name="Metadata.ArtworkSharedByAlbum" xml:space="preserve"><value>Shared by the whole album</value><comment>Text in MetadataWindow.axaml</comment></data>
+  <data name="Metadata.ArtworkOwnTrack" xml:space="preserve"><value>This track's own cover</value><comment>Text in MetadataWindow.axaml: the track's embedded cover differs from its album's</comment></data>
   <data name="Metadata.AnimatedArtworkHint" xml:space="preserve"><value>Per album · plays on the album page and Now Playing</value><comment>Text in MetadataWindow.axaml</comment></data>
   <data name="Metadata.Cancel" xml:space="preserve"><value>Cancel</value><comment>Content in MetadataWindow.axaml</comment></data>
   <data name="Metadata.Save" xml:space="preserve"><value>Save</value><comment>Text in MetadataWindow.axaml</comment></data>

@@ -2293,7 +2293,11 @@ public partial class PlayerViewModel : ViewModelBase
     {
         // Bitmaps come from the shared LRU cache, which owns their lifetime — never
         // dispose them here. The cache de-dupes, so track switches no longer leak.
-        var artPath = _persistence.GetArtworkPath(track.AlbumId);
+        // The index points a track with its own embedded cover at that cover
+        // (TrackArtwork); anything else falls back to the album's.
+        var artPath = !string.IsNullOrEmpty(track.AlbumArtworkPath) && File.Exists(track.AlbumArtworkPath)
+            ? track.AlbumArtworkPath
+            : _persistence.GetArtworkPath(track.AlbumId);
         var generation = Interlocked.Increment(ref _albumArtGeneration);
 
         // Drive CachedImage-based surfaces (playback bar) via a path string. They

@@ -321,6 +321,20 @@ public class MetadataService : IMetadataService
         }
     }
 
+    public byte[]? ExtractEmbeddedArt(string filePath)
+    {
+        if (!UseEmbeddedArtwork) return null;
+        try
+        {
+            using var file = TagLib.File.Create(filePath);
+            return SelectBestEmbeddedPicture(file.Tag.Pictures);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
     public byte[]? ExtractAlbumArt(string filePath)
     {
         // 1. Try embedded artwork first (most reliable), unless disabled in Settings.

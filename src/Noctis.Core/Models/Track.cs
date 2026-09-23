@@ -473,9 +473,16 @@ public partial class Track : ObservableObject
     /// </summary>
     public void NotifyMetadataUpdated() => OnPropertyChanged(string.Empty);
 
-    /// <summary>Cached album artwork path, populated from album data during index build. Not persisted.</summary>
+    /// <summary>Cached artwork path, populated during index build: the track's OWN cover
+    /// when its embedded art differs from its album's (<see cref="Services.TrackArtwork"/>),
+    /// the album cover otherwise. Not persisted.</summary>
     [System.Text.Json.Serialization.JsonIgnore]
     public string? AlbumArtworkPath { get; set; }
+
+    /// <summary>Fingerprint of this file's embedded cover (<see cref="Services.TrackArtwork.Fingerprint"/>),
+    /// null when it has none. Persisted so a rescan can tell an odd-one-out track from its
+    /// album without re-reading every unchanged file.</summary>
+    public string? ArtworkHash { get; set; }
 
     /// <summary>Whether this track has album artwork available.</summary>
     [System.Text.Json.Serialization.JsonIgnore]
