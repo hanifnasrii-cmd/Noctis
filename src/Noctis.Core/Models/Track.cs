@@ -173,6 +173,11 @@ public partial class Track : ObservableObject
     [System.Text.Json.Serialization.JsonIgnore]
     public bool IsRecentImport { get; set; }
 
+    /// <summary>Transient flag: true for a dropped file played from where it is, outside the
+    /// library (GitHub #71). Library reconciles must not prune it as "deleted" (#84). Not persisted.</summary>
+    [System.Text.Json.Serialization.JsonIgnore]
+    public bool IsExternal { get; set; }
+
     /// <summary>Transient flag: true when this track is the one currently loaded in the player.
     /// Drives the now-playing row highlight in flat track lists. Not persisted.</summary>
     [ObservableProperty]
