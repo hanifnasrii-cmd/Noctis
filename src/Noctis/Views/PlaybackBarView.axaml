@@ -872,6 +872,8 @@
                             VerticalAlignment="Top"
                             Cursor="Hand"
                             ToolTip.Tip="{loc:T PlaybackBar.MiniPlayerTip}"
+                            ToolTip.Placement="Top"
+                            ToolTip.VerticalOffset="-6"
                             PointerPressed="OnAlbumArtPressed"
                             Background="{DynamicResource IslandAlbumArtPlaceholder}">
                         <Panel>
