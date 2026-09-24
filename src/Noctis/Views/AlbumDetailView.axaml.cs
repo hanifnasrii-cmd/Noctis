@@ -337,6 +337,12 @@ public partial class AlbumDetailView : UserControl
     private void OnRelatedAlbumContextMenuOpening(object? sender, CancelEventArgs e)
         => ContextMenuCoordinator.NotifyOpening(sender as ContextMenu);
 
+    private void OnTileMoreClick(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        Helpers.AlbumTile.OpenMenu(sender);
+        e.Handled = true;
+    }
+
     private void OnAlbumFlyoutOpened(object? sender, EventArgs e) { }
 
     private void OnOptionsFlyoutButtonPointerPressed(object? sender, PointerPressedEventArgs e)

@@ -996,6 +996,16 @@ public partial class AlbumDetailViewModel : ViewModelBase, IDisposable
         _player.ReplaceQueueAndPlay(InAlbumOrder(album.Tracks), 0);
     }
 
+    /// <summary>Related tile hover button: Pause/resume when this album is the loaded one,
+    /// else play it from track 1 (the Albums grid's TogglePlayAlbum).</summary>
+    [RelayCommand]
+    private void TogglePlayRelatedAlbum(Album? album)
+    {
+        if (album == null) return;
+        if (album.IsCurrent) { _player.PlayPauseCommand.Execute(null); return; }
+        PlayRelatedAlbum(album);
+    }
+
     [RelayCommand]
     private void ShuffleRelatedAlbum(Album? album)
     {

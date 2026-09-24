@@ -229,7 +229,15 @@
         </Style>
         <!-- MUST stay last: equal-origin Avalonia styles resolve by declaration order, so
              this is what makes the box win on striped, hovered and ctrl-selected rows alike. -->
+        <!-- No tween onto/off the fill: Avalonia lerps colours in linear light, so hover
+             wash (white at ~4%) -> opaque accent passed through a half-opaque near-white
+             (#81D1BDBF on Wine) = a white flicker on dark accents (NowPlayingRowSnapTests).
+             Transitions MUST be the first setter: setters apply in order, and after
+             Background the 40ms tween still catches the change. -->
         <Style Selector="Border.row-body.now-playing">
+            <Setter Property="Transitions">
+                <Transitions />
+            </Setter>
             <Setter Property="Background" Value="{DynamicResource NowPlayingRowBrush}" />
         </Style>
     </UserControl.Styles>
@@ -902,7 +910,7 @@
                     </ItemsControl.ItemsPanel>
                     <ItemsControl.ItemTemplate>
                         <DataTemplate x:DataType="m:Album">
-                            <Button Classes="related-album-tile"
+                            <Button Classes="album-tile related-album-tile"
                                     Background="Transparent"
                                     BorderThickness="0"
                                     Padding="0"
@@ -1025,6 +1033,19 @@
                                                                   Stretch="UniformToFill"
                                                                   RenderOptions.BitmapInterpolationMode="HighQuality"
                                                                   IsVisible="{Binding ArtworkPath, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                                            <!-- Hover overlay: same dim + Play/Pause + dots as the Albums grid; styles in Styles.axaml -->
+                                            <Border Classes="tile-dim" />
+                                            <Button Classes="tile-play"
+                                                    Command="{Binding $parent[UserControl].((vm:AlbumDetailViewModel)DataContext).TogglePlayRelatedAlbumCommand}"
+                                                    CommandParameter="{Binding}">
+                                                <Panel>
+                                                    <Viewbox Width="12" Height="12" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="1,0,0,0" IsVisible="{Binding !IsNowPlaying}"><Path Data="{StaticResource PlayIcon}" Fill="White" /></Viewbox>
+                                                    <Viewbox Width="12" Height="12" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding IsNowPlaying}"><Path Data="{StaticResource PauseIcon}" Fill="White" /></Viewbox>
+                                                </Panel>
+                                            </Button>
+                                            <Button Classes="tile-more" Click="OnTileMoreClick">
+                                                <Viewbox Width="14" Height="14" HorizontalAlignment="Center" VerticalAlignment="Center"><Path Data="{StaticResource MoreDotsIcon}" Fill="White" /></Viewbox>
+                                            </Button>
                                         </Panel>
                                     </Border>
                                     <TextBlock FontSize="13"
@@ -1133,7 +1154,7 @@
                     </ItemsControl.ItemsPanel>
                     <ItemsControl.ItemTemplate>
                         <DataTemplate x:DataType="m:Album">
-                            <Button Classes="related-album-tile"
+                            <Button Classes="album-tile related-album-tile"
                                     Background="Transparent"
                                     BorderThickness="0"
                                     Padding="0"
@@ -1256,6 +1277,19 @@
                                                                   Stretch="UniformToFill"
                                                                   RenderOptions.BitmapInterpolationMode="HighQuality"
                                                                   IsVisible="{Binding ArtworkPath, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                                            <!-- Hover overlay: same dim + Play/Pause + dots as the Albums grid; styles in Styles.axaml -->
+                                            <Border Classes="tile-dim" />
+                                            <Button Classes="tile-play"
+                                                    Command="{Binding $parent[UserControl].((vm:AlbumDetailViewModel)DataContext).TogglePlayRelatedAlbumCommand}"
+                                                    CommandParameter="{Binding}">
+                                                <Panel>
+                                                    <Viewbox Width="12" Height="12" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="1,0,0,0" IsVisible="{Binding !IsNowPlaying}"><Path Data="{StaticResource PlayIcon}" Fill="White" /></Viewbox>
+                                                    <Viewbox Width="12" Height="12" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding IsNowPlaying}"><Path Data="{StaticResource PauseIcon}" Fill="White" /></Viewbox>
+                                                </Panel>
+                                            </Button>
+                                            <Button Classes="tile-more" Click="OnTileMoreClick">
+                                                <Viewbox Width="14" Height="14" HorizontalAlignment="Center" VerticalAlignment="Center"><Path Data="{StaticResource MoreDotsIcon}" Fill="White" /></Viewbox>
+                                            </Button>
                                         </Panel>
                                     </Border>
                                     <TextBlock FontSize="13"
