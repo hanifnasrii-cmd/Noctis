@@ -6,6 +6,7 @@ using Avalonia.Media;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 using Avalonia.Platform.Storage;
+using Avalonia.Controls.ApplicationLifetimes;
 using Noctis.Helpers;
 using Noctis.Models;
 using Noctis.Services;
@@ -19,6 +20,38 @@ public partial class MainWindow : Window
     private TaskbarIntegrationService? _taskbar;
     private SmtcService? _smtc;
     private MprisService? _mpris;
+    private LinuxResumeWatcher? _resumeWatcher;
+
+    /// <summary>
+    /// Linux, XWayland on NVIDIA: after a suspend the window's buffers are gone and nothing
+    /// drawn reaches the screen until the app is restarted (Mistery, Discord 2026-09-22; see
+    /// <see cref="LinuxResumeWatcher"/>). Unmap + map gives XWayland a fresh surface and
+    /// pixmap, as a restart would. Only windows the user can see are touched — minimized
+    /// and tray-hidden ones are left alone — and focus is handed back to the one that had it.
+    /// </summary>
+    private void RemapWindowsAfterResume()
+    {
+        if (Application.Current?.ApplicationLifetime is not IClassicDesktopStyleApplicationLifetime desktop)
+            return;
+        foreach (var window in new List<Window>(desktop.Windows))
+        {
+            if (!window.IsVisible || window.WindowState == WindowState.Minimized)
+                continue;
+            var wasActive = window.IsActive;
+            try
+            {
+                window.Hide();
+                window.Show();
+                if (wasActive)
+                    window.Activate();
+                DebugLogger.Info(DebugLogger.Category.UI, "ResumeWatch.Remapped", window.GetType().Name);
+            }
+            catch (Exception ex)
+            {
+                DebugLogger.Warn(DebugLogger.Category.UI, "ResumeWatch.Remap", $"{window.GetType().Name}: {ex.Message}");
+            }
+        }
+    }
     private MacNowPlayingService? _macNowPlaying;
     private TrayIcon? _trayIcon;
     private bool _exitRequestedFromTray;
@@ -443,6 +476,7 @@ public partial class MainWindow : Window
                 InitializeTrayIcon(vm);
                 _smtc = new SmtcService(vm.Player, TryGetPlatformHandle()?.Handle ?? IntPtr.Zero);
                 _mpris = MprisService.TryStart(vm.Player);
+                _resumeWatcher = LinuxResumeWatcher.TryStart(() => Dispatcher.UIThread.Post(RemapWindowsAfterResume));
                 _macNowPlaying = MacNowPlayingService.TryStart(vm.Player);
                 InitializeMacMenuBar(vm);
                 Services.StartupTrace.Mark("tray-smtc-mpris-ready");
@@ -1081,6 +1115,8 @@ public partial class MainWindow : Window
         _smtc = null;
         _mpris?.Dispose();
         _mpris = null;
+        _resumeWatcher?.Dispose();
+        _resumeWatcher = null;
         _macNowPlaying?.Dispose();
         _macNowPlaying = null;
         if (_trayIcon != null)
@@ -1294,7 +1330,12 @@ public partial class MainWindow : Window
     private void OnDragPreviewStarted(TopLevel top, Helpers.DragFileBehavior.DragPreview preview)
     {
         if (!ReferenceEquals(top, this)) return;
-        if (this.FindControl<TextBlock>("DragChipTitle") is { } title) title.Text = preview.Title;
+        // Set the title Run, not TextBlock.Text: Text would replace the inline E badge.
+        if (this.FindControl<TextBlock>("DragChipTitle") is { Inlines: { } inlines }
+            && inlines.OfType<Avalonia.Controls.Documents.Run>().FirstOrDefault() is { } titleRun)
+            titleRun.Text = preview.Title;
+        if (this.FindControl<Border>("DragChipExplicit") is { } explicitBadge)
+            explicitBadge.IsVisible = preview.IsExplicit;
         if (this.FindControl<TextBlock>("DragChipSubtitle") is { } subtitle)
         {
             subtitle.Text = preview.Subtitle;
@@ -1382,6 +1423,11 @@ public partial class MainWindow : Window
     {
         var overlay = this.FindControl<Avalonia.Controls.Border>("DragDropOverlay");
         if (overlay == null) return;
+        // GitHub #86: with "Import dropped files" off the drop plays / queues in place,
+        // so "Drop files to import" promised something that would not happen.
+        if (show && DataContext is MainWindowViewModel vm
+            && this.FindControl<TextBlock>("DragDropOverlayText") is { } text)
+            text.Text = Localization.Loc.T(vm.Settings.ImportDroppedMedia ? "Main.DropFilesImport" : "Main.DropFilesPlay");
         overlay.IsVisible = show;
         overlay.Opacity = show ? 1 : 0;
     }
@@ -1542,6 +1588,11 @@ public partial class MainWindow : Window
                 return true;
             case ShortcutAction.NewPlaylist:
                 vm.Sidebar.CreatePlaylistCommand.Execute(null);
+                return true;
+            case ShortcutAction.ToggleQueue:
+                // GitHub #86: the island's Queue button is gone while nothing is loaded
+                // (the bar unmounts), so this is the way in to an empty queue.
+                vm.Player.ShowQueueCommand.Execute(null);
                 return true;
             default:
                 return false;
@@ -2067,6 +2118,179 @@ public partial class MainWindow : Window
         _queueDragRow = null;
     }
 
+    // ── GitHub #88: rubber-band selection ────────────────────────────────────
+    // A band starts from the popup's empty space (the row gutters, below the last row) or
+    // from a Ctrl/Shift press on a row; a plain press on a row stays click / drag-to-reorder.
+    // Rows are virtualized, so the band's start is kept in fractional ROW units measured off
+    // a realized row (rows are a fixed height). That keeps it pinned to its rows while the
+    // list auto-scrolls under a band held near the top or bottom edge.
+
+    private const double QueueBandEdge = 28.0;
+    private bool _queueBandPending;
+    private bool _queueBandActive;
+    private bool _queueBandClearOnClick;
+    private Point _queueBandStartPos;
+    private double _queueBandStartRow;
+    private Point _queueBandLastPos;
+    private int[]? _queueBandKeep;
+    private DispatcherTimer? _queueBandScrollTimer;
+
+    /// <summary>First on-screen realized row: its index, its top (margin included) in
+    /// <paramref name="listBox"/> coordinates, and the row pitch.</summary>
+    private static bool TryQueueRowMetrics(ListBox listBox, out int index, out double top, out double pitch)
+    {
+        index = -1; top = 0; pitch = 0;
+        foreach (var container in listBox.GetRealizedContainers())
+        {
+            var i = listBox.IndexFromContainer(container);
+            if (i < 0 || !container.IsVisible || (index >= 0 && i >= index)) continue;
+            if (container.TranslatePoint(new Point(0, 0), listBox) is not { } p) continue;
+            var h = container.Bounds.Height + container.Margin.Top + container.Margin.Bottom;
+            // Skip a container kept realized far off-screen (e.g. the focused one).
+            if (h <= 0 || p.Y + h < -h || p.Y > listBox.Bounds.Height + h) continue;
+            index = i;
+            top = p.Y - container.Margin.Top;
+            pitch = h;
+        }
+        return index >= 0;
+    }
+
+    private void OnQueueBandPressed(object? sender, PointerPressedEventArgs e)
+    {
+        if (sender is not ListBox listBox || _queueSelection is null) return;
+        if (e.Pointer.Type == PointerType.Touch) return;
+        if (!e.GetCurrentPoint(listBox).Properties.IsLeftButtonPressed) return;
+        if (QueueLiquid is { IsSettling: true }) return;
+
+        var onRow = (e.Source as Visual)?.GetSelfAndVisualAncestors()
+            .Any(v => v is Border b && b.Classes.Contains("queue-row")) == true;
+        var modifiers = e.KeyModifiers & (KeyModifiers.Control | KeyModifiers.Shift);
+        if (onRow && modifiers == KeyModifiers.None) return;
+
+        var pos = e.GetPosition(listBox);
+        if (!TryQueueRowMetrics(listBox, out var index, out var top, out var pitch)) return;
+
+        _queueBandPending = true;
+        _queueBandActive = false;
+        _queueBandClearOnClick = !onRow && modifiers == KeyModifiers.None;
+        _queueBandStartPos = _queueBandLastPos = pos;
+        _queueBandStartRow = index + (pos.Y - top) / pitch;
+        // The row press handler already ran (it sits deeper), so a Ctrl/Shift band keeps
+        // what that click just selected.
+        _queueBandKeep = modifiers != KeyModifiers.None ? _queueSelection.Snapshot() : null;
+    }
+
+    private void OnQueueBandMoved(object? sender, PointerEventArgs e)
+    {
+        if (!_queueBandPending || sender is not ListBox listBox) return;
+        var pos = e.GetPosition(listBox);
+        if (!_queueBandActive)
+        {
+            if (!e.GetCurrentPoint(listBox).Properties.IsLeftButtonPressed)
+            {
+                EndQueueBand();
+                return;
+            }
+            if (Math.Abs(pos.X - _queueBandStartPos.X) < QueueDragThreshold &&
+                Math.Abs(pos.Y - _queueBandStartPos.Y) < QueueDragThreshold)
+                return;
+            _queueBandActive = true;
+            e.Pointer.Capture(listBox);
+            _queueBandScrollTimer ??= CreateQueueBandScrollTimer();
+            _queueBandScrollTimer.Start();
+        }
+        _queueBandLastPos = pos;
+        UpdateQueueBand(listBox);
+        e.Handled = true;
+    }
+
+    private void OnQueueBandReleased(object? sender, PointerReleasedEventArgs e)
+    {
+        if (!_queueBandPending) return;
+        var wasActive = _queueBandActive;
+        // A plain click on empty space (no band) clears the selection, like a file list.
+        if (!wasActive && _queueBandClearOnClick && _queueSelection is { } selection
+            && sender is ListBox listBox)
+        {
+            selection.Clear();
+            SyncQueueSelectionVisuals(listBox);
+        }
+        EndQueueBand();
+        if (wasActive)
+        {
+            e.Pointer.Capture(null);
+            e.Handled = true;
+        }
+    }
+
+    private void OnQueueBandCaptureLost(object? sender, PointerCaptureLostEventArgs e)
+    {
+        if (!ReferenceEquals(e.Source, sender) || !_queueBandActive) return;
+        EndQueueBand();
+    }
+
+    private void UpdateQueueBand(ListBox listBox)
+    {
+        if (_queueSelection is not { } selection
+            || !TryQueueRowMetrics(listBox, out var index, out var top, out var pitch))
+            return;
+
+        var currentRow = index + (_queueBandLastPos.Y - top) / pitch;
+        selection.SelectBand((int)Math.Floor(_queueBandStartRow), (int)Math.Floor(currentRow), _queueBandKeep);
+        SyncQueueSelectionVisuals(listBox);
+
+        if (this.FindControl<Grid>("QueueListWrapper") is not { } wrapper
+            || this.FindControl<Border>("QueueMarquee") is not { } marquee)
+            return;
+        // The start row may have scrolled away: draw the band clipped to the list.
+        var startY = top + (_queueBandStartRow - index) * pitch;
+        var y1 = Math.Clamp(Math.Min(startY, _queueBandLastPos.Y), 0, listBox.Bounds.Height);
+        var y2 = Math.Clamp(Math.Max(startY, _queueBandLastPos.Y), 0, listBox.Bounds.Height);
+        var x1 = Math.Clamp(Math.Min(_queueBandStartPos.X, _queueBandLastPos.X), 0, listBox.Bounds.Width);
+        var x2 = Math.Clamp(Math.Max(_queueBandStartPos.X, _queueBandLastPos.X), 0, listBox.Bounds.Width);
+        if (listBox.TranslatePoint(new Point(x1, y1), wrapper) is not { } origin) return;
+        marquee.Margin = new Thickness(origin.X, origin.Y, 0, 0);
+        marquee.Width = x2 - x1;
+        marquee.Height = y2 - y1;
+        marquee.IsVisible = true;
+    }
+
+    private DispatcherTimer CreateQueueBandScrollTimer()
+    {
+        var timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(16) };
+        timer.Tick += (_, _) =>
+        {
+            if (!_queueBandActive
+                || this.FindControl<ListBox>("QueuePopupListBox") is not { } listBox
+                || listBox.FindDescendantOfType<ScrollViewer>() is not { } scroller)
+                return;
+            var y = _queueBandLastPos.Y;
+            var height = listBox.Bounds.Height;
+            var depth = y < QueueBandEdge ? y - QueueBandEdge
+                : y > height - QueueBandEdge ? y - (height - QueueBandEdge)
+                : 0;
+            if (depth == 0) return;
+            var max = Math.Max(0, scroller.Extent.Height - scroller.Viewport.Height);
+            var next = Math.Clamp(scroller.Offset.Y + Math.Clamp(depth, -60, 60) * 0.5, 0, max);
+            if (Math.Abs(next - scroller.Offset.Y) < 0.5) return;
+            scroller.Offset = scroller.Offset.WithY(next);
+            // Realize/arrange the rows at the new offset before measuring off them.
+            listBox.UpdateLayout();
+            UpdateQueueBand(listBox);
+        };
+        return timer;
+    }
+
+    private void EndQueueBand()
+    {
+        _queueBandPending = false;
+        _queueBandActive = false;
+        _queueBandKeep = null;
+        _queueBandScrollTimer?.Stop();
+        if (this.FindControl<Border>("QueueMarquee") is { } marquee)
+            marquee.IsVisible = false;
+    }
+
     protected override void OnLoaded(RoutedEventArgs e)
     {
         base.OnLoaded(e);
@@ -2103,6 +2327,11 @@ public partial class MainWindow : Window
             DragDrop.SetAllowDrop(queueDropTarget, true);
             queueDropTarget.AddHandler(DragDrop.DragOverEvent, OnQueueDragOver);
             queueDropTarget.AddHandler(DragDrop.DropEvent, OnQueueDrop);
+            // GitHub #88 rubber band. handledEventsToo: rows / ListBoxItems handle presses.
+            queueDropTarget.AddHandler(PointerPressedEvent, OnQueueBandPressed, RoutingStrategies.Bubble, handledEventsToo: true);
+            queueDropTarget.AddHandler(PointerMovedEvent, OnQueueBandMoved, RoutingStrategies.Bubble, handledEventsToo: true);
+            queueDropTarget.AddHandler(PointerReleasedEvent, OnQueueBandReleased, RoutingStrategies.Bubble, handledEventsToo: true);
+            queueDropTarget.AddHandler(PointerCaptureLostEvent, OnQueueBandCaptureLost, RoutingStrategies.Direct);
         }
     }
 

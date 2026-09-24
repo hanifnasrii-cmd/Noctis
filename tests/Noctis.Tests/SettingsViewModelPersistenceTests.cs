@@ -211,6 +211,23 @@ public class SettingsViewModelPersistenceTests : IDisposable
         Assert.False(reloaded.AlbumSortAscending);
     }
 
+    /// <summary>GitHub #89: the Folders track-pane sort defaults to folder order and survives a restart.</summary>
+    [AvaloniaFact]
+    public async Task FoldersSort_DefaultsToFolderOrder_AndSurvivesSaveAndReload()
+    {
+        var vm = CreateViewModel();
+        await vm.LoadAsync();
+        Assert.Equal("default", vm.FoldersSortMode);
+
+        vm.FoldersSortMode = "modified-oldest";
+        await vm.SaveAsync();
+
+        var reloaded = CreateViewModel();
+        await reloaded.LoadAsync();
+
+        Assert.Equal("modified-oldest", reloaded.FoldersSortMode);
+    }
+
     [AvaloniaFact]
     public async Task SongsViewState_DefaultsMatchTheFormerStartupBehaviour()
     {

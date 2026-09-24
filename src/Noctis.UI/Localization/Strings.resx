@@ -904,6 +904,10 @@
   <data name="Main.Bitrate" xml:space="preserve"><value>Bitrate</value><comment>Header in MainWindow.axaml</comment></data>
   <data name="Main.SampleRate" xml:space="preserve"><value>Sample Rate</value><comment>Header in MainWindow.axaml</comment></data>
   <data name="Main.DateAdded" xml:space="preserve"><value>Date Added</value><comment>Header in MainWindow.axaml</comment></data>
+  <data name="Main.DateModified" xml:space="preserve"><value>Date Modified</value><comment>Header in MainWindow.axaml</comment></data>
+  <data name="Main.FoldersSortDefault" xml:space="preserve"><value>Folder Order</value><comment>Header in MainWindow.axaml (Folders sort menu)</comment></data>
+  <data name="Main.FoldersSortModifiedNewest" xml:space="preserve"><value>Date Modified (Newest)</value><comment>Header in MainWindow.axaml (Folders sort menu)</comment></data>
+  <data name="Main.FoldersSortModifiedOldest" xml:space="preserve"><value>Date Modified (Oldest)</value><comment>Header in MainWindow.axaml (Folders sort menu)</comment></data>
   <data name="Main.ShowViewOptions" xml:space="preserve"><value>Show View Options</value><comment>Header in MainWindow.axaml</comment></data>
   <data name="Main.SortPlaylistsTip" xml:space="preserve"><value>Sort playlists</value><comment>ToolTip.Tip in MainWindow.axaml</comment></data>
   <data name="Main.Name" xml:space="preserve"><value>Name</value><comment>Header in MainWindow.axaml</comment></data>
@@ -943,6 +947,7 @@
   <data name="Main.RemoveFromQueue" xml:space="preserve"><value>Remove from Queue</value><comment>Header in MainWindow.axaml</comment></data>
   <data name="Main.ExplicitTip" xml:space="preserve"><value>Explicit</value><comment>ToolTip.Tip in MainWindow.axaml</comment></data>
   <data name="Main.DropFilesImport" xml:space="preserve"><value>Drop files to import</value><comment>Text in MainWindow.axaml</comment></data>
+  <data name="Main.DropFilesPlay" xml:space="preserve"><value>Drop files to play or add to the queue</value><comment>Drag overlay text in MainWindow.axaml.cs when Import dropped files is off</comment></data>
 
   <!-- MetadataFinderDialog.axaml (auto-migrated) -->
   <data name="MetadataFinder.FindMetadata" xml:space="preserve"><value>Find Metadata</value><comment>Title in MetadataFinderDialog.axaml</comment></data>
@@ -1196,6 +1201,7 @@
   <data name="PlaybackBar.ViewAlbumTip" xml:space="preserve"><value>View Album</value><comment>ToolTip.Tip in PlaybackBarView.axaml</comment></data>
   <data name="PlaybackBar.ExplicitTip" xml:space="preserve"><value>Explicit</value><comment>ToolTip.Tip in PlaybackBarView.axaml</comment></data>
   <data name="PlaybackBar.ViewArtistTip" xml:space="preserve"><value>View Artist</value><comment>ToolTip.Tip in PlaybackBarView.axaml</comment></data>
+  <data name="PlaybackBar.ViewNamedArtistTip" xml:space="preserve"><value>View {0}</value><comment>Island artist link tooltip while the pointer is over one name of a multi-artist credit; {0} = that artist's name</comment></data>
   <data name="PlaybackBar.FavoriteTip" xml:space="preserve"><value>Favorite</value><comment>ToolTip.Tip in PlaybackBarView.axaml</comment></data>
   <data name="PlaybackBar.OptionsTip" xml:space="preserve"><value>Options</value><comment>ToolTip.Tip in PlaybackBarView.axaml</comment></data>
   <data name="PlaybackBar.Play" xml:space="preserve"><value>Play</value><comment>Text in PlaybackBarView.axaml</comment></data>
@@ -1256,6 +1262,8 @@
   <data name="Playlist.ReleaseDateOldest" xml:space="preserve"><value>Release Date (Oldest)</value><comment>Header in PlaylistView.axaml</comment></data>
   <data name="Playlist.ReleaseDateNewest" xml:space="preserve"><value>Release Date (Newest)</value><comment>Header in PlaylistView.axaml</comment></data>
   <data name="Playlist.SortBadge" xml:space="preserve"><value>Badge</value><comment>Header in PlaylistView.axaml</comment></data>
+  <data name="Playlist.DateModifiedNewest" xml:space="preserve"><value>Date Modified (Newest)</value><comment>Header in PlaylistView.axaml</comment></data>
+  <data name="Playlist.DateModifiedOldest" xml:space="preserve"><value>Date Modified (Oldest)</value><comment>Header in PlaylistView.axaml</comment></data>
   <data name="Badge.Title" xml:space="preserve"><value>New badge</value><comment>Text in BadgeNameDialog.axaml</comment></data>
   <data name="Badge.NamePlaceholder" xml:space="preserve"><value>Badge name</value><comment>Text in BadgeNameDialog.axaml</comment></data>
   <data name="Badge.Add" xml:space="preserve"><value>Add</value><comment>Text in BadgeNameDialog.axaml</comment></data>

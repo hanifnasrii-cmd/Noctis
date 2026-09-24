@@ -1012,18 +1012,19 @@
                             <!-- Artist name. The 200px viewport clips the marquee; the Button
                                  sits inside and wraps only the text, so hover/click are limited
                                  to the artist name itself, not the blank space to its right.
-                                 Clicking opens the artist's discography page (same ViewArtist
-                                 path as the queue popup's artist link). -->
+                                 Clicking opens the discography of the name under the pointer —
+                                 a multi-artist credit stays one marquee run, so the code-behind
+                                 resolves the clicked character to a name (ArtistCreditSpans)
+                                 and falls back to the primary artist over a separator. -->
                             <Border x:Name="ArtistNameViewport"
                                     Grid.Row="1"
                                     Margin="0,0,8,0"
                                     ClipToBounds="True"
                                     HorizontalAlignment="Left">
-                                <Button Classes="artist-link-btn"
+                                <Button x:Name="ArtistNameButton"
+                                        Classes="artist-link-btn"
                                         Background="Transparent" BorderThickness="0" Padding="0"
                                         Cursor="Hand" HorizontalAlignment="Left"
-                                        Command="{Binding ViewArtistCommand}"
-                                        CommandParameter="{Binding CurrentTrack}"
                                         ToolTip.Tip="{loc:T PlaybackBar.ViewArtistTip}">
                                     <StackPanel Orientation="Horizontal">
                                         <Border Classes="artist-text-hover"

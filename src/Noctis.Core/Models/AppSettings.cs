@@ -300,6 +300,10 @@ public class AppSettings
     /// <summary>Artists grid sort direction.</summary>
     public bool ArtistSortAscending { get; set; } = true;
 
+    /// <summary>Folders track-pane sort (GitHub #89): "default" (folder order),
+    /// "modified-newest" or "modified-oldest" (file last-modified time).</summary>
+    public string FoldersSortMode { get; set; } = "default";
+
     /// <summary>Albums sort direction. Only meaningful outside "default"; each mode
     /// starts in its natural direction (see LibraryAlbumsViewModel.IsDescendingByDefault).</summary>
     public bool AlbumSortAscending { get; set; } = true;

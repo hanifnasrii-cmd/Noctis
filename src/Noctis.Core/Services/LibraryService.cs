@@ -481,7 +481,14 @@ public class LibraryService : ILibraryService
         // Belt-and-braces: never let a scan replace a populated library with nothing.
         // Any path that gets here with zero results and a non-empty library is a bug in
         // enumeration, not a user deleting their entire collection mid-scan.
-        if (newTracks.IsEmpty && originalTrackCount > 0)
+        // The one legitimate "nothing" is having no folders at all: removing the last media
+        // folder must empty the library, or its albums stay forever (the scan reported
+        // "N tracks found" for folders that were no longer configured). Confirmed against
+        // the persisted settings too, so an empty folder list handed in by a caller whose
+        // settings haven't loaded yet can never wipe the library.
+        var noFoldersConfigured = includeRoots.Count == 0
+                                  && settings.MusicFolders.All(string.IsNullOrWhiteSpace);
+        if (newTracks.IsEmpty && originalTrackCount > 0 && !noFoldersConfigured)
         {
             RestoreOriginalLibrary();
             DebugLog.Write("Library",

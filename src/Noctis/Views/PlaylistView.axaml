@@ -645,6 +645,8 @@
                                     <MenuItem Header="{loc:T Playlist.RecentlyAdded}" Command="{Binding SetSortCommand}" CommandParameter="RecentlyAdded" />
                                     <MenuItem Header="{loc:T Playlist.ReleaseDateOldest}" Command="{Binding SetSortCommand}" CommandParameter="ReleaseDateOldest" />
                                     <MenuItem Header="{loc:T Playlist.ReleaseDateNewest}" Command="{Binding SetSortCommand}" CommandParameter="ReleaseDateNewest" />
+                                    <MenuItem Header="{loc:T Playlist.DateModifiedNewest}" Command="{Binding SetSortCommand}" CommandParameter="DateModifiedNewest" />
+                                    <MenuItem Header="{loc:T Playlist.DateModifiedOldest}" Command="{Binding SetSortCommand}" CommandParameter="DateModifiedOldest" />
                                     <MenuItem Header="{loc:T Playlist.SortBadge}" Command="{Binding SetSortCommand}" CommandParameter="Badge" />
                                 </MenuFlyout>
                             </Button.Flyout>

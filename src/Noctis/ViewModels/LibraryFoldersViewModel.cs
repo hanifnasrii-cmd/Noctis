@@ -41,6 +41,35 @@ public partial class LibraryFoldersViewModel : ViewModelBase, ISearchable, IDisp
     /// <summary>"2,144 items · 61.2 GB" line for the selected folder's header.</summary>
     [ObservableProperty] private string _folderSummaryText = string.Empty;
 
+    /// <summary>Track-pane order (GitHub #89): "default" (folder order), "modified-newest"
+    /// or "modified-oldest" (file last-modified time).</summary>
+    [ObservableProperty] private string _sortMode = "default";
+
+    public string SortLabel => SortMode switch
+    {
+        "modified-newest" => "Date Modified (Newest)",
+        "modified-oldest" => "Date Modified (Oldest)",
+        _ => "Folder Order",
+    };
+
+    partial void OnSortModeChanged(string value)
+    {
+        OnPropertyChanged(nameof(SortLabel));
+        RebuildTrackPane();
+    }
+
+    [RelayCommand]
+    private void SetSort(string mode) => SortMode = mode;
+
+    /// <summary>Orders the flattened folder tracks for display. LINQ's OrderBy is stable,
+    /// so tracks sharing a timestamp (a batch retag) keep their folder order.</summary>
+    public static List<Track> SortTracks(List<Track> tracks, string mode) => mode switch
+    {
+        "modified-newest" => tracks.OrderByDescending(t => t.LastModified).ToList(),
+        "modified-oldest" => tracks.OrderBy(t => t.LastModified).ToList(),
+        _ => tracks,
+    };
+
     /// <summary>Fires when the user clicks "Manage media folders…" — handled by MainWindowViewModel to switch views.</summary>
     public event EventHandler? NavigateToSettingsRequested;
 
@@ -171,6 +200,7 @@ public partial class LibraryFoldersViewModel : ViewModelBase, ISearchable, IDisp
         {
             var sink = new List<Track>();
             Collect(SelectedNode, sink);
+            sink = SortTracks(sink, SortMode);
             for (int i = 0; i < sink.Count; i++)
                 sink[i].RowNumber = i + 1;
             SelectedFolderTracks.ReplaceAll(sink);
@@ -194,6 +224,7 @@ public partial class LibraryFoldersViewModel : ViewModelBase, ISearchable, IDisp
         {
             foreach (var root in RootNodes)
                 Collect(root, all);
+            all = SortTracks(all, SortMode);
             for (int i = 0; i < all.Count; i++)
                 all[i].RowNumber = i + 1;
             var q = _currentFilter.Trim();

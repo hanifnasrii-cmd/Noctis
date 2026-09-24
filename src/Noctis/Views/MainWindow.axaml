@@ -290,6 +290,9 @@
                                         <MenuItem Header="{loc:T Main.RecentlyAdded}" Command="{Binding AlbumSortCommand}" CommandParameter="dateadded">
                                             <MenuItem.Icon><PathIcon Data="{StaticResource CheckmarkIcon}" Width="14" Height="14" IsVisible="{Binding AlbumSortMode, Converter={StaticResource StringEquals}, ConverterParameter=dateadded}"/></MenuItem.Icon>
                                         </MenuItem>
+                                        <MenuItem Header="{loc:T Main.DateModified}" Command="{Binding AlbumSortCommand}" CommandParameter="datemodified">
+                                            <MenuItem.Icon><PathIcon Data="{StaticResource CheckmarkIcon}" Width="14" Height="14" IsVisible="{Binding AlbumSortMode, Converter={StaticResource StringEquals}, ConverterParameter=datemodified}"/></MenuItem.Icon>
+                                        </MenuItem>
                                         <MenuItem Header="{loc:T Main.MostPlayed}" Command="{Binding AlbumSortCommand}" CommandParameter="mostplayed">
                                             <MenuItem.Icon><PathIcon Data="{StaticResource CheckmarkIcon}" Width="14" Height="14" IsVisible="{Binding AlbumSortMode, Converter={StaticResource StringEquals}, ConverterParameter=mostplayed}"/></MenuItem.Icon>
                                         </MenuItem>
@@ -399,6 +402,9 @@
                                         </MenuItem>
                                         <MenuItem Header="{loc:T Main.DateAdded}" Command="{Binding PageSortCommand}" CommandParameter="Date Added">
                                             <MenuItem.Icon><PathIcon Data="{StaticResource CheckmarkIcon}" Width="14" Height="14" IsVisible="{Binding PageSortColumn, Converter={StaticResource StringEquals}, ConverterParameter='Date Added'}"/></MenuItem.Icon>
+                                        </MenuItem>
+                                        <MenuItem Header="{loc:T Main.DateModified}" Command="{Binding PageSortCommand}" CommandParameter="Date Modified">
+                                            <MenuItem.Icon><PathIcon Data="{StaticResource CheckmarkIcon}" Width="14" Height="14" IsVisible="{Binding PageSortColumn, Converter={StaticResource StringEquals}, ConverterParameter='Date Modified'}"/></MenuItem.Icon>
                                         </MenuItem>
                                         <Separator />
                                         <MenuItem Header="{loc:T Main.Ascending}" Command="{Binding PageSortCommand}" CommandParameter="Ascending">
@@ -601,9 +607,31 @@
                         </Button>
                     </StackPanel>
 
-                    <!-- Folders: manage icon · shuffle icon · Play (primary). -->
+                    <!-- Folders: sort popover · manage icon · shuffle icon · Play (primary). -->
                     <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center"
                                 IsVisible="{Binding FoldersActionsVisible}">
+                        <Panel VerticalAlignment="Center">
+                            <Button Classes="corner-icon">
+                                <ToolTip.Tip>
+                                    <TextBlock><Run Text="{loc:T Main.Sort}"/><Run Text=" "/><Run Text="{Binding FoldersSortLabel}"/></TextBlock>
+                                </ToolTip.Tip>
+                                <PathIcon Data="{StaticResource SortIcon}"/>
+                                <Button.Flyout>
+                                    <MenuFlyout Placement="BottomEdgeAlignedRight">
+                                        <MenuItem Header="{loc:T Main.FoldersSortDefault}" Command="{Binding FoldersSortCommand}" CommandParameter="default">
+                                            <MenuItem.Icon><PathIcon Data="{StaticResource CheckmarkIcon}" Width="14" Height="14" IsVisible="{Binding FoldersSortMode, Converter={StaticResource StringEquals}, ConverterParameter=default}"/></MenuItem.Icon>
+                                        </MenuItem>
+                                        <MenuItem Header="{loc:T Main.FoldersSortModifiedNewest}" Command="{Binding FoldersSortCommand}" CommandParameter="modified-newest">
+                                            <MenuItem.Icon><PathIcon Data="{StaticResource CheckmarkIcon}" Width="14" Height="14" IsVisible="{Binding FoldersSortMode, Converter={StaticResource StringEquals}, ConverterParameter=modified-newest}"/></MenuItem.Icon>
+                                        </MenuItem>
+                                        <MenuItem Header="{loc:T Main.FoldersSortModifiedOldest}" Command="{Binding FoldersSortCommand}" CommandParameter="modified-oldest">
+                                            <MenuItem.Icon><PathIcon Data="{StaticResource CheckmarkIcon}" Width="14" Height="14" IsVisible="{Binding FoldersSortMode, Converter={StaticResource StringEquals}, ConverterParameter=modified-oldest}"/></MenuItem.Icon>
+                                        </MenuItem>
+                                    </MenuFlyout>
+                                </Button.Flyout>
+                            </Button>
+                            <Border Classes="corner-dot" IsVisible="{Binding IsFoldersSortActive}"/>
+                        </Panel>
                         <Button Classes="corner-icon" Command="{Binding PageManageFoldersCommand}" ToolTip.Tip="{loc:T Main.ManageFolders}">
                             <PathIcon Data="{StaticResource SettingsIcon}"/>
                         </Button>
@@ -1113,6 +1141,22 @@
                                     </StackPanel>
                                 </Grid>
                             </Border>
+
+                            <!-- GitHub #88: rubber-band selection rectangle, sized from code-behind
+                                 (OnQueueBand*). Rim and wash are separate so the fill can be faint
+                                 while the edge stays crisp. -->
+                            <Border x:Name="QueueMarquee"
+                                    IsHitTestVisible="False"
+                                    IsVisible="False"
+                                    HorizontalAlignment="Left"
+                                    VerticalAlignment="Top"
+                                    CornerRadius="6"
+                                    BorderThickness="1"
+                                    BorderBrush="{DynamicResource AccentColorBrush}">
+                                <Border CornerRadius="5"
+                                        Background="{DynamicResource AccentColorBrush}"
+                                        Opacity="0.18" />
+                            </Border>
                         </Grid>
                     </DockPanel>
                     </Panel>
@@ -1145,7 +1189,8 @@
             <PathIcon Data="M12,2 L12,14 M8,10 L12,14 L16,10 M4,18 L20,18"
                       Width="32" Height="32"
                       Foreground="{StaticResource SystemControlHighlightAccentBrush}" />
-            <TextBlock Text="{loc:T Main.DropFilesImport}"
+            <TextBlock x:Name="DragDropOverlayText"
+                       Text="{loc:T Main.DropFilesImport}"
                        FontSize="14" FontWeight="SemiBold"
                        Foreground="#CCFFFFFF"
                        HorizontalAlignment="Center" />
@@ -1412,12 +1457,26 @@
                 </Border>
             </Panel>
             <StackPanel Grid.Column="1" Margin="10,0,0,0" VerticalAlignment="Center" Spacing="1">
+                <!-- Title run + the tiles' compact E badge (set from OnDragPreviewStarted). -->
                 <TextBlock x:Name="DragChipTitle"
                            FontSize="13"
                            FontWeight="SemiBold"
                            Foreground="{DynamicResource IslandForeground}"
                            TextTrimming="CharacterEllipsis"
-                           MaxLines="1" />
+                           MaxLines="1">
+                    <Run />
+                    <InlineUIContainer BaselineAlignment="Center">
+                        <Border x:Name="DragChipExplicit"
+                                Classes="explicit-badge compact"
+                                Margin="6,0,0,0"
+                                IsVisible="False">
+                            <TextBlock Text="E"
+                                       Classes="explicit-badge-text compact"
+                                       FontSize="8"
+                                       Opacity="0.9" />
+                        </Border>
+                    </InlineUIContainer>
+                </TextBlock>
                 <TextBlock x:Name="DragChipSubtitle"
                            FontSize="11"
                            FontWeight="SemiBold"

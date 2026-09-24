@@ -27,6 +27,8 @@ public partial class PlayerViewModel : ViewModelBase
     private readonly ILibraryService _library;
     private readonly IPersistenceService _persistence;
     private readonly IAnimatedCoverService _animatedCovers;
+    // Re-reads queued non-library files on restore (GitHub #86). Null: they are dropped.
+    private readonly IMetadataService? _metadata;
 
     // ── Recently-played memory (feeds shuffle recency deprioritization) ──
     private readonly LinkedList<Guid> _recentlyPlayedOrder = new();
@@ -396,12 +398,14 @@ public partial class PlayerViewModel : ViewModelBase
     // Up Next so the queue popup shows where playback is heading.
     private const int AutoplayBatchSize = 5;
 
-    public PlayerViewModel(IAudioPlayer audioPlayer, ILibraryService library, IPersistenceService persistence, IAnimatedCoverService animatedCovers)
+    public PlayerViewModel(IAudioPlayer audioPlayer, ILibraryService library, IPersistenceService persistence, IAnimatedCoverService animatedCovers,
+        IMetadataService? metadata = null)
     {
         _audioPlayer = audioPlayer;
         _library = library;
         _persistence = persistence;
         _animatedCovers = animatedCovers;
+        _metadata = metadata;
 
         // Subscribe to audio player events
         _audioPlayer.PositionChanged += OnPositionChanged;
@@ -527,6 +531,15 @@ public partial class PlayerViewModel : ViewModelBase
             RemainingTimeText = FormatTime(Duration);
             Seeked?.Invoke(this, TimeSpan.Zero);
         }
+        else if (Math.Min(_queueHistoryDepth, History.Count) > 0)
+        {
+            // Undo the Next / natural advances made inside this queue before touching the
+            // pre-start tracks: started at 3, Next to 4, Previous must return to 3 — it went
+            // to 2 because the pre-start branch below was consulted first (Discord, aaron
+            // 2026-09-23). Entries deeper than _queueHistoryDepth predate this queue.
+            CancelAutoMixTransition("user skipped");
+            GoBackInQueue(QueueAdvanceReason.Previous);
+        }
         else if (_precedingInQueue.Count > 0)
         {
             // Step back into the part of the queue that was started past (GitHub #74).
@@ -547,6 +560,12 @@ public partial class PlayerViewModel : ViewModelBase
     /// <summary>Queue entries before the one the user started from, newest-first is the
     /// END of the list; consumed by <see cref="Previous"/> before <see cref="History"/>.</summary>
     private readonly List<Track> _precedingInQueue = new();
+
+    /// <summary>How many leading <see cref="History"/> entries were pushed by advances inside
+    /// the current queue (Next / natural end). <see cref="Previous"/> walks these back before
+    /// it steps into <see cref="_precedingInQueue"/>; anything deeper played before the queue
+    /// was started and is only reached once its first track is passed (GitHub #74).</summary>
+    private int _queueHistoryDepth;
 
     /// <summary>Island speed menu; parameter is a percent ("75" … "200").</summary>
     [RelayCommand]
@@ -830,6 +849,16 @@ public partial class PlayerViewModel : ViewModelBase
             _viewArtistAction?.Invoke(artist);
     }
 
+    /// <summary>One name out of a multi-artist credit — the island resolves the name under
+    /// the pointer (see <see cref="Helpers.ArtistCreditSpans"/>); <see cref="ViewArtist"/> with
+    /// the whole credit opens the primary artist only.</summary>
+    [RelayCommand]
+    private void ViewArtistNamed(string? artistName)
+    {
+        if (!string.IsNullOrWhiteSpace(artistName))
+            _viewArtistAction?.Invoke(artistName);
+    }
+
     [RelayCommand]
     private void SetLyricsSynced() => _selectLyricsSynced?.Invoke();
 
@@ -1101,6 +1130,7 @@ public partial class PlayerViewModel : ViewModelBase
             History.Insert(0, CurrentTrack);
             TrimHistory();
         }
+        _queueHistoryDepth = 0; // that entry belongs to what played before this queue
 
         // Clear stale shuffle state — a new queue replaces whatever was shuffled.
         _originalQueue.Clear();
@@ -1202,6 +1232,7 @@ public partial class PlayerViewModel : ViewModelBase
         CurrentTrack = null;
         UpNext.Clear();
         History.Clear();
+        _queueHistoryDepth = 0;
         _precedingInQueue.Clear();
         _originalQueue.Clear();
         _parkedExplicit.Clear();
@@ -1314,6 +1345,7 @@ public partial class PlayerViewModel : ViewModelBase
         var target = History[index];
         for (var i = index; i >= 0; i--)
             History.RemoveAt(i);
+        _queueHistoryDepth = Math.Max(0, _queueHistoryDepth - (index + 1));
         PlayTrack(target);
     }
 
@@ -1356,9 +1388,29 @@ public partial class PlayerViewModel : ViewModelBase
             RepeatMode = RepeatMode,
             IsShuffleEnabled = IsShuffleEnabled,
             IsMuted = IsMuted,
-            RepeatCycleIds = _repeatCycleTracks.Select(t => t.Id).ToList()
+            RepeatCycleIds = _repeatCycleTracks.Select(t => t.Id).ToList(),
+            ExternalTrackPaths = BuildExternalTrackPaths()
         };
         await _persistence.SaveQueueStateAsync(state);
+    }
+
+    /// <summary>
+    /// GitHub #86: Id → file of every non-library track the snapshot references, so the
+    /// next launch can re-read them (their Ids exist only in this session). Null when none.
+    /// </summary>
+    private Dictionary<Guid, string>? BuildExternalTrackPaths()
+    {
+        Dictionary<Guid, string>? map = null;
+        void Add(Track? t)
+        {
+            if (t is not { IsExternal: true } || string.IsNullOrEmpty(t.FilePath)) return;
+            (map ??= new Dictionary<Guid, string>())[t.Id] = t.FilePath;
+        }
+        Add(CurrentTrack);
+        foreach (var t in UpNext) Add(t);
+        foreach (var t in History) Add(t);
+        foreach (var t in _repeatCycleTracks) Add(t);
+        return map;
     }
 
     /// <summary>
@@ -1394,7 +1446,8 @@ public partial class PlayerViewModel : ViewModelBase
                 RepeatMode = RepeatMode,
                 IsShuffleEnabled = IsShuffleEnabled,
                 IsMuted = IsMuted,
-                RepeatCycleIds = _repeatCycleTracks.Select(t => t.Id).ToList()
+                RepeatCycleIds = _repeatCycleTracks.Select(t => t.Id).ToList(),
+                ExternalTrackPaths = BuildExternalTrackPaths()
             };
         }
         catch
@@ -1424,11 +1477,16 @@ public partial class PlayerViewModel : ViewModelBase
         var state = await _persistence.LoadQueueStateAsync();
         if (state == null) return;
 
+        // GitHub #86: non-library tracks (dropped with "Import dropped files" off) are
+        // unknown to the library, so they are re-read from their saved files.
+        var external = await ResolveSavedExternalTracksAsync(state);
+        Track? Resolve(Guid id) => _library.GetTrackById(id) ?? external.GetValueOrDefault(id);
+
         // Restore history
         var restoredHistory = new List<Track>();
         foreach (var id in state.HistoryIds)
         {
-            var track = _library.GetTrackById(id);
+            var track = Resolve(id);
             if (track != null) restoredHistory.Add(track);
         }
         History.AddRange(restoredHistory);
@@ -1437,7 +1495,7 @@ public partial class PlayerViewModel : ViewModelBase
         var restoredUpNext = new List<Track>();
         foreach (var id in state.UpNextIds)
         {
-            var track = _library.GetTrackById(id);
+            var track = Resolve(id);
             if (track != null) restoredUpNext.Add(track);
         }
         UpNext.AddRange(restoredUpNext);
@@ -1451,7 +1509,7 @@ public partial class PlayerViewModel : ViewModelBase
         var restoredCycle = new List<Track>(state.RepeatCycleIds.Count);
         foreach (var id in state.RepeatCycleIds)
         {
-            var track = _library.GetTrackById(id);
+            var track = Resolve(id);
             if (track != null) restoredCycle.Add(track);
         }
         _repeatCycleTracks = restoredCycle;
@@ -1459,7 +1517,7 @@ public partial class PlayerViewModel : ViewModelBase
         // Restore current track (paused, not auto-playing)
         if (state.CurrentTrackId.HasValue)
         {
-            var track = _library.GetTrackById(state.CurrentTrackId.Value);
+            var track = Resolve(state.CurrentTrackId.Value);
             if (track != null)
             {
                 CurrentTrack = track;
@@ -1487,6 +1545,80 @@ public partial class PlayerViewModel : ViewModelBase
                 }, DispatcherPriority.Render);
             }
         }
+    }
+
+    /// <summary>
+    /// Saved non-library tracks by their saved Id. A file that has since joined the library
+    /// resolves to the library entry; otherwise it is re-read off the UI thread, keeping the
+    /// saved Id so the Id lists (and Home's play log) still point at it. Missing files drop.
+    /// </summary>
+    private async Task<Dictionary<Guid, Track>> ResolveSavedExternalTracksAsync(QueueState state)
+    {
+        var result = new Dictionary<Guid, Track>();
+        if (state.ExternalTrackPaths is not { Count: > 0 } saved) return result;
+
+        var wanted = saved
+            .Where(p => !string.IsNullOrWhiteSpace(p.Value) && _library.GetTrackById(p.Key) == null)
+            .ToList();
+        if (wanted.Count == 0) return result;
+
+        // Path index snapshot here — _library.Tracks is mutated on the UI thread.
+        var wantedPaths = new HashSet<string>(wanted.Select(p => p.Value), StringComparer.OrdinalIgnoreCase);
+        var byPath = new Dictionary<string, Track>(StringComparer.OrdinalIgnoreCase);
+        foreach (var t in _library.Tracks)
+            if (wantedPaths.Contains(t.FilePath))
+                byPath[t.FilePath] = t;
+
+        var metadata = _metadata;
+        var persistence = _persistence;
+        var resolved = await Task.Run(() =>
+        {
+            var list = new List<KeyValuePair<Guid, Track>>(wanted.Count);
+            foreach (var (id, path) in wanted)
+            {
+                if (byPath.TryGetValue(path, out var libraryTrack))
+                {
+                    list.Add(new(id, libraryTrack));
+                    continue;
+                }
+                if (metadata == null) continue;
+                try
+                {
+                    var track = ExternalTrackReader.Read(metadata, persistence, path);
+                    if (track == null) continue;
+                    track.Id = id;
+                    list.Add(new(id, track));
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"[Player] External track restore failed for {path}: {ex.Message}");
+                }
+            }
+            return list;
+        });
+
+        foreach (var (id, track) in resolved)
+            result[id] = track;
+        return result;
+    }
+
+    /// <summary>
+    /// The non-library tracks the player currently holds (current, Up Next, History, repeat
+    /// cycle) by Id. Lets Home's Last Played resolve dropped files the library cannot
+    /// (GitHub #86) without touching the disk.
+    /// </summary>
+    public Dictionary<Guid, Track> GetExternalTracksById()
+    {
+        var map = new Dictionary<Guid, Track>();
+        void Add(Track? t)
+        {
+            if (t is { IsExternal: true }) map.TryAdd(t.Id, t);
+        }
+        Add(CurrentTrack);
+        foreach (var t in UpNext) Add(t);
+        foreach (var t in History) Add(t);
+        foreach (var t in _repeatCycleTracks) Add(t);
+        return map;
     }
 
     // ── Volume property change handler ───────────────────────
@@ -1763,7 +1895,9 @@ public partial class PlayerViewModel : ViewModelBase
 
     private void MarkPlayStateDirty(Track? track)
     {
-        if (track == null) return;
+        // A non-library track has no library row: journaling it only left orphan
+        // user-state rows in library.db under its per-session Id (GitHub #86).
+        if (track == null || track.IsExternal) return;
         lock (_pendingPlayStateSaves)
             _pendingPlayStateSaves.Add(track);
     }
@@ -2083,6 +2217,7 @@ public partial class PlayerViewModel : ViewModelBase
                 MarkPlayStateDirty(CurrentTrack);
             }
             History.Insert(0, CurrentTrack);
+            _queueHistoryDepth++;
             TrimHistory();
         }
 
@@ -2114,6 +2249,7 @@ public partial class PlayerViewModel : ViewModelBase
                 allTracks.RemoveAll(IsBlockedExplicit);
 
             History.Clear();
+            _queueHistoryDepth = 0;
             _originalQueue.Clear(); // clear stale shuffle state to prevent wrong restore
 
             if (allTracks.Count == 0) { StopAndClear(); return; }
@@ -2271,6 +2407,7 @@ public partial class PlayerViewModel : ViewModelBase
 
         var prev = History[0];
         History.RemoveAt(0);
+        if (_queueHistoryDepth > 0) _queueHistoryDepth--;
         PlayTrack(prev);
     }
 

@@ -86,6 +86,22 @@ public partial class MainWindowViewModel : ViewModelBase
         _favoritesVm.IsActive = ReferenceEquals(current, _favoritesVm);
     }
 
+    private readonly DispatcherTimer _coveredRefreshTimer;
+
+    /// <summary>Rebuilds the section under the Settings modal if the library changed
+    /// (each Refresh is a no-op when its view model isn't dirty).</summary>
+    private void RefreshCoveredSection()
+    {
+        var current = CurrentView;
+        DebugLog.Write("Library", $"Covered refresh of {current?.GetType().Name ?? "none"} (library={_library.Tracks.Count})");
+        if (ReferenceEquals(current, _homeVm)) _homeVm.Refresh();
+        else if (ReferenceEquals(current, _songsVm)) _songsVm.Refresh();
+        else if (ReferenceEquals(current, _albumsVm)) _albumsVm.Refresh();
+        else if (ReferenceEquals(current, _artistsVm)) _artistsVm.Refresh();
+        else if (ReferenceEquals(current, _foldersVm)) _foldersVm.Refresh();
+        else if (ReferenceEquals(current, _favoritesVm)) _favoritesVm.Refresh();
+    }
+
     // ── Scrobble tracking ──
     private DateTime _trackStartedAt;
     private Track? _scrobbleTrack;
@@ -256,7 +272,7 @@ public partial class MainWindowViewModel : ViewModelBase
         _loon = loon;
 
         // Create long-lived ViewModels
-        Player = new PlayerViewModel(audioPlayer, library, persistence, new AnimatedCoverService(persistence));
+        Player = new PlayerViewModel(audioPlayer, library, persistence, new AnimatedCoverService(persistence), metadata);
         Sidebar = new SidebarViewModel(persistence, library);
         TopBar = new TopBarViewModel();
         Sidebar.TopBar = TopBar;
@@ -402,11 +418,46 @@ public partial class MainWindowViewModel : ViewModelBase
         };
 
         _foldersVm = new LibraryFoldersViewModel(library, Player, persistence, Sidebar);
+        // Folders sort (GitHub #89): mirror into the top bar and persist, adopting the
+        // saved choice once settings load — same shape as the Artists sort above.
+        var adoptingFoldersSort = false;
+        _foldersVm.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName != nameof(LibraryFoldersViewModel.SortMode)) return;
+            TopBar.FoldersSortMode = _foldersVm.SortMode;
+            TopBar.FoldersSortLabel = _foldersVm.SortLabel;
+            if (!adoptingFoldersSort) Settings.FoldersSortMode = _foldersVm.SortMode;
+        };
+        Settings.ViewStateLoaded += (_, _) =>
+        {
+            adoptingFoldersSort = true;
+            try { _foldersVm.SortMode = Settings.FoldersSortMode; }
+            finally { adoptingFoldersSort = false; }
+        };
         _foldersVm.NavigateToSettingsRequested += (_, _) =>
         {
             OpenSettings();
             Dispatcher.UIThread.Post(Settings.RequestMediaFoldersSection);
         };
+        // The Settings modal leaves the page beneath it visible around the card, yet counts
+        // it as hidden (UpdateSectionActiveFlags) so settings toggles don't rebuild it
+        // mid-animation. A scan or a folder add/remove then never reached that page until
+        // the user navigated away and back (09-23 owner report). Catch the covered page up
+        // once library updates settle, debounced so a scan's ~1.5 s progress publishes
+        // don't each rebuild it.
+        _coveredRefreshTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(700) };
+        _coveredRefreshTimer.Tick += (_, _) =>
+        {
+            _coveredRefreshTimer.Stop();
+            if (IsSettingsModalOpen) RefreshCoveredSection();
+        };
+        _library.LibraryUpdated += (_, _) => Dispatcher.UIThread.Post(() =>
+        {
+            if (!IsSettingsModalOpen) return;
+            _coveredRefreshTimer.Stop();
+            _coveredRefreshTimer.Start();
+        });
+
         // Settings is a modal overlay and folder add/remove doesn't fire LibraryUpdated,
         // so explicitly rebuild the Folders tree when the media-folder set changes.
         Settings.MusicFoldersChanged += (_, _) =>
@@ -848,28 +899,7 @@ public partial class MainWindowViewModel : ViewModelBase
                         continue;
 
                     if (!byPath.TryGetValue(path, out var track))
-                    {
-                        track = _metadata.ReadTrackMetadata(path);
-
-                        // External tracks never pass through a library index rebuild, so
-                        // nothing populates their artwork. Extract it here the way the
-                        // scanner does (embedded tag, else cover file beside the track) —
-                        // otherwise the playback bar shows the placeholder and the Discord
-                        // relay has no cover to serve (GetArtworkUrl(null) → no image).
-                        if (track != null)
-                        {
-                            track.IsExternal = true;
-                            var artPath = _persistence.GetArtworkPath(track.AlbumId);
-                            if (!File.Exists(artPath))
-                            {
-                                var artBytes = _metadata.ExtractAlbumArt(path);
-                                if (artBytes is { Length: > 0 })
-                                    _persistence.SaveArtwork(track.AlbumId, artBytes);
-                            }
-                            if (File.Exists(artPath))
-                                track.AlbumArtworkPath = artPath;
-                        }
-                    }
+                        track = ExternalTrackReader.Read(_metadata, _persistence, path);
 
                     if (track != null)
                         resolved.Add(track);
@@ -1952,7 +1982,7 @@ public partial class MainWindowViewModel : ViewModelBase
         else if (key == "favorites")
             TopBar.ShowFavoritesActions(_favoritesVm.ShuffleAllCommand, _favoritesVm.PlayAllCommand);
         else if (key == "folders")
-            TopBar.ShowFoldersActions(_foldersVm.PlayFolderCommand, _foldersVm.ShuffleFolderCommand, _foldersVm.OpenMediaFolderSettingsCommand);
+            TopBar.ShowFoldersActions(_foldersVm.PlayFolderCommand, _foldersVm.ShuffleFolderCommand, _foldersVm.OpenMediaFolderSettingsCommand, _foldersVm.SetSortCommand);
         else if (key == "artists")
             TopBar.ShowArtistSort(_artistsVm.SetSortCommand, _artistsVm.SortLabel, _artistsVm.SortMode, _artistsVm.SortAscending);
 
@@ -2484,7 +2514,7 @@ public partial class MainWindowViewModel : ViewModelBase
         else if (ReferenceEquals(view, _lyricsVm))
             WireLyricsPageToPlayer();
         else if (ReferenceEquals(view, _foldersVm))
-            TopBar.ShowFoldersActions(_foldersVm.PlayFolderCommand, _foldersVm.ShuffleFolderCommand, _foldersVm.OpenMediaFolderSettingsCommand);
+            TopBar.ShowFoldersActions(_foldersVm.PlayFolderCommand, _foldersVm.ShuffleFolderCommand, _foldersVm.OpenMediaFolderSettingsCommand, _foldersVm.SetSortCommand);
         else if (ReferenceEquals(view, _artistsVm))
             TopBar.ShowArtistSort(_artistsVm.SetSortCommand, _artistsVm.SortLabel, _artistsVm.SortMode, _artistsVm.SortAscending);
         // Artist actions for _albumsVm are restored in CaptureRestoreState's lambda
