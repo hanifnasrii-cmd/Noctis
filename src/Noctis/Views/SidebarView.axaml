@@ -269,11 +269,11 @@
                        Closed="OnSearchPopupClosed">
                     <Border x:Name="SearchPopupContent"
                             Background="{DynamicResource IslandBackground}"
-                            BorderBrush="{DynamicResource IslandBorder}"
-                            BorderThickness="1"
+                            BorderBrush="{DynamicResource TextControlBorderBrush}"
+                            BorderThickness="1.5"
                             CornerRadius="999"
                             Width="40" Height="32"
-                            Padding="8,0,0,0"
+                            Padding="7.5,0,0,0"
                             ClipToBounds="True">
                         <Grid ColumnDefinitions="30,Auto" HorizontalAlignment="Left">
                             <!-- Left cap: same 16px magnifier as the (hidden) rail button

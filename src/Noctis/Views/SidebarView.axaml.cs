@@ -442,13 +442,15 @@ public partial class SidebarView : UserControl
     // with the filtered page beneath it — except when it is EMPTY, where a click
     // anywhere else dismisses it (see OnHostPointerPressed).
 
-    private const double SearchAnimMs = 250;
+    private const double SearchOpenMs = 320;
+    private const double SearchCloseMs = 240;      // total, including the lead below
+    private const double SearchCloseLeadMs = 50;   // field starts fading before the width moves
     // The capsule sits a lip's width left of the icon (Border Padding.Left in XAML),
     // so the magnifier lands INSIDE the rounded cap instead of on its curve while
     // staying exactly over the (hidden) rail button's glyph.
     private const double SearchCapsuleLip = 8;
     private const double SearchCapsuleClosedWidth = 32 + SearchCapsuleLip;   // rail circle + left lip
-    private const double SearchCapsuleOpenWidth = 224 + SearchCapsuleLip;    // + borders, 30 icon cap, 180 field, 12 right pad
+    private const double SearchCapsuleOpenWidth = 225 + SearchCapsuleLip;    // + 1.5px borders, 30 icon cap, 180 field, 12 right pad
     // Both settled rail states put SearchIconHost at x=16 (expanded: 6 panel margin +
     // 10 padding; collapsed: centered to the same spot — see the rail-action styles).
     // X must be this CONSTANT, not a live measurement: the hover collapse animates the
@@ -491,8 +493,8 @@ public partial class SidebarView : UserControl
         SearchFieldArea.Transitions = null;
         SearchPopupContent.Width = SearchCapsuleClosedWidth;
         SearchFieldArea.Opacity = 0;
-        SearchFieldArea.RenderTransform = TransformOperations.Parse("translateX(-8px)");
-        EnsureSearchTransitions(TimeSpan.FromMilliseconds(SearchAnimMs));
+        SearchFieldArea.RenderTransform = TransformOperations.Parse("translateX(-6px)");
+        EnsureSearchTransitions(opening: true);
         Dispatcher.UIThread.Post(() =>
         {
             SearchPopupContent.Width = SearchCapsuleOpenWidth;
@@ -525,12 +527,13 @@ public partial class SidebarView : UserControl
         // close the popup (its Closed handler restores the real button, so the
         // hand-off happens while both are pixel-identical circles).
         _searchCloseAnimating = true;
-        EnsureSearchTransitions(TimeSpan.FromMilliseconds(SearchAnimMs));
+        EnsureSearchTransitions(opening: false);
         SearchPopupContent.Width = SearchCapsuleClosedWidth;
         SearchFieldArea.Opacity = 0;
-        SearchFieldArea.RenderTransform = TransformOperations.Parse("translateX(-8px)");
+        SearchFieldArea.RenderTransform = TransformOperations.Parse("translateX(-6px)");
 
-        var timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(SearchAnimMs) };
+        // +1 frame so the width lands on the closed circle before the popup goes.
+        var timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(SearchCloseMs + 16) };
         timer.Tick += (_, _) =>
         {
             timer.Stop();
@@ -605,19 +608,38 @@ public partial class SidebarView : UserControl
         return false;
     }
 
-    private void EnsureSearchTransitions(TimeSpan duration)
+    private void EnsureSearchTransitions(bool opening)
     {
-        // ~cubic-bezier(.2,.8,.2,1): fast start, gentle settle.
-        var easing = new SplineEasing(0.2, 0.8, 0.2, 1);
-        SearchPopupContent.Transitions = new Transitions
+        // CubicBezierEase, not SplineEasing (mis-stores Y1 and can freeze after frame 1).
+        // Staggered so the field never fights the width: on open the capsule leads and
+        // the text follows once there is room; on close the text is gone before the
+        // shrinking edge reaches it, so nothing is visibly clipped mid-collapse.
+        if (opening)
         {
-            new DoubleTransition { Property = WidthProperty, Duration = duration, Easing = easing },
-        };
-        SearchFieldArea.Transitions = new Transitions
+            var grow = new CubicBezierEase(0.32, 0.72, 0, 1);   // long, soft settle
+            SearchPopupContent.Transitions = new Transitions
+            {
+                new DoubleTransition { Property = WidthProperty, Duration = TimeSpan.FromMilliseconds(SearchOpenMs), Easing = grow },
+            };
+            SearchFieldArea.Transitions = new Transitions
+            {
+                new DoubleTransition { Property = Visual.OpacityProperty, Duration = TimeSpan.FromMilliseconds(200), Delay = TimeSpan.FromMilliseconds(70), Easing = grow },
+                new TransformOperationsTransition { Property = Visual.RenderTransformProperty, Duration = TimeSpan.FromMilliseconds(280), Delay = TimeSpan.FromMilliseconds(40), Easing = grow },
+            };
+        }
+        else
         {
-            new DoubleTransition { Property = Visual.OpacityProperty, Duration = duration, Easing = easing },
-            new TransformOperationsTransition { Property = Visual.RenderTransformProperty, Duration = duration, Easing = easing },
-        };
+            var shrink = new CubicBezierEase(0.4, 0, 0.2, 1);   // standard ease-in-out
+            SearchPopupContent.Transitions = new Transitions
+            {
+                new DoubleTransition { Property = WidthProperty, Duration = TimeSpan.FromMilliseconds(SearchCloseMs - SearchCloseLeadMs), Delay = TimeSpan.FromMilliseconds(SearchCloseLeadMs), Easing = shrink },
+            };
+            SearchFieldArea.Transitions = new Transitions
+            {
+                new DoubleTransition { Property = Visual.OpacityProperty, Duration = TimeSpan.FromMilliseconds(110), Easing = shrink },
+                new TransformOperationsTransition { Property = Visual.RenderTransformProperty, Duration = TimeSpan.FromMilliseconds(160), Easing = shrink },
+            };
+        }
     }
 
     private void UnsubscribeFromViewModel()
