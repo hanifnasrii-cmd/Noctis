@@ -197,6 +197,6 @@ public class PluginManifestTests
         var m = PluginManifest.Parse(File.ReadAllText(PluginSandbox.RepoFile(relative)));
         Assert.Equal(entry, m.Entry);
         Assert.Empty(m.Warnings);
-        Assert.Null(m.CheckCompatibility("1.5.2"));
+        Assert.Null(m.CheckCompatibility("1.5.3"));
     }
 }

@@ -353,7 +353,7 @@ public partial class MainWindowViewModel : ViewModelBase
             () => Settings.GetSettings().LyricsStudioWordTimings, MetadataHelper.CreateLyricsStudioViewModel);
 
         // Plugins load once settings are read so the disabled list is honoured on the first pass.
-        // Plugins see the bare version ("1.5.2"), which is also what plugin.json's minAppVersion is checked against.
+        // Plugins see the bare version ("1.5.3"), which is also what plugin.json's minAppVersion is checked against.
         Plugins = new PluginHost(Player, persistence.DataDirectory, () => Settings.GetSettings(),
             () => _ = Settings.SaveAsync(), UpdateService.CurrentVersion.ToString(3), library);
         Settings.Plugins = Plugins;

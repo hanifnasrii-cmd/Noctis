@@ -7,7 +7,7 @@
   "type": "dotnet",
   "entry": "Noctis.Plugins.Kawarp.dll",
   "apiVersion": "1.0",
-  "minAppVersion": "1.5.2",
+  "minAppVersion": "1.5.3",
   "platforms": ["windows", "macos", "linux"],
   "permissions": []
 }

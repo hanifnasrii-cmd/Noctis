@@ -690,7 +690,7 @@ public class PluginHostApiTests : IDisposable
         Assert.Equal(Path.Combine(_box.DataRoot, Id), script.Host!.DataDirectory);
         Assert.True(Directory.Exists(script.Host.DataDirectory));
         Assert.Equal(plugin.Directory, script.Host.PluginDirectory);
-        Assert.Equal("1.5.2", script.Host.AppVersion);
+        Assert.Equal("1.5.3", script.Host.AppVersion);
     }
 
     // ── The real sample through the isolated loader ──

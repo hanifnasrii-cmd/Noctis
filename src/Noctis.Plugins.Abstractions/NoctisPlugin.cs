@@ -35,7 +35,7 @@ public sealed record PluginInfo(string Id, string Name, string Version, string A
 /// </summary>
 public interface IPluginHost
 {
-    /// <summary>The Noctis version the plugin is running in ("1.5.2").</summary>
+    /// <summary>The Noctis version the plugin is running in ("1.5.3").</summary>
     string AppVersion { get; }
 
     /// <summary>

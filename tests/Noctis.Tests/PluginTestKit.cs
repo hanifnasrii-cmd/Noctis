@@ -43,7 +43,7 @@ internal sealed class PluginSandbox : IDisposable
     public string PluginsDir => Path.Combine(Root, "plugins");
     public string DataRoot => Path.Combine(Root, "plugin-data");
 
-    public PluginHost NewHost(PlayerViewModel? player = null, ILibraryService? library = null, string appVersion = "1.5.2")
+    public PluginHost NewHost(PlayerViewModel? player = null, ILibraryService? library = null, string appVersion = "1.5.3")
         => new(player, Root, () => Settings, () => Saves++, appVersion, library);
 
     public static string Manifest(

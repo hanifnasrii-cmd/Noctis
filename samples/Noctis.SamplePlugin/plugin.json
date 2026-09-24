@@ -8,7 +8,7 @@
   "entry": "Noctis.SamplePlugin.dll",
   "entryType": "Noctis.SamplePlugin.PulseRingPlugin",
   "apiVersion": "1.1",
-  "minAppVersion": "1.5.2",
+  "minAppVersion": "1.5.3",
   "platforms": ["windows", "macos", "linux"],
   "permissions": [],
   "homepage": "https://github.com/heartached/Noctis/tree/main/samples/Noctis.SamplePlugin"

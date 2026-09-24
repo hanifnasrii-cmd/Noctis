@@ -25,7 +25,7 @@ deciding whether to install one.
 
 ## What a plugin can do
 
-API **1.1** (Noctis 1.5.2 and later):
+API **1.1** (Noctis 1.5.3 and later):
 
 | Area | What | Permission |
 |---|---|---|
@@ -104,7 +104,7 @@ public sealed class HelloPlugin : INoctisPlugin
   "type": "dotnet",
   "entry": "MyPlugin.dll",
   "apiVersion": "1.1",
-  "minAppVersion": "1.5.2",
+  "minAppVersion": "1.5.3",
   "permissions": ["menu.commands", "notifications"]
 }
 ```
@@ -136,7 +136,7 @@ are case-insensitive.
 | `entry` | dotnet | File name of the plugin DLL in the same folder (no path). |
 | `entryType` | no | Full type name of the `INoctisPlugin` to create, when the DLL holds several. Otherwise the only (or first by name) implementation is used. |
 | `apiVersion` | dotnet | `"major.minor"` of the kit you built against (`"1.1"`). A different **major** is refused. |
-| `minAppVersion` | no | Oldest Noctis that can run it (`"1.5.2"`). Older apps refuse with "Needs Noctis x or newer". Set it to the first release with the API minor you use. |
+| `minAppVersion` | no | Oldest Noctis that can run it (`"1.5.3"`). Older apps refuse with "Needs Noctis x or newer". Set it to the first release with the API minor you use. |
 | `platforms` | no | Any of `"windows"`, `"macos"`, `"linux"`. Omit for all. |
 | `permissions` | no | What the plugin uses from the API; see [Permissions](#permissions). Unknown names are ignored with a warning. |
 | `settings` | no | Settings Noctis draws for you; see below. |
@@ -176,7 +176,7 @@ Everything lives in the `Noctis.Plugins` namespace.
 
 | Member | Since | Permission | |
 |---|---|---|---|
-| `string AppVersion` | 1.0 | | `"1.5.2"` |
+| `string AppVersion` | 1.0 | | `"1.5.3"` |
 | `string DataDirectory` | 1.0 | | Private folder; since 1.1 `<data>/plugin-data/<id>/`, outside the plugin folder. Create it before writing. |
 | `INowPlaying NowPlaying` | 1.0 | | `Track`, `IsPlaying`, `Position`, events `TrackChanged`, `IsPlayingChanged` (UI thread). |
 | `IBeatSource Beat` / `ISpectrumSource Spectrum` | 1.0 | | Poll per frame. |
@@ -364,8 +364,8 @@ Planned for phase 2, modelled on Flow Launcher and Obsidian:
 
 | Kit | Noctis | Changes |
 |---|---|---|
-| 1.0 | before 1.5.2 | Plugin entry point, now playing, beat/spectrum taps, data folder, visual layers. |
-| 1.1 | 1.5.2+ | plugin.json, permissions, playback control, library search, lyrics providers, track menu commands, scrobble hook, declared settings, notices, `PluginDirectory`; data folder moved out of the plugin folder. |
+| 1.0 | before 1.5.3 | Plugin entry point, now playing, beat/spectrum taps, data folder, visual layers. |
+| 1.1 | 1.5.3+ | plugin.json, permissions, playback control, library search, lyrics providers, track menu commands, scrobble hook, declared settings, notices, `PluginDirectory`; data folder moved out of the plugin folder. |
 
 ## Legacy plugins (API 1.0, no plugin.json)
 
@@ -409,7 +409,7 @@ sample-pack-1.0.0.zip
   "author": "You",
   "description": "Two warm themes and a karaoke preset.",
   "type": "content",
-  "minAppVersion": "1.5.2",
+  "minAppVersion": "1.5.3",
   "contents": {
     "themes": ["themes/dusk.json", "themes/paper.json"],
     "lyricsPresets": ["lyrics/karaoke.json"],

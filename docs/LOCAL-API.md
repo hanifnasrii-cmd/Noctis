@@ -163,7 +163,7 @@ curl -H "Authorization: Bearer $TOKEN" http://127.0.0.1:9421/api/v1/status
 ```
 
 ```json
-{ "app": "Noctis", "appVersion": "1.5.2", "apiVersion": 1,
+{ "app": "Noctis", "appVersion": "1.5.3", "apiVersion": 1,
   "state": "playing", "playing": true, "hasTrack": true }
 ```
 
