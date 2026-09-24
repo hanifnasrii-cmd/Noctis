@@ -712,6 +712,11 @@ public class LibraryService : ILibraryService
         var publish = PublishLoopAsync();
 
         var extracted = 0;
+        // Albums whose representative file carries no picture and whose folder has no
+        // cover image: they show the grid's note placeholder, and this line in the
+        // session log is how a "some covers don't load" report can be told apart from a
+        // decode problem without the reporter's files.
+        var noArt = new ConcurrentBag<string>();
         try
         {
             await Task.Run(() =>
@@ -729,6 +734,10 @@ public class LibraryService : ILibraryService
                             _persistence.SaveArtwork(g.Key, artBytes);
                             Interlocked.Increment(ref extracted);
                         }
+                        else
+                        {
+                            noArt.Add($"{rep.Album} — {(string.IsNullOrWhiteSpace(rep.AlbumArtist) ? rep.Artist : rep.AlbumArtist)}");
+                        }
                     });
             }, ct);
         }
@@ -736,6 +745,12 @@ public class LibraryService : ILibraryService
         {
             pubCts.Cancel();
             try { await publish.ConfigureAwait(false); } catch { /* publisher already stopping */ }
+        }
+        if (!noArt.IsEmpty)
+        {
+            var names = noArt.OrderBy(n => n, StringComparer.OrdinalIgnoreCase).ToList();
+            DebugLog.Write("Library", $"artwork: {names.Count} album(s) have no embedded picture and no folder cover image: "
+                + string.Join("; ", names.Take(20)) + (names.Count > 20 ? $"; +{names.Count - 20} more" : ""));
         }
         return extracted;
     }

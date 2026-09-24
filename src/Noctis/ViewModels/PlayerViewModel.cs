@@ -140,6 +140,8 @@ public partial class PlayerViewModel : ViewModelBase
     [ObservableProperty] private bool _islandShowSleepTimer;
     /// <summary>GitHub #59: shuffle on the island, after Repeat.</summary>
     [ObservableProperty] private bool _islandShowShuffle;
+    /// <summary>GitHub #94: EQ on/off on the island, after Shuffle.</summary>
+    [ObservableProperty] private bool _islandShowEqualizer;
     /// <summary>Repeat after Next, and the favorite heart on the right: opt-in since the
     /// track-box layout, so the stock bar is transport + box + lyrics/queue/volume.</summary>
     [ObservableProperty] private bool _islandShowRepeat;
@@ -796,7 +798,25 @@ public partial class PlayerViewModel : ViewModelBase
     }
 
     /// <summary>Sets the SettingsViewModel for per-track EQ and audio overrides.</summary>
-    public void SetSettingsViewModel(SettingsViewModel settings) => _settings = settings;
+    public void SetSettingsViewModel(SettingsViewModel settings)
+    {
+        _settings = settings;
+        settings.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(SettingsViewModel.EqualizerEnabled))
+                OnPropertyChanged(nameof(IsEqualizerEnabled));
+        };
+        OnPropertyChanged(nameof(IsEqualizerEnabled));
+    }
+
+    /// <summary>GitHub #94: the EQ master switch (Settings → Audio), for the island's EQ button.</summary>
+    public bool IsEqualizerEnabled => _settings?.EqualizerEnabled ?? false;
+
+    [RelayCommand]
+    private void ToggleEqualizer()
+    {
+        if (_settings != null) _settings.EqualizerEnabled = !_settings.EqualizerEnabled;
+    }
 
     /// <summary>Commits a finished playback-bar resize (drag release or grip
     /// double-click reset): updates the live width and persists it through the
@@ -1681,6 +1701,10 @@ public partial class PlayerViewModel : ViewModelBase
         // path changes can leave us here without a Play() call.
         if (_settings != null)
             _audioPlayer.ApplyReplayGain(_settings.ReplayGainMode, _settings.ReplayGainPreampDb);
+        // Nothing playing any more (stop / cleared queue): drop the last track's per-track
+        // EQ preset, or switching the EQ back on would re-push it (GitHub #94).
+        if (value == null)
+            _settings?.ClearTrackEqPresetOverride();
 
         RefreshSignalPath();
         // The player applies ReplayGain / opens the output on a worker shortly
@@ -1780,10 +1804,14 @@ public partial class PlayerViewModel : ViewModelBase
                 ? $"{rgMode} — {rgDb:+0.0;-0.0} dB"
                 : $"{rgMode} — no tags (bypass)";
 
+        // Index 0 is the Custom curve; a user preset rides it under its own name (GitHub #95).
+        var eqName = _settings?.SelectedEqPresetName;
         var eqDetail = !eqEnabled
             ? "Off"
             : eqOn
-                ? (_settings?.SelectedEqPresetIndex == 0 ? "Parametric (custom)" : _settings?.SelectedEqPresetName ?? "On")
+                ? (_settings?.SelectedEqPresetIndex == 0 && (string.IsNullOrEmpty(eqName) || eqName == SettingsViewModel.EqPresetNames[0])
+                    ? "Parametric (custom)"
+                    : eqName ?? "On")
                 : "Flat — bypass";
 
         var crossfadeDetail = crossfadeOn

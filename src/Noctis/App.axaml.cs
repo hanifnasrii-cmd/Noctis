@@ -140,6 +140,8 @@ public partial class App : Application
     {
         // The core rewrites cover files without knowing about the UI's bitmap cache.
         global::Noctis.Services.LibraryService.ArtworkFileReplaced += global::Noctis.Services.ArtworkCache.Invalidate;
+        // Downscaled cover decodes kept on disk: a 3000px cover is decoded at full size once.
+        ArtworkThumbnailCache.Enable(System.IO.Path.Combine(Noctis.Helpers.AppPaths.DataRoot, "cache", "artwork_thumbs"));
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
             Noctis.Services.StartupTrace.Mark("avalonia-initialized");

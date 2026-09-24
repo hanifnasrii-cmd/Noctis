@@ -309,6 +309,26 @@ public class MetadataViewModelTests
         Assert.Equal(45_000, album[0].StartTimeMs);
     }
 
+    /// <summary>GitHub #95: user EQ presets join the Options dropdown. Names match
+    /// case-insensitively, so a tag spelled "BASS" selects the listed "Bass" once.</summary>
+    [Fact]
+    public void UserEqPresets_AreListedOnce_AndTheTagSelectsTheListedSpelling()
+    {
+        var album = Album("A", "X", 1);
+        album[0].EqPreset = "BASS";
+        using var p = new TestPersistenceService();
+        var vm = new MetadataViewModel(album[0], new FakeMetadataService(),
+            new FakeLibraryService { TrackList = album.ToList() }, p, new FakeAnimatedCoverService(),
+            albumScoped: false, albumTracks: null);
+
+        vm.SetUserEqPresets(new[] { "Bass", "Studio" });
+
+        Assert.Single(vm.EqPresetOptions, n => string.Equals(n, "bass", StringComparison.OrdinalIgnoreCase));
+        Assert.Equal("Bass", vm.SelectedEqPreset);
+        Assert.Contains("Studio", vm.EqPresetOptions);
+        Assert.Equal(MetadataViewModel.OptionsEqPresets, vm.EqPresetOptions.Take(MetadataViewModel.OptionsEqPresets.Length));
+    }
+
     // ── Timestamp Lyrics: first manual timing pass must survive Save ──
 
     [Fact]

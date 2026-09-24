@@ -1299,8 +1299,10 @@
                    VerticalAlignment="Center"/>
     </Border>
 
-    <!-- Bottom playback island (Apple Music-style glass pill) -->
+    <!-- Bottom playback island (Apple Music-style glass pill). No clip: the island's glass
+         must hear of repaints right beside the pill, which its blur reads (see GlassReach). -->
     <views:PlaybackBarView DataContext="{Binding Player}"
+                           ClipToBounds="False"
                            CompactWhenLyricsPageActive="False"
                            IsVisible="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).IsPlaybackBarMounted, FallbackValue=False}"
                            IsHitTestVisible="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).IsPlaybackBarHitTestVisible, FallbackValue=False}"
@@ -1364,7 +1366,6 @@
             Width="60"
             Margin="8,8,8,12"
             CornerRadius="20"
-            ClipToBounds="True"
             ZIndex="10">
         <Border.Transitions>
             <Transitions>
@@ -1376,12 +1377,17 @@
             </Transitions>
         </Border.Transitions>
         <!-- Liquid Glass host: off, paints the sidebar fill the view used to paint
-             itself; on, frosts the page content scrolling past under the rail. -->
+             itself; on, frosts the page content scrolling past under the rail. The
+             rounded clip sits on the content, not on SidebarWrapper: the glass draws its
+             own rounded shape, and a clipping ancestor would hide from it the repaints of
+             the page beside the rail that its blur reads (see GlassReach). -->
         <controls:GlassPanel Background="{DynamicResource IslandBackground}"
                              CornerRadius="20"
                              GlassTintOpacity="0.55">
-            <views:SidebarView HorizontalAlignment="Stretch"
-                               DataContext="{Binding Sidebar}" />
+            <Border CornerRadius="20" ClipToBounds="True">
+                <views:SidebarView HorizontalAlignment="Stretch"
+                                   DataContext="{Binding Sidebar}" />
+            </Border>
         </controls:GlassPanel>
     </Border>
 

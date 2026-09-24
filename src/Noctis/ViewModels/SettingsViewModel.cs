@@ -666,10 +666,15 @@ public partial class SettingsViewModel : ViewModelBase
     [ObservableProperty] private bool _playbackBarShowPlaybackSpeed;
     [ObservableProperty] private bool _playbackBarShowSleepTimer;
     [ObservableProperty] private bool _playbackBarShowShuffle;
+    /// <summary>GitHub #94: EQ on/off button on the island.</summary>
+    [ObservableProperty] private bool _playbackBarShowEqualizer;
     [ObservableProperty] private bool _playbackBarShowRepeat;
     [ObservableProperty] private bool _playbackBarShowFavorite;
     [ObservableProperty] private bool _playbackBarShowMiniPlayer = true;
+    [ObservableProperty] private bool _playbackBarShowIdlePill;
     [ObservableProperty] private bool _playbackBarShowTime;
+    /// <summary>GitHub #93: waveform in the island / mini player seek bars (off by default).</summary>
+    [ObservableProperty] private bool _waveformSeekBarEnabled;
 
     public bool IsSkipSeconds10 { get => PlaybackBarSkipSeconds == 10; set { if (value) PlaybackBarSkipSeconds = 10; } }
     public bool IsSkipSeconds15 { get => PlaybackBarSkipSeconds == 15; set { if (value) PlaybackBarSkipSeconds = 15; } }
@@ -1349,7 +1354,9 @@ public partial class SettingsViewModel : ViewModelBase
 
     public bool LocalApiRunning => LocalApiBoundPort > 0;
     public string LocalApiBaseUrl => LocalApiBoundPort > 0 ? $"http://127.0.0.1:{LocalApiBoundPort}/api/v1" : string.Empty;
-    public string LocalApiTokenDisplay => LocalApiTokenRevealed || LocalApiToken.Length < 8
+    /// <summary>Always-masked preview on the button row; Show glides the full token open
+    /// below it, so the row (and its buttons) never re-flows.</summary>
+    public string LocalApiTokenDisplay => LocalApiToken.Length < 8
         ? LocalApiToken
         : new string('•', 12) + LocalApiToken[^4..];
     public string LocalApiDiscoveryPath => LocalApiTokens.FilePath;
@@ -1361,7 +1368,6 @@ public partial class SettingsViewModel : ViewModelBase
     }
 
     partial void OnLocalApiTokenChanged(string value) => OnPropertyChanged(nameof(LocalApiTokenDisplay));
-    partial void OnLocalApiTokenRevealedChanged(bool value) => OnPropertyChanged(nameof(LocalApiTokenDisplay));
 
     partial void OnLocalApiEnabledChanged(bool value)
     {
@@ -1674,9 +1680,16 @@ public partial class SettingsViewModel : ViewModelBase
 
     // ── Equalizer ──
 
-    [ObservableProperty] private bool _equalizerEnabled = true;
-    [ObservableProperty] private int _selectedEqPresetIndex = 1; // 0 = Custom, 1 = Flat, 2+ = VLC preset
-    [ObservableProperty] private string _selectedEqPresetName = "Flat";
+    /// <summary>Master switch (GitHub #94). Off bypasses the EQ — per-track presets included —
+    /// without touching the curve, so switching back on restores it exactly.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(EqualizerControlsOpacity))]
+    private bool _equalizerEnabled = true;
+    // 0 = Custom curve (also a user preset, named by SelectedEqPresetName), 1 = Flat, 2+ = VLC preset
+    [ObservableProperty] private int _selectedEqPresetIndex = 1;
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanDeleteSelectedEqPreset))]
+    private string _selectedEqPresetName = "Flat";
     /// <summary>EQ pre-amp in dB relative to native (0 = unchanged); rides presets and custom curves alike.</summary>
     [ObservableProperty] private double _eqPreampDb;
 
@@ -1694,6 +1707,30 @@ public partial class SettingsViewModel : ViewModelBase
 
     public bool CanAddEqBand => EqBands.Count < ParametricEqMath.MaxBands;
     public bool CanRemoveEqBand => EqBands.Count > ParametricEqMath.MinBands;
+
+    /// <summary>Greys the EQ card's controls while the master switch is off (values kept).</summary>
+    public double EqualizerControlsOpacity => EqualizerEnabled ? 1.0 : 0.5;
+
+    // ── EQ presets (GitHub #95) ──
+    // User presets are Custom curves with a name: selecting one loads its bands + pre-amp and
+    // leaves SelectedEqPresetIndex at 0, so everything downstream treats it as Custom.
+    // Built-ins are never removed, only hidden, so deleting one is reversible.
+    private readonly List<UserEqPreset> _userEqPresets = new();
+    private readonly HashSet<string> _hiddenEqPresets = new(StringComparer.OrdinalIgnoreCase);
+    /// <summary>The playing track's own preset (null = global curve), re-applied when the
+    /// master switch comes back on mid-track.</summary>
+    private string? _trackEqPresetOverride;
+    public const int MaxEqPresetNameLength = 40;
+
+    /// <summary>Names of the user presets, in save order.</summary>
+    public IReadOnlyList<string> UserEqPresetNames => _userEqPresets.Select(p => p.Name).ToList();
+    /// <summary>Text box of the Save preset flyout.</summary>
+    [ObservableProperty] private string _newEqPresetName = "";
+    /// <summary>Why the last save was refused ("" = no error).</summary>
+    [ObservableProperty] private string _eqPresetSaveError = "";
+    /// <summary>User presets and built-ins other than Custom / Flat (Flat is the reset target).</summary>
+    public bool CanDeleteSelectedEqPreset => IsDeletableEqPreset(SelectedEqPresetName);
+    public bool HasHiddenEqPresets => _hiddenEqPresets.Count > 0;
 
     private bool _suppressEqNotify;
     private const int EqSaveDebounceMs = 280;
@@ -1871,8 +1908,8 @@ public partial class SettingsViewModel : ViewModelBase
     [NotifyPropertyChangedFor(nameof(CheckForUpdatesButtonText))]
     private bool _isCheckingForUpdate;
 
-    /// <summary>True briefly after a manual check finds no newer release; drives the
-    /// inline "You're up to date" label on the Check-for-Updates button.</summary>
+    /// <summary>True once a check (startup or manual) finds no newer release; drives the
+    /// persistent "Up to date" label on the Check-for-Updates button.</summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(CheckForUpdatesButtonText))]
     private bool _isUpToDate;
@@ -1895,12 +1932,13 @@ public partial class SettingsViewModel : ViewModelBase
     public bool ShowCheckForUpdatesButton => !IsUpdateAvailable && !IsReadyToInstall;
 
     /// <summary>Label for the Check-for-Updates pill, reflecting progress/result inline:
-    /// "Checking..." while polling, "You're up to date" briefly when no update is found,
-    /// otherwise the default call to action.</summary>
+    /// "Checking..." while polling, "Up to date" once a check found nothing newer,
+    /// otherwise (not checked yet / check failed) a neutral "Check for updates" —
+    /// "Update" is reserved for the pill that appears when a newer release exists.</summary>
     public string CheckForUpdatesButtonText =>
         IsCheckingForUpdate ? "Checking..."
         : IsUpToDate ? "Up to date"
-        : "Update";
+        : "Check for updates";
 
     /// <summary>Label for the update-available buttons, naming the target version
     /// when known (e.g. "Update to 1.2.8").</summary>
@@ -2004,12 +2042,20 @@ public partial class SettingsViewModel : ViewModelBase
             });
         };
 
-        // Keep the Developer Mode log view live while it's visible.
-        DebugLog.Changed += () => Dispatcher.UIThread.Post(() =>
+        // Keep the Developer Mode log view live while it's visible. Coalesced: every
+        // write used to queue its own re-join of the whole 500-line ring (a large string
+        // per log line, often LOH-sized), so a burst of playback warnings — themselves
+        // mirrored here in dev mode — piled N full rebuilds onto the UI thread.
+        DebugLog.Changed += () =>
         {
-            if (DeveloperMode)
-                DevLogText = ComposeDevLogText();
-        });
+            if (Interlocked.Exchange(ref _devLogRefreshQueued, 1) == 1) return;
+            Dispatcher.UIThread.Post(() =>
+            {
+                Volatile.Write(ref _devLogRefreshQueued, 0);
+                if (DeveloperMode)
+                    DevLogText = ComposeDevLogText();
+            }, DispatcherPriority.Background);
+        };
 
         if (Avalonia.Application.Current is Noctis.App app)
         {
@@ -2234,10 +2280,13 @@ public partial class SettingsViewModel : ViewModelBase
             PlaybackBarShowPlaybackSpeed = _settings.PlaybackBarShowPlaybackSpeed;
             PlaybackBarShowSleepTimer = _settings.PlaybackBarShowSleepTimer;
             PlaybackBarShowShuffle = _settings.PlaybackBarShowShuffle;
+            PlaybackBarShowEqualizer = _settings.PlaybackBarShowEqualizer;
             PlaybackBarShowRepeat = _settings.PlaybackBarShowRepeat;
             PlaybackBarShowFavorite = _settings.PlaybackBarShowFavorite;
             PlaybackBarShowMiniPlayer = _settings.PlaybackBarShowMiniPlayer;
+            PlaybackBarShowIdlePill = _settings.PlaybackBarShowIdlePill;
             PlaybackBarShowTime = _settings.PlaybackBarShowTime;
+            WaveformSeekBarEnabled = _settings.WaveformSeekBarEnabled;
             PlaybackBarIslandWidth = _settings.PlaybackBarWidth;
             LyricsFlowingLightEnabled = _settings.LyricsFlowingLightEnabled;
             LyricsFlowingStyle = FlowingStyles.Normalize(_settings.LyricsFlowingStyle);
@@ -2345,9 +2394,22 @@ public partial class SettingsViewModel : ViewModelBase
             _suppressEqNotify = true;
             EqualizerEnabled = _settings.EqualizerEnabled;
             EqPreampDb = Math.Clamp(_settings.EqPreampDb, ParametricEqMath.EqPreampMinDb, ParametricEqMath.EqPreampMaxDb);
+            LoadEqPresetLists(_settings);
             int loadedIdx = Math.Clamp(_settings.EqualizerPresetIndex + 1, 0, EqPresetNames.Length - 1);
+            var loadedName = EqPresetNames[loadedIdx];
+            if (FindUserEqPreset(_settings.SelectedUserEqPreset) is { } loadedUser)
+            {
+                loadedIdx = 0;
+                loadedName = loadedUser.Name;
+            }
+            else if (_hiddenEqPresets.Contains(loadedName))
+            {
+                // Deleted while selected (or a hand-edited file): keep the stored curve as Custom.
+                loadedIdx = 0;
+                loadedName = EqPresetNames[0];
+            }
             SelectedEqPresetIndex = loadedIdx;
-            SelectedEqPresetName = EqPresetNames[loadedIdx];
+            SelectedEqPresetName = loadedName;
             // Parametric bands are the source of truth; settings files written
             // before the parametric EQ migrate from the legacy 10-band gains.
             var loadedBands = _settings.ParametricEqBands is { Count: > 0 } pb
@@ -2666,10 +2728,13 @@ public partial class SettingsViewModel : ViewModelBase
         _settings.PlaybackBarShowPlaybackSpeed = PlaybackBarShowPlaybackSpeed;
         _settings.PlaybackBarShowSleepTimer = PlaybackBarShowSleepTimer;
         _settings.PlaybackBarShowShuffle = PlaybackBarShowShuffle;
+        _settings.PlaybackBarShowEqualizer = PlaybackBarShowEqualizer;
         _settings.PlaybackBarShowRepeat = PlaybackBarShowRepeat;
         _settings.PlaybackBarShowFavorite = PlaybackBarShowFavorite;
         _settings.PlaybackBarShowMiniPlayer = PlaybackBarShowMiniPlayer;
+        _settings.PlaybackBarShowIdlePill = PlaybackBarShowIdlePill;
         _settings.PlaybackBarShowTime = PlaybackBarShowTime;
+        _settings.WaveformSeekBarEnabled = WaveformSeekBarEnabled;
         _settings.LyricsFlowingLightEnabled = LyricsFlowingLightEnabled;
         _settings.LyricsFlowingStyle = LyricsFlowingStyle;
         _settings.LyricsKawarpWarp = LyricsKawarpWarp;
@@ -2756,6 +2821,9 @@ public partial class SettingsViewModel : ViewModelBase
         _settings.EqualizerEnabled = EqualizerEnabled;
         _settings.EqPreampDb = EqPreampDb;
         _settings.EqualizerPresetIndex = SelectedEqPresetIndex - 1;
+        _settings.SelectedUserEqPreset = FindUserEqPreset(SelectedEqPresetName)?.Name;
+        _settings.UserEqPresets = _userEqPresets.Select(CloneUserEqPreset).ToList();
+        _settings.HiddenEqPresets = EqPresetNames.Where(_hiddenEqPresets.Contains).ToList();
         _settings.ParametricEqBands = EqBands
             .Select(b => new ParametricEqBand { FrequencyHz = b.FrequencyHz, GainDb = b.GainDb, Q = b.Q })
             .ToList();
@@ -2936,10 +3004,12 @@ public partial class SettingsViewModel : ViewModelBase
         _player.IslandShowPlaybackSpeed = PlaybackBarShowPlaybackSpeed;
         _player.IslandShowSleepTimer = PlaybackBarShowSleepTimer;
         _player.IslandShowShuffle = PlaybackBarShowShuffle;
+        _player.IslandShowEqualizer = PlaybackBarShowEqualizer;
         _player.IslandShowRepeat = PlaybackBarShowRepeat;
         _player.IslandShowFavorite = PlaybackBarShowFavorite;
         _player.IslandShowMiniPlayer = PlaybackBarShowMiniPlayer;
         _player.IslandShowTime = PlaybackBarShowTime;
+        _player.WaveformSeekBarEnabled = WaveformSeekBarEnabled;
         _player.IslandBackgroundOpacity = Math.Clamp(PlaybackBarBackgroundOpacity, 0, 1);
         _player.IslandTrackBoxOpacity = Math.Clamp(PlaybackBarTrackBoxOpacity, 0, 1);
         // Already clamped by AppSettings.ClampToValidRanges on load; a live
@@ -3052,12 +3122,25 @@ public partial class SettingsViewModel : ViewModelBase
     /// </summary>
     public void ApplyEqPresetByName(string? presetName)
     {
-        if (string.IsNullOrEmpty(presetName))
+        _trackEqPresetOverride = string.IsNullOrEmpty(presetName) ? null : presetName;
+        // The master switch wins over a per-track preset: off means off (GitHub #94).
+        if (string.IsNullOrEmpty(presetName) || !EqualizerEnabled)
         {
             ApplyEqualizer();
             return;
         }
 
+        if (FindUserEqPreset(presetName) is { } user)
+        {
+            // A user preset carries its own pre-amp, so the global one does not ride on top.
+            _audioPlayer?.SetAdvancedEqualizer(true,
+                ParametricEqMath.MapToGraphicBands(user.Bands),
+                ParametricEqMath.ApplyUserPreamp(ParametricEqMath.VlcEqUnityPreampDb, user.PreampDb));
+            return;
+        }
+
+        // Hidden (deleted) built-ins still resolve: hiding only tidies the dropdown, it must
+        // not silently break a track tagged with that preset.
         var index = Array.IndexOf(EqPresetNames, presetName);
         // index 0 = "Custom", 1 = "Flat" = VLC preset 0
         if (index <= 0 || !TryGetVlcPresetCurve(index - 1, out var bands, out var preamp))
@@ -3068,6 +3151,9 @@ public partial class SettingsViewModel : ViewModelBase
 
         _audioPlayer?.SetAdvancedEqualizer(true, bands, ParametricEqMath.ApplyUserPreamp(preamp, EqPreampDb));
     }
+
+    /// <summary>Forget the per-track preset once nothing is playing (the next Play sets it again).</summary>
+    public void ClearTrackEqPresetOverride() => _trackEqPresetOverride = null;
 
     private void QueueEqualizerSave()
     {
@@ -3501,6 +3587,13 @@ public partial class SettingsViewModel : ViewModelBase
     {
         _settings.IncludePrereleaseUpdates = value;
         _ = SaveAsync();
+
+        // "Up to date" was answered for the other channel; re-ask for this one.
+        if (IsUpToDate)
+        {
+            IsUpToDate = false;
+            _ = CheckForUpdateSilentAsync();
+        }
     }
 
     partial void OnCrossfadeEnabledChanged(bool value)
@@ -4005,7 +4098,19 @@ public partial class SettingsViewModel : ViewModelBase
         if (_settingsLoaded) _ = SaveAsync();
     }
 
+    partial void OnPlaybackBarShowEqualizerChanged(bool value)
+    {
+        ApplyPlayerSettings();
+        if (_settingsLoaded) _ = SaveAsync();
+    }
+
     partial void OnPlaybackBarShowTimeChanged(bool value)
+    {
+        ApplyPlayerSettings();
+        if (_settingsLoaded) _ = SaveAsync();
+    }
+
+    partial void OnWaveformSeekBarEnabledChanged(bool value)
     {
         ApplyPlayerSettings();
         if (_settingsLoaded) _ = SaveAsync();
@@ -4026,6 +4131,11 @@ public partial class SettingsViewModel : ViewModelBase
     partial void OnPlaybackBarShowMiniPlayerChanged(bool value)
     {
         ApplyPlayerSettings();
+        if (_settingsLoaded) _ = SaveAsync();
+    }
+
+    partial void OnPlaybackBarShowIdlePillChanged(bool value)
+    {
         if (_settingsLoaded) _ = SaveAsync();
     }
 
@@ -4849,13 +4959,23 @@ public partial class SettingsViewModel : ViewModelBase
     partial void OnEqualizerEnabledChanged(bool value)
     {
         if (_suppressEqNotify) return;
-        ApplyEqualizer();
+        // Back on mid-track: the playing track's own preset, not just the global curve.
+        ApplyEqPresetByName(_trackEqPresetOverride);
+        _player?.RefreshSignalPath();
         QueueEqualizerSave();
     }
+
+    /// <summary>Player bar / mini player EQ button: flips the master switch.</summary>
+    [RelayCommand]
+    private void ToggleEqualizer() => EqualizerEnabled = !EqualizerEnabled;
 
     partial void OnEqPreampDbChanged(double value)
     {
         if (_suppressEqNotify) return;
+        // A user preset stores its pre-amp, so moving it edits the preset's curve → Custom.
+        // Built-ins don't: their pre-amp rides on top, as before.
+        if (FindUserEqPreset(SelectedEqPresetName) != null)
+            SelectCustomEqPresetSilently();
         ApplyEqualizer();
         QueueEqualizerSave();
     }
@@ -4876,6 +4996,12 @@ public partial class SettingsViewModel : ViewModelBase
     {
         if (_suppressEqNotify) return;
         if (string.IsNullOrEmpty(value)) return;
+
+        if (FindUserEqPreset(value) is { } user)
+        {
+            ApplyUserEqPreset(user);
+            return;
+        }
 
         int idx = System.Array.IndexOf(EqPresetNames, value);
         if (idx < 0) return;
@@ -4913,17 +5039,236 @@ public partial class SettingsViewModel : ViewModelBase
     {
         if (_suppressEqNotify) return;
 
-        if (SelectedEqPresetIndex != 0)
-        {
-            _suppressEqNotify = true;
-            SyncCustomInVisiblePresets(true);
-            SelectedEqPresetIndex = 0;
-            SelectedEqPresetName = "Custom";
-            _suppressEqNotify = false;
-        }
+        // A built-in or a user preset (index 0 with its own name) becomes Custom once edited.
+        if (SelectedEqPresetIndex != 0 || SelectedEqPresetName != EqPresetNames[0])
+            SelectCustomEqPresetSilently();
 
         ApplyEqualizer();
         QueueEqualizerSave();
+    }
+
+    /// <summary>Switch the selection to Custom without re-applying or reloading bands.</summary>
+    private void SelectCustomEqPresetSilently()
+    {
+        var was = _suppressEqNotify;
+        _suppressEqNotify = true;
+        FoldBuiltInPreampIntoUserPreamp();
+        SyncCustomInVisiblePresets(true);
+        SelectedEqPresetIndex = 0;
+        SelectedEqPresetName = EqPresetNames[0];
+        _suppressEqNotify = was;
+    }
+
+    /// <summary>
+    /// Leaving a built-in for the Custom path (band edit, Delete, Save as preset) keeps the level.
+    /// A built-in plays at its own VLC preamp P (+ the user pre-amp U); Custom plays at
+    /// VlcEqUnityPreampDb + U'. U' = U + P − unity keeps the effective preamp identical — without
+    /// it the level jumped by (unity − P), about +6 dB for most presets. Flat's zeroed preamp
+    /// means "bypass, else unity" (see ParametricEqMath.ApplyUserPreamp), so it folds as unity:
+    /// no change. A result below EqPreampMinDb is clamped, which leaves that remainder as a
+    /// (smaller) jump. Call with notifications suppressed; no-op on the Custom path.
+    /// </summary>
+    private void FoldBuiltInPreampIntoUserPreamp()
+    {
+        if (SelectedEqPresetIndex <= 1) return; // Custom / user preset, or Flat
+        if (!TryGetVlcPresetCurve(SelectedEqPresetIndex - 1, out _, out var presetPreamp)) return; // played as Custom already
+        EqPreampDb = Math.Clamp(EqPreampDb + presetPreamp - ParametricEqMath.VlcEqUnityPreampDb,
+            ParametricEqMath.EqPreampMinDb, ParametricEqMath.EqPreampMaxDb);
+    }
+
+    // ── User EQ presets (GitHub #95) ──
+
+    private UserEqPreset? FindUserEqPreset(string? name) =>
+        string.IsNullOrWhiteSpace(name)
+            ? null
+            : _userEqPresets.FirstOrDefault(p => string.Equals(p.Name, name.Trim(), StringComparison.OrdinalIgnoreCase));
+
+    private static UserEqPreset CloneUserEqPreset(UserEqPreset p) => new()
+    {
+        Name = p.Name,
+        PreampDb = p.PreampDb,
+        Bands = p.Bands.Select(b => new ParametricEqBand { FrequencyHz = b.FrequencyHz, GainDb = b.GainDb, Q = b.Q }).ToList(),
+    };
+
+    /// <summary>Built-in names (Custom and Flat included) and "None" — the metadata editor's
+    /// "no per-track preset" sentinel — can't name a user preset.</summary>
+    private static bool IsReservedEqPresetName(string name) =>
+        EqPresetNames.Contains(name, StringComparer.OrdinalIgnoreCase)
+        || string.Equals(name, "None", StringComparison.OrdinalIgnoreCase);
+
+    private bool IsDeletableEqPreset(string? name)
+    {
+        if (FindUserEqPreset(name) != null) return true;
+        var idx = Array.IndexOf(EqPresetNames, name);
+        // 0 = Custom (the live curve, not a preset), 1 = Flat (Reset's target): not deletable.
+        return idx >= 2 && !_hiddenEqPresets.Contains(EqPresetNames[idx]);
+    }
+
+    /// <summary>Null when <paramref name="name"/> can be saved, else the (localized) reason.</summary>
+    public static string? ValidateEqPresetName(string? name)
+    {
+        var trimmed = (name ?? "").Trim();
+        if (trimmed.Length == 0) return Loc.T("Settings.EqPresetNameEmpty");
+        if (trimmed.Length > MaxEqPresetNameLength) return Loc.T("Settings.EqPresetNameTooLong");
+        if (IsReservedEqPresetName(trimmed)) return Loc.T("Settings.EqPresetNameReserved");
+        return null;
+    }
+
+    /// <summary>Reads the user presets and hidden built-ins from settings, dropping anything
+    /// a hand-edited file could make invalid, and rebuilds the dropdown list.</summary>
+    private void LoadEqPresetLists(AppSettings settings)
+    {
+        _userEqPresets.Clear();
+        foreach (var p in settings.UserEqPresets ?? new List<UserEqPreset>())
+        {
+            if (p == null || ValidateEqPresetName(p.Name) != null) continue;
+            var name = p.Name.Trim();
+            if (FindUserEqPreset(name) != null) continue;
+            var clone = CloneUserEqPreset(new UserEqPreset
+            {
+                Name = name,
+                PreampDb = Math.Clamp(double.IsFinite(p.PreampDb) ? p.PreampDb : 0,
+                    ParametricEqMath.EqPreampMinDb, ParametricEqMath.EqPreampMaxDb),
+                Bands = p.Bands?.Where(b => b != null).ToList() ?? new List<ParametricEqBand>(),
+            });
+            _userEqPresets.Add(clone);
+        }
+
+        _hiddenEqPresets.Clear();
+        foreach (var name in settings.HiddenEqPresets ?? new List<string>())
+        {
+            var idx = Array.FindIndex(EqPresetNames, n => string.Equals(n, name, StringComparison.OrdinalIgnoreCase));
+            if (idx >= 2) _hiddenEqPresets.Add(EqPresetNames[idx]); // never Custom / Flat
+        }
+
+        RebuildVisibleEqPresets();
+    }
+
+    /// <summary>
+    /// Brings <see cref="VisibleEqPresets"/> in line with Custom + visible built-ins + user
+    /// presets. Only called on save / delete / restore / load — never while the dropdown is
+    /// open. Edits in place (remove, then insert) so the selected item is never
+    /// removed-and-re-added, and re-asserts the selection a ComboBox may have nulled.
+    /// </summary>
+    private void RebuildVisibleEqPresets()
+    {
+        var target = EqPresetNames.Where(n => !_hiddenEqPresets.Contains(n))
+            .Concat(_userEqPresets.Select(p => p.Name))
+            .ToList();
+        var keep = SelectedEqPresetName;
+        var was = _suppressEqNotify;
+        _suppressEqNotify = true;
+        try
+        {
+            for (int i = VisibleEqPresets.Count - 1; i >= 0; i--)
+                if (!target.Contains(VisibleEqPresets[i])) VisibleEqPresets.RemoveAt(i);
+            for (int i = 0; i < target.Count; i++)
+            {
+                if (i < VisibleEqPresets.Count && VisibleEqPresets[i] == target[i]) continue;
+                var at = VisibleEqPresets.IndexOf(target[i]);
+                if (at >= 0) VisibleEqPresets.Move(at, i);
+                else VisibleEqPresets.Insert(i, target[i]);
+            }
+            if (SelectedEqPresetName != keep) SelectedEqPresetName = keep;
+        }
+        finally
+        {
+            _suppressEqNotify = was;
+        }
+        OnPropertyChanged(nameof(HasHiddenEqPresets));
+        OnPropertyChanged(nameof(CanDeleteSelectedEqPreset));
+    }
+
+    /// <summary>Recall a user preset exactly: its bands and its pre-amp, on the Custom path.</summary>
+    private void ApplyUserEqPreset(UserEqPreset preset)
+    {
+        _suppressEqNotify = true;
+        SelectedEqPresetIndex = 0;
+        EqPreampDb = Math.Clamp(preset.PreampDb, ParametricEqMath.EqPreampMinDb, ParametricEqMath.EqPreampMaxDb);
+        SetEqBands(preset.Bands);
+        _suppressEqNotify = false;
+
+        ApplyEqualizer();
+        QueueEqualizerSave();
+    }
+
+    /// <summary>
+    /// Saves the current curve (bands + pre-amp) as a user preset and selects it. An existing
+    /// user preset with the same name (any case) is overwritten. Returns false — with
+    /// <see cref="EqPresetSaveError"/> set — for an empty, too long or reserved name.
+    /// </summary>
+    public bool SaveUserEqPreset(string? name)
+    {
+        var error = ValidateEqPresetName(name);
+        EqPresetSaveError = error ?? "";
+        if (error != null) return false;
+
+        // Saved from a built-in: capture the pre-amp that keeps its level on the Custom path.
+        var was = _suppressEqNotify;
+        _suppressEqNotify = true;
+        FoldBuiltInPreampIntoUserPreamp();
+        _suppressEqNotify = was;
+
+        var preset = new UserEqPreset
+        {
+            Name = name!.Trim(),
+            PreampDb = EqPreampDb,
+            Bands = EqBands.Select(b => new ParametricEqBand { FrequencyHz = b.FrequencyHz, GainDb = b.GainDb, Q = b.Q }).ToList(),
+        };
+        var existing = _userEqPresets.FindIndex(p => string.Equals(p.Name, preset.Name, StringComparison.OrdinalIgnoreCase));
+        if (existing >= 0) _userEqPresets[existing] = preset;
+        else _userEqPresets.Add(preset);
+
+        RebuildVisibleEqPresets();
+        _suppressEqNotify = true;
+        SelectedEqPresetIndex = 0;
+        SelectedEqPresetName = preset.Name;
+        _suppressEqNotify = was;
+        NewEqPresetName = "";
+
+        // Saving from a built-in moves playback onto the Custom path, i.e. onto exactly what
+        // recalling this preset will play.
+        ApplyEqualizer();
+        QueueEqualizerSave();
+        return true;
+    }
+
+    [RelayCommand]
+    private void SaveEqPreset() => SaveUserEqPreset(NewEqPresetName);
+
+    /// <summary>
+    /// Deletes the selected preset: a user preset is removed, a built-in is hidden (see
+    /// <see cref="RestoreBuiltInEqPresets"/>). The curve in effect is kept, now as Custom, so
+    /// deleting never changes the sound. Custom and Flat can't be deleted.
+    /// </summary>
+    [RelayCommand]
+    private void DeleteSelectedEqPreset()
+    {
+        var name = SelectedEqPresetName;
+        if (!IsDeletableEqPreset(name)) return;
+        if (FindUserEqPreset(name) is { } user) _userEqPresets.Remove(user);
+        else _hiddenEqPresets.Add(name);
+
+        SelectCustomEqPresetSilently();
+        RebuildVisibleEqPresets();
+        ApplyEqualizer();
+        QueueEqualizerSave();
+    }
+
+    /// <summary>Un-hides every deleted built-in preset.</summary>
+    [RelayCommand]
+    private void RestoreBuiltInEqPresets()
+    {
+        if (_hiddenEqPresets.Count == 0) return;
+        _hiddenEqPresets.Clear();
+        RebuildVisibleEqPresets();
+        QueueEqualizerSave();
+    }
+
+    partial void OnNewEqPresetNameChanged(string value)
+    {
+        // Typing again clears the last refusal.
+        if (EqPresetSaveError.Length > 0) EqPresetSaveError = "";
     }
 
     [RelayCommand]
@@ -5836,10 +6181,13 @@ public partial class SettingsViewModel : ViewModelBase
             PlaybackBarShowPlaybackSpeed = defaultSettings.PlaybackBarShowPlaybackSpeed;
             PlaybackBarShowSleepTimer = defaultSettings.PlaybackBarShowSleepTimer;
             PlaybackBarShowShuffle = defaultSettings.PlaybackBarShowShuffle;
+            PlaybackBarShowEqualizer = defaultSettings.PlaybackBarShowEqualizer;
             PlaybackBarShowRepeat = defaultSettings.PlaybackBarShowRepeat;
             PlaybackBarShowFavorite = defaultSettings.PlaybackBarShowFavorite;
             PlaybackBarShowMiniPlayer = defaultSettings.PlaybackBarShowMiniPlayer;
+            PlaybackBarShowIdlePill = defaultSettings.PlaybackBarShowIdlePill;
             PlaybackBarShowTime = defaultSettings.PlaybackBarShowTime;
+            WaveformSeekBarEnabled = defaultSettings.WaveformSeekBarEnabled;
             PlaybackBarIslandWidth = defaultSettings.PlaybackBarWidth;
             LyricsFlowingLightEnabled = defaultSettings.LyricsFlowingLightEnabled;
             LyricsFlowingStyle = defaultSettings.LyricsFlowingStyle;
@@ -5931,6 +6279,7 @@ public partial class SettingsViewModel : ViewModelBase
             EqPreampDb = defaultSettings.EqPreampDb;
             SyncCustomInVisiblePresets(false);
             SetEqBands(ParametricEqMath.FromGraphicBands(null));
+            LoadEqPresetLists(defaultSettings); // no user presets, every built-in visible
             _suppressEqNotify = false;
 
             // Music folders
@@ -6065,7 +6414,12 @@ public partial class SettingsViewModel : ViewModelBase
         {
             using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
             var update = await _updateService.CheckForUpdateAsync(IncludePrereleaseUpdates, cts.Token);
-            if (update is null) return;
+            if (update is null)
+            {
+                // Nothing newer: About shows "Up to date" without a manual click.
+                await Dispatcher.UIThread.InvokeAsync(() => IsUpToDate = true);
+                return;
+            }
             if (update.InstallerApiUrl is null) return;
 
             // This runs inside Task.Run at startup, so continuations are on a
@@ -6075,6 +6429,7 @@ public partial class SettingsViewModel : ViewModelBase
             {
                 LatestVersionTag = update.TagName;
                 IsLatestPrerelease = update.IsPrerelease;
+                IsUpToDate = false;
                 IsUpdateAvailable = true;
             });
         }
@@ -6122,10 +6477,9 @@ public partial class SettingsViewModel : ViewModelBase
 
             if (update is null)
             {
-                // Show the result inline on the button ("✓ Up to date")
-                // rather than as a separate status line.
+                // Show the result inline on the button ("✓ Up to date") and keep
+                // it there — it's the confirmation that everything is current.
                 IsUpToDate = true;
-                _ = ClearUpdateStatusAfterDelay(3000);
             }
             else if (update.InstallerApiUrl is null)
             {
@@ -6266,10 +6620,7 @@ public partial class SettingsViewModel : ViewModelBase
         await Task.Delay(delayMs);
         if (generation != _updateStatusGeneration) return;
         if (!IsUpdateAvailable && !IsDownloadingUpdate && !IsReadyToInstall)
-        {
             UpdateStatusText = "";
-            IsUpToDate = false;   // reverts the button label to "Update"
-        }
     }
 
     // ── Developer Mode (About tab) ──
@@ -6311,6 +6662,10 @@ public partial class SettingsViewModel : ViewModelBase
 
     /// <summary>The log pane / Copy Logs content: any preserved crash log from a
     /// previous session first, then the live session log.</summary>
+    // 1 while a Developer Mode log refresh is queued on the UI thread (DebugLog.Changed
+    // fires on any thread; one pending refresh absorbs a whole burst of writes).
+    private int _devLogRefreshQueued;
+
     private static string ComposeDevLogText()
         => CrashJournal.PreservedBlock is { } preserved
             ? preserved + Environment.NewLine + DebugLog.Snapshot()

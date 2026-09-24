@@ -242,6 +242,7 @@ public partial class PlaybackBarView : UserControl
             e.PropertyName == nameof(PlayerViewModel.IslandShowPlaybackSpeed) ||
             e.PropertyName == nameof(PlayerViewModel.IslandShowSleepTimer) ||
             e.PropertyName == nameof(PlayerViewModel.IslandShowShuffle) ||
+            e.PropertyName == nameof(PlayerViewModel.IslandShowEqualizer) ||
             e.PropertyName == nameof(PlayerViewModel.IslandShowRepeat) ||
             e.PropertyName == nameof(PlayerViewModel.IslandShowFavorite) ||
             e.PropertyName == nameof(PlayerViewModel.IslandShowMiniPlayer) ||
@@ -1253,6 +1254,7 @@ public partial class PlaybackBarView : UserControl
                         + (vm.IslandShowPlaybackSpeed ? 1 : 0)
                         + (vm.IslandShowSleepTimer ? 1 : 0)
                         + (vm.IslandShowShuffle ? 1 : 0)
+                        + (vm.IslandShowEqualizer ? 1 : 0)
                         + (vm.IslandShowRepeat ? 1 : 0)
                         + (vm.IslandShowFavorite ? 1 : 0)
                         + (vm.IslandShowMiniPlayer ? 1 : 0);

@@ -503,6 +503,14 @@ public class MarqueeTextBlock : UserControl
     private void StartScrolling()
     {
         if (_isRunning || VisualRoot == null) return;
+        if (!IsEffectivelyVisible)
+        {
+            // Hidden by an ancestor (the mini player keeps every form attached and hides
+            // the inactive ones): scrolling would pump frames for text nobody can see.
+            // Check back after another rest instead; a form shown again resumes within one.
+            ScheduleNextLap();
+            return;
+        }
         if (!IsInView())
         {
             _waitingForView = true;
@@ -546,6 +554,15 @@ public class MarqueeTextBlock : UserControl
         if (!IsInView())
         {
             ParkOutOfView();
+            return;
+        }
+        if (!IsEffectivelyVisible)
+        {
+            StopScrolling();
+            _offset = 0;
+            _transform.X = 0;
+            ApplyEdgeFade(false);
+            ScheduleNextLap();
             return;
         }
 

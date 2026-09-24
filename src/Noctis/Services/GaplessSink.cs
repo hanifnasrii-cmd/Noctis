@@ -434,6 +434,8 @@ public sealed class GaplessSink : IDisposable
 
         private readonly ISampleProvider _inner;
         private long _lastReadTick;
+        private TimeSpan _lastGcPause;
+        private int _lastGen0, _lastGen1, _lastGen2;
         private bool _boosted;
         public WaveFormat WaveFormat => _inner.WaveFormat;
 
@@ -473,16 +475,31 @@ public sealed class GaplessSink : IDisposable
             var now = Stopwatch.GetTimestamp();
             var last = _lastReadTick;
             _lastReadTick = now;
+            // GC counters over the same gap. A collection suspends every managed thread,
+            // this one included, whatever its priority or MMCSS class, so a stall line
+            // must say whether a GC sat inside it (09-24: stalls clustered while the
+            // artist page realized hundreds of rows; with this the next log proves or
+            // clears the GC). "gcs=a/b/c" is CollectionCount(0/1/2) over the gap, and
+            // CollectionCount(n) counts every GC of generation n or higher. Plain counter
+            // reads, cheap at the ~10ms cadence.
+            var gcPause = GC.GetTotalPauseDuration();
+            int gen0 = GC.CollectionCount(0), gen1 = GC.CollectionCount(1), gen2 = GC.CollectionCount(2);
             var gapMs = (now - last) * 1000.0 / Stopwatch.Frequency;
             if (last != 0 && gapMs > 25)
             {
-                try
+                // Logged off this thread: with Developer Mode on the line goes through
+                // DebugLog's lock into CrashJournal's AutoFlush file write, and that time
+                // landed inside the NEXT gap — one stall could log its way into the next.
+                var meta = $"gapMs={gapMs:F1}, gcPauseMs={(gcPause - _lastGcPause).TotalMilliseconds:F1}, " +
+                           $"gcs={gen0 - _lastGen0}/{gen1 - _lastGen1}/{gen2 - _lastGen2}";
+                ThreadPool.QueueUserWorkItem(static m =>
                 {
-                    DebugLogger.Warn(DebugLogger.Category.Playback, "GaplessEngine.RenderStall",
-                        $"gapMs={gapMs:F1}");
-                }
-                catch { /* diagnostic only */ }
+                    try { DebugLogger.Warn(DebugLogger.Category.Playback, "GaplessEngine.RenderStall", m); }
+                    catch { /* diagnostic only */ }
+                }, meta, preferLocal: false);
             }
+            _lastGcPause = gcPause;
+            _lastGen0 = gen0; _lastGen1 = gen1; _lastGen2 = gen2;
             return _inner.Read(buffer, offset, count);
         }
     }

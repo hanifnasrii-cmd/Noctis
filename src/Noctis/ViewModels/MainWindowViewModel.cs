@@ -166,8 +166,9 @@ public partial class MainWindowViewModel : ViewModelBase
     public bool IsPlaybackBarHitTestVisible => IsPlaybackBarVisible;
 
     /// <summary>GitHub #92: the island unmounts while nothing is loaded, taking its Queue
-    /// button with it; a small idle pill stands in so the queue can still be opened.</summary>
-    public bool IsIdleIslandVisible => !Player.HasContent && !IsLyricsViewActive;
+    /// button with it; a small idle pill stands in so the queue can still be opened.
+    /// Opt-in via Settings → Player (off by default).</summary>
+    public bool IsIdleIslandVisible => Settings.PlaybackBarShowIdlePill && !Player.HasContent && !IsLyricsViewActive;
 
     /// <summary>
     /// With "Import dropped files" off, whether a drop plays (nothing loaded and nothing queued)
@@ -296,6 +297,8 @@ public partial class MainWindowViewModel : ViewModelBase
         Settings.SetPlayer(Player);
         Player.SetSettingsViewModel(Settings);
         Player.SetPlayHistory(playHistory);
+        if (App.Services?.GetService<Services.Waveform.WaveformService>() is { } waveforms)
+            Player.SetWaveformService(waveforms);
         Settings.SetDiscordPresence(discord);
         Settings.SetLoonClient(loon);
         Settings.SetLastFm(lastFm);
@@ -317,6 +320,11 @@ public partial class MainWindowViewModel : ViewModelBase
         // check runs on a background thread, so marshal to the UI thread.
         Settings.PropertyChanged += (_, e) =>
         {
+            if (e.PropertyName == nameof(SettingsViewModel.PlaybackBarShowIdlePill))
+            {
+                OnPropertyChanged(nameof(IsIdleIslandVisible));
+                return;
+            }
             if (e.PropertyName != nameof(SettingsViewModel.IsUpdateAvailable)) return;
             Dispatcher.UIThread.Post(() =>
             {

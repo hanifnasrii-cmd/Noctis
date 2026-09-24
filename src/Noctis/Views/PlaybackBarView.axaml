@@ -830,6 +830,32 @@
                         </Panel>
                     </Button>
 
+                    <!-- EQ on/off (island extra, GitHub #94): the Settings → Audio master switch,
+                         same accent pill + accent glyph as Shuffle while the EQ is on. -->
+                    <Button Classes="pill-btn transport-btn"
+                            Command="{Binding ToggleEqualizerCommand}"
+                            ToolTip.Tip="{loc:T PlaybackBar.EqualizerTip}"
+                            IsVisible="{Binding IslandShowEqualizer}"
+                            Width="34" Height="34">
+                        <Panel Width="34" Height="34">
+                            <Border Width="28" Height="28"
+                                    CornerRadius="8"
+                                    Background="{DynamicResource AccentColorBrush}"
+                                    Opacity="0.18"
+                                    IsVisible="{Binding IsEqualizerEnabled}" />
+                            <Viewbox Width="18" Height="18">
+                                <Canvas Width="24" Height="24">
+                                    <Path Fill="{DynamicResource IslandIconFill}"
+                                          Data="{StaticResource EqualizerIcon}"
+                                          IsVisible="{Binding !IsEqualizerEnabled}" />
+                                    <Path Fill="{DynamicResource AccentColorBrush}"
+                                          Data="{StaticResource EqualizerIcon}"
+                                          IsVisible="{Binding IsEqualizerEnabled}" />
+                                </Canvas>
+                            </Viewbox>
+                        </Panel>
+                    </Button>
+
                 </StackPanel>
 
                 <!-- CENTER: the track box — album art, title/artist, the now-playing bars
@@ -1130,6 +1156,22 @@
                   <Grid Grid.Row="1" Height="6" Margin="-6,0,-6,0" ClipToBounds="False"
                         Classes="seek-row" Background="Transparent">
                       <Grid Height="6" ClipToBounds="False">
+                          <!-- Waveform seek bar (Settings → Player, GitHub #93): replaces the
+                               3px line below while on. 7px tall with the extra pixel hanging
+                               under the row so its centre (3.5) is the line's centre; the
+                               card's rounded clip trims it like the line. Visual only — the
+                               Slider on top still does the seeking. -->
+                          <controls:WaveformSeekBar x:Name="SeekWaveform"
+                                                    IsVisible="{Binding WaveformSeekBarEnabled}"
+                                                    Waveform="{Binding CurrentWaveform}"
+                                                    Value="{Binding #SeekSlider.Value}"
+                                                    PlayedBrush="{DynamicResource IslandSliderFilled}"
+                                                    UnplayedBrush="{DynamicResource IslandTrackBoxSliderUnfilled}"
+                                                    TrackInset="6" LineInset="6" LineThickness="3"
+                                                    MaxBarHeight="6"
+                                                    Height="7" Margin="0,0,0,-1"
+                                                    VerticalAlignment="Top"
+                                                    IsHitTestVisible="False"/>
                           <Canvas x:Name="SeekVisual"
                                   Height="6"
                                   ClipToBounds="False"
@@ -1139,11 +1181,13 @@
                                    darker than the card and read as a shadow trough. -->
                               <Border x:Name="SeekTrackBackground"
                                       Classes="seek-track"
+                                      IsVisible="{Binding !WaveformSeekBarEnabled}"
                                       CornerRadius="999"
                                       Background="{DynamicResource IslandTrackBoxSliderUnfilled}"
                                       Canvas.Top="2"/>
                               <Border x:Name="SeekTrackFill"
                                       Classes="seek-track"
+                                      IsVisible="{Binding !WaveformSeekBarEnabled}"
                                       CornerRadius="999"
                                       Background="{DynamicResource IslandSliderFilled}"
                                       Canvas.Top="2"/>

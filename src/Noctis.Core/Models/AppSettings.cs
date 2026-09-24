@@ -448,6 +448,10 @@ public class AppSettings
     /// shuffle already lives in the Queue panel header.</summary>
     public bool PlaybackBarShowShuffle { get; set; }
 
+    /// <summary>GitHub #94: an EQ on/off button on the island, after Shuffle. Off by
+    /// default like the other extras (the switch also lives in Settings → Audio).</summary>
+    public bool PlaybackBarShowEqualizer { get; set; }
+
     /// <summary>Repeat (after Next) and the favorite heart (right cluster) on the island.
     /// Off by default since the track-box layout: the stock bar mirrors the Apple-Music
     /// reference — transport, track box, lyrics / queue / volume.</summary>
@@ -459,10 +463,19 @@ public class AppSettings
     /// default so the mini player is discoverable; like the heart it adds 36px when shown.</summary>
     public bool PlaybackBarShowMiniPlayer { get; set; } = true;
 
+    /// <summary>GitHub #92: the "Nothing playing · Queue" pill that stands in for the island
+    /// while nothing is loaded. Off by default (owner, 2026-09-24).</summary>
+    public bool PlaybackBarShowIdlePill { get; set; }
+
     /// <summary>Discord (Luwi, 2026-09-21): elapsed / remaining time of the current title in
     /// the island's track box, stacked beside the title. Off by default — the stock LCD
     /// carries no time labels.</summary>
     public bool PlaybackBarShowTime { get; set; }
+
+    /// <summary>GitHub #93: the island and mini player seek bars draw the track's waveform
+    /// (decoded in the background with ffmpeg, cached under cache/waveforms). Off by
+    /// default — when off nothing is decoded and the plain seek line stays.</summary>
+    public bool WaveformSeekBarEnabled { get; set; }
 
     /// <summary>Whether tracks marked explicit (ITUNESADVISORY=1) may play automatically.
     /// On by default. When off they are skipped on queue advance, excluded from shuffle,
@@ -551,6 +564,18 @@ public class AppSettings
     /// before the EQ curve, so a negative value creates the headroom that keeps
     /// boosted bands from clipping — the post-mix volume slider cannot.</summary>
     public double EqPreampDb { get; set; } = 0.0;
+
+    /// <summary>GitHub #95: user-saved presets (parametric bands + pre-amp), listed after
+    /// the built-ins in the preset dropdown.</summary>
+    public List<UserEqPreset> UserEqPresets { get; set; } = new();
+
+    /// <summary>GitHub #95: built-in preset names the user deleted. Hidden from the
+    /// dropdown rather than removed, so "Restore built-in presets" can bring them back.</summary>
+    public List<string> HiddenEqPresets { get; set; } = new();
+
+    /// <summary>The selected user preset, by name. Null when a built-in or Custom is
+    /// selected (see <see cref="EqualizerPresetIndex"/>, which is -1 while this is set).</summary>
+    public string? SelectedUserEqPreset { get; set; }
 
     // ── Integration settings ──
 

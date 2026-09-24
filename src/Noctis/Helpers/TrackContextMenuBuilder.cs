@@ -479,6 +479,19 @@ public sealed class TrackContextMenuBuilder
 
     // ── Shared helpers ──
 
+    // One decoded bitmap per icon asset, shared by every menu. Each Build() used to decode
+    // its own copies (a track menu carries five 512×512 masks, 1 MiB each once decoded),
+    // and album pages / playlist pages build a fresh menu per page instance, so every
+    // visit left another set of native bitmaps waiting on the finalizer.
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, Bitmap> IconBitmaps = new();
+
+    internal static Bitmap GetIconBitmap(string assetUri) =>
+        IconBitmaps.GetOrAdd(assetUri, static uri =>
+        {
+            using var stream = Avalonia.Platform.AssetLoader.Open(new Uri(uri));
+            return new Bitmap(stream);
+        });
+
     public static Avalonia.Controls.Border CreatePngIcon(string assetUri, double size = 14, IBrush? color = null)
     {
         var border = new Avalonia.Controls.Border { Width = size, Height = size };
@@ -492,7 +505,7 @@ public sealed class TrackContextMenuBuilder
         RenderOptions.SetBitmapInterpolationMode(border, BitmapInterpolationMode.HighQuality);
         border.OpacityMask = new ImageBrush
         {
-            Source = new Bitmap(Avalonia.Platform.AssetLoader.Open(new Uri(assetUri))),
+            Source = GetIconBitmap(assetUri),
             Stretch = Stretch.Uniform
         };
         return border;

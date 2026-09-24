@@ -222,8 +222,12 @@
   <data name="Settings.SleepTimerOneClick" xml:space="preserve"><value>Sleep timer one click away.</value><comment>Text in SettingsView.axaml</comment></data>
   <data name="Settings.Shuffle" xml:space="preserve"><value>Shuffle</value><comment>Text in SettingsView.axaml</comment></data>
   <data name="Settings.ShuffleButtonAfterRepeat" xml:space="preserve"><value>A shuffle button next to Repeat.</value><comment>Text in SettingsView.axaml</comment></data>
+  <data name="Settings.EqualizerButton" xml:space="preserve"><value>Equalizer</value><comment>Player Island Buttons row: EQ on/off button (GitHub #94)</comment></data>
+  <data name="Settings.EqualizerButtonHint" xml:space="preserve"><value>An EQ on/off button after Shuffle.</value><comment>Player Island Buttons row hint</comment></data>
   <data name="Settings.PlaybackTime" xml:space="preserve"><value>Playback time</value><comment>Text in SettingsView.axaml</comment></data>
   <data name="Settings.PlaybackTimeInTrackBox" xml:space="preserve"><value>Elapsed and remaining time of the current title in the track box.</value><comment>Text in SettingsView.axaml</comment></data>
+  <data name="Settings.WaveformSeekBar" xml:space="preserve"><value>Waveform seek bar</value><comment>Text in SettingsView.axaml</comment></data>
+  <data name="Settings.WaveformSeekBarHint" xml:space="preserve"><value>Show the song's waveform in the player island and mini player seek bars. It is worked out in the background for the current and next songs, then remembered.</value><comment>Text in SettingsView.axaml</comment></data>
   <data name="Settings.TrackBoxOpacity" xml:space="preserve"><value>Track Box Opacity</value><comment>Text in SettingsView.axaml</comment></data>
   <data name="Settings.HowSolidTrackBox" xml:space="preserve"><value>How solid the box around the song info in the player bar is. 0% hides it.</value><comment>Text in SettingsView.axaml</comment></data>
   <data name="Settings.RepeatButton" xml:space="preserve"><value>Repeat</value><comment>Text in SettingsView.axaml</comment></data>
@@ -232,6 +236,8 @@
   <data name="Settings.FavoriteButtonHeart" xml:space="preserve"><value>A heart on the right to favorite the playing song in one click.</value><comment>Text in SettingsView.axaml</comment></data>
   <data name="Settings.MiniPlayerButton" xml:space="preserve"><value>Mini player</value><comment>Text in SettingsView.axaml</comment></data>
   <data name="Settings.MiniPlayerButtonHint" xml:space="preserve"><value>A button on the right to switch to the mini player.</value><comment>Text in SettingsView.axaml</comment></data>
+  <data name="Settings.IdleQueuePill" xml:space="preserve"><value>Idle queue pill</value><comment>Text in SettingsView.axaml</comment></data>
+  <data name="Settings.IdleQueuePillHint" xml:space="preserve"><value>While nothing is playing, show a small "Nothing playing · Queue" pill in place of the player.</value><comment>Text in SettingsView.axaml</comment></data>
   <data name="Settings.PlayerIslandWidth" xml:space="preserve"><value>Player Island Width</value><comment>Text in SettingsView.axaml</comment></data>
   <data name="Settings.HowWidePlayerIsland" xml:space="preserve"><value>Wider gives the seek bar more room. You can also drag the island's edges. Double-click the knob to reset.</value><comment>Text in SettingsView.axaml</comment></data>
   <data name="Settings.Narrower" xml:space="preserve"><value>Narrower</value><comment>Text in SettingsView.axaml</comment></data>
@@ -339,6 +345,20 @@
   <data name="Settings.QBandWidthHigherTip" xml:space="preserve"><value>Q (band width) — higher values affect a narrower range around the frequency</value><comment>ToolTip.Tip in SettingsView.axaml</comment></data>
   <data name="Settings.RemoveBandTip" xml:space="preserve"><value>Remove band</value><comment>ToolTip.Tip in SettingsView.axaml</comment></data>
   <data name="Settings.AddBand" xml:space="preserve"><value>+ Add Band</value><comment>Text in SettingsView.axaml</comment></data>
+  <data name="Settings.EqualizerOnOffTip" xml:space="preserve"><value>Turn the equalizer on or off. Your curve is kept either way.</value><comment>Equalizer card master switch tooltip (GitHub #94)</comment></data>
+  <data name="Settings.SaveEqPreset" xml:space="preserve"><value>Save</value><comment>Equalizer card: opens the Save preset flyout (GitHub #95)</comment></data>
+  <data name="Settings.SaveEqPresetTip" xml:space="preserve"><value>Save the current curve and pre-amp as a preset</value><comment>Equalizer card Save button tooltip</comment></data>
+  <data name="Settings.SaveEqPresetConfirm" xml:space="preserve"><value>Save preset</value><comment>Save button inside the Save preset flyout</comment></data>
+  <data name="Settings.EqPresetName" xml:space="preserve"><value>Preset name</value><comment>Save preset flyout label</comment></data>
+  <data name="Settings.EqPresetNameWatermark" xml:space="preserve"><value>e.g. Headphones fix</value><comment>Save preset flyout text box watermark</comment></data>
+  <data name="Settings.EqPresetOverwriteHint" xml:space="preserve"><value>Saving under the name of one of your presets replaces it.</value><comment>Save preset flyout hint</comment></data>
+  <data name="Settings.EqPresetNameEmpty" xml:space="preserve"><value>Enter a name for the preset.</value><comment>Save preset flyout error</comment></data>
+  <data name="Settings.EqPresetNameTooLong" xml:space="preserve"><value>Preset names can be at most 40 characters.</value><comment>Save preset flyout error</comment></data>
+  <data name="Settings.EqPresetNameReserved" xml:space="preserve"><value>That name is taken by a built-in preset. Pick another one.</value><comment>Save preset flyout error (built-in names, Custom, None)</comment></data>
+  <data name="Settings.DeleteEqPreset" xml:space="preserve"><value>Delete</value><comment>Equalizer card: deletes the selected preset</comment></data>
+  <data name="Settings.DeleteEqPresetTip" xml:space="preserve"><value>Delete the selected preset. Custom and Flat can't be deleted.</value><comment>Equalizer card Delete button tooltip</comment></data>
+  <data name="Settings.RestoreEqPresets" xml:space="preserve"><value>Restore presets</value><comment>Equalizer card: brings back deleted built-in presets</comment></data>
+  <data name="Settings.RestoreEqPresetsTip" xml:space="preserve"><value>Bring back the built-in presets you deleted</value><comment>Equalizer card Restore presets tooltip</comment></data>
   <data name="Settings.AUDIOTOOLS" xml:space="preserve"><value>AUDIO TOOLS</value><comment>Text in SettingsView.axaml</comment></data>
   <data name="Settings.Ffmpeg" xml:space="preserve"><value>ffmpeg</value><comment>Text in SettingsView.axaml</comment></data>
   <data name="Settings.UsedByAudioConverter" xml:space="preserve"><value>Used by the converter, spectrogram and Lyrics Studio. Blank auto-detects.</value><comment>Text in SettingsView.axaml</comment></data>
@@ -1152,6 +1172,10 @@
   <data name="MiniPlayer.ExplicitTip" xml:space="preserve"><value>Explicit</value><comment>ToolTip.Tip in MiniPlayerWindow.axaml</comment></data>
   <data name="MiniPlayer.FavoritesTip" xml:space="preserve"><value>Favorites</value><comment>ToolTip.Tip in MiniPlayerWindow.axaml</comment></data>
   <data name="MiniPlayer.MoreTip" xml:space="preserve"><value>More</value><comment>ToolTip.Tip in MiniPlayerWindow.axaml</comment></data>
+  <data name="MiniPlayer.Equalizer" xml:space="preserve"><value>Equalizer</value><comment>Mini player "…" menu: EQ on/off item (GitHub #94)</comment></data>
+  <data name="MiniPlayer.EqualizerTip" xml:space="preserve"><value>Turn the equalizer on or off</value><comment>Mini player "…" menu EQ item tooltip</comment></data>
+  <data name="MiniPlayer.EqualizerOn" xml:space="preserve"><value>On</value><comment>Mini player "…" menu EQ item state</comment></data>
+  <data name="MiniPlayer.EqualizerOff" xml:space="preserve"><value>Off</value><comment>Mini player "…" menu EQ item state</comment></data>
   <data name="MiniPlayer.PinOnTop" xml:space="preserve"><value>Pin on top</value><comment>Mini player pin (tooltip + "…" menu item): keeps it visible through Show desktop / Minimize all and over games</comment></data>
   <data name="MiniPlayer.Unpin" xml:space="preserve"><value>Unpin</value><comment>Mini player pin, while pinned (tooltip + "…" menu item)</comment></data>
   <data name="MiniPlayer.ShuffleTip" xml:space="preserve"><value>Shuffle</value><comment>ToolTip.Tip in MiniPlayerWindow.axaml</comment></data>
@@ -1216,6 +1240,7 @@
   <data name="PlaybackBar.CancelTimer" xml:space="preserve"><value>Cancel timer</value><comment>Header in PlaybackBarView.axaml</comment></data>
   <data name="PlaybackBar.RepeatTip" xml:space="preserve"><value>Repeat</value><comment>ToolTip.Tip in PlaybackBarView.axaml</comment></data>
   <data name="PlaybackBar.ShuffleTip" xml:space="preserve"><value>Shuffle</value><comment>ToolTip.Tip in PlaybackBarView.axaml</comment></data>
+  <data name="PlaybackBar.EqualizerTip" xml:space="preserve"><value>Equalizer on/off</value><comment>ToolTip.Tip of the island EQ button (GitHub #94)</comment></data>
   <data name="PlaybackBar.MiniPlayerTip" xml:space="preserve"><value>Mini Player</value><comment>ToolTip.Tip in PlaybackBarView.axaml</comment></data>
   <data name="PlaybackBar.ViewAlbumTip" xml:space="preserve"><value>View Album</value><comment>ToolTip.Tip in PlaybackBarView.axaml</comment></data>
   <data name="PlaybackBar.ExplicitTip" xml:space="preserve"><value>Explicit</value><comment>ToolTip.Tip in PlaybackBarView.axaml</comment></data>
@@ -1514,7 +1539,7 @@
   <data name="Plugins.CommunityTitle" xml:space="preserve"><value>Community plugins</value></data>
   <data name="Plugins.CommunityDescription" xml:space="preserve"><value>Run plugins made by other people. While this is off (restricted mode) Noctis loads no plugin code; installed plugins stay listed.</value></data>
   <data name="Plugins.RestrictedNotice" xml:space="preserve"><value>Restricted mode is on: no plugin code runs. Turn on Community plugins to use the plugins below.</value></data>
-  <data name="Plugins.InstallFromFile" xml:space="preserve"><value>Install from file…</value></data>
+  <data name="Plugins.InstallFromFile" xml:space="preserve"><value>Install from file</value></data>
   <data name="Plugins.InstallPickerTitle" xml:space="preserve"><value>Install a Noctis plugin (.zip)</value></data>
   <data name="Plugins.OpenPluginFolder" xml:space="preserve"><value>Open folder</value></data>
   <data name="Plugins.Remove" xml:space="preserve"><value>Remove</value></data>

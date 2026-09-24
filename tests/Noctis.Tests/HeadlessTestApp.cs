@@ -12,9 +12,24 @@ namespace Noctis.Tests;
 /// </summary>
 public class HeadlessTestApp : Application
 {
-    public static AppBuilder BuildAvaloniaApp() => AppBuilder
-        .Configure<HeadlessTestApp>()
-        .UseHeadless(new AvaloniaHeadlessPlatformOptions());
+    /// <summary>
+    /// NOCTIS_TEST_SKIA=1 swaps the headless drawing stubs for real Skia rendering, so a
+    /// probe can save what a control actually draws (Window.CaptureRenderedFrame) and the
+    /// PNG can be eyeballed. Off by default: the suite's layout assertions are measured
+    /// against the stubs.
+    /// </summary>
+    public static bool RealRendering =>
+        Environment.GetEnvironmentVariable("NOCTIS_TEST_SKIA") == "1";
+
+    public static AppBuilder BuildAvaloniaApp() => RealRendering
+        ? AppBuilder
+            .Configure<HeadlessTestApp>()
+            .UseSkia()
+            .UseHarfBuzz()
+            .UseHeadless(new AvaloniaHeadlessPlatformOptions { UseHeadlessDrawing = false })
+        : AppBuilder
+            .Configure<HeadlessTestApp>()
+            .UseHeadless(new AvaloniaHeadlessPlatformOptions());
 
     public override void Initialize()
     {

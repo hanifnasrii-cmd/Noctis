@@ -34,6 +34,12 @@ public partial class SettingsView : UserControl
     {
         InitializeComponent();
 
+        if (EqSavePresetButton.Flyout is Flyout eqPresetFlyout)
+        {
+            eqPresetFlyout.Opened += OnEqPresetFlyoutOpened;
+            eqPresetFlyout.Closing += OnEqPresetFlyoutClosing;
+        }
+
         // Wire up the Add Folder button to open a native folder picker
         AddFolderButton.Click += OnAddFolderClicked;
 
@@ -208,6 +214,106 @@ public partial class SettingsView : UserControl
     {
         if (SettingsScrollViewer is not null)
             SmoothScrollBehavior.SetIsEnabled(SettingsScrollViewer, true);
+    }
+
+    // ── Save EQ preset flyout (GitHub #95) ──
+
+    // The flyout's content attaches each time it opens: start from a clean state, prefill
+    // the selected user preset's name (so re-saving overwrites it) and focus the box.
+    private void OnEqPresetNameBoxAttached(object? sender, VisualTreeAttachmentEventArgs e)
+    {
+        if (sender is not TextBox box || DataContext is not SettingsViewModel vm) return;
+        vm.EqPresetSaveError = "";
+        if (string.IsNullOrEmpty(vm.NewEqPresetName) && vm.UserEqPresetNames.Contains(vm.SelectedEqPresetName))
+            vm.NewEqPresetName = vm.SelectedEqPresetName;
+        Dispatcher.UIThread.Post(() =>
+        {
+            box.Focus();
+            box.SelectAll();
+        }, DispatcherPriority.Input);
+    }
+
+    private void OnEqPresetNameKeyDown(object? sender, KeyEventArgs e)
+    {
+        if (e.Key is Key.Enter or Key.Return)
+        {
+            SaveEqPresetFromFlyout();
+            e.Handled = true;
+        }
+    }
+
+    private void OnEqSavePresetClick(object? sender, RoutedEventArgs e) => SaveEqPresetFromFlyout();
+
+    // Open/close motion: the custom theme editor's 180ms CubicEaseOut fade + 0.96 scale
+    // (ThemeEditorDialog), played on the FlyoutPresenter. Same recipe as ColorPickerFlyout:
+    // the first Closing is cancelled so the fade-out can play, then the real Hide runs.
+    private static readonly TimeSpan EqPresetMotionDuration = TimeSpan.FromMilliseconds(180);
+    private static readonly Avalonia.Media.Transformation.TransformOperations EqPresetShrunk =
+        Avalonia.Media.Transformation.TransformOperations.Parse("scale(0.96)");
+    private static readonly Avalonia.Media.Transformation.TransformOperations EqPresetRest =
+        Avalonia.Media.Transformation.TransformOperations.Parse("scale(1)");
+    private Control? _eqPresetMotionBody;
+    private bool _eqPresetCloseHeld;
+
+    private static Avalonia.Animation.Transitions BuildEqPresetMotion() => new()
+    {
+        new Avalonia.Animation.DoubleTransition { Property = OpacityProperty, Duration = EqPresetMotionDuration, Easing = new Avalonia.Animation.Easings.CubicEaseOut() },
+        new Avalonia.Animation.TransformOperationsTransition { Property = RenderTransformProperty, Duration = EqPresetMotionDuration, Easing = new Avalonia.Animation.Easings.CubicEaseOut() },
+    };
+
+    private void OnEqPresetFlyoutOpened(object? sender, EventArgs e)
+    {
+        _eqPresetCloseHeld = false;
+        var body = EqPresetFlyoutBody.FindAncestorOfType<FlyoutPresenter>() ?? (Control)EqPresetFlyoutBody;
+        if (!ReferenceEquals(_eqPresetMotionBody, body))
+        {
+            _eqPresetMotionBody = body;
+            body.PropertyChanged += OnEqPresetMotionBodyPropertyChanged;
+        }
+        body.Transitions = null;
+        body.RenderTransformOrigin = RelativePoint.Center;
+        body.Opacity = 0;
+        body.RenderTransform = EqPresetShrunk;
+        body.Transitions = BuildEqPresetMotion();
+        Dispatcher.UIThread.Post(() =>
+        {
+            body.Opacity = 1;
+            body.RenderTransform = EqPresetRest;
+        }, DispatcherPriority.Render);
+    }
+
+    private void OnEqPresetFlyoutClosing(object? sender, CancelEventArgs e)
+    {
+        if (_eqPresetCloseHeld)
+        {
+            _eqPresetCloseHeld = false;
+            return;
+        }
+        if (_eqPresetMotionBody is not { } body) return;
+
+        e.Cancel = true;
+        _eqPresetCloseHeld = true;
+        body.Transitions = BuildEqPresetMotion();
+        Dispatcher.UIThread.Post(() =>
+        {
+            body.Opacity = 0;
+            body.RenderTransform = EqPresetShrunk;
+        }, DispatcherPriority.Render);
+    }
+
+    private void OnEqPresetMotionBodyPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
+    {
+        if (e.Property != OpacityProperty || !_eqPresetCloseHeld) return;
+        if (sender is not Control body || body.Opacity > 0.001) return;
+        EqSavePresetButton.Flyout?.Hide();
+    }
+
+    /// <summary>Closes the flyout on success; a refused name keeps it open with the reason shown.</summary>
+    private void SaveEqPresetFromFlyout()
+    {
+        if (DataContext is not SettingsViewModel vm) return;
+        if (vm.SaveUserEqPreset(vm.NewEqPresetName))
+            EqSavePresetButton.Flyout?.Hide();
     }
 
     private void OnSettingsPointerPressed(object? sender, PointerPressedEventArgs e)

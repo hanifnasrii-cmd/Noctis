@@ -203,6 +203,14 @@ public static class MetadataHelper
     /// tracks: blank artwork, "N artists / M songs selected" header, Mixed fields, and
     /// edits that fan out to every selected track.
     /// </summary>
+    /// <summary>Lists the user's saved EQ presets in the Options tab (GitHub #95). Must run
+    /// before the window binds: swapping a ComboBox's ItemsSource later nulls its selection.</summary>
+    private static void AddUserEqPresets(MetadataViewModel vm)
+    {
+        if (App.Services!.GetService<MainWindowViewModel>() is { } main)
+            vm.SetUserEqPresets(main.Settings.UserEqPresetNames);
+    }
+
     public static async Task OpenMultiTrackMetadataWindow(IReadOnlyList<Track> tracks)
     {
         if (tracks == null || tracks.Count == 0) return;
@@ -218,6 +226,7 @@ public static class MetadataHelper
         var vm = new MetadataViewModel(tracks[0], metadata, library, persistence, animatedCovers,
             albumScoped: true, albumTracks: tracks.ToList(), itunes: itunes, lrcLib: lrcLib, multiSelect: true,
             autoMatch: App.Services!.GetService<AutoMatchCoordinator>());
+        AddUserEqPresets(vm);
 
         var window = new MetadataWindow(vm);
         await vm.InitializeAsync(); // file reads stay off the UI thread; window opens fully populated
@@ -247,6 +256,7 @@ public static class MetadataHelper
         var itunes = App.Services!.GetService<ITunesArtworkService>();
         var lrcLib = App.Services!.GetService<ILrcLibService>();
         var vm = new MetadataViewModel(track, metadata, library, persistence, animatedCovers, albumScoped, albumTracks, itunes, lrcLib, autoMatch: App.Services!.GetService<AutoMatchCoordinator>());
+        AddUserEqPresets(vm);
 
         vm.AnimatedCoverChanging += (_, _) =>
         {

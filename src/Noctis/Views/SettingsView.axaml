@@ -55,6 +55,11 @@
         <Style Selector="Button:pointerover /template/ ContentPresenter">
             <Setter Property="Background" Value="{DynamicResource SettingsButtonHoverBrush}"/>
         </Style>
+        <!-- accent-pill (e.g. Plugins "Install from file"): the wash above beat the global
+             Styles.axaml accent hover, turning the pill grey. Stay accent, just deeper. -->
+        <Style Selector="Button.accent-pill:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource AccentColorBrushDark1}"/>
+        </Style>
 
         <!-- About-tab update pill: accent by default, subdued while showing the
              transient "✓ Up to date" confirmation so it stops reading as a CTA. -->
@@ -2152,6 +2157,15 @@
                                               IsChecked="{Binding PlaybackBarShowMiniPlayer}"
                                               VerticalAlignment="Center"/>
                     </Grid>
+                    <Grid ColumnDefinitions="*,Auto">
+                        <StackPanel Grid.Column="0" Spacing="2">
+                            <TextBlock Text="{loc:T Settings.IdleQueuePill}" FontSize="13" FontWeight="SemiBold"/>
+                            <TextBlock Text="{loc:T Settings.IdleQueuePillHint}" FontSize="12" Opacity="0.5" TextWrapping="Wrap"/>
+                        </StackPanel>
+                        <controls:LottieToggle Grid.Column="1"
+                                              IsChecked="{Binding PlaybackBarShowIdlePill}"
+                                              VerticalAlignment="Center"/>
+                    </Grid>
                     <StackPanel>
                     <Grid ColumnDefinitions="*,Auto">
                         <StackPanel Grid.Column="0" Spacing="2">
@@ -2211,6 +2225,15 @@
                     </Grid>
                     <Grid ColumnDefinitions="*,Auto">
                         <StackPanel Grid.Column="0" Spacing="2">
+                            <TextBlock Text="{loc:T Settings.EqualizerButton}" FontSize="13" FontWeight="SemiBold"/>
+                            <TextBlock Text="{loc:T Settings.EqualizerButtonHint}" FontSize="12" Opacity="0.5" TextWrapping="Wrap"/>
+                        </StackPanel>
+                        <controls:LottieToggle Grid.Column="1"
+                                              IsChecked="{Binding PlaybackBarShowEqualizer}"
+                                              VerticalAlignment="Center"/>
+                    </Grid>
+                    <Grid ColumnDefinitions="*,Auto">
+                        <StackPanel Grid.Column="0" Spacing="2">
                             <TextBlock Text="{loc:T Settings.PlaybackTime}" FontSize="13" FontWeight="SemiBold"/>
                             <TextBlock Text="{loc:T Settings.PlaybackTimeInTrackBox}" FontSize="12" Opacity="0.5" TextWrapping="Wrap"/>
                         </StackPanel>
@@ -2219,6 +2242,19 @@
                                               VerticalAlignment="Center"/>
                     </Grid>
                 </StackPanel>
+            </Border>
+            <!-- GitHub #93: waveform in the island and mini player seek bars (off by default). -->
+            <Border Classes="setting-row">
+                <Grid ColumnDefinitions="*,Auto">
+                    <StackPanel Grid.Column="0" Spacing="2">
+                        <TextBlock Text="{loc:T Settings.WaveformSeekBar}" FontSize="15" FontWeight="SemiBold"/>
+                        <TextBlock Text="{loc:T Settings.WaveformSeekBarHint}"
+                                   FontSize="12" Opacity="0.5" TextWrapping="Wrap"/>
+                    </StackPanel>
+                    <controls:LottieToggle Grid.Column="1"
+                                          IsChecked="{Binding WaveformSeekBarEnabled}"
+                                          VerticalAlignment="Center"/>
+                </Grid>
             </Border>
             <Border Classes="setting-row">
                 <StackPanel Spacing="12">
@@ -3130,8 +3166,9 @@
 
             <Border Classes="setting-card" Padding="22,16,38,16" ClipToBounds="False" Margin="0,14,0,10">
                 <StackPanel Spacing="16">
-                    <!-- Header row with icon, preset selector, and reset button -->
-                    <Grid ColumnDefinitions="*,Auto,Auto">
+                    <!-- Header row: title + master switch (GitHub #94). Off bypasses the EQ but
+                         keeps every value below, so switching back on restores the same curve. -->
+                    <Grid ColumnDefinitions="*,Auto">
                         <StackPanel Grid.Column="0" Margin="0,0,16,0">
                             <StackPanel Spacing="2">
                                 <TextBlock Text="{loc:T Settings.Equalizer}" FontSize="15" FontWeight="SemiBold"/>
@@ -3139,16 +3176,96 @@
                                            FontSize="12" Opacity="0.5" TextWrapping="Wrap"/>
                             </StackPanel>
                         </StackPanel>
-                        <ComboBox Grid.Column="1"
-                                  x:Name="EqPresetCombo"
+                        <controls:LottieToggle Grid.Column="1"
+                                              IsChecked="{Binding EqualizerEnabled}"
+                                              ToolTip.Tip="{loc:T Settings.EqualizerOnOffTip}"
+                                              VerticalAlignment="Center"/>
+                    </Grid>
+
+                    <!-- Everything below greys out (values kept) while the EQ is off. -->
+                    <StackPanel Spacing="16"
+                                IsEnabled="{Binding EqualizerEnabled}"
+                                Opacity="{Binding EqualizerControlsOpacity}">
+                    <!-- Preset row (GitHub #95): selector, save / delete / restore, reset.
+                         Wraps rather than overflowing on a narrow Settings pane. -->
+                    <WrapPanel Orientation="Horizontal" ItemSpacing="8" LineSpacing="8">
+                        <ComboBox x:Name="EqPresetCombo"
                                   Classes="pill-combo stable-popup"
                                   Width="164"
                                   ItemsSource="{Binding VisibleEqPresets}"
                                   SelectedItem="{Binding SelectedEqPresetName}"
-                                  VerticalAlignment="Center"
-                                  Margin="0,0,10,0" />
-                        <Button Grid.Column="2"
+                                  VerticalAlignment="Center" />
+                        <Button x:Name="EqSavePresetButton"
                                 Classes="pill-action"
+                                CornerRadius="999"
+                                Padding="14,8"
+                                Cursor="Hand"
+                                ToolTip.Tip="{loc:T Settings.SaveEqPresetTip}"
+                                VerticalAlignment="Center">
+                            <TextBlock Text="{loc:T Settings.SaveEqPreset}"
+                                       FontSize="13"
+                                       FontWeight="SemiBold"
+                                       VerticalAlignment="Center" />
+                            <Button.Flyout>
+                                <!-- One row: pill name box + Save. Fades/scales in and out like
+                                     the custom theme editor (code-behind). -->
+                                <Flyout Placement="BottomEdgeAlignedLeft">
+                                    <StackPanel x:Name="EqPresetFlyoutBody" Spacing="6" Width="280">
+                                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                                            <TextBox Text="{Binding NewEqPresetName}"
+                                                     MaxLength="40"
+                                                     CornerRadius="999"
+                                                     Padding="14,7"
+                                                     VerticalContentAlignment="Center"
+                                                     Watermark="{loc:T Settings.EqPresetName}"
+                                                     AttachedToVisualTree="OnEqPresetNameBoxAttached"
+                                                     KeyDown="OnEqPresetNameKeyDown"/>
+                                            <Button Grid.Column="1"
+                                                    Classes="pill-action"
+                                                    CornerRadius="999"
+                                                    Padding="16,7"
+                                                    Cursor="Hand"
+                                                    VerticalAlignment="Center"
+                                                    Click="OnEqSavePresetClick">
+                                                <TextBlock Text="{loc:T Settings.SaveEqPreset}" FontSize="13" FontWeight="SemiBold"/>
+                                            </Button>
+                                        </Grid>
+                                        <TextBlock Text="{Binding EqPresetSaveError}"
+                                                   IsVisible="{Binding EqPresetSaveError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                                                   Margin="14,0,0,0"
+                                                   FontSize="11" Foreground="#FF6B6B" TextWrapping="Wrap"/>
+                                    </StackPanel>
+                                </Flyout>
+                            </Button.Flyout>
+                        </Button>
+                        <Button Classes="pill-action"
+                                Command="{Binding DeleteSelectedEqPresetCommand}"
+                                IsEnabled="{Binding CanDeleteSelectedEqPreset}"
+                                CornerRadius="999"
+                                Padding="14,8"
+                                Cursor="Hand"
+                                ToolTip.Tip="{loc:T Settings.DeleteEqPresetTip}"
+                                VerticalAlignment="Center">
+                            <TextBlock Text="{loc:T Settings.DeleteEqPreset}"
+                                       FontSize="13"
+                                       FontWeight="SemiBold"
+                                       VerticalAlignment="Center" />
+                        </Button>
+                        <!-- Only while a built-in has been deleted (hidden). -->
+                        <Button Classes="pill-action"
+                                Command="{Binding RestoreBuiltInEqPresetsCommand}"
+                                IsVisible="{Binding HasHiddenEqPresets}"
+                                CornerRadius="999"
+                                Padding="14,8"
+                                Cursor="Hand"
+                                ToolTip.Tip="{loc:T Settings.RestoreEqPresetsTip}"
+                                VerticalAlignment="Center">
+                            <TextBlock Text="{loc:T Settings.RestoreEqPresets}"
+                                       FontSize="13"
+                                       FontWeight="SemiBold"
+                                       VerticalAlignment="Center" />
+                        </Button>
+                        <Button Classes="pill-action"
                                 Command="{Binding ResetEqualizerCommand}"
                                 CornerRadius="999"
                                 Padding="14,8"
@@ -3159,7 +3276,7 @@
                                        FontWeight="SemiBold"
                                        VerticalAlignment="Center" />
                         </Button>
-                    </Grid>
+                    </WrapPanel>
 
                     <!-- Pre-amp: level relative to native, applied before the curve.
                          Negative values create the headroom that keeps boosted bands
@@ -3241,6 +3358,7 @@
                                 HorizontalAlignment="Left">
                             <TextBlock Text="{loc:T Settings.AddBand}" FontSize="13" FontWeight="SemiBold"/>
                         </Button>
+                    </StackPanel>
                     </StackPanel>
                 </StackPanel>
             </Border>
@@ -4581,9 +4699,9 @@
                             <StackPanel Spacing="2">
                                 <TextBlock Text="{loc:T Settings.LocalApiToken}" FontSize="10" Opacity="0.5"/>
                                 <StackPanel Orientation="Horizontal" Spacing="8">
-                                    <SelectableTextBlock Text="{Binding LocalApiTokenDisplay}" FontSize="12"
-                                                         FontFamily="Consolas,Menlo,monospace"
-                                                         VerticalAlignment="Center" MaxWidth="330" TextWrapping="Wrap"/>
+                                    <TextBlock Text="{Binding LocalApiTokenDisplay}" FontSize="12"
+                                               FontFamily="Consolas,Menlo,monospace"
+                                               VerticalAlignment="Center"/>
                                     <Button Classes="pill-action" Command="{Binding ToggleLocalApiTokenRevealCommand}">
                                         <Panel>
                                             <TextBlock Text="{loc:T Settings.LocalApiShowToken}" FontSize="11"
@@ -4604,6 +4722,17 @@
                                                VerticalAlignment="Center"
                                                IsVisible="{Binding LocalApiTokenCopied}"/>
                                 </StackPanel>
+                                <!-- Full token glides open under the row on Show and folds away on
+                                     Hide; the row above never re-flows. -->
+                                <controls:CollapsibleContent IsOpen="{Binding LocalApiTokenRevealed}"
+                                                             Lift="8" Motion="Glide">
+                                    <Border Background="#14FFFFFF" CornerRadius="6"
+                                            Padding="10,8" Margin="0,6,0,0">
+                                        <SelectableTextBlock Text="{Binding LocalApiToken}" FontSize="12"
+                                                             FontFamily="Consolas,Menlo,monospace"
+                                                             TextWrapping="Wrap"/>
+                                    </Border>
+                                </controls:CollapsibleContent>
                             </StackPanel>
                             <TextBlock Text="{loc:T Settings.LocalApiWarning}"
                                        FontSize="11" Opacity="0.6" TextWrapping="Wrap"/>
