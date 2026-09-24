@@ -750,6 +750,25 @@
                 </Panel>
                 <Border Classes="icon-overlay" Background="#66000000">
                     <Panel>
+                        <!-- Pin (Windows): the icon form has no "…" menu, so it gets the
+                             pin here, mirroring the close glyph in the opposite corner. -->
+                        <Panel HorizontalAlignment="Left" VerticalAlignment="Top" Margin="8"
+                               IsVisible="{Binding CanPin}">
+                            <Button Classes="mini-transport" Width="26" Height="26"
+                                    IsVisible="{Binding !IsPinned}"
+                                    ToolTip.Tip="{loc:T MiniPlayer.PinOnTop}"
+                                    ToolTip.Placement="Right"
+                                    Command="{Binding TogglePinCommand}">
+                                <PathIcon Data="{StaticResource PinIcon}" Width="13" Height="13" Foreground="White"/>
+                            </Button>
+                            <Button Classes="mini-transport" Width="26" Height="26"
+                                    IsVisible="{Binding IsPinned}"
+                                    ToolTip.Tip="{loc:T MiniPlayer.Unpin}"
+                                    ToolTip.Placement="Right"
+                                    Command="{Binding TogglePinCommand}">
+                                <PathIcon Data="{StaticResource PinFilledIcon}" Width="13" Height="13" Foreground="{DynamicResource AccentColorBrush}"/>
+                            </Button>
+                        </Panel>
                         <Button Classes="mini-transport" Width="26" Height="26"
                                 HorizontalAlignment="Right" VerticalAlignment="Top"
                                 Margin="8"
@@ -2554,6 +2573,25 @@
                              window takes the popup with it. -->
                         <Border Height="1" Margin="8,4"
                                 Background="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
+                        <!-- Pin (Windows): survives Show desktop / Minimize all and stays
+                             above games; the label says which way it goes. -->
+                        <Button x:Name="PinMenuItem" Classes="mini-menu-item" Command="{Binding TogglePinCommand}"
+                                Click="OnMenuItemClick" IsVisible="{Binding CanPin}">
+                            <StackPanel Orientation="Horizontal" Spacing="10">
+                                <Panel Width="14" Height="14">
+                                    <PathIcon Data="{StaticResource PinIcon}" Width="14" Height="14" IsVisible="{Binding !IsPinned}"
+                                              Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                                    <PathIcon Data="{StaticResource PinFilledIcon}" Width="14" Height="14" IsVisible="{Binding IsPinned}"
+                                              Foreground="{DynamicResource AccentColorBrush}"/>
+                                </Panel>
+                                <Panel>
+                                    <TextBlock Text="{loc:T MiniPlayer.PinOnTop}" IsVisible="{Binding !IsPinned}"
+                                               FontSize="13" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" VerticalAlignment="Center"/>
+                                    <TextBlock Text="{loc:T MiniPlayer.Unpin}" IsVisible="{Binding IsPinned}"
+                                               FontSize="13" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" VerticalAlignment="Center"/>
+                                </Panel>
+                            </StackPanel>
+                        </Button>
                         <Button Classes="mini-menu-item" Click="OnCloseClick">
                             <StackPanel Orientation="Horizontal" Spacing="10">
                                 <PathIcon Data="{StaticResource DismissIcon}" Width="14" Height="14" Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>

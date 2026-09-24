@@ -402,6 +402,16 @@ public partial class SettingsView : UserControl
         }
     }
 
+    // Double-tapping the album page tint-strength slider restores the full cover colour.
+    private void OnAlbumPageTintStrengthSliderDoubleTapped(object? sender, TappedEventArgs e)
+    {
+        if (DataContext is SettingsViewModel vm)
+        {
+            vm.AlbumPageTintStrength = Models.AppSettings.AlbumPageTintStrengthDefault;
+            e.Handled = true;
+        }
+    }
+
     private void OnPreampSliderPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
     {
         if (e.Property == Slider.ValueProperty ||

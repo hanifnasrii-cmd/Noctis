@@ -1085,6 +1085,27 @@
                                 </ListBox.ItemTemplate>
                             </ListBox>
 
+                            <!-- GitHub #92: empty-queue hint. Not hit-testable, so a library row
+                                 dragged over it still lands on the ListBox (OnQueueDrop). -->
+                            <StackPanel IsVisible="{Binding !Player.UpNext.Count}"
+                                        IsHitTestVisible="False"
+                                        VerticalAlignment="Top"
+                                        Margin="32,40,32,0"
+                                        Spacing="6">
+                                <TextBlock Text="{loc:T Main.QueueEmptyTitle}"
+                                           FontSize="14"
+                                           FontWeight="SemiBold"
+                                           Foreground="{DynamicResource QueueDrawerForeground}"
+                                           Opacity="0.7"
+                                           TextAlignment="Center" />
+                                <TextBlock Text="{loc:T Main.QueueEmptyHint}"
+                                           FontSize="12"
+                                           Foreground="{DynamicResource QueueDrawerForeground}"
+                                           Opacity="0.45"
+                                           TextWrapping="Wrap"
+                                           TextAlignment="Center" />
+                            </StackPanel>
+
                             <!-- Floating drag preview: follows the pointer Y while reordering.
                                  DataContext starts pinned to null (the state ResetQueueDragState
                                  restores after every drag) so the Track-typed bindings inside never
@@ -1173,7 +1194,7 @@
             IsVisible="False"
             IsHitTestVisible="False"
             Background="#18FFFFFF"
-            BorderBrush="{StaticResource SystemControlHighlightAccentBrush}"
+            BorderBrush="{DynamicResource AccentColorBrush}"
             BorderThickness="2"
             Margin="4"
             CornerRadius="8"
@@ -1183,18 +1204,30 @@
                 <DoubleTransition Property="Opacity" Duration="0:0:0.15" />
             </Transitions>
         </Border.Transitions>
-        <StackPanel HorizontalAlignment="Center"
-                    VerticalAlignment="Center"
-                    Spacing="8">
-            <PathIcon Data="M12,2 L12,14 M8,10 L12,14 L16,10 M4,18 L20,18"
-                      Width="32" Height="32"
-                      Foreground="{StaticResource SystemControlHighlightAccentBrush}" />
-            <TextBlock x:Name="DragDropOverlayText"
-                       Text="{loc:T Main.DropFilesImport}"
-                       FontSize="14" FontWeight="SemiBold"
-                       Foreground="#CCFFFFFF"
-                       HorizontalAlignment="Center" />
-        </StackPanel>
+        <!-- 09-24: the icon and text sit on the island's fill (they were drawn straight over the
+             page and collided with whatever was under the pointer), in the user's accent (a
+             StaticResource froze the pre-accent red), and the import arrow is a filled glyph (the
+             old stroke-only path rendered nothing in a PathIcon). -->
+        <Border HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                Padding="28,18"
+                CornerRadius="20"
+                Background="{DynamicResource IslandBackground}"
+                BorderBrush="#22FFFFFF"
+                BorderThickness="1">
+            <StackPanel Spacing="8">
+                <PathIcon x:Name="DragDropOverlayIcon"
+                          Data="M5 20h14v-2H5v2zM19 9h-4V3H9v6H5l7 7 7-7z"
+                          Width="32" Height="32"
+                          HorizontalAlignment="Center"
+                          Foreground="{DynamicResource AccentColorBrush}" />
+                <TextBlock x:Name="DragDropOverlayText"
+                           Text="{loc:T Main.DropFilesImport}"
+                           FontSize="14" FontWeight="SemiBold"
+                           Foreground="{DynamicResource IslandForeground}"
+                           HorizontalAlignment="Center" />
+            </StackPanel>
+        </Border>
     </Border>
 
     <!-- Drop-import progress pill (spinner + "Copying files 3 of 10") -->
@@ -1245,6 +1278,27 @@
         </StackPanel>
     </Border>
 
+    <!-- Plugin notice pill (IPluginHost.Notify): same glass pill as the drop-import one,
+         near the top so it never covers the playback island; clears itself after a few seconds. -->
+    <Border IsVisible="{Binding PluginNotice, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+            IsHitTestVisible="False"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Top"
+            Margin="0,72,0,0"
+            MaxWidth="560"
+            Background="{DynamicResource IslandBackground}"
+            BorderBrush="#22FFFFFF"
+            BorderThickness="1"
+            CornerRadius="999"
+            Padding="16,9"
+            ZIndex="40">
+        <TextBlock Text="{Binding PluginNotice}"
+                   FontSize="13" FontWeight="SemiBold"
+                   TextTrimming="CharacterEllipsis"
+                   Foreground="{DynamicResource IslandForeground}"
+                   VerticalAlignment="Center"/>
+    </Border>
+
     <!-- Bottom playback island (Apple Music-style glass pill) -->
     <views:PlaybackBarView DataContext="{Binding Player}"
                            CompactWhenLyricsPageActive="False"
@@ -1255,6 +1309,53 @@
                            VerticalAlignment="Bottom"
                            Margin="0,0,0,16"
                            ZIndex="30" />
+
+    <!-- GitHub #92: idle island. The island above unmounts while nothing is loaded, and its
+         Queue button with it; this pill takes its place so the queue (and anything dropped
+         into it) stays one click away. Same glass fill and ring as the island. -->
+    <Border IsVisible="{Binding IsIdleIslandVisible}"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Bottom"
+            Margin="0,0,0,16"
+            Height="44"
+            CornerRadius="999"
+            BorderBrush="#40FFFFFF"
+            BorderThickness="1.5"
+            ZIndex="30">
+        <controls:GlassPanel CornerRadius="999" BlurRadius="14">
+            <controls:GlassPanel.Background>
+                <SolidColorBrush Color="{DynamicResource IslandBackgroundColor}" Opacity="{Binding Player.IslandBackgroundOpacity}"/>
+            </controls:GlassPanel.Background>
+            <StackPanel Orientation="Horizontal" Spacing="14" Margin="20,0,6,0" VerticalAlignment="Center">
+                <TextBlock Text="{loc:T Main.NothingPlaying}"
+                           FontSize="13"
+                           FontWeight="SemiBold"
+                           Foreground="{DynamicResource IslandForeground}"
+                           Opacity="0.6"
+                           VerticalAlignment="Center" />
+                <Button Classes="accent-pill"
+                        Command="{Binding Player.ShowQueueCommand}"
+                        CornerRadius="999"
+                        Padding="12,6"
+                        VerticalAlignment="Center"
+                        Cursor="Hand">
+                    <StackPanel Orientation="Horizontal" Spacing="7">
+                        <Border Width="14" Height="14"
+                                Background="{DynamicResource AccentForegroundBrush}"
+                                RenderOptions.BitmapInterpolationMode="HighQuality">
+                            <Border.OpacityMask>
+                                <ImageBrush Source="avares://Noctis.UI/Assets/Icons/Queue%20ICON.png" Stretch="Uniform" />
+                            </Border.OpacityMask>
+                        </Border>
+                        <TextBlock Text="{loc:T Main.Queue}"
+                                   FontSize="13"
+                                   FontWeight="Bold"
+                                   VerticalAlignment="Center" />
+                    </StackPanel>
+                </Button>
+            </StackPanel>
+        </controls:GlassPanel>
+    </Border>
 
     <!-- Sidebar: overlaid so hover-expand doesn't reflow content -->
     <Border x:Name="SidebarWrapper"

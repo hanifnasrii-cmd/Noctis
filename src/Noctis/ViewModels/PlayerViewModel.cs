@@ -462,6 +462,13 @@ public partial class PlayerViewModel : ViewModelBase
                     // Track loaded but stopped — replay it
                     PlayTrack(CurrentTrack);
                 }
+                else if (UpNext.Count > 0)
+                {
+                    // Nothing loaded but the queue was filled (GitHub #92: songs added to
+                    // the queue opened on an empty player) — play it, don't replace it
+                    // with a library shuffle.
+                    AdvanceQueue(QueueAdvanceReason.UserSkip);
+                }
                 else if (_library.Tracks.Count > 0)
                 {
                     // No track loaded — shuffle entire library.
@@ -1245,6 +1252,9 @@ public partial class PlayerViewModel : ViewModelBase
         // AlbumArt bitmaps are owned by the shared ArtworkCache — drop the reference,
         // don't dispose (other UI surfaces and the cache may still hold it).
         AlbumArt = null;
+        // The island draws the path, not the bitmap: songs queued onto the emptied player
+        // (GitHub #92) showed the last song's cover over a blank title (09-24).
+        CurrentArtPath = null;
         // Stop the animated cover with playback — otherwise the loop keeps
         // playing over the "No track playing" state after the queue drains.
         CurrentAnimatedCoverPath = null;
@@ -1518,15 +1528,24 @@ public partial class PlayerViewModel : ViewModelBase
         if (state.CurrentTrackId.HasValue)
         {
             var track = Resolve(state.CurrentTrackId.Value);
+            var positionSeconds = state.PositionSeconds;
+            if (track == null && UpNext.Count > 0)
+            {
+                // Its file was moved or deleted since (GitHub #91): load the next queued
+                // track from its start instead of leaving the island without a track.
+                track = UpNext[0];
+                UpNext.RemoveAt(0);
+                positionSeconds = 0;
+            }
             if (track != null)
             {
                 CurrentTrack = track;
                 LoadAlbumArt(track);
                 Duration = track.Duration;
                 DurationText = FormatTime(track.Duration);
-                Position = TimeSpan.FromSeconds(state.PositionSeconds);
+                Position = TimeSpan.FromSeconds(positionSeconds);
                 PositionFraction = Duration.TotalSeconds > 0
-                    ? state.PositionSeconds / Duration.TotalSeconds
+                    ? positionSeconds / Duration.TotalSeconds
                     : 0;
                 PositionText = FormatTime(Position);
                 RemainingTimeText = FormatTime(Duration > Position ? Duration - Position : TimeSpan.Zero);
@@ -1534,7 +1553,7 @@ public partial class PlayerViewModel : ViewModelBase
 
                 // Pressing Play on this restored track resumes where the user
                 // left off (consumed one-shot inside PlayTrack's seek chain).
-                _resumePositionMs = (long)(state.PositionSeconds * 1000);
+                _resumePositionMs = (long)(positionSeconds * 1000);
                 _resumeTrackId = track.Id;
 
                 // Ensure UI updates on UI thread

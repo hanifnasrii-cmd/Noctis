@@ -1419,15 +1419,44 @@ public partial class MainWindow : Window
         }
     }
 
+    private enum DropMode { Import, Play, Queue }
+
+    /// <summary>The overlay's import arrow from the XAML, kept so the icon can switch back to it.</summary>
+    private Avalonia.Media.Geometry? _dropImportIconData;
+
+    /// <summary>"Add to queue": three list lines with a plus (GitHub #90).</summary>
+    private static readonly Avalonia.Media.Geometry DropQueueIconData = Avalonia.Media.Geometry.Parse(
+        "M3 5h13v2H3z M3 10h13v2H3z M3 15h8v2H3z M17 12h2v4h4v2h-4v4h-2v-4h-4v-2h4z");
+
     private void ShowDragOverlay(bool show)
     {
         var overlay = this.FindControl<Avalonia.Controls.Border>("DragDropOverlay");
         if (overlay == null) return;
-        // GitHub #86: with "Import dropped files" off the drop plays / queues in place,
-        // so "Drop files to import" promised something that would not happen.
+        // GitHub #86 / #90: with "Import dropped files" off the drop plays / queues in place,
+        // so "Drop files to import" promised something that would not happen. The overlay says
+        // what this drop will do — play (nothing loaded) or add to the queue — with its own icon.
         if (show && DataContext is MainWindowViewModel vm
             && this.FindControl<TextBlock>("DragDropOverlayText") is { } text)
-            text.Text = Localization.Loc.T(vm.Settings.ImportDroppedMedia ? "Main.DropFilesImport" : "Main.DropFilesPlay");
+        {
+            var mode = vm.Settings.ImportDroppedMedia ? DropMode.Import
+                : vm.DropStartsPlayback ? DropMode.Play : DropMode.Queue;
+            text.Text = Localization.Loc.T(mode switch
+            {
+                DropMode.Import => "Main.DropFilesImport",
+                DropMode.Play => "Main.DropFilesPlay",
+                _ => "Main.DropFilesQueue",
+            });
+            if (this.FindControl<PathIcon>("DragDropOverlayIcon") is { } icon)
+            {
+                _dropImportIconData ??= icon.Data;
+                icon.Data = mode switch
+                {
+                    DropMode.Import => _dropImportIconData,
+                    DropMode.Play => this.FindResource("PlayIcon") as Avalonia.Media.Geometry ?? _dropImportIconData,
+                    _ => DropQueueIconData,
+                };
+            }
+        }
         overlay.IsVisible = show;
         overlay.Opacity = show ? 1 : 0;
     }

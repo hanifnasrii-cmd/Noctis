@@ -393,10 +393,35 @@ public partial class MiniPlayerWindow : Window
         _hookedVm.Settings.PropertyChanged += OnSettingsPropertyChanged;
         UpdateDesignSegment();
         ApplyTransparencyHint();
+        ApplyPin();
 
         // A DataContext arriving after Opened would otherwise leave every form hidden.
         SyncFormVisual();
         UpdateFlowAnimationState();
+    }
+
+    // ── Pin (Windows) ──
+    // Pinned: no minimize box, so Show desktop / Minimize all pass the window over (it keeps
+    // its taskbar button), plus a foreground hook that puts it back on top of a game that
+    // raised itself. Unpinned is exactly the old window. Evidence in MiniPlayerPin.
+
+    private TopmostKeeper? _topmostKeeper;
+
+    private void ApplyPin()
+    {
+        var pinned = Vm is { IsPinned: true } && MiniPlayerPin.IsSupported;
+        CanMinimize = MiniPlayerPin.CanMinimize(pinned);
+        if (pinned)
+        {
+            _topmostKeeper ??= new TopmostKeeper(
+                () => TryGetPlatformHandle() is { HandleDescriptor: "HWND" } h ? h.Handle : IntPtr.Zero,
+                () => IsVisible && !_closeAnimationDone);
+        }
+        else
+        {
+            _topmostKeeper?.Dispose();
+            _topmostKeeper = null;
+        }
     }
 
     private void OnVmPropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -405,6 +430,9 @@ public partial class MiniPlayerWindow : Window
         {
             case nameof(MiniPlayerViewModel.Drawer):
                 OnDrawerChanged();
+                break;
+            case nameof(MiniPlayerViewModel.IsPinned):
+                ApplyPin();
                 break;
             case nameof(MiniPlayerViewModel.Form):
                 // Leaving the split view ends the lyrics session the pre-lyrics capture
@@ -1112,6 +1140,8 @@ public partial class MiniPlayerWindow : Window
         _lyricsScrollTimer?.Stop();
         _lyricsFontTimer?.Stop();
         _flow?.Dispose();
+        _topmostKeeper?.Dispose();
+        _topmostKeeper = null;
         if (_lyricsSurfaceRegistered && _hookedVm != null)
         {
             _lyricsSurfaceRegistered = false;

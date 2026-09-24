@@ -36,8 +36,25 @@ public class AppSettings
     /// <summary>UI language: a culture name shipped in Localization/ ("es") or "" to follow the OS.</summary>
     public string Language { get; set; } = "";
 
-    /// <summary>Plugin folders (names under data/plugins) the user switched off in Settings → Plugins.</summary>
+    /// <summary>Plugin ids (plugin.json "id"; the folder name for a legacy plugin without one)
+    /// the user switched off in Settings → Plugins. Older builds stored folder names; the
+    /// plugin host rewrites those to ids on load.</summary>
     public List<string> DisabledPlugins { get; set; } = new();
+
+    /// <summary>
+    /// "Community plugins" switch (Settings → Plugins). False = restricted mode: no
+    /// third-party plugin code is loaded. Null = never decided: the plugin host sets it on
+    /// first load, ON when plugins were already installed (they ran before this switch
+    /// existed), OFF for everyone else.
+    /// </summary>
+    public bool? CommunityPluginsEnabled { get; set; }
+
+    /// <summary>Plugin id → the permissions the user approved when enabling it. A plugin
+    /// whose plugin.json asks for more (after an update) waits for approval again.</summary>
+    public Dictionary<string, List<string>> PluginPermissionGrants { get; set; } = new();
+
+    /// <summary>Plugin id → setting key → value (invariant text) for settings declared in plugin.json.</summary>
+    public Dictionary<string, Dictionary<string, string>> PluginSettingValues { get; set; } = new();
 
     /// <summary>
     /// Marker for the v2 theme migration. In v1, "Dark" denoted today's Gray colours.
@@ -184,6 +201,16 @@ public class AppSettings
     /// the Appearance toggle turns it off for users who want the flat theme page.</summary>
     public bool AlbumPageTintEnabled { get; set; } = false;
 
+    /// <summary>Fresh-install value of <see cref="AlbumPageTintStrength"/>: the full cover
+    /// colour, the look the album page had before the slider existed. Double-tapping the
+    /// slider in Settings snaps back to it.</summary>
+    public const int AlbumPageTintStrengthDefault = 100;
+
+    /// <summary>How strongly a tinted album page takes on its cover colour, in percent
+    /// (0–100). Below 100 the cover colour is blended into the theme's own page colour, so
+    /// the page reads calmer and its buttons stand further apart from it (Discord ask).</summary>
+    public int AlbumPageTintStrength { get; set; } = AlbumPageTintStrengthDefault;
+
     /// <summary>Minimizing the main window hides it to the system tray.</summary>
     public bool MinimizeToTray { get; set; }
 
@@ -204,6 +231,14 @@ public class AppSettings
 
     /// <summary>TCP port for the web remote.</summary>
     public int WebRemotePort { get; set; } = 9420;
+
+    /// <summary>Local automation API on 127.0.0.1 (/api/v1, docs/LOCAL-API.md). Off by default.
+    /// The token lives in local-api.json, never here.</summary>
+    public bool LocalApiEnabled { get; set; }
+
+    /// <summary>Preferred TCP port for the Local API (a free one is used when it's taken;
+    /// local-api.json records the real one).</summary>
+    public int LocalApiPort { get; set; } = 9421;
 
     /// <summary>Built-in Noctis server (OpenSubsonic API over HTTPS for phones and other clients). Off by default.</summary>
     public bool NoctisServerEnabled { get; set; }
@@ -356,6 +391,11 @@ public class AppSettings
     /// the OS for a blur-behind backdrop, so the desktop behind the card reads frosted.
     /// Off by default.</summary>
     public bool MiniPlayerFrostedBackground { get; set; } = false;
+
+    /// <summary>The mini player's pin (Windows only): it survives Show desktop / Minimize all
+    /// and re-asserts always-on-top when another window (e.g. a borderless game) takes the
+    /// foreground. Written by the mini player itself, like its placement. Off by default.</summary>
+    public bool MiniPlayerPinned { get; set; } = false;
 
     /// <summary>User-chosen width of the floating playback bar island, set by dragging its
     /// edges (double-click a grip resets). 536 is the full layout (626 with the old long
@@ -710,6 +750,7 @@ public class AppSettings
         Volume = Math.Clamp(Volume, 0, 100);
         // Below 1024 needs privileges on Unix; 65535 is the top of the port space.
         WebRemotePort = WebRemotePort is >= 1024 and <= 65535 ? WebRemotePort : 9420;
+        LocalApiPort = LocalApiPort is >= 1024 and <= 65535 ? LocalApiPort : 9421;
         NoctisServerPort = NoctisServerPort is >= 1024 and <= 65535 ? NoctisServerPort : 4747;
         ReplayGainPreampDb = Math.Clamp(ReplayGainPreampDb, -12, 12);
         EqPreampDb = Math.Clamp(EqPreampDb, Services.ParametricEqMath.EqPreampMinDb, Services.ParametricEqMath.EqPreampMaxDb);

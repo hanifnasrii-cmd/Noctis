@@ -166,6 +166,156 @@ public partial class SettingsViewModel : ViewModelBase
             n == 0 ? "Reloaded · no plugins found." : $"Reloaded · {n} plugin{(n == 1 ? "" : "s")} found.");
     }
 
+    /// <summary>The "Community plugins" switch; off = restricted mode (nothing third-party runs).</summary>
+    [ObservableProperty] private bool _communityPluginsEnabled;
+    private bool _syncingCommunityPlugins;
+
+    /// <summary>Shows plugin dialogs (permission approval, turn on, remove, update). Tests and
+    /// the screenshot harness can swap it; the default is the app's ConfirmationDialog.</summary>
+    internal Func<Views.ConfirmationRequest, Task<Views.ConfirmationResult>> ShowPluginDialog { get; set; }
+        = Views.ConfirmationDialog.ShowAsync;
+
+    /// <summary>Opens a file picker for a plugin .zip; null = cancelled. Swappable for tests.</summary>
+    internal Func<Task<string?>> PickPluginPackage { get; set; } = PickPluginZipAsync;
+
+    partial void OnCommunityPluginsEnabledChanged(bool value)
+    {
+        if (_syncingCommunityPlugins || Plugins is null || value == Plugins.CommunityPluginsEnabled) return;
+        if (value) _ = ConfirmTurnOnCommunityPluginsAsync();
+        else Plugins.SetCommunityPluginsEnabled(false);
+    }
+
+    private async Task ConfirmTurnOnCommunityPluginsAsync()
+    {
+        var result = await ShowPluginDialog(new Views.ConfirmationRequest(
+            Loc.T("Plugins.TurnOnBody"),
+            Title: Loc.T("Plugins.TurnOnTitle"),
+            Note: Loc.T("Plugins.SafetyNote"),
+            ConfirmText: Loc.T("Plugins.TurnOnConfirm"),
+            Width: 440));
+        if (result.Confirmed) Plugins?.SetCommunityPluginsEnabled(true);
+        SyncCommunityPluginsSwitch();
+    }
+
+    private void SyncCommunityPluginsSwitch()
+    {
+        _syncingCommunityPlugins = true;
+        try { CommunityPluginsEnabled = Plugins?.CommunityPluginsEnabled ?? false; }
+        finally { _syncingCommunityPlugins = false; }
+    }
+
+    /// <summary>The first-enable approval: what the plugin declares, and what that does and does not mean.</summary>
+    internal async Task<bool> ConfirmEnablePluginAsync(LoadedPlugin plugin)
+    {
+        var details = plugin.Permissions.Count == 0
+            ? new List<string> { Loc.T("Plugins.NoPermissions") }
+            : plugin.Permissions.Select(PermissionLabel).ToList();
+        var who = plugin.Author.Length > 0 ? Loc.T("Plugins.EnableBodyBy", plugin.Name, plugin.Version, plugin.Author)
+                                           : Loc.T("Plugins.EnableBody", plugin.Name, plugin.Version);
+        var result = await ShowPluginDialog(new Views.ConfirmationRequest(
+            who,
+            Title: Loc.T("Plugins.EnableTitle", plugin.Name),
+            Details: details,
+            Note: Loc.T("Plugins.SafetyNote"),
+            ConfirmText: Loc.T("Plugins.EnableConfirm"),
+            Width: 460));
+        return result.Confirmed;
+    }
+
+    /// <summary>"playback.control" → "Control playback (play, pause, skip, seek)".</summary>
+    public static string PermissionLabel(string permission) => PluginPermissionText.Describe(permission);
+
+    [RelayCommand]
+    private async Task InstallPluginFromFileAsync()
+    {
+        if (Plugins is null) return;
+        var path = await PickPluginPackage();
+        if (string.IsNullOrEmpty(path)) return;
+        await InstallPluginPackageAsync(path);
+    }
+
+    /// <summary>Install flow after the file is picked: refuse duplicates, offer an update when newer.</summary>
+    internal async Task InstallPluginPackageAsync(string zipPath)
+    {
+        if (Plugins is null) return;
+        PluginPackage package;
+        LoadedPlugin? existing;
+        try { (package, existing) = Plugins.InspectPackage(zipPath); }
+        catch (PluginInstallException ex)
+        {
+            ShowPluginStatus(Loc.T("Plugins.InstallFailed", ex.Message));
+            return;
+        }
+
+        var allowUpdate = false;
+        if (existing is not null)
+        {
+            if (PluginVersion.Compare(package.Manifest.Version, existing.Version) <= 0)
+            {
+                ShowPluginStatus(Loc.T("Plugins.AlreadyInstalled", existing.Name, existing.Version, package.Manifest.Version));
+                return;
+            }
+            var update = await ShowPluginDialog(new Views.ConfirmationRequest(
+                Loc.T("Plugins.UpdateBody"),
+                Title: Loc.T("Plugins.UpdateTitle", existing.Name, existing.Version, package.Manifest.Version),
+                ConfirmText: Loc.T("Plugins.UpdateConfirm"),
+                Width: 420));
+            if (!update.Confirmed) return;
+            allowUpdate = true;
+        }
+
+        var result = Plugins.InstallPackage(zipPath, allowUpdate);
+        ShowPluginStatus(result.Outcome switch
+        {
+            PluginInstallOutcome.Installed when result.Plugin!.IsContentPack => Loc.T("Plugins.InstalledContent", result.Plugin.Name, result.Plugin.Version),
+            PluginInstallOutcome.Installed => Loc.T("Plugins.Installed", result.Plugin!.Name, result.Plugin.Version),
+            PluginInstallOutcome.Updated => Loc.T("Plugins.Updated", result.Plugin!.Name, result.Plugin.Version),
+            PluginInstallOutcome.Failed => Loc.T("Plugins.InstallFailed", result.Message),
+            _ => result.Message,
+        });
+    }
+
+    [RelayCommand]
+    private async Task RemovePluginAsync(LoadedPlugin? plugin)
+    {
+        if (Plugins is null || plugin is null) return;
+        var answer = await ShowPluginDialog(new Views.ConfirmationRequest(
+            Loc.T("Plugins.RemoveBody"),
+            Title: Loc.T("Plugins.RemoveTitle", plugin.Name),
+            ConfirmText: Loc.T("Plugins.Remove"),
+            OptionText: Loc.T("Plugins.RemoveDeleteData"),
+            Width: 420));
+        if (!answer.Confirmed) return;
+        var removed = Plugins.Remove(plugin, deleteData: answer.OptionChecked);
+        ShowPluginStatus(removed ? Loc.T("Plugins.Removed", plugin.Name) : Loc.T("Plugins.RemoveFailed", plugin.Directory));
+    }
+
+    [RelayCommand]
+    private void OpenPluginDirectory(LoadedPlugin? plugin)
+    {
+        if (plugin is null) return;
+        PlatformHelper.OpenFolder(plugin.Directory);
+    }
+
+    private void ShowPluginStatus(string text)
+        => TransientStatus.Show(nameof(PluginsStatus), v => PluginsStatus = v, text, TimeSpan.FromSeconds(8));
+
+    private static async Task<string?> PickPluginZipAsync()
+    {
+        if (Avalonia.Application.Current?.ApplicationLifetime is not
+            Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop) return null;
+        if (desktop.MainWindow is not Avalonia.Controls.Window owner) return null;
+        var top = Avalonia.Controls.TopLevel.GetTopLevel(owner);
+        if (top == null) return null;
+        var picks = await top.StorageProvider.OpenFilePickerAsync(new Avalonia.Platform.Storage.FilePickerOpenOptions
+        {
+            Title = Loc.T("Plugins.InstallPickerTitle"),
+            AllowMultiple = false,
+            FileTypeFilter = new[] { new Avalonia.Platform.Storage.FilePickerFileType("Noctis plugin (.zip)") { Patterns = new[] { "*.zip" } } },
+        });
+        return picks.Count > 0 ? picks[0].Path.LocalPath : null;
+    }
+
     public bool IsGeneralTabVisible => IsGeneralTabSelected;
     public bool IsAppearanceTabVisible => IsAppearanceTabSelected;
     public bool IsAudioTabVisible => IsAudioTabSelected;
@@ -482,6 +632,9 @@ public partial class SettingsViewModel : ViewModelBase
     /// <summary>Album pages tinted by the cover's edge colour (Appearance tab). Album
     /// detail view-models watch this and rebuild their background live.</summary>
     [ObservableProperty] private bool _albumPageTintEnabled = true;
+    /// <summary>Percent (0–100) of the cover colour a tinted album page takes on; 100 is the
+    /// full cover colour. Open album pages re-blend live on change.</summary>
+    [ObservableProperty] private int _albumPageTintStrength = AppSettings.AlbumPageTintStrengthDefault;
 
     /// <summary>Persisted name of the now-playing artwork costume ("Cover", "CompactDisc",
     /// "Vinyl", "Cassette"). The Appearance picker binds the Is* flags below, the same
@@ -566,11 +719,17 @@ public partial class SettingsViewModel : ViewModelBase
     }
     private IReadOnlyList<LanguageOption> _languageOptions = BuildLanguageOptions();
 
-    private static IReadOnlyList<LanguageOption> BuildLanguageOptions()
+    private static IReadOnlyList<LanguageOption> BuildLanguageOptions(ContentCatalog? packs = null)
     {
         var list = new List<LanguageOption> { new(Loc.SystemLanguage, Loc.T("Settings.Language.System")) };
         foreach (var code in Loc.Supported)
-            list.Add(new(code, DescribeCulture(code)));
+        {
+            // A language pack names its source: "English (Pseudo) · by Sample Pack".
+            var pack = packs?.FindLanguage(code);
+            var display = pack is null ? DescribeCulture(code)
+                : $"{pack.Name ?? DescribeCulture(code)} · {Loc.T("Plugins.ByPack", pack.PackName)}";
+            list.Add(new(code, display));
+        }
         return list;
     }
 
@@ -606,10 +765,11 @@ public partial class SettingsViewModel : ViewModelBase
         _relabelingLanguages = true;
         try
         {
-            LanguageOptions = BuildLanguageOptions();
+            LanguageOptions = BuildLanguageOptions(PackContent);
             LanguageChoice = LanguageOptions.FirstOrDefault(o => o.Code == code) ?? LanguageOptions[0];
         }
         finally { _relabelingLanguages = false; }
+        RefreshPackItems(); // "by <pack>" labels
         OnPropertyChanged(nameof(SelectedTabTitle));
         OnPropertyChanged(nameof(SelectedTabDescription));
         OnPropertyChanged(nameof(ShowOlderVersionsLabel));
@@ -1160,6 +1320,138 @@ public partial class SettingsViewModel : ViewModelBase
             _webRemotePhoneSeenGeneration++; // cancel any pending quiet-window reset
             WebRemotePhoneSeen = false;
             SetWebRemoteQr(null);
+        }
+    }
+
+    // ── Local API (127.0.0.1 automation, docs/LOCAL-API.md) ──
+
+    private WebRemoteServer? _localApi;
+    private Services.LocalApi.LocalApiTokenStore? _localApiTokens;
+    private Services.LocalApi.LocalApiTokenStore LocalApiTokens =>
+        _localApiTokens ??= new Services.LocalApi.LocalApiTokenStore(_persistence.DataDirectory);
+
+    /// <summary>Loopback automation API for Stream Deck / OBS / scripts. Off by default.</summary>
+    [ObservableProperty] private bool _localApiEnabled;
+
+    /// <summary>Port actually bound while running, else 0.</summary>
+    [ObservableProperty] private int _localApiBoundPort;
+
+    [ObservableProperty] private string _localApiToken = string.Empty;
+
+    /// <summary>The token is masked on the card until revealed (a Settings screenshot
+    /// once leaked the web remote's key on Discord).</summary>
+    [ObservableProperty] private bool _localApiTokenRevealed;
+
+    [ObservableProperty] private bool _localApiTokenCopied;
+
+    /// <summary>Start failure text; empty when fine.</summary>
+    [ObservableProperty] private string _localApiError = string.Empty;
+
+    public bool LocalApiRunning => LocalApiBoundPort > 0;
+    public string LocalApiBaseUrl => LocalApiBoundPort > 0 ? $"http://127.0.0.1:{LocalApiBoundPort}/api/v1" : string.Empty;
+    public string LocalApiTokenDisplay => LocalApiTokenRevealed || LocalApiToken.Length < 8
+        ? LocalApiToken
+        : new string('•', 12) + LocalApiToken[^4..];
+    public string LocalApiDiscoveryPath => LocalApiTokens.FilePath;
+
+    partial void OnLocalApiBoundPortChanged(int value)
+    {
+        OnPropertyChanged(nameof(LocalApiRunning));
+        OnPropertyChanged(nameof(LocalApiBaseUrl));
+    }
+
+    partial void OnLocalApiTokenChanged(string value) => OnPropertyChanged(nameof(LocalApiTokenDisplay));
+    partial void OnLocalApiTokenRevealedChanged(bool value) => OnPropertyChanged(nameof(LocalApiTokenDisplay));
+
+    partial void OnLocalApiEnabledChanged(bool value)
+    {
+        if (_settingsLoaded) _ = SaveAsync();
+        UpdateLocalApiState();
+    }
+
+    private void UpdateLocalApiState()
+    {
+        if (LocalApiEnabled && _player != null)
+        {
+            try
+            {
+                var token = LocalApiTokens.LoadOrCreateToken();
+                _localApi ??= new WebRemoteServer(_player, new LocalApiOptions
+                {
+                    Library = _library,
+                    Persistence = _persistence,
+                    Lyrics = new Services.LocalApi.LyricsViewModelLyricsSource(
+                        () => App.Services?.GetService<MainWindowViewModel>()?.Lyrics),
+                });
+                if (!_localApi.IsRunning)
+                {
+                    try { _localApi.Start(_settings.LocalApiPort, token); }
+                    catch (SocketException) { _localApi.Start(0, token); } // port taken: any free one, recorded in the file
+                }
+                LocalApiTokens.WriteState(token, _localApi.Port, running: true);
+                LocalApiToken = token;
+                LocalApiBoundPort = _localApi.Port;
+                LocalApiError = string.Empty;
+            }
+            catch (Exception ex)
+            {
+                _localApi?.Stop();
+                LocalApiBoundPort = 0;
+                LocalApiError = ex.Message;
+                DebugLogger.Error(DebugLogger.Category.Error, "LocalApi.StartFailed", ex.Message);
+            }
+        }
+        else
+        {
+            StopLocalApi();
+        }
+    }
+
+    /// <summary>Stops the Local API and marks local-api.json as not running (toggle off, app exit).</summary>
+    public void StopLocalApi()
+    {
+        var wasRunning = _localApi?.IsRunning == true;
+        _localApi?.Stop();
+        LocalApiBoundPort = 0;
+        LocalApiTokenRevealed = false;
+        if (wasRunning && LocalApiToken.Length > 0)
+        {
+            try { LocalApiTokens.WriteState(LocalApiToken, port: null, running: false); }
+            catch (Exception ex) { DebugLogger.Error(DebugLogger.Category.Error, "LocalApi.Stop", ex.Message); }
+        }
+    }
+
+    [RelayCommand]
+    private void ToggleLocalApiTokenReveal() => LocalApiTokenRevealed = !LocalApiTokenRevealed;
+
+    [RelayCommand]
+    private async Task CopyLocalApiTokenAsync()
+    {
+        var clipboard = (Avalonia.Application.Current?.ApplicationLifetime
+            as Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime)
+            ?.MainWindow?.Clipboard;
+        if (clipboard is null || LocalApiToken.Length == 0) return;
+        try { await clipboard.SetTextAsync(LocalApiToken); } catch { return; }
+        LocalApiTokenCopied = true;
+        await Task.Delay(1500);
+        LocalApiTokenCopied = false;
+    }
+
+    /// <summary>New token: written to local-api.json and swapped into the running server,
+    /// which drops event streams opened with the old one.</summary>
+    [RelayCommand]
+    private void RegenerateLocalApiToken()
+    {
+        try
+        {
+            var token = LocalApiTokens.Regenerate();
+            _localApi?.SetToken(token);
+            LocalApiToken = token;
+        }
+        catch (Exception ex)
+        {
+            LocalApiError = ex.Message;
+            DebugLogger.Error(DebugLogger.Category.Error, "LocalApi.Regenerate", ex.Message);
         }
     }
     [ObservableProperty] private double _playbackBarBackgroundOpacity = 0.4;
@@ -1735,6 +2027,7 @@ public partial class SettingsViewModel : ViewModelBase
                     AccentHex = t.AccentHex,
                 };
             };
+            app.PackThemeResolver = key => Plugins?.Content.FindTheme(key);
         }
     }
 
@@ -1822,6 +2115,9 @@ public partial class SettingsViewModel : ViewModelBase
         {
             _settings = await _persistence.LoadSettingsAsync();
             ShortcutService.Load(_settings);
+            // Content packs (pure JSON) are read now, ahead of the full plugin load, so a pack
+            // theme or language chosen last session applies from the first frame.
+            Plugins?.PreloadContent();
 
             // Theme — with one-shot migration from the v1 schema where "Dark" denoted today's Gray.
             // Also collapse any prior "MidnightBlack" choice into "Dark" since the two themes
@@ -1871,6 +2167,7 @@ public partial class SettingsViewModel : ViewModelBase
                     SetActiveThemeFlags("__Custom"); // clears all five built-in flags
                 }
             }
+            RestorePackTheme(storedTheme);
 
             // Profile
             ProfileName = _settings.ProfileName ?? string.Empty;
@@ -1927,6 +2224,7 @@ public partial class SettingsViewModel : ViewModelBase
             MiniPlayerAlbumMarqueeEnabled = _settings.MiniPlayerAlbumMarqueeEnabled;
             EnableAnimatedCovers = _settings.EnableAnimatedCovers;
             AlbumPageTintEnabled = _settings.AlbumPageTintEnabled;
+            AlbumPageTintStrength = Math.Clamp(_settings.AlbumPageTintStrength, 0, 100);
             // Round-trip through Parse so a stale/unknown file value normalizes to "Cover".
             NowPlayingArtworkStyle = ArtworkMediums.Parse(_settings.NowPlayingArtworkStyle).ToString();
             CoverFlowLayout = CoverFlowLayouts.Parse(_settings.CoverFlowLayout).ToString();
@@ -1948,6 +2246,7 @@ public partial class SettingsViewModel : ViewModelBase
             LyricsVisualizerEnabled = _settings.LyricsVisualizerEnabled;
             LyricsVisualizerStyle = _settings.LyricsVisualizerStyle;
             LyricsVisualizerArtworkColor = _settings.LyricsVisualizerArtworkColor;
+            LanguageOptions = BuildLanguageOptions(PackContent); // pack languages were preloaded above
             LanguageChoice = LanguageOptions.FirstOrDefault(o => o.Code == (_settings.Language ?? string.Empty)) ?? LanguageOptions[0];
             LyricsBackgroundMediaPath = File.Exists(_settings.LyricsBackgroundMediaPath)
                 ? _settings.LyricsBackgroundMediaPath
@@ -1972,6 +2271,7 @@ public partial class SettingsViewModel : ViewModelBase
             StartMinimizedToTray = _settings.StartMinimizedToTray;
             RestoreLastTrackOnStartup = _settings.RestoreLastTrackOnStartup;
             WebRemoteEnabled = _settings.WebRemoteEnabled;
+            LocalApiEnabled = _settings.LocalApiEnabled;
             NoctisServerPort = _settings.NoctisServerPort;
             NoctisServerEnabled = _settings.NoctisServerEnabled;
             ShowArtworkColumn = _settings.ShowArtworkColumn;
@@ -2241,6 +2541,15 @@ public partial class SettingsViewModel : ViewModelBase
         nameof(AppSettings.MiniPlayerHeight),
         nameof(AppSettings.MiniPlayerX),
         nameof(AppSettings.MiniPlayerY),
+        // Also written straight onto _settings by the mini player (SetMiniPlayerPinned).
+        nameof(AppSettings.MiniPlayerPinned),
+        // Written straight onto _settings by the plugin host (enable/disable, approvals,
+        // plugin settings, the community-plugins switch). Pulling them back from disk
+        // before the save undid every plugin toggle.
+        nameof(AppSettings.DisabledPlugins),
+        nameof(AppSettings.CommunityPluginsEnabled),
+        nameof(AppSettings.PluginPermissionGrants),
+        nameof(AppSettings.PluginSettingValues),
     };
 
     private async Task MergeExternalSettingChangesAsync()
@@ -2278,6 +2587,7 @@ public partial class SettingsViewModel : ViewModelBase
         else _settings.Theme = "System";
 
         if (!string.IsNullOrEmpty(ActiveCustomThemeId)) _settings.Theme = "Custom:" + ActiveCustomThemeId;
+        else if (!string.IsNullOrEmpty(ActivePackThemeKey)) _settings.Theme = App.PackThemePrefix + ActivePackThemeKey;
 
         _settings.CustomThemes = CustomThemes.Select(t => new CustomThemeDefinition
         {
@@ -2347,6 +2657,7 @@ public partial class SettingsViewModel : ViewModelBase
         _settings.MiniPlayerAlbumMarqueeEnabled = MiniPlayerAlbumMarqueeEnabled;
         _settings.EnableAnimatedCovers = EnableAnimatedCovers;
         _settings.AlbumPageTintEnabled = AlbumPageTintEnabled;
+        _settings.AlbumPageTintStrength = AlbumPageTintStrength;
         _settings.NowPlayingArtworkStyle = NowPlayingArtworkStyle ?? ArtworkMediums.DefaultSetting;
         _settings.CoverFlowLayout = CoverFlowLayout ?? CoverFlowLayouts.DefaultSetting;
         _settings.MiniPlayerStyle = MiniPlayerStyle ?? MiniPlayerStyles.DefaultSetting;
@@ -2382,6 +2693,7 @@ public partial class SettingsViewModel : ViewModelBase
         _settings.StartMinimizedToTray = StartMinimizedToTray;
         _settings.RestoreLastTrackOnStartup = RestoreLastTrackOnStartup;
         _settings.WebRemoteEnabled = WebRemoteEnabled;
+        _settings.LocalApiEnabled = LocalApiEnabled;
         _settings.NoctisServerEnabled = NoctisServerEnabled;
         _settings.NoctisServerPort = NoctisServerPort;
         _settings.ShowArtworkColumn = ShowArtworkColumn;
@@ -2537,6 +2849,17 @@ public partial class SettingsViewModel : ViewModelBase
     /// trailing write. See <see cref="ProcessOwnedPlacementKeys"/> for why these survive
     /// the on-disk merge.
     /// </summary>
+    /// <summary>The mini player's pin, persisted like its placement (see
+    /// <see cref="ProcessOwnedPlacementKeys"/>): the window owns it, no Settings page does.</summary>
+    public bool MiniPlayerPinned => _settings.MiniPlayerPinned;
+
+    public void SetMiniPlayerPinned(bool pinned)
+    {
+        if (_settings.MiniPlayerPinned == pinned) return;
+        _settings.MiniPlayerPinned = pinned;
+        QueueSettingsSave();
+    }
+
     /// <summary>Position only: the mini player's stored SIZE is the classic card's and
     /// must survive a fixed design (whose canonical size is not the user's).</summary>
     public void SetMiniPlayerPosition(double x, double y)
@@ -2875,6 +3198,8 @@ public partial class SettingsViewModel : ViewModelBase
 
         foreach (var t in CustomThemes) t.IsActive = t.Id == id;
         ActiveCustomThemeId = id;
+        ActivePackThemeKey = null;
+        foreach (var t in PackThemes) t.IsActive = false;
         SetActiveThemeFlags("__Custom");
 
         ApplyAccent(tile.AccentHex, "Custom");
@@ -3073,6 +3398,9 @@ public partial class SettingsViewModel : ViewModelBase
         ActiveCustomThemeId = null;
         foreach (var t in CustomThemes)
             t.IsActive = false;
+        ActivePackThemeKey = null;
+        foreach (var t in PackThemes)
+            t.IsActive = false;
 
         SetActiveThemeFlags(themeKey);
         ThemeChanged?.Invoke(this, ResolveActiveThemeKey());
@@ -3114,6 +3442,7 @@ public partial class SettingsViewModel : ViewModelBase
     private string ResolveActiveThemeKey()
     {
         if (!string.IsNullOrEmpty(ActiveCustomThemeId)) return "Custom:" + ActiveCustomThemeId;
+        if (!string.IsNullOrEmpty(ActivePackThemeKey)) return App.PackThemePrefix + ActivePackThemeKey;
         if (IsLightTheme) return "Light";
         if (IsDarkTheme) return "Dark";
         if (IsMidnightTheme) return "Midnight";
@@ -3545,6 +3874,12 @@ public partial class SettingsViewModel : ViewModelBase
         if (_settingsLoaded) _ = SaveAsync();
     }
 
+    partial void OnAlbumPageTintStrengthChanged(int value)
+    {
+        // Same as the toggle: open album pages watch this VM and re-blend their tint.
+        if (_settingsLoaded) _ = SaveAsync();
+    }
+
     partial void OnLyricsBackgroundMediaPathChanged(string value)
     {
         ApplyPlayerSettings();
@@ -3781,13 +4116,33 @@ public partial class SettingsViewModel : ViewModelBase
 
     partial void OnPluginsChanged(PluginHost? oldValue, PluginHost? newValue)
     {
-        if (oldValue is not null) oldValue.VisualLayersChanged -= OnPluginVisualLayersChanged;
-        if (newValue is not null) newValue.VisualLayersChanged += OnPluginVisualLayersChanged;
+        if (oldValue is not null)
+        {
+            oldValue.VisualLayersChanged -= OnPluginVisualLayersChanged;
+            oldValue.CommunityPluginsChanged -= OnCommunityPluginsChanged;
+            oldValue.Content.Changed -= OnPluginContentChanged;
+            oldValue.ConfirmEnable = null;
+        }
+        if (newValue is not null)
+        {
+            newValue.VisualLayersChanged += OnPluginVisualLayersChanged;
+            newValue.CommunityPluginsChanged += OnCommunityPluginsChanged;
+            newValue.Content.Changed += OnPluginContentChanged;
+            newValue.ConfirmEnable = ConfirmEnablePluginAsync;
+        }
+        SyncCommunityPluginsSwitch();
         RefreshFlowingStyleOptions();
     }
 
+    private void OnCommunityPluginsChanged(object? sender, EventArgs e) => SyncCommunityPluginsSwitch();
+
     private void OnPluginVisualLayersChanged(object? sender, EventArgs e)
-        => Dispatcher.UIThread.Post(RefreshFlowingStyleOptions);
+        => Dispatcher.UIThread.Post(() =>
+        {
+            RefreshFlowingStyleOptions();
+            // LoadAll also settles the community-plugins default on first run.
+            SyncCommunityPluginsSwitch();
+        });
 
     private void RefreshFlowingStyleOptions()
     {
@@ -5430,6 +5785,8 @@ public partial class SettingsViewModel : ViewModelBase
             // and SyncToSettings wrote it straight back — the reset visibly undid itself.
             ActiveCustomThemeId = null;
             CustomThemes.Clear();
+            ActivePackThemeKey = null;
+            foreach (var t in PackThemes) t.IsActive = false;
             SetActiveThemeFlags("Gray");
 
             // Accent colour — reset to default (Crimson)
@@ -5462,12 +5819,14 @@ public partial class SettingsViewModel : ViewModelBase
             StartMinimizedToTray = defaultSettings.StartMinimizedToTray;
             RestoreLastTrackOnStartup = defaultSettings.RestoreLastTrackOnStartup;
             WebRemoteEnabled = defaultSettings.WebRemoteEnabled;
+            LocalApiEnabled = defaultSettings.LocalApiEnabled;
             CollapseAlbumEditions = defaultSettings.CollapseAlbumEditions;
             MergeFeaturedFromTitles = defaultSettings.MergeFeaturedFromTitles;
             ArtistGroupMode = defaultSettings.ArtistGroupMode;
             ReplaceArtistTagSeparators(defaultSettings.ArtistTagSeparators);
             EnableAnimatedCovers = defaultSettings.EnableAnimatedCovers;
             AlbumPageTintEnabled = defaultSettings.AlbumPageTintEnabled;
+            AlbumPageTintStrength = defaultSettings.AlbumPageTintStrength;
             HomeShowHeavyRotation = defaultSettings.HomeShowHeavyRotation;
             NowPlayingArtworkStyle = defaultSettings.NowPlayingArtworkStyle;
             CoverFlowLayout = defaultSettings.CoverFlowLayout;
