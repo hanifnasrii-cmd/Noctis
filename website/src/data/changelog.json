@@ -1,6 +1,68 @@
 {
   "releases": [
     {
+      "tag": "v1.5.3",
+      "version": "1.5.3",
+      "name": "v1.5.3",
+      "publishedAt": "2026-09-25T00:40:15Z",
+      "url": "https://github.com/heartached/Noctis/releases/tag/v1.5.3",
+      "prerelease": false,
+      "sections": [
+        {
+          "title": "New Features",
+          "items": [
+            "Added rectangle selection in queue popup",
+            "Added Date Modified sort (Songs, Albums, Playlists, Folders)",
+            "Added Ctrl+U shortcut to show/hide queue",
+            "Added Clickable individual artists in player island credits",
+            "Added Waveform seek bar (player bar and mini player)",
+            "Added Idle queue pill setting (off by default)",
+            "Added EQ on/off switch (Settings, player bar, mini player)",
+            "Added EQ preset save/delete",
+            "Added Per-song EQ preset selection in metadata editor",
+            "Added Hover buttons on Other Versions/More By tiles"
+          ]
+        },
+        {
+          "title": "Improvements",
+          "items": [
+            "Improved sidebar selected item styling (accent pill)",
+            "Improved search box open/close animation",
+            "Improved animated cover performance (shared decoder, ~520MB vs 3.7GB)",
+            "Improved album cover thumbnail caching (88ms → 2.3ms load)",
+            "Improved artist page Songs list virtualization",
+            "Improved memory usage (menu icon caching, log batching, cache limits)",
+            "Improved About page update status display",
+            "Improved audio signal-path readout (shows EQ off/preset name)"
+          ]
+        },
+        {
+          "title": "Bug Fixes",
+          "items": [
+            "Fixed dropped files lost after restart (queue now restores them)",
+            "Fixed orphan database rows from dropped files",
+            "Fixed removing last folder emptying library incorrectly",
+            "Fixed page behind Settings not updating on library change",
+            "Fixed Songs page empty or stale after folder changes",
+            "Fixed audio cutting out mid-track on slow drives",
+            "Fixed Previous button skipping two songs back",
+            "Fixed Linux window blank after sleep (Wayland/NVIDIA)",
+            "Fixed mini player tooltip placement swallowing first click",
+            "Fixed animated artwork high RAM/CPU usage",
+            "Fixed artist page freeze and black flashing covers",
+            "Fixed audio stalls caused by logging on playback thread",
+            "Fixed Liquid Glass redrawing every frame unnecessarily",
+            "Fixed Plugins Install from File hover color",
+            "Fixed EQ preset applying even when EQ turned off",
+            "Fixed volume change when leaving a built-in EQ preset",
+            "Fixed EQ preset returning after stop/restart with EQ off",
+            "Fixed duplicate preset names differing only by capitalization",
+            "Fixed white flicker on Wine when clicking a track"
+          ]
+        }
+      ]
+    },
+    {
       "tag": "v1.5.2",
       "version": "1.5.2",
       "name": "v1.5.2",
@@ -2664,6 +2726,6 @@
       "sections": []
     }
   ],
-  "updatedAt": "2026-09-23T02:22:28.181Z",
+  "updatedAt": "2026-09-25T00:40:31.808Z",
   "degraded": false
 }
