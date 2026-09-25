@@ -1671,7 +1671,7 @@ public partial class MainWindow : Window
     /// back Maximized instead of Normal.</summary>
     private WindowState _preFullScreenState = WindowState.Normal;
 
-    private void ToggleFullScreen()
+    internal void ToggleFullScreen()
     {
         if (WindowState == WindowState.FullScreen)
         {

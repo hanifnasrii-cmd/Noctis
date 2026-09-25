@@ -1441,6 +1441,11 @@ public partial class PlaybackBarView : UserControl
             mainVm.ToggleLyricsCommand.Execute(null);
     }
 
+    private void OnImmersiveLyricsButtonClick(object? sender, RoutedEventArgs e)
+    {
+        this.FindLogicalAncestorOfType<MainWindow>()?.ToggleFullScreen();
+    }
+
     private void OnLyricsPanelButtonClick(object? sender, RoutedEventArgs e)
     {
         var mainWindow = this.FindLogicalAncestorOfType<MainWindow>();

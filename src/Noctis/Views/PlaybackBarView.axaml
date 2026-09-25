@@ -11,6 +11,7 @@
              Background="Transparent">
 
     <UserControl.Resources>
+        <StreamGeometry x:Key="ImmersiveIcon">M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M21 16v3a2 2 0 0 1-2 2h-3M3 16v3a2 2 0 0 0 2 2h3</StreamGeometry>
         <conv:TrackDisplayTitleConverter x:Key="DisplayTitle" />
         <conv:TrackArtistConverter x:Key="DisplayArtist" />
         <conv:BoolToOpacityConverter x:Key="BoolToOpacity" />
@@ -1519,6 +1520,7 @@
                     <Button Classes="secondary-btn"
                             Click="OnLyricsButtonClick"
                             ToolTip.Tip="{loc:T PlaybackBar.LyricsTip}"
+                            IsVisible="{Binding !IsLyricsPageActive}"
                             Width="34" Height="34">
                         <Border Width="16" Height="16"
                                 Background="{DynamicResource IslandIconFill}"
@@ -1527,6 +1529,22 @@
                                 <ImageBrush Source="avares://Noctis.UI/Assets/Icons/Lyrics%20ICON.png" Stretch="Uniform" />
                             </Border.OpacityMask>
                         </Border>
+                    </Button>
+
+                    <!-- On the lyrics page this reuses the lyrics slot as the immersive
+                         toggle, keeping the island width and control rhythm unchanged. -->
+                    <Button Classes="secondary-btn"
+                            Click="OnImmersiveLyricsButtonClick"
+                            ToolTip.Tip="Immersive lyrics"
+                            IsVisible="{Binding IsLyricsPageActive}"
+                            Width="34" Height="34">
+                        <Viewbox Width="16" Height="16">
+                            <Path Data="{StaticResource ImmersiveIcon}"
+                                  Stroke="{DynamicResource IslandIconFill}"
+                                  StrokeThickness="1.8"
+                                  StrokeLineCap="Round"
+                                  StrokeJoin="Round" />
+                        </Viewbox>
                     </Button>
 
                     <!-- Queue button -->
