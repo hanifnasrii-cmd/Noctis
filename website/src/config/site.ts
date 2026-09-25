@@ -35,6 +35,13 @@ export const links = {
   discord: 'https://discord.com/invite/BNCDZQUVx7',
   support: 'https://buymeacoffee.com/heartached',
   scoopBucket: `https://github.com/${REPO_OWNER}/scoop-bucket`,
+  /** Plugin system docs (v1.5.3+). They live in the app repo beside the code
+      they describe, so they are versioned with it. */
+  pluginDocs: `https://github.com/${REPO}/blob/main/docs/PLUGINS.md`,
+  contentPackDocs: `https://github.com/${REPO}/blob/main/docs/PLUGINS.md#content-packs`,
+  localApiDocs: `https://github.com/${REPO}/blob/main/docs/LOCAL-API.md`,
+  samples: `https://github.com/${REPO}/tree/main/samples`,
+  crowdin: 'https://crowdin.com/project/noctis',
 } as const;
 
 export const platforms = {

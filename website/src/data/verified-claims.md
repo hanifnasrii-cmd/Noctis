@@ -60,6 +60,53 @@ Dark, Gray, Midnight, Light, System — plus a custom theme editor.
 Verified: no telemetry, analytics SDK, crash reporter, session beacon, or device
 identifier anywhere in the source or package list.
 
+**Plugins (v1.5.3+)**
+Source: `docs/PLUGINS.md`, `docs/LOCAL-API.md` and the plugin host in the app.
+- The plugin system ships in Noctis 1.5.3. Plugin API ("kit") version 1.1,
+  package `Noctis.Plugins.Abstractions`. Desktop only (Windows, macOS, Linux);
+  Android does not load plugins.
+- Three ways to extend, safest first: content packs (JSON, no code), the Local
+  API (other apps talk to Noctis over HTTP, nothing runs inside Noctis),
+  plugins (.NET code inside Noctis, `type: "dotnet"`, targets `net10.0`).
+- Everything is in Settings → Plugins: Install from file…, Community plugins
+  switch, per-plugin switch, Remove (optionally "Also delete its data and
+  settings"), Open plugins folder, Reload plugins, declared plugin settings.
+- A code plugin installs switched off. Switching it on shows its permissions
+  for approval. An update keeps data and settings and asks again only for new
+  permissions (the plugin waits in **Needs approval** until switched on again).
+- Permissions: `playback.control`, `library.read`, `network` (disclosure),
+  `lyrics.provider`, `menu.commands`, `notifications`. Reading playback, audio
+  taps, visual layers, the scrobble hook, settings and storage need none.
+- Not possible yet: writing tags or the library, editing the queue, new pages
+  or sidebar entries.
+- Code plugins run with full trust; .NET has no in-process sandbox.
+  Permissions gate only the Noctis API. Each plugin gets its own load context,
+  for stability, not security.
+- Restricted mode (Community plugins off, no third-party code loaded) is the
+  default on new installs. Installs that had plugins before 1.5.3 start with
+  it on.
+- An exception, or a UI callback holding the app over 1 second, marks the
+  plugin **Failed** and stops it. Lyrics sources are time-boxed to 8 seconds.
+  Disabling or removing a plugin removes everything it registered.
+- Zip checks: plugin.json must parse, entry DLL present, at most 2000 files /
+  256 MB, any path-escaping entry rejects the whole file.
+- Content packs: themes (Settings → Appearance → Themes, "by <pack>"), lyrics
+  presets (Settings → Lyrics → Style presets → Apply, one-time copy), languages
+  (Settings → General → Language, English fallback). On at install, no
+  approval, work in restricted mode. Allowed files `.json .md .txt .png .jpg
+  .jpeg .webp` (plus LICENSE/README-style files); anything else refuses the
+  pack. Limits 200 files, 2 MB per file, 20 MB per pack. Themes: `base`
+  dark/light, optional `accent`, optional colours for 38 keys.
+- Local API: HTTP + JSON on 127.0.0.1 only, default port 9421, routes under
+  `/api/v1`, off by default (Settings → Account & Devices → Local API). Token
+  in `local-api.json` in the data folder (`%APPDATA%\Noctis`,
+  `~/.config/Noctis`), sent as `Authorization: Bearer` or `?token=`. 256-bit
+  token, lockout after 10 bad attempts a minute, DNS-rebinding protection,
+  Regenerate token. Server-Sent Events stream. Samples: OBS overlay,
+  PowerShell, curl.
+- Compatibility: a different API major version is refused; minor versions
+  only add; deprecations get at least one minor release and three months.
+
 ---
 
 ## Do NOT claim
@@ -85,6 +132,11 @@ identifier anywhere in the source or package list.
 | Exclusive / hog-mode output on macOS or Linux | Gated to Windows and forced off elsewhere. |
 | "Nothing ever leaves your machine" | The app contacts GitHub (update check) and Deezer (artist portraits) automatically. Use the approved privacy wording above. |
 | Word-by-word lyrics for every song | Only when the source supplies word timing. |
+| An in-app plugin store or directory | Not built. Plugins are shared as zips (GitHub releases, Discord); a public index is only planned. |
+| Sandboxed or "safe" code plugins | Code plugins run with full trust. Permissions are a summary, not a sandbox. |
+| Plugins on Android or iOS | Desktop only. Android does not load plugins. |
+| The plugin SDK on NuGet | `Noctis.Plugins.Abstractions` is built from the repo for now; say "coming to NuGet". |
+| Visualizer presets as a content-pack kind | Visualizer settings live inside lyrics presets. |
 
 ---
 
