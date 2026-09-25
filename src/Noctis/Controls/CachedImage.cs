@@ -336,8 +336,12 @@ public class CachedImage : Image
         // Add-to-Playlist thumbnails. When that bitmap is at least as wide as we need
         // (and not absurdly wider) it IS the result: no second decode, no second copy.
         // This is safe for recycled list containers: the fallback is the NEW item's art.
+        // Single-cover surfaces (ClearOnSourceChange off: the lyrics page, player, mini
+        // player) take it only when it is big enough. Their cache is usually a 128-384px
+        // tile decode, which stretched to a ~1000px cover showed blurry for the length of
+        // the full decode and then snapped sharp. The previous cover stays up instead.
         var fallback = ArtworkCache.TryGetAnyWidth(path, decodeWidth, out var sufficient);
-        if (fallback != null)
+        if (fallback != null && (sufficient || ClearOnSourceChange || fallback.PixelSize.Width >= decodeWidth))
         {
             SetSource(fallback);
             if (sufficient) return;
