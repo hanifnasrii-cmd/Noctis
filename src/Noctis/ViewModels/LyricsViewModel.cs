@@ -2460,12 +2460,14 @@ public partial class LyricsViewModel : ViewModelBase, IDisposable
                                  && !hasSyncedField
                                  && track.Lyrics.Contains('[')
                                  && LrcTimestampRegex().IsMatch(track.Lyrics);
+        var plainIsActuallyTtml = hasPlainField && TtmlParser.LooksLikeTtml(track.Lyrics);
 
         DebugLogger.Info(DebugLogger.Category.Lyrics, "Source:Embedded",
             $"synced={hasSyncedField}, plain={hasPlainField}, lrcInPlain={plainIsActuallyLrc}");
 
         var syncedSource = hasSyncedField ? track.SyncedLyrics
                          : plainIsActuallyLrc ? track.Lyrics
+                         : plainIsActuallyTtml ? track.Lyrics
                          : null;
 
         // Build first, fill once below (FillLyricCollections) — a null fill leaves
@@ -2508,7 +2510,7 @@ public partial class LyricsViewModel : ViewModelBase, IDisposable
             };
         }
 
-        if (hasPlainField && !plainIsActuallyLrc)
+        if (hasPlainField && !plainIsActuallyLrc && !plainIsActuallyTtml)
         {
             var split = SplitPlainLyrics(track.Lyrics);
             if (!hasSyncedField)

@@ -1900,7 +1900,7 @@ public partial class MetadataViewModel : ViewModelBase
             AllowMultiple = false,
             FileTypeFilter = new[]
             {
-                new FilePickerFileType("Lyrics") { Patterns = new[] { "*.lrc", "*.txt" } },
+                new FilePickerFileType("Lyrics") { Patterns = new[] { "*.lrc", "*.elrc", "*.ttml", "*.txt" } },
                 new FilePickerFileType("All files") { Patterns = new[] { "*" } }
             }
         });
@@ -1938,7 +1938,16 @@ public partial class MetadataViewModel : ViewModelBase
             return;
         }
 
-        if (LyricsTextHelper.ContainsTimestamps(normalized))
+        if (TtmlParser.LooksLikeTtml(normalized))
+        {
+            SyncedLyrics = normalized;
+            HasCustomSyncedLyrics = true;
+            SyncedLyricsSearchStatus = $"Imported {fileName}";
+            SyncedLyricLines.Clear();
+            HasSyncedLines = false;
+            HasWordTimedLines = true;
+        }
+        else if (LyricsTextHelper.ContainsTimestamps(normalized))
         {
             SyncedLyrics = normalized;
             HasCustomSyncedLyrics = true;
@@ -2328,7 +2337,8 @@ public partial class MetadataViewModel : ViewModelBase
         var plainToWrite = HasCustomLyrics
             ? (LyricsTextHelper.ContainsTimestamps(Lyrics) ? LyricsTextHelper.StripTimestamps(Lyrics) : Lyrics)
             : string.Empty;
-        var syncedToWrite = HasCustomSyncedLyrics && LyricsTextHelper.ContainsTimestamps(SyncedLyrics)
+        var syncedToWrite = HasCustomSyncedLyrics
+            && (LyricsTextHelper.ContainsTimestamps(SyncedLyrics) || TtmlParser.LooksLikeTtml(SyncedLyrics))
             ? SyncedLyrics
             : string.Empty;
         _track.Lyrics = plainToWrite;
