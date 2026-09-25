@@ -1,7 +1,7 @@
 {
-  "total": 9973,
+  "total": 9979,
   "byRelease": {
-    "v1.5.3": 8,
+    "v1.5.3": 12,
     "v1.5.2": 266,
     "v1.5.1": 169,
     "v1.5.0": 170,
@@ -9,7 +9,7 @@
     "v1.4.6": 199,
     "v1.4.5": 145,
     "v1.4.4": 206,
-    "v1.4.3": 297,
+    "v1.4.3": 299,
     "v1.4.2": 162,
     "v1.4.1": 207,
     "v1.4.0": 205,
@@ -66,7 +66,7 @@
       "name": "Noctis-v1.5.3-Setup.exe",
       "url": "https://github.com/heartached/Noctis/releases/download/v1.5.3/Noctis-v1.5.3-Setup.exe",
       "size": 151734075,
-      "downloads": 5
+      "downloads": 8
     },
     "windowsPortable": {
       "name": "Noctis-windows-x64.zip",
@@ -108,7 +108,7 @@
       "name": "SHA256SUMS",
       "url": "https://github.com/heartached/Noctis/releases/download/v1.5.3/SHA256SUMS",
       "size": 1001,
-      "downloads": 1
+      "downloads": 2
     }
   },
   "sizes": {
@@ -121,6 +121,6 @@
     "linuxTar": "147 MB",
     "checksums": "0 MB"
   },
-  "updatedAt": "2026-09-25T01:02:26.922Z",
+  "updatedAt": "2026-09-25T01:27:35.862Z",
   "degraded": false
 }
