@@ -1,15 +1,16 @@
 {
-  "total": 9979,
+  "total": 9994,
   "byRelease": {
-    "v1.5.3": 12,
+    "v1.5.4": 0,
+    "v1.5.3": 25,
     "v1.5.2": 266,
     "v1.5.1": 169,
-    "v1.5.0": 170,
+    "v1.5.0": 171,
     "v1.4.7": 1371,
     "v1.4.6": 199,
     "v1.4.5": 145,
     "v1.4.4": 206,
-    "v1.4.3": 299,
+    "v1.4.3": 300,
     "v1.4.2": 162,
     "v1.4.1": 207,
     "v1.4.0": 205,
@@ -54,73 +55,73 @@
     "v1.0.1": 22,
     "v1.0.0": 11
   },
-  "latestVersion": "1.5.3",
-  "latestTag": "v1.5.3",
-  "latestUrl": "https://github.com/heartached/Noctis/releases/tag/v1.5.3",
-  "publishedAt": "2026-09-25T00:40:15Z",
-  "releaseCount": 52,
-  "stars": 230,
+  "latestVersion": "1.5.4",
+  "latestTag": "v1.5.4",
+  "latestUrl": "https://github.com/heartached/Noctis/releases/tag/v1.5.4",
+  "publishedAt": "2026-09-25T02:20:44Z",
+  "releaseCount": 53,
+  "stars": 232,
   "openIssues": 12,
   "assets": {
     "windowsInstaller": {
-      "name": "Noctis-v1.5.3-Setup.exe",
-      "url": "https://github.com/heartached/Noctis/releases/download/v1.5.3/Noctis-v1.5.3-Setup.exe",
-      "size": 151734075,
-      "downloads": 8
+      "name": "Noctis-v1.5.4-Setup.exe",
+      "url": "https://github.com/heartached/Noctis/releases/download/v1.5.4/Noctis-v1.5.4-Setup.exe",
+      "size": 151735239,
+      "downloads": 0
     },
     "windowsPortable": {
       "name": "Noctis-windows-x64.zip",
-      "url": "https://github.com/heartached/Noctis/releases/download/v1.5.3/Noctis-windows-x64.zip",
-      "size": 272530060,
-      "downloads": 1
+      "url": "https://github.com/heartached/Noctis/releases/download/v1.5.4/Noctis-windows-x64.zip",
+      "size": 271244381,
+      "downloads": 0
     },
     "macosArm": {
       "name": "Noctis-osx-arm64.dmg",
-      "url": "https://github.com/heartached/Noctis/releases/download/v1.5.3/Noctis-osx-arm64.dmg",
-      "size": 205361880,
+      "url": "https://github.com/heartached/Noctis/releases/download/v1.5.4/Noctis-osx-arm64.dmg",
+      "size": 206441097,
       "downloads": 0
     },
     "macosIntel": {
       "name": "Noctis-osx-x64.dmg",
-      "url": "https://github.com/heartached/Noctis/releases/download/v1.5.3/Noctis-osx-x64.dmg",
-      "size": 209146441,
-      "downloads": 1
+      "url": "https://github.com/heartached/Noctis/releases/download/v1.5.4/Noctis-osx-x64.dmg",
+      "size": 209459226,
+      "downloads": 0
     },
     "linuxAppImage": {
       "name": "Noctis-x86_64.AppImage",
-      "url": "https://github.com/heartached/Noctis/releases/download/v1.5.3/Noctis-x86_64.AppImage",
-      "size": 213051896,
+      "url": "https://github.com/heartached/Noctis/releases/download/v1.5.4/Noctis-x86_64.AppImage",
+      "size": 213055992,
       "downloads": 0
     },
     "linuxArm": {
       "name": "Noctis-linux-arm64.tar.gz",
-      "url": "https://github.com/heartached/Noctis/releases/download/v1.5.3/Noctis-linux-arm64.tar.gz",
-      "size": 143035633,
+      "url": "https://github.com/heartached/Noctis/releases/download/v1.5.4/Noctis-linux-arm64.tar.gz",
+      "size": 143047568,
       "downloads": 0
     },
     "linuxTar": {
       "name": "Noctis-linux-x64.tar.gz",
-      "url": "https://github.com/heartached/Noctis/releases/download/v1.5.3/Noctis-linux-x64.tar.gz",
-      "size": 154409946,
+      "url": "https://github.com/heartached/Noctis/releases/download/v1.5.4/Noctis-linux-x64.tar.gz",
+      "size": 154416481,
       "downloads": 0
     },
     "checksums": {
       "name": "SHA256SUMS",
-      "url": "https://github.com/heartached/Noctis/releases/download/v1.5.3/SHA256SUMS",
-      "size": 1001,
-      "downloads": 2
+      "url": "https://github.com/heartached/Noctis/releases/download/v1.5.4/SHA256SUMS",
+      "size": 990,
+      "downloads": 0
     }
   },
   "sizes": {
     "windowsInstaller": "145 MB",
-    "windowsPortable": "260 MB",
-    "macosArm": "196 MB",
-    "macosIntel": "199 MB",
+    "windowsPortable": "259 MB",
+    "macosArm": "197 MB",
+    "macosIntel": "200 MB",
     "linuxAppImage": "203 MB",
     "linuxArm": "136 MB",
     "linuxTar": "147 MB",
     "checksums": "0 MB"
   },
-  "updatedAt": "2026-09-25T01:27:35.862Z",
+  "updatedAt": "2026-09-25T02:20:58.019Z",
   "degraded": false
 }
