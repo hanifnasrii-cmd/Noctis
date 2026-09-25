@@ -2475,7 +2475,22 @@ public partial class LyricsViewModel : ViewModelBase, IDisposable
 
         if (!string.IsNullOrWhiteSpace(syncedSource))
         {
-            var parsedLines = ParseLrcContent(syncedSource);
+            List<LyricLine> parsedLines;
+            string? parsedPlain = null;
+            if (TtmlParser.LooksLikeTtml(syncedSource))
+            {
+                var (ttmlLines, ttmlPlain) = TtmlParser.Parse(
+                    syncedSource,
+                    _player.LyricsJoinSplitWords,
+                    Localization.Loc.Instance.Culture.Name);
+                parsedLines = ttmlLines ?? new List<LyricLine>();
+                parsedPlain = ttmlPlain;
+            }
+            else
+            {
+                parsedLines = ParseLrcContent(syncedSource);
+            }
+
             _hasSyncedLyrics = parsedLines.Any(l => l.IsSynced);
             IsSynced = _hasSyncedLyrics;
             HasSyncedLyricsAvailable = _hasSyncedLyrics;
@@ -2484,7 +2499,13 @@ public partial class LyricsViewModel : ViewModelBase, IDisposable
                 InsertIntroPlaceholderIfNeeded(parsedLines);
 
             syncedLines = parsedLines;
-            fillUnsynced = () => PopulateUnsyncedLines(parsedLines);
+            fillUnsynced = () =>
+            {
+                if (!string.IsNullOrWhiteSpace(parsedPlain))
+                    PopulateUnsyncedFromPlainText(parsedPlain);
+                else
+                    PopulateUnsyncedLines(parsedLines);
+            };
         }
 
         if (hasPlainField && !plainIsActuallyLrc)
