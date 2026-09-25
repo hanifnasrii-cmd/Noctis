@@ -2,11 +2,6 @@
    Base — reset, typography, primitives
    ========================================================================== */
 
-:root {
-  /* Fixed-position film grain. Without it, flat black reads as cheap. */
-  --grain-url: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-}
-
 *,
 *::before,
 *::after {
@@ -231,22 +226,6 @@ a {
 .section {
   padding-block: var(--section-pad);
   position: relative;
-}
-
-/* ==========================================================================
-   Grain — what stops flat black looking cheap
-   ========================================================================== */
-
-.grain {
-  position: fixed;
-  inset: 0;
-  z-index: 1;
-  pointer-events: none;
-  opacity: var(--grain-opacity);
-  mix-blend-mode: overlay;
-  background-image: var(--grain-url);
-  background-size: 180px 180px;
-  transition: opacity var(--t-base) var(--ease);
 }
 
 /* ==========================================================================

@@ -86,9 +86,10 @@ const TOTAL = (lines.length * STEP).toFixed(1);
     padding: clamp(1.75rem, 4vw, 3rem);
     border: 1px solid var(--line);
     border-radius: var(--r-card);
+    /* No backdrop-filter: the panel sits on the flat page colour, so a blur
+       had nothing to soften and cost a re-blur on every frame of the lyric
+       loop. */
     background: color-mix(in srgb, var(--bg-1) 82%, transparent);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
     box-shadow: var(--shadow-card);
   }
 

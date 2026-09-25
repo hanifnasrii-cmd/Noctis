@@ -20,6 +20,12 @@
 /changelog/
   Cache-Control: public, max-age=0, must-revalidate
 
+/plugins
+  Cache-Control: public, max-age=0, must-revalidate
+
+/plugins/
+  Cache-Control: public, max-age=0, must-revalidate
+
 /og
   Cache-Control: public, max-age=0, must-revalidate
   X-Robots-Tag: noindex, nofollow
