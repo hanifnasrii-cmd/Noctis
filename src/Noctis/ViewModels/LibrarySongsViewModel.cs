@@ -89,6 +89,7 @@ public partial class LibrarySongsViewModel : ViewModelBase, ISearchable, IDispos
         _libraryUpdatedHandler = (_, _) =>
         {
             _isDirty = true;
+            Noctis.Services.DebugLog.Write("Songs", $"LibraryUpdated active={_isActive} library={_library.Tracks.Count} shown={FilteredTracks.Count}");
             if (_isActive)
                 Dispatcher.UIThread.Post(Refresh);
         };
@@ -458,11 +459,19 @@ public partial class LibrarySongsViewModel : ViewModelBase, ISearchable, IDispos
             _viewArtistAction?.Invoke(artistName);
     }
 
+    /// <summary>A library reload was requested and hasn't landed yet (see ApplyFilterAndSort).</summary>
+    private bool _reloadPending;
+
     private async void ApplyFilterAndSort(bool refreshFromLibrary = false)
     {
         try
         {
             var generation = Interlocked.Increment(ref _filterGeneration);
+            // A sort/filter request that supersedes a library reload must reload too:
+            // otherwise it sorts the pre-reload _allTracks and the reload is lost until
+            // some later LibraryUpdated.
+            refreshFromLibrary |= _reloadPending;
+            if (refreshFromLibrary) _reloadPending = true;
 
             // Capture all state needed for filtering/sorting
             var filter = _currentFilter;
@@ -488,13 +497,22 @@ public partial class LibrarySongsViewModel : ViewModelBase, ISearchable, IDispos
             // captured the pre-reload _allTracks snapshot.
             if (generation != _filterGeneration)
             {
-                if (refreshFromLibrary) _isDirty = true;
+                if (refreshFromLibrary)
+                {
+                    _isDirty = true;
+                    Noctis.Services.DebugLog.Write("Songs", $"Reload gen={generation} superseded by gen={_filterGeneration} ({tracks.Count} tracks dropped)");
+                }
                 return;
             }
+            if (refreshFromLibrary)
+                Noctis.Services.DebugLog.Write("Songs", $"Reload gen={generation} applied: {tracks.Count} tracks, {result.Count} shown");
 
             // Save refreshed tracks list back (already on UI thread)
             if (refreshFromLibrary)
+            {
                 _allTracks = tracks;
+                _reloadPending = false;
+            }
 
             FilteredTracks.ReplaceAll(result);
             UpdateSummaryText();
@@ -502,6 +520,7 @@ public partial class LibrarySongsViewModel : ViewModelBase, ISearchable, IDispos
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"[SongsVM] Filter/sort failed: {ex.Message}");
+            Noctis.Services.DebugLog.Write("Songs", ex);
         }
     }
 
@@ -590,6 +609,8 @@ public partial class LibrarySongsViewModel : ViewModelBase, ISearchable, IDispos
             "SampleRate" => sortAsc ? ordered.ThenBy(x => x.Track.SampleRate).ThenBy(x => x.Track.Title) : ordered.ThenByDescending(x => x.Track.SampleRate).ThenBy(x => x.Track.Title),
             "Duration" => sortAsc ? ordered.ThenBy(x => x.Track.Duration) : ordered.ThenByDescending(x => x.Track.Duration),
             "Date Added" => sortAsc ? ordered.ThenBy(x => x.Track.DateAdded) : ordered.ThenByDescending(x => x.Track.DateAdded),
+            // GitHub #89: file last-write time (refreshed on rescan). Descending = newest first.
+            "Date Modified" => sortAsc ? ordered.ThenBy(x => x.Track.LastModified).ThenBy(x => x.Track.Title) : ordered.ThenByDescending(x => x.Track.LastModified).ThenBy(x => x.Track.Title),
             _ => ordered.ThenBy(x => x.Track.Title)
         };
 

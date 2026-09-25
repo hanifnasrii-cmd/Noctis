@@ -50,7 +50,7 @@ public class LyricsStudioPickerViewModelTests
         Assert.Equal("2 songs", albumRow.StateText); // the remote track is not offered
         var songRows = vm.Results.Where(r => !r.IsAlbum).ToList();
         Assert.Equal(2, songRows.Count);
-        Assert.All(songRows, r => Assert.Equal("line-level", r.StateText));
+        Assert.All(songRows, r => Assert.Equal("LRC", r.StateText));
 
         vm.ToggleSelectCommand.Execute(albumRow);
         Assert.Equal(2, vm.SelectedCount);

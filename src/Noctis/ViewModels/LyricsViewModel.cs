@@ -200,6 +200,10 @@ public partial class LyricsViewModel : ViewModelBase, IDisposable
 
     public PlayerViewModel Player => _player;
 
+    /// <summary>Id of the track whose lyrics <see cref="LyricLines"/> currently hold (the
+    /// Local API uses it to avoid serving the previous track's lyrics mid-load).</summary>
+    internal Guid? LoadedTrackId => _currentTrack?.Id;
+
     /// <summary>Lyrics lines for the current track.</summary>
     public BulkObservableCollection<LyricLine> LyricLines { get; } = new();
 
@@ -531,6 +535,9 @@ public partial class LyricsViewModel : ViewModelBase, IDisposable
     /// The lyrics view's code-behind subscribes and calls Flyout.ShowAt on the hidden host button.
     /// </summary>
     public event Action? OpenBackgroundColorRequested;
+
+    /// <summary>Lyrics providers of running plugins (set by MainWindowViewModel); read per search.</summary>
+    internal Func<IReadOnlyList<Services.Plugins.PluginLyricsSource>>? PluginLyricsSources { get; set; }
 
     public LyricsViewModel(PlayerViewModel player, ILrcLibService lrcLib, INetEaseService netEase, IMetadataService metadata, IPersistenceService persistence, ILibraryService library)
     {
@@ -1034,6 +1041,13 @@ public partial class LyricsViewModel : ViewModelBase, IDisposable
             var settings = await _persistence.LoadSettingsAsync();
             var lrcLibEnabled = settings.LrcLibEnabled;
             var netEaseEnabled = settings.NetEaseEnabled;
+            // Plugin providers ("lyrics.provider") race alongside the built-ins and rank after
+            // them; each is time-boxed and its failures contained by PluginLyricsSource.
+            IReadOnlyList<Services.Plugins.PluginLyricsSource> pluginSources;
+            try { pluginSources = PluginLyricsSources?.Invoke() ?? Array.Empty<Services.Plugins.PluginLyricsSource>(); }
+            catch { pluginSources = Array.Empty<Services.Plugins.PluginLyricsSource>(); }
+            var pluginResults = new LrcLibResult?[pluginSources.Count];
+            var pluginErrored = new bool[pluginSources.Count];
 
             var artist = track.Artist ?? "";
             var title = track.Title ?? "";
@@ -1064,6 +1078,9 @@ public partial class LyricsViewModel : ViewModelBase, IDisposable
             {
                 tasks.Add(FetchNetEaseAsync());
             }
+
+            for (var i = 0; i < pluginSources.Count; i++)
+                tasks.Add(FetchPluginAsync(i));
 
             // With both providers switched off, Task.WhenAll on an empty list completed
             // instantly and the user got "No Lyrics found." — indistinguishable from a
@@ -1132,11 +1149,28 @@ public partial class LyricsViewModel : ViewModelBase, IDisposable
                 }
             }
 
+            async Task FetchPluginAsync(int index)
+            {
+                try
+                {
+                    pluginResults[index] = await pluginSources[index].FindAsync(artist, title, track.Album ?? "", track.Duration);
+                }
+                catch (Exception ex)
+                {
+                    pluginErrored[index] = true;
+                    DebugLogger.Warn(DebugLogger.Category.Lyrics, "Plugin:Error", $"{pluginSources[index].Name}: {ex.Message}");
+                }
+            }
+
             // Race condition guard
             if (generation != _searchGeneration) return;
 
-            // Pick best result: prefer synced over unsynced, LRCLIB over NetEase when equal
-            var (primary, primarySource, alternate, altSource) = PickBestResult(lrcLibResult, netEaseResult);
+            // Pick best result: prefer synced over unsynced, then provider order
+            // (LRCLIB, NetEase, then plugin providers in load order).
+            var candidates = new List<(LrcLibResult? Result, string Source)> { (lrcLibResult, "LRCLIB"), (netEaseResult, "NetEase") };
+            for (var i = 0; i < pluginSources.Count; i++) candidates.Add((pluginResults[i], pluginSources[i].Name));
+            var (primary, primarySource, alternate, altSource) = PickBestResult(candidates);
+            var pluginInstrumental = pluginResults.Any(r => r is { Instrumental: true, HasLyrics: false });
 
             if (primary != null && primary.HasLyrics)
             {
@@ -1158,13 +1192,13 @@ public partial class LyricsViewModel : ViewModelBase, IDisposable
             {
                 LyricLines.Clear();
                 UnsyncedLines.Clear();
-                if (lrcLibInstrumental)
+                if (lrcLibInstrumental || pluginInstrumental)
                 {
                     // A definitive "instrumental" answer outranks any provider error.
                     DebugLogger.Warn(DebugLogger.Category.Lyrics, "SearchLyrics:Instrumental");
                     SearchFailedMessage = "This track is instrumental.";
                 }
-                else if ((!lrcLibEnabled || lrcLibErrored) && (!netEaseEnabled || netEaseErrored))
+                else if ((!lrcLibEnabled || lrcLibErrored) && (!netEaseEnabled || netEaseErrored) && pluginErrored.All(e => e))
                 {
                     // EVERY enabled provider errored — plausibly an offline user (or
                     // a blanket outage), which must not read as "this track has no
@@ -1208,33 +1242,25 @@ public partial class LyricsViewModel : ViewModelBase, IDisposable
     }
 
     /// <summary>
-    /// Picks the best lyrics result from the two providers.
-    /// Prefers synced over unsynced. When both have equal quality, prefers LRCLIB (curated).
-    /// Returns (primary, primarySource, alternate, alternateSource).
+    /// Picks the best lyrics result over providers in priority order (built-ins first, then plugin
+    /// providers): the first synced answer wins, else the first answer with any lyrics;
+    /// the alternate is the best of the rest by the same rule. With LRCLIB and NetEase
+    /// alone this is exactly the old two-way rule (synced beats unsynced, LRCLIB wins ties).
     /// </summary>
-    private static (LrcLibResult? Primary, string PrimarySource, LrcLibResult? Alternate, string? AlternateSource)
-        PickBestResult(LrcLibResult? lrcLib, LrcLibResult? netEase)
+    internal static (LrcLibResult? Primary, string PrimarySource, LrcLibResult? Alternate, string? AlternateSource)
+        PickBestResult(IReadOnlyList<(LrcLibResult? Result, string Source)> candidates)
     {
-        var lrcLibHas = lrcLib != null && lrcLib.HasLyrics;
-        var netEaseHas = netEase != null && netEase.HasLyrics;
+        var withLyrics = candidates.Where(c => c.Result is { HasLyrics: true }).ToList();
+        if (withLyrics.Count == 0) return (null, "", null, null);
 
-        if (lrcLibHas && netEaseHas)
-        {
-            // Both have results — pick the one with synced lyrics, or LRCLIB if equal
-            if (lrcLib!.HasSyncedLyrics && !netEase!.HasSyncedLyrics)
-                return (lrcLib, "LRCLIB", netEase, "NetEase");
-            if (!lrcLib.HasSyncedLyrics && netEase!.HasSyncedLyrics)
-                return (netEase, "NetEase", lrcLib, "LRCLIB");
-            // Both synced or both unsynced — prefer LRCLIB (community curated)
-            return (lrcLib, "LRCLIB", netEase, "NetEase");
-        }
+        static (LrcLibResult? Result, string Source) Best(List<(LrcLibResult? Result, string Source)> list)
+            => list.FirstOrDefault(c => c.Result!.HasSyncedLyrics) is { Result: not null } synced ? synced : list[0];
 
-        if (lrcLibHas)
-            return (lrcLib, "LRCLIB", null, null);
-        if (netEaseHas)
-            return (netEase, "NetEase", null, null);
-
-        return (null, "", null, null);
+        var primary = Best(withLyrics);
+        var rest = withLyrics.Where(c => !ReferenceEquals(c.Result, primary.Result)).ToList();
+        if (rest.Count == 0) return (primary.Result, primary.Source, null, null);
+        var alternate = Best(rest);
+        return (primary.Result, primary.Source, alternate.Result, alternate.Source);
     }
 
     /// <summary>
@@ -1474,7 +1500,8 @@ public partial class LyricsViewModel : ViewModelBase, IDisposable
     [RelayCommand]
     private async Task RemoveLyrics()
     {
-        if (_currentTrack == null) return;
+        // The lines on screen are an unsaved Studio preview — never delete real files for them.
+        if (_currentTrack == null || IsPreviewActive) return;
         // Capture the track: awaiting the writer lane frees the UI thread, so
         // _currentTrack can change (or go null) before the deletes finish.
         var track = _currentTrack;
@@ -1613,6 +1640,48 @@ public partial class LyricsViewModel : ViewModelBase, IDisposable
             .Replace("\n", Environment.NewLine, StringComparison.Ordinal);
     }
 
+    // ── Lyrics Studio preview ──
+    // Unsaved Studio lyrics shown on this page in place of the track's real ones.
+    // Memory only: nothing touches disk, the online cache or the Track's lyric fields,
+    // so dropping the preview and reloading brings the real lyrics straight back.
+    private const string PreviewSource = "Preview";
+    private Guid? _previewTrackId;
+    private string? _previewText;
+
+    /// <summary>True while the lines on screen are a Lyrics Studio preview (not saved anywhere).</summary>
+    [ObservableProperty]
+    private bool _isPreviewActive;
+
+    /// <summary>
+    /// Shows <paramref name="syncedText"/> (LRC, or ELRC with word tags) whenever
+    /// <paramref name="track"/> is the current track, ahead of every sidecar/embedded/online
+    /// source. Works before or after the track starts; calling again replaces the text.
+    /// Dropped by <see cref="ClearPreview"/> or when a different track becomes current.
+    /// </summary>
+    public void ShowPreview(Track track, string syncedText)
+    {
+        _previewTrackId = track.Id;
+        _previewText = syncedText;
+        if (_player.CurrentTrack is { } current && current.Id == track.Id)
+            LoadLyricsForTrack(current);
+    }
+
+    /// <summary>Drops the preview; if it was for the loaded track, its real lyrics reload.</summary>
+    public void ClearPreview()
+    {
+        var previewTrackId = _previewTrackId;
+        DropPreview();
+        if (previewTrackId != null && _currentTrack is { } current && current.Id == previewTrackId)
+            LoadLyricsForTrack(current);
+    }
+
+    private void DropPreview()
+    {
+        _previewTrackId = null;
+        _previewText = null;
+        IsPreviewActive = false;
+    }
+
     /// <summary>
     /// Called from context menus to search lyrics for a specific track.
     /// Loads the track first, and if no local lyrics found, triggers online search.
@@ -1639,6 +1708,7 @@ public partial class LyricsViewModel : ViewModelBase, IDisposable
 
     private void DisplayOnlineLyrics(LrcLibResult result, bool userSwitchedSource = false)
     {
+        IsPreviewActive = false;
         _currentOnlineResult = result;
         LyricLines.Clear();
         UnsyncedLines.Clear();
@@ -1890,6 +1960,11 @@ public partial class LyricsViewModel : ViewModelBase, IDisposable
         if (e.PropertyName == nameof(PlayerViewModel.CurrentTrack))
             RefreshHeaderCredits();
 
+        // A different track took over: a Studio preview belongs to its own track only.
+        if (e.PropertyName == nameof(PlayerViewModel.CurrentTrack) &&
+            _previewTrackId != null && _player.CurrentTrack?.Id != _previewTrackId)
+            DropPreview();
+
         // Clear lyrics when track becomes null (queue ended)
         if (e.PropertyName == nameof(PlayerViewModel.CurrentTrack) && _player.CurrentTrack == null)
         {
@@ -2018,7 +2093,8 @@ public partial class LyricsViewModel : ViewModelBase, IDisposable
 
         // Fire-and-forget: all file I/O runs off the UI thread, result is posted back.
         // The task is kept so SearchLyricsForTrack can await the probe's outcome.
-        _localProbeTask = LoadLocalLyricsAsync(track, generation);
+        _localProbeTask = LoadLocalLyricsAsync(track, generation,
+            _previewTrackId == track.Id ? _previewText : null);
     }
 
     // Completes only after the probe result has been APPLIED on the UI thread —
@@ -2032,7 +2108,7 @@ public partial class LyricsViewModel : ViewModelBase, IDisposable
     ///
     /// Priority: .lyricsfile sidecar → .ttml sidecar → .lrc sidecar → embedded tags → cache file.
     /// </summary>
-    private async Task LoadLocalLyricsAsync(Track track, int generation)
+    private async Task LoadLocalLyricsAsync(Track track, int generation, string? previewText = null)
     {
         // Read the parse-affecting setting here, on the UI thread that owns it.
         var joinSplitWords = _player.LyricsJoinSplitWords;
@@ -2064,6 +2140,14 @@ public partial class LyricsViewModel : ViewModelBase, IDisposable
             // store's LRU for the UI-thread reads in ApplyLocalLyricsResult).
             _loadedLyrics = track.Lyrics;
             _loadedSyncedLyrics = track.SyncedLyrics;
+            // A Lyrics Studio preview outranks every real source; it goes through the
+            // same parser as an .elrc/.lrc sidecar, so it renders exactly as saved would.
+            if (previewText != null)
+            {
+                var previewLines = ParseLrcContent(previewText);
+                if (previewLines.Count > 0)
+                    return new LocalLyricsProbe(previewLines, null, PreviewSource, FromCache: false);
+            }
             return ProbeLocalLyricSources(track, joinSplitWords, uiLanguage);
         });
         // Visible in Settings ▸ About ▸ Developer Mode ▸ Copy Logs: how long the
@@ -2191,6 +2275,7 @@ public partial class LyricsViewModel : ViewModelBase, IDisposable
 
     private void ApplyLocalLyricsResult(Track track, LocalLyricsProbe probe)
     {
+        IsPreviewActive = probe.Source == PreviewSource;
         if (probe.Lines != null && probe.Lines.Count > 0)
         {
             DebugLogger.Info(DebugLogger.Category.Lyrics, probe.Source, $"lines={probe.Lines.Count}");
@@ -2560,6 +2645,9 @@ public partial class LyricsViewModel : ViewModelBase, IDisposable
                 // the timestamp block and any word tags; strip it before word parsing
                 // so it never reaches display text.
                 var (unvoiced, voice) = EnhancedLrcParser.StripVoiceMarker(body);
+                // "[t]word <t>word" ELRC: the untagged first word is timed by the line stamp.
+                if (matches.Count == 1 && ParseLrcTimestamp(matches[0].Value) is { } lineStamp)
+                    unvoiced = EnhancedLrcParser.TagLeadingText(unvoiced, lineStamp);
                 var (text, words) = EnhancedLrcParser.ParseLine(unvoiced);
 
                 // Skip empty timestamp lines — LRC files often end with

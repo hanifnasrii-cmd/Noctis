@@ -76,6 +76,22 @@ public sealed class QueueRowSelection<T> where T : class
         Anchor = _selected.Count > 0 ? _selected.Keys.First() : -1;
     }
 
+    /// <summary>GitHub #88 rubber band: the rows a band spanning <paramref name="from"/>..<paramref name="to"/>
+    /// (either order, may run past either end of the queue) covers, plus <paramref name="keep"/>
+    /// (the selection when a Ctrl/Shift band started). The band's first row becomes the anchor,
+    /// so a later Shift+Click extends from where the band began.</summary>
+    public void SelectBand(int from, int to, IEnumerable<int>? keep = null)
+    {
+        _selected.Clear();
+        if (keep != null)
+            foreach (var i in keep) Add(i);
+        var lo = Math.Max(Math.Min(from, to), 0);
+        var hi = Math.Min(Math.Max(from, to), _rows.Count - 1);
+        for (var i = lo; i <= hi; i++) Add(i);
+        if (lo <= hi) Anchor = Math.Clamp(from, lo, hi);
+        else if (!Valid(Anchor)) Anchor = -1;
+    }
+
     /// <summary>Inclusive run of rows between <paramref name="anchor"/> and
     /// <paramref name="row"/>, in either direction, ascending.</summary>
     public static IEnumerable<int> Range(int anchor, int row)

@@ -127,6 +127,7 @@ public partial class LibraryAlbumsViewModel : ViewModelBase, ISearchable, IDispo
     {
         "title" => "Title",
         "dateadded" => "Recently added",
+        "datemodified" => "Date Modified",
         "mostplayed" => "Most played",
         "albumartist" => "Album Artist",
         "year" => "Year",
@@ -244,7 +245,7 @@ public partial class LibraryAlbumsViewModel : ViewModelBase, ISearchable, IDispo
     /// </summary>
     /// <remarks>Internal for tests (InternalsVisibleTo Noctis.Tests).</remarks>
     internal static bool IsDescendingByDefault(string sortMode) =>
-        sortMode is "dateadded" or "mostplayed" or "year";
+        sortMode is "dateadded" or "datemodified" or "mostplayed" or "year";
 
     /// <summary>Applies the grid sort persisted from the previous session.</summary>
     private void AdoptPersistedSort()
@@ -684,7 +685,7 @@ public partial class LibraryAlbumsViewModel : ViewModelBase, ISearchable, IDispo
     }
 
     /// <summary>
-    /// Orders the grid for an explicit sort mode ("title", "dateadded", "mostplayed",
+    /// Orders the grid for an explicit sort mode ("title", "dateadded", "datemodified", "mostplayed",
     /// "albumartist", "year", "random"); any other mode returns the input unchanged.
     /// <para>
     /// <paramref name="ascending"/> flips the primary key only — tie-breakers stay
@@ -707,6 +708,12 @@ public partial class LibraryAlbumsViewModel : ViewModelBase, ISearchable, IDispo
             "dateadded" => ascending
                 ? albums.OrderBy(a => a.Tracks.Count > 0 ? a.Tracks.Max(t => t.DateAdded) : DateTime.MinValue)
                 : albums.OrderByDescending(a => a.Tracks.Count > 0 ? a.Tracks.Max(t => t.DateAdded) : DateTime.MinValue),
+            // GitHub #89: an album counts as modified when its newest file was (a re-tag
+            // or a replaced track), so updated albums surface like new ones.
+            "datemodified" => (ascending
+                    ? albums.OrderBy(LatestModified)
+                    : albums.OrderByDescending(LatestModified))
+                .ThenBy(a => a.Name, StringComparer.OrdinalIgnoreCase),
             "mostplayed" => (ascending
                     ? albums.OrderBy(a => a.Tracks.Sum(t => (long)t.PlayCount))
                     : albums.OrderByDescending(a => a.Tracks.Sum(t => (long)t.PlayCount)))
@@ -730,6 +737,9 @@ public partial class LibraryAlbumsViewModel : ViewModelBase, ISearchable, IDispo
             "random" => ShuffleBySeed(albums, randomSeed),
             _ => albums,
         };
+
+    private static DateTime LatestModified(Album album) =>
+        album.Tracks.Count > 0 ? album.Tracks.Max(t => t.LastModified) : DateTime.MinValue;
 
     private static List<Album> ShuffleBySeed(IEnumerable<Album> albums, int seed)
     {

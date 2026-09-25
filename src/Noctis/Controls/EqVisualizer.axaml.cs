@@ -53,6 +53,13 @@ public class EqVisualizer : TemplatedControl
     private static readonly double[] Frequencies = { 1.6, 2.0, 1.4, 1.8, 1.7 };
     private static readonly TimeSpan FlattenDuration = TimeSpan.FromMilliseconds(420);
 
+    // Frame cadence while the bars can be seen, and the slow re-check cadence while an
+    // ancestor hides them (the playback bar's track box on the lyrics page, the mini
+    // player's inactive Sleeve form): own IsVisible stays true there, so the 16 ms timer
+    // used to keep running for bars nobody could see.
+    private static readonly TimeSpan FrameInterval = TimeSpan.FromMilliseconds(16);
+    internal static readonly TimeSpan HiddenPollInterval = TimeSpan.FromMilliseconds(250);
+
     // Live state: one spectrum band per bar for tonal colour, the beat pulse for the
     // bounce; smoothed per bar with a fast attack and a release short enough to fall
     // between beats.
@@ -156,11 +163,19 @@ public class EqVisualizer : TemplatedControl
         }
     }
 
+    // Bindings outlive a detach: a closed mini player window keeps its DataContext, so a
+    // pause→play still reaches IsPlaying on its (detached) Sleeve bars. Starting the timer
+    // there let the dispatcher root the closed window for as long as music played.
+    private bool IsAttached => ((global::Avalonia.LogicalTree.ILogical)this).IsAttachedToLogicalTree;
+
     private void StartAnimating()
     {
+        if (!IsAttached) return;
         _animStart = DateTime.UtcNow;
         _lastTick = _animStart;
-        EnsureTimer().Start();
+        var timer = EnsureTimer();
+        timer.Interval = FrameInterval;
+        timer.Start();
     }
 
     private void StopAnimating()
@@ -174,7 +189,7 @@ public class EqVisualizer : TemplatedControl
         {
             _animTimer = new DispatcherTimer(DispatcherPriority.Render)
             {
-                Interval = TimeSpan.FromMilliseconds(16)
+                Interval = FrameInterval
             };
             _animTimer.Tick += OnAnimTick;
         }
@@ -183,6 +198,13 @@ public class EqVisualizer : TemplatedControl
 
     private void BeginFlatten()
     {
+        if (!IsAttached)
+        {
+            _flattening = false;
+            StopAnimating();
+            SetAllBars(FlatHeight);
+            return;
+        }
         _flattenFrom[0] = _bar1?.Height ?? FlatHeight;
         _flattenFrom[1] = _bar2?.Height ?? FlatHeight;
         _flattenFrom[2] = _bar3?.Height ?? FlatHeight;
@@ -190,11 +212,36 @@ public class EqVisualizer : TemplatedControl
         _flattenFrom[4] = _bar5?.Height ?? FlatHeight;
         _flattenStart = DateTime.UtcNow;
         _flattening = true;
-        EnsureTimer().Start();
+        var timer = EnsureTimer();
+        timer.Interval = FrameInterval;
+        timer.Start();
     }
 
     private void OnAnimTick(object? sender, EventArgs e)
     {
+        if (!IsAttached)
+        {
+            _flattening = false;
+            StopAnimating();
+            return;
+        }
+        if (!IsEffectivelyVisible)
+        {
+            if (_flattening || !IsPlaying)
+            {
+                // Nothing to ease out where it can't be seen: land flat and stop.
+                _flattening = false;
+                StopAnimating();
+                SetAllBars(FlatHeight);
+                return;
+            }
+            if (_animTimer != null && _animTimer.Interval != HiddenPollInterval)
+                _animTimer.Interval = HiddenPollInterval;
+            return;
+        }
+        if (_animTimer != null && _animTimer.Interval != FrameInterval)
+            _animTimer.Interval = FrameInterval;
+
         if (_flattening)
         {
             var progress = (DateTime.UtcNow - _flattenStart).TotalMilliseconds / FlattenDuration.TotalMilliseconds;

@@ -6,6 +6,7 @@ using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.DependencyInjection;
+using Noctis.Helpers;
 using Noctis.Localization;
 using Noctis.Models;
 using Noctis.Services.Plugins;
@@ -86,6 +87,22 @@ public partial class MainWindowViewModel : ViewModelBase
         _favoritesVm.IsActive = ReferenceEquals(current, _favoritesVm);
     }
 
+    private readonly DispatcherTimer _coveredRefreshTimer;
+
+    /// <summary>Rebuilds the section under the Settings modal if the library changed
+    /// (each Refresh is a no-op when its view model isn't dirty).</summary>
+    private void RefreshCoveredSection()
+    {
+        var current = CurrentView;
+        DebugLog.Write("Library", $"Covered refresh of {current?.GetType().Name ?? "none"} (library={_library.Tracks.Count})");
+        if (ReferenceEquals(current, _homeVm)) _homeVm.Refresh();
+        else if (ReferenceEquals(current, _songsVm)) _songsVm.Refresh();
+        else if (ReferenceEquals(current, _albumsVm)) _albumsVm.Refresh();
+        else if (ReferenceEquals(current, _artistsVm)) _artistsVm.Refresh();
+        else if (ReferenceEquals(current, _foldersVm)) _foldersVm.Refresh();
+        else if (ReferenceEquals(current, _favoritesVm)) _favoritesVm.Refresh();
+    }
+
     // ── Scrobble tracking ──
     private DateTime _trackStartedAt;
     private Track? _scrobbleTrack;
@@ -94,6 +111,9 @@ public partial class MainWindowViewModel : ViewModelBase
     // ── Drop-import progress (spinner pill while dropped files are copied/added) ──
     [ObservableProperty] private bool _isDropImporting;
     [ObservableProperty] private string _dropImportStatus = string.Empty;
+
+    /// <summary>"Plugin: message" from a plugin's Notify(), shown for a few seconds in the notice pill.</summary>
+    [ObservableProperty] private string _pluginNotice = string.Empty;
 
     // ── Discord seek throttle ──
     private DateTime _lastDiscordSeekUpdate = DateTime.MinValue;
@@ -144,6 +164,18 @@ public partial class MainWindowViewModel : ViewModelBase
 
     /// <summary>Whether the mounted playback bar should accept pointer input.</summary>
     public bool IsPlaybackBarHitTestVisible => IsPlaybackBarVisible;
+
+    /// <summary>GitHub #92: the island unmounts while nothing is loaded, taking its Queue
+    /// button with it; a small idle pill stands in so the queue can still be opened.
+    /// Opt-in via Settings → Player (off by default).</summary>
+    public bool IsIdleIslandVisible => Settings.PlaybackBarShowIdlePill && !Player.HasContent && !IsLyricsViewActive;
+
+    /// <summary>
+    /// With "Import dropped files" off, whether a drop plays (nothing loaded and nothing queued)
+    /// or is added to the queue. A queue built up with nothing playing (#92) is kept, not
+    /// replaced. The drag overlay reads this too, so its text matches what the drop does (#90).
+    /// </summary>
+    public bool DropStartsPlayback => !Player.HasContent;
 
     // ── Sidebar visibility ──
 
@@ -256,7 +288,7 @@ public partial class MainWindowViewModel : ViewModelBase
         _loon = loon;
 
         // Create long-lived ViewModels
-        Player = new PlayerViewModel(audioPlayer, library, persistence, new AnimatedCoverService(persistence));
+        Player = new PlayerViewModel(audioPlayer, library, persistence, new AnimatedCoverService(persistence), metadata);
         Sidebar = new SidebarViewModel(persistence, library);
         TopBar = new TopBarViewModel();
         Sidebar.TopBar = TopBar;
@@ -265,6 +297,8 @@ public partial class MainWindowViewModel : ViewModelBase
         Settings.SetPlayer(Player);
         Player.SetSettingsViewModel(Settings);
         Player.SetPlayHistory(playHistory);
+        if (App.Services?.GetService<Services.Waveform.WaveformService>() is { } waveforms)
+            Player.SetWaveformService(waveforms);
         Settings.SetDiscordPresence(discord);
         Settings.SetLoonClient(loon);
         Settings.SetLastFm(lastFm);
@@ -286,6 +320,11 @@ public partial class MainWindowViewModel : ViewModelBase
         // check runs on a background thread, so marshal to the UI thread.
         Settings.PropertyChanged += (_, e) =>
         {
+            if (e.PropertyName == nameof(SettingsViewModel.PlaybackBarShowIdlePill))
+            {
+                OnPropertyChanged(nameof(IsIdleIslandVisible));
+                return;
+            }
             if (e.PropertyName != nameof(SettingsViewModel.IsUpdateAvailable)) return;
             Dispatcher.UIThread.Post(() =>
             {
@@ -314,9 +353,13 @@ public partial class MainWindowViewModel : ViewModelBase
             () => Settings.GetSettings().LyricsStudioWordTimings, MetadataHelper.CreateLyricsStudioViewModel);
 
         // Plugins load once settings are read so the disabled list is honoured on the first pass.
+        // Plugins see the bare version ("1.5.3"), which is also what plugin.json's minAppVersion is checked against.
         Plugins = new PluginHost(Player, persistence.DataDirectory, () => Settings.GetSettings(),
-            () => _ = Settings.SaveAsync(), UpdateService.CurrentVersionDisplay);
+            () => _ = Settings.SaveAsync(), UpdateService.CurrentVersion.ToString(3), library);
         Settings.Plugins = Plugins;
+        TrackContextMenuBuilder.PluginCommandSource = () => Plugins.TrackCommands;
+        Plugins.NotificationRequested += (_, notice) =>
+            TransientStatus.Show(nameof(PluginNotice), v => PluginNotice = v, $"{notice.PluginName}: {notice.Message}", TimeSpan.FromSeconds(4));
         // LoadAll walks the plugins folder, loads assemblies and reflects over their
         // types on the UI thread. Settings finish loading right after the window
         // shows, so running it inline there held the first frame hostage to however
@@ -402,11 +445,46 @@ public partial class MainWindowViewModel : ViewModelBase
         };
 
         _foldersVm = new LibraryFoldersViewModel(library, Player, persistence, Sidebar);
+        // Folders sort (GitHub #89): mirror into the top bar and persist, adopting the
+        // saved choice once settings load — same shape as the Artists sort above.
+        var adoptingFoldersSort = false;
+        _foldersVm.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName != nameof(LibraryFoldersViewModel.SortMode)) return;
+            TopBar.FoldersSortMode = _foldersVm.SortMode;
+            TopBar.FoldersSortLabel = _foldersVm.SortLabel;
+            if (!adoptingFoldersSort) Settings.FoldersSortMode = _foldersVm.SortMode;
+        };
+        Settings.ViewStateLoaded += (_, _) =>
+        {
+            adoptingFoldersSort = true;
+            try { _foldersVm.SortMode = Settings.FoldersSortMode; }
+            finally { adoptingFoldersSort = false; }
+        };
         _foldersVm.NavigateToSettingsRequested += (_, _) =>
         {
             OpenSettings();
             Dispatcher.UIThread.Post(Settings.RequestMediaFoldersSection);
         };
+        // The Settings modal leaves the page beneath it visible around the card, yet counts
+        // it as hidden (UpdateSectionActiveFlags) so settings toggles don't rebuild it
+        // mid-animation. A scan or a folder add/remove then never reached that page until
+        // the user navigated away and back (09-23 owner report). Catch the covered page up
+        // once library updates settle, debounced so a scan's ~1.5 s progress publishes
+        // don't each rebuild it.
+        _coveredRefreshTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(700) };
+        _coveredRefreshTimer.Tick += (_, _) =>
+        {
+            _coveredRefreshTimer.Stop();
+            if (IsSettingsModalOpen) RefreshCoveredSection();
+        };
+        _library.LibraryUpdated += (_, _) => Dispatcher.UIThread.Post(() =>
+        {
+            if (!IsSettingsModalOpen) return;
+            _coveredRefreshTimer.Stop();
+            _coveredRefreshTimer.Start();
+        });
+
         // Settings is a modal overlay and folder add/remove doesn't fire LibraryUpdated,
         // so explicitly rebuild the Folders tree when the media-folder set changes.
         Settings.MusicFoldersChanged += (_, _) =>
@@ -422,6 +500,7 @@ public partial class MainWindowViewModel : ViewModelBase
         _favoritesVm = new FavoritesViewModel(Player, library, persistence, Sidebar, Settings);
         _queueVm = new QueueViewModel(Player);
         _lyricsVm = new LyricsViewModel(Player, lrcLib, netEase, metadata, persistence, library);
+        _lyricsVm.PluginLyricsSources = () => Plugins.LyricsProviders;
         _statisticsVm = new StatisticsViewModel(library, playHistory);
         _statisticsVm.BackRequested += (_, _) =>
         {
@@ -556,6 +635,7 @@ public partial class MainWindowViewModel : ViewModelBase
                 OnPropertyChanged(nameof(IsPlaybackBarMounted));
                 OnPropertyChanged(nameof(PlaybackBarOpacity));
                 OnPropertyChanged(nameof(IsPlaybackBarHitTestVisible));
+                OnPropertyChanged(nameof(IsIdleIslandVisible));
             }
             if (e.PropertyName == nameof(PlayerViewModel.CurrentTrack) && Player.CurrentTrack == null)
                 IsLyricsPanelOpen = false;
@@ -786,7 +866,7 @@ public partial class MainWindowViewModel : ViewModelBase
             if (files.Count == 0) return;
             var tracks = await ResolveExternalTracksAsync(files);
             if (tracks.Count == 0) return;
-            if (Player.CurrentTrack == null)
+            if (DropStartsPlayback)
                 Player.ReplaceQueueAndPlay(tracks, 0);
             else
                 Player.AddRangeToQueue(tracks);
@@ -848,28 +928,7 @@ public partial class MainWindowViewModel : ViewModelBase
                         continue;
 
                     if (!byPath.TryGetValue(path, out var track))
-                    {
-                        track = _metadata.ReadTrackMetadata(path);
-
-                        // External tracks never pass through a library index rebuild, so
-                        // nothing populates their artwork. Extract it here the way the
-                        // scanner does (embedded tag, else cover file beside the track) —
-                        // otherwise the playback bar shows the placeholder and the Discord
-                        // relay has no cover to serve (GetArtworkUrl(null) → no image).
-                        if (track != null)
-                        {
-                            track.IsExternal = true;
-                            var artPath = _persistence.GetArtworkPath(track.AlbumId);
-                            if (!File.Exists(artPath))
-                            {
-                                var artBytes = _metadata.ExtractAlbumArt(path);
-                                if (artBytes is { Length: > 0 })
-                                    _persistence.SaveArtwork(track.AlbumId, artBytes);
-                            }
-                            if (File.Exists(artPath))
-                                track.AlbumArtworkPath = artPath;
-                        }
-                    }
+                        track = ExternalTrackReader.Read(_metadata, _persistence, path);
 
                     if (track != null)
                         resolved.Add(track);
@@ -897,6 +956,8 @@ public partial class MainWindowViewModel : ViewModelBase
         catch (Exception ex) { Debug.WriteLine($"[MainWindowVM] Plugin shutdown failed: {ex.Message}"); }
         try { await Settings.StopNoctisServerAsync().WaitAsync(TimeSpan.FromSeconds(2)); }
         catch (Exception ex) { Debug.WriteLine($"[MainWindowVM] Server stop failed: {ex.Message}"); }
+        try { Settings.StopLocalApi(); } // closes event streams, marks local-api.json not running
+        catch (Exception ex) { Debug.WriteLine($"[MainWindowVM] Local API stop failed: {ex.Message}"); }
 
         // Stop any in-flight library scan and flush its progress to disk so the next
         // launch resumes where it left off instead of re-scanning from scratch.
@@ -1358,6 +1419,7 @@ public partial class MainWindowViewModel : ViewModelBase
         OnPropertyChanged(nameof(IsPlaybackBarMounted));
         OnPropertyChanged(nameof(PlaybackBarOpacity));
         OnPropertyChanged(nameof(IsPlaybackBarHitTestVisible));
+        OnPropertyChanged(nameof(IsIdleIslandVisible));
     }
 
     private void RefreshBackButton()
@@ -1952,7 +2014,7 @@ public partial class MainWindowViewModel : ViewModelBase
         else if (key == "favorites")
             TopBar.ShowFavoritesActions(_favoritesVm.ShuffleAllCommand, _favoritesVm.PlayAllCommand);
         else if (key == "folders")
-            TopBar.ShowFoldersActions(_foldersVm.PlayFolderCommand, _foldersVm.ShuffleFolderCommand, _foldersVm.OpenMediaFolderSettingsCommand);
+            TopBar.ShowFoldersActions(_foldersVm.PlayFolderCommand, _foldersVm.ShuffleFolderCommand, _foldersVm.OpenMediaFolderSettingsCommand, _foldersVm.SetSortCommand);
         else if (key == "artists")
             TopBar.ShowArtistSort(_artistsVm.SetSortCommand, _artistsVm.SortLabel, _artistsVm.SortMode, _artistsVm.SortAscending);
 
@@ -2484,7 +2546,7 @@ public partial class MainWindowViewModel : ViewModelBase
         else if (ReferenceEquals(view, _lyricsVm))
             WireLyricsPageToPlayer();
         else if (ReferenceEquals(view, _foldersVm))
-            TopBar.ShowFoldersActions(_foldersVm.PlayFolderCommand, _foldersVm.ShuffleFolderCommand, _foldersVm.OpenMediaFolderSettingsCommand);
+            TopBar.ShowFoldersActions(_foldersVm.PlayFolderCommand, _foldersVm.ShuffleFolderCommand, _foldersVm.OpenMediaFolderSettingsCommand, _foldersVm.SetSortCommand);
         else if (ReferenceEquals(view, _artistsVm))
             TopBar.ShowArtistSort(_artistsVm.SetSortCommand, _artistsVm.SortLabel, _artistsVm.SortMode, _artistsVm.SortAscending);
         // Artist actions for _albumsVm are restored in CaptureRestoreState's lambda
@@ -2755,6 +2817,14 @@ public partial class MainWindowViewModel : ViewModelBase
         _lyricsVm.SearchLyricsForTrack(track);
     }
 
+    /// <summary>Opens the lyrics page, or stays on it when it is already up (unlike
+    /// <see cref="ToggleLyricsCommand"/>). Used by Lyrics Studio's preview.</summary>
+    public void ShowLyricsPage()
+    {
+        if (CurrentView != _lyricsVm)
+            OpenLyricsView();
+    }
+
     // ── Discord RPC / Last.fm integration ─────────────────────
 
     private void OnTrackStartedForIntegrations(object? sender, Track track)
@@ -2865,7 +2935,9 @@ public partial class MainWindowViewModel : ViewModelBase
 
         var lastFmActive = _lastFm.IsAuthenticated && Settings.LastFmScrobblingEnabled;
         var listenBrainzActive = _listenBrainz.IsAuthenticated && Settings.ListenBrainzScrobblingEnabled;
-        if (!lastFmActive && !listenBrainzActive)
+        // Plugins' OnTrackScrobbled fires on the same rule, with or without a scrobbling service.
+        var pluginsListening = Plugins.HasScrobbleListeners;
+        if (!lastFmActive && !listenBrainzActive && !pluginsListening)
         {
             _scrobbleTrack = null;
             return;
@@ -2894,6 +2966,12 @@ public partial class MainWindowViewModel : ViewModelBase
             // silently failed to scrobble, because App.OnFrameworkInitializationCompleted
             // calls desktop.Shutdown() as soon as ShutdownAsync returns.
             _pendingScrobbles = pending.Count > 0 ? Task.WhenAll(pending) : Task.CompletedTask;
+
+            if (pluginsListening)
+            {
+                try { Plugins.RaiseTrackScrobbled(track, startedAt); }
+                catch (Exception ex) { DebugLogger.Error(DebugLogger.Category.State, "Plugins", $"scrobble hook: {ex.Message}"); }
+            }
         }
 
         _scrobbleTrack = null;

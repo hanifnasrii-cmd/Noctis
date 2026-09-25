@@ -365,6 +365,28 @@ public partial class MetadataViewModel : ViewModelBase
         return list.ToArray();
     }
 
+    /// <summary>What the Options tab dropdown lists: <see cref="OptionsEqPresets"/> plus the
+    /// user's saved presets (GitHub #95), set by <see cref="SetUserEqPresets"/> before the
+    /// window opens.</summary>
+    public IReadOnlyList<string> EqPresetOptions { get; private set; } = OptionsEqPresets;
+
+    /// <summary>Adds the user's saved EQ presets to <see cref="EqPresetOptions"/>. A track tagged
+    /// with a preset that no longer exists keeps it listed, so opening the editor can't blank it.</summary>
+    public void SetUserEqPresets(IEnumerable<string> names)
+    {
+        var list = OptionsEqPresets.Concat(names).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+        if (!string.IsNullOrEmpty(SelectedEqPreset))
+        {
+            // Preset names match case-insensitively (as SettingsViewModel resolves them); the
+            // ComboBox matches exactly, so point the selection at the listed spelling.
+            var listed = list.FirstOrDefault(n => string.Equals(n, SelectedEqPreset, StringComparison.OrdinalIgnoreCase));
+            if (listed == null) list.Add(SelectedEqPreset);
+            else if (listed != SelectedEqPreset) SelectedEqPreset = listed;
+        }
+        EqPresetOptions = list;
+        OnPropertyChanged(nameof(EqPresetOptions));
+    }
+
     /// <summary>Fires when the user clicks OK and changes were saved.</summary>
     public event EventHandler? ChangesSaved;
 

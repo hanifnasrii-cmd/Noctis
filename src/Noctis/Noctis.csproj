@@ -16,12 +16,12 @@
     <RootNamespace>Noctis</RootNamespace>
     <Product>Noctis</Product>
     <Company>Noctis</Company>
-    <Version>1.5.2</Version>
+    <Version>1.5.3</Version>
     <!-- Pre-release marker: numeric Version stays 1.1.16 (update checks + the
          displayed number are unchanged); the "-prerelease" SemVer suffix on the
          informational version is what lights the "Pre-release" badge in Settings.
          Remove this line (or drop the suffix) when cutting a stable release. -->
-    <InformationalVersion>1.5.2</InformationalVersion>
+    <InformationalVersion>1.5.3</InformationalVersion>
     <ApplicationManifest Condition="$([MSBuild]::IsOSPlatform('Windows'))">app.manifest</ApplicationManifest>
 
     <!-- Avalonia requires this for XAML compilation -->
@@ -37,7 +37,7 @@
     <!-- Suppress build warnings.
          CS8625 was dropped: it was a project-wide nullability switch kept on for exactly
          two warnings at one interop call, which now carries a scoped #pragma instead
-         (Controls/AnimatedCoverImage.axaml.cs).
+         (Controls/AnimatedCoverFeed.cs).
          CA1416 stays for now — it produces 0 warnings on the Windows TFM, and the
          non-Windows TFM has never been built with it visible, so removing it here is a
          change that has to be evaluated against a real linux-x64/osx build. -->

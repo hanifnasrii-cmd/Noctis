@@ -78,7 +78,15 @@ public static class SkiaArtworkDecoder
     /// null when the file is missing or not an image. The caller owns the bitmap.
     /// </summary>
     public static SKBitmap? DecodeToWidth(string? path, int width)
+        => DecodeToWidth(path, width, out _);
+
+    /// <summary>
+    /// As <see cref="DecodeToWidth(string?, int)"/>, and reports the encoded image's own
+    /// width (0 when the file is not an image), so a caller can tell how much the decode shrank.
+    /// </summary>
+    public static SKBitmap? DecodeToWidth(string? path, int width, out int sourceWidth)
     {
+        sourceWidth = 0;
         if (string.IsNullOrEmpty(path) || !File.Exists(path) || width <= 0)
             return null;
         try
@@ -88,6 +96,7 @@ public static class SkiaArtworkDecoder
 
             var info = codec.Info;
             if (info.Width <= 0 || info.Height <= 0) return null;
+            sourceWidth = info.Width;
 
             var targetWidth = Math.Min(width, info.Width);
             var targetHeight = Math.Max(1, (int)Math.Round(info.Height * (targetWidth / (double)info.Width)));

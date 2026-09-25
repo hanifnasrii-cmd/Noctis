@@ -169,6 +169,23 @@ public class VlcAudioPlayer : IAudioPlayer
     // block pending. A jump between consecutive blocks means VLC dropped audio
     // upstream and the hole is butt-spliced into the ring.
     private readonly long[] _engineExpectedPts = new long[2];
+
+    // Adaptive input read-ahead (NoteInputGap / ApplyReadAhead). For a local file VLC
+    // keeps only file-caching worth of audio decoded ahead of its clock — the demuxer
+    // sleeps once it is that far in front — so a disk stall longer than the window
+    // empties the sink however deep the ring is, and everything read late is dropped
+    // ("buffer too late", ES_OUT_SET_PCR "called too late"). Field log 2026-09-23: a
+    // hard-disk library under heavy I/O from other processes stalled 3.6–8 s and the
+    // 1 s window lost the audio. Once such a stall is seen, media opened for the rest of
+    // the session read further ahead (EQ changes are heard that much later — the cost of
+    // the margin, paid only by sessions that needed it). Written on libvlc's aout thread,
+    // read on the play path.
+    private int _baseCachingMs = DefaultCachingMs;
+    private int _adaptiveCachingMs = DefaultCachingMs;
+    internal const int DefaultCachingMs = 1000;
+    internal const int MaxReadAheadMs = 8000;         // GaplessTrackSegment rings hold 15 s
+    internal const int MinStallForReadAheadMs = 1000; // below the window itself: ordinary jitter
+    internal const int IgnoreStallAboveMs = 30_000;   // the whole process stopped (sleep), not the disk
     private FileStream? _engineInTap; // NOCTIS_ENGINE_TAP input-side capture (raw s16le)
     private readonly object _engineInTapLock = new();
     private int _engineInTapSinceFlush;
@@ -479,7 +496,8 @@ public class VlcAudioPlayer : IAudioPlayer
         //   hardware (e.g. NOCTIS_CACHING=300 restores the old default).
         var cachingMs =
             int.TryParse(Environment.GetEnvironmentVariable("NOCTIS_CACHING"), out var cm) && cm >= 0
-                ? cm : 1000;
+                ? cm : DefaultCachingMs;
+        _baseCachingMs = _adaptiveCachingMs = cachingMs;
 
         var vlcDiag = string.Equals(
             Environment.GetEnvironmentVariable("NOCTIS_VLC_LOG"), "1", StringComparison.Ordinal);
@@ -2322,6 +2340,7 @@ public class VlcAudioPlayer : IAudioPlayer
             try
             {
                 media = new Media(_libVlc, normalizedPath, FromType.FromPath);
+                ApplyReadAhead(media);
                 // Off the engine the playback-speed button is LibVLC's rate; only
                 // media opened with time-stretch keep their pitch at ≠ 1×.
                 if (!_gaplessEngine)
@@ -2770,6 +2789,8 @@ public class VlcAudioPlayer : IAudioPlayer
             var media = isCd
                 ? CreateAudioCdMedia(_libVlc, filePath)
                 : new Media(_libVlc, filePath, isRemote ? FromType.FromLocation : FromType.FromPath);
+            if (!isCd && !isRemote)
+                ApplyReadAhead(media);
             // Off the engine the playback-speed button is LibVLC's rate; only media
             // opened with time-stretch keep their pitch at ≠ 1× (scaletempo is a
             // pass-through at 1×, and it is VLC's own default filter).
@@ -3863,8 +3884,14 @@ public class VlcAudioPlayer : IAudioPlayer
                 // their peak so decoder warm-up garble is visible in the field.
                 var expectedPts = _engineExpectedPts[slot];
                 if (expectedPts > 0 && Math.Abs(pts - expectedPts) > 20_000)
+                {
+                    var gapMs = (pts - expectedPts) / 1000.0;
                     DebugLogger.Warn(DebugLogger.Category.Playback, "GaplessEngine.PtsGap",
-                        $"slot={slot}, gapMs={(pts - expectedPts) / 1000.0:0.#}, frames={count}");
+                        $"slot={slot}, gapMs={gapMs:0.#}, frames={count}");
+                    // A forward hole is VLC having dropped late audio because the input
+                    // stalled longer than the read-ahead window; widen it for what follows.
+                    NoteInputGap(gapMs);
+                }
                 if (expectedPts == 0)
                 {
                     var peak = 0;
@@ -5266,6 +5293,47 @@ public class VlcAudioPlayer : IAudioPlayer
     /// </summary>
     internal static bool ShouldForceAvformatDemux(bool isLinux, string? bundledVlcEnv)
         => !isLinux || bundledVlcEnv == "1";
+
+    /// <summary>
+    /// Read-ahead for media opened after a delivery gap of <paramref name="gapMs"/> was
+    /// seen with <paramref name="currentMs"/> in force: the gap plus a second of margin,
+    /// rounded up to 500 ms, never below today's value and capped at
+    /// <see cref="MaxReadAheadMs"/>. Gaps under <see cref="MinStallForReadAheadMs"/> are
+    /// ordinary jitter; gaps over <see cref="IgnoreStallAboveMs"/> mean the process itself
+    /// was stopped (system sleep) and say nothing about the disk. Pure; internal for tests.
+    /// </summary>
+    internal static int NextReadAheadMs(int currentMs, double gapMs)
+    {
+        if (gapMs < MinStallForReadAheadMs || gapMs > IgnoreStallAboveMs)
+            return currentMs;
+        var want = (int)Math.Ceiling((gapMs + 1000) / 500.0) * 500;
+        return Math.Max(currentMs, Math.Min(want, MaxReadAheadMs));
+    }
+
+    /// <summary>Per-media libvlc option carrying a raised read-ahead, or null while the
+    /// session value still equals the configured one (the LibVLC-wide --file-caching).</summary>
+    internal static string? ReadAheadOption(int baseMs, int adaptiveMs)
+        => adaptiveMs > baseMs ? $":file-caching={adaptiveMs}" : null;
+
+    /// <summary>Called from the engine's play callback when consecutive blocks left a hole;
+    /// raises the session read-ahead so later media ride out a stall of that length.</summary>
+    private void NoteInputGap(double gapMs)
+    {
+        var current = Volatile.Read(ref _adaptiveCachingMs);
+        var next = NextReadAheadMs(current, gapMs);
+        if (next == current) return;
+        Volatile.Write(ref _adaptiveCachingMs, next);
+        DebugLogger.Warn(DebugLogger.Category.Playback, "GaplessEngine.ReadAheadRaised",
+            $"gapMs={gapMs:0}, fileCachingMs={current}->{next} (input stalled past the read-ahead window; media opened from now on read further ahead)");
+    }
+
+    /// <summary>Applies the session read-ahead to a local-file media before it is played.</summary>
+    private void ApplyReadAhead(Media media)
+    {
+        var option = ReadAheadOption(_baseCachingMs, Volatile.Read(ref _adaptiveCachingMs));
+        if (option != null)
+            media.AddOption(option);
+    }
 
     private static string BuildLibVlcMissingMessage()
     {

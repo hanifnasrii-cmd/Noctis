@@ -813,7 +813,12 @@ public partial class HomeViewModel : ViewModelBase, IDisposable
         var events = _playHistory?.Events;
         if (events == null || events.Count == 0)
             return _player.History.ToList();
-        return BuildRecentFromLog(events, _library.GetTrackById, RecentLogScan);
+        // GitHub #86: dropped files played in place are not library tracks; the player
+        // still holds them (restored from queue.json), so fall back to its copies.
+        Dictionary<Guid, Track>? external = null;
+        return BuildRecentFromLog(events,
+            id => _library.GetTrackById(id) ?? (external ??= _player.GetExternalTracksById()).GetValueOrDefault(id),
+            RecentLogScan);
     }
 
     /// <summary>

@@ -150,8 +150,11 @@ Options and client notes are in [docs/SELF-HOSTING.md](docs/SELF-HOSTING.md).
 
 ### Plugins
 
-- [x] Plugin system with an SDK (`Noctis.Plugins.Abstractions`) and a sample plugin under `plugins/`
-- [x] Each plugin loads in its own context, so one that fails is contained
+- [x] Plugin system with an SDK (`Noctis.Plugins.Abstractions`), a `plugin.json` manifest, permissions and install from a .zip. See the [plugin guide](docs/PLUGINS.md)
+- [x] Restricted mode, which turns off community plugins while content packs keep working
+- [x] Content packs (themes, lyrics presets, languages) that contain no code. See [Content packs](docs/PLUGINS.md#content-packs)
+- [x] Local API: HTTP + JSON on 127.0.0.1 for Stream Deck, OBS overlays and scripts. See the [Local API reference](docs/LOCAL-API.md)
+- [x] Sample plugins, a sample content pack and Local API examples under [`samples/`](samples/)
 
 <p align="center">
   <img src="docs/images/discord.png" width="380" alt="Discord Rich Presence" />

@@ -66,6 +66,14 @@ public sealed class TrackContextMenuBuilder
     public MenuItem OpenWith { get; private set; } = null!;
     public MenuItem Remove { get; private set; } = null!;
 
+    /// <summary>Commands plugins registered ("menu.commands"); set once by MainWindowViewModel.
+    /// Read on every Bind so enabling/disabling a plugin shows up on the next menu open.</summary>
+    public static Func<IReadOnlyList<Services.Plugins.PluginTrackCommand>>? PluginCommandSource { get; set; }
+
+    /// <summary>Separator above the plugin entries; hidden when no plugin adds one.</summary>
+    private Separator _pluginSeparator = null!;
+    private readonly List<MenuItem> _pluginItems = new();
+
     public ContextMenu Menu { get; private set; } = null!;
 
     /// <summary>
@@ -205,6 +213,10 @@ public sealed class TrackContextMenuBuilder
         OpenWith = new MenuItem { Header = "Open File With" };
         OpenWith.Icon = CreatePngIcon("avares://Noctis.UI/Assets/Icons/Metadata%20ICON.png");
         items.Add(OpenWith);
+
+        // Plugin commands are inserted after this separator on each Bind.
+        _pluginSeparator = new Separator { IsVisible = false };
+        items.Add(_pluginSeparator);
 
         items.Add(new Separator());
 
@@ -412,6 +424,42 @@ public sealed class TrackContextMenuBuilder
 
         Remove.Command = removeCommand;
         Remove.CommandParameter = track;
+
+        BindPluginCommands(track);
+    }
+
+    /// <summary>Rebuilds the plugin entries for this open. A plugin that throws here is contained by the host.</summary>
+    private void BindPluginCommands(Track track)
+    {
+        foreach (var old in _pluginItems) Menu.Items.Remove(old);
+        _pluginItems.Clear();
+
+        IReadOnlyList<Services.Plugins.PluginTrackCommand> commands;
+        try { commands = PluginCommandSource?.Invoke() ?? Array.Empty<Services.Plugins.PluginTrackCommand>(); }
+        catch { commands = Array.Empty<Services.Plugins.PluginTrackCommand>(); }
+
+        var at = Menu.Items.IndexOf(_pluginSeparator) + 1;
+        foreach (var command in commands)
+        {
+            var item = new MenuItem
+            {
+                Header = command.Label,
+                Command = new RelayCommand(() => command.Execute(track)),
+            };
+            ToolTip.SetTip(item, command.PluginName);
+            if (TryParseIcon(command.Icon) is { } geometry)
+                item.Icon = new PathIcon { Width = 14, Height = 14, Data = geometry };
+            Menu.Items.Insert(at++, item);
+            _pluginItems.Add(item);
+        }
+        _pluginSeparator.IsVisible = _pluginItems.Count > 0;
+    }
+
+    private static Geometry? TryParseIcon(string? pathData)
+    {
+        if (string.IsNullOrWhiteSpace(pathData)) return null;
+        try { return Geometry.Parse(pathData); }
+        catch { return null; }
     }
 
     private static void BindOptional(MenuItem item, ICommand? command, Track track)
@@ -431,6 +479,19 @@ public sealed class TrackContextMenuBuilder
 
     // ── Shared helpers ──
 
+    // One decoded bitmap per icon asset, shared by every menu. Each Build() used to decode
+    // its own copies (a track menu carries five 512×512 masks, 1 MiB each once decoded),
+    // and album pages / playlist pages build a fresh menu per page instance, so every
+    // visit left another set of native bitmaps waiting on the finalizer.
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, Bitmap> IconBitmaps = new();
+
+    internal static Bitmap GetIconBitmap(string assetUri) =>
+        IconBitmaps.GetOrAdd(assetUri, static uri =>
+        {
+            using var stream = Avalonia.Platform.AssetLoader.Open(new Uri(uri));
+            return new Bitmap(stream);
+        });
+
     public static Avalonia.Controls.Border CreatePngIcon(string assetUri, double size = 14, IBrush? color = null)
     {
         var border = new Avalonia.Controls.Border { Width = size, Height = size };
@@ -444,7 +505,7 @@ public sealed class TrackContextMenuBuilder
         RenderOptions.SetBitmapInterpolationMode(border, BitmapInterpolationMode.HighQuality);
         border.OpacityMask = new ImageBrush
         {
-            Source = new Bitmap(Avalonia.Platform.AssetLoader.Open(new Uri(assetUri))),
+            Source = GetIconBitmap(assetUri),
             Stretch = Stretch.Uniform
         };
         return border;

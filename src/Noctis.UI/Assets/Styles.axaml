@@ -810,17 +810,22 @@
         <Setter Property="Background" Value="{DynamicResource SidebarHoverBrush}" />
     </Style>
 
+    <!-- Selected row = accent pill with accent-contrast content, same as the Settings rail's
+         active item (GitHub #87: the sidebar didn't follow the accent / album-art accent). -->
     <Style Selector="ListBox.sidebar ListBoxItem:selected">
-        <Setter Property="Background" Value="{DynamicResource SidebarSelectedBrush}" />
+        <Setter Property="Background" Value="{DynamicResource AccentColorBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource AccentForegroundBrush}" />
     </Style>
 
     <Style Selector="ListBox.sidebar ListBoxItem:selected /template/ ContentPresenter">
-        <Setter Property="Background" Value="{DynamicResource SidebarSelectedBrush}" />
+        <Setter Property="Background" Value="{DynamicResource AccentColorBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource AccentForegroundBrush}" />
         <Setter Property="CornerRadius" Value="999" />
     </Style>
 
     <Style Selector="ListBox.sidebar ListBoxItem:selected:pointerover /template/ ContentPresenter">
-        <Setter Property="Background" Value="{DynamicResource SidebarSelectedHoverBrush}" />
+        <Setter Property="Background" Value="{DynamicResource AccentColorBrushDark1}" />
+        <Setter Property="Foreground" Value="{DynamicResource AccentForegroundBrush}" />
     </Style>
 
     <!-- Track list styling -->

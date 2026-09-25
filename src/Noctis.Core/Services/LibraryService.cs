@@ -481,7 +481,14 @@ public class LibraryService : ILibraryService
         // Belt-and-braces: never let a scan replace a populated library with nothing.
         // Any path that gets here with zero results and a non-empty library is a bug in
         // enumeration, not a user deleting their entire collection mid-scan.
-        if (newTracks.IsEmpty && originalTrackCount > 0)
+        // The one legitimate "nothing" is having no folders at all: removing the last media
+        // folder must empty the library, or its albums stay forever (the scan reported
+        // "N tracks found" for folders that were no longer configured). Confirmed against
+        // the persisted settings too, so an empty folder list handed in by a caller whose
+        // settings haven't loaded yet can never wipe the library.
+        var noFoldersConfigured = includeRoots.Count == 0
+                                  && settings.MusicFolders.All(string.IsNullOrWhiteSpace);
+        if (newTracks.IsEmpty && originalTrackCount > 0 && !noFoldersConfigured)
         {
             RestoreOriginalLibrary();
             DebugLog.Write("Library",
@@ -705,6 +712,11 @@ public class LibraryService : ILibraryService
         var publish = PublishLoopAsync();
 
         var extracted = 0;
+        // Albums whose representative file carries no picture and whose folder has no
+        // cover image: they show the grid's note placeholder, and this line in the
+        // session log is how a "some covers don't load" report can be told apart from a
+        // decode problem without the reporter's files.
+        var noArt = new ConcurrentBag<string>();
         try
         {
             await Task.Run(() =>
@@ -722,6 +734,10 @@ public class LibraryService : ILibraryService
                             _persistence.SaveArtwork(g.Key, artBytes);
                             Interlocked.Increment(ref extracted);
                         }
+                        else
+                        {
+                            noArt.Add($"{rep.Album} — {(string.IsNullOrWhiteSpace(rep.AlbumArtist) ? rep.Artist : rep.AlbumArtist)}");
+                        }
                     });
             }, ct);
         }
@@ -729,6 +745,12 @@ public class LibraryService : ILibraryService
         {
             pubCts.Cancel();
             try { await publish.ConfigureAwait(false); } catch { /* publisher already stopping */ }
+        }
+        if (!noArt.IsEmpty)
+        {
+            var names = noArt.OrderBy(n => n, StringComparer.OrdinalIgnoreCase).ToList();
+            DebugLog.Write("Library", $"artwork: {names.Count} album(s) have no embedded picture and no folder cover image: "
+                + string.Join("; ", names.Take(20)) + (names.Count > 20 ? $"; +{names.Count - 20} more" : ""));
         }
         return extracted;
     }

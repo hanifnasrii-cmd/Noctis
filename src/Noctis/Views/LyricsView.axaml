@@ -970,6 +970,15 @@
                         </StackPanel>
                     </Button>
 
+                    <!-- Lyrics Studio preview: the lines shown are unsaved -->
+                    <Border Background="{DynamicResource LyricsBtnBgRes}"
+                            CornerRadius="18"
+                            Padding="10,5"
+                            Height="30"
+                            IsVisible="{Binding IsPreviewActive}">
+                        <TextBlock Text="{loc:T Lyrics.PreviewUnsaved}" FontSize="11" Foreground="{Binding LyricsPrimaryFg}" VerticalAlignment="Center"/>
+                    </Border>
+
                     <!-- Save status text -->
                     <TextBlock Text="{Binding SaveStatusText}"
                                FontSize="11"

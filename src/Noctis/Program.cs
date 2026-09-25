@@ -373,6 +373,12 @@ internal class Program
         // playing track instead. Started from App once the player exists.
         services.AddSingleton<SideDecodeMeterFeed>(sp =>
             new SideDecodeMeterFeed(sp.GetRequiredService<IAudioPlayer>(), sp.GetRequiredService<IAudioConverterService>()));
+        // Waveform seek bar (GitHub #93): ffmpeg decode on one low-priority worker, cached
+        // under cache/waveforms. Inert until Settings → Player → Waveform seek bar is on.
+        services.AddSingleton<Services.Waveform.WaveformService>(sp =>
+            new Services.Waveform.WaveformService(
+                new Services.Waveform.FfmpegWaveformDecoder(sp.GetRequiredService<IAudioConverterService>()),
+                new Services.Waveform.WaveformCache(Services.Waveform.WaveformCache.DefaultDirectory)));
         services.AddSingleton<AudioAnalysisCoordinator>(sp =>
             new AudioAnalysisCoordinator(
                 sp.GetRequiredService<IAudioAnalysisService>(),

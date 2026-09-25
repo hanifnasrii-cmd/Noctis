@@ -21,6 +21,7 @@ public enum ShortcutAction
     SearchLibrary,
     CommandPalette,
     NewPlaylist,
+    ToggleQueue,
 }
 
 /// <summary>Display metadata for one rebindable action.</summary>
@@ -42,6 +43,7 @@ public static class ShortcutDefaults
         new ShortcutDescriptor(ShortcutAction.VolumeDown, "Volume down", GroupPlayback),
         new ShortcutDescriptor(ShortcutAction.ToggleFavorite, "Favorite current track", GroupPlayback),
         new ShortcutDescriptor(ShortcutAction.ToggleFullscreen, "Toggle fullscreen", GroupWindow),
+        new ShortcutDescriptor(ShortcutAction.ToggleQueue, "Show / hide queue", GroupWindow),
         new ShortcutDescriptor(ShortcutAction.SearchLibrary, "Search library", GroupNavigation),
         new ShortcutDescriptor(ShortcutAction.CommandPalette, "Command palette", GroupNavigation),
         new ShortcutDescriptor(ShortcutAction.NewPlaylist, "New playlist", GroupNavigation),
@@ -67,6 +69,9 @@ public static class ShortcutDefaults
             ShortcutAction.SearchLibrary => new KeyGesture(Key.F, primary),
             ShortcutAction.CommandPalette => new KeyGesture(Key.K, primary),
             ShortcutAction.NewPlaylist => new KeyGesture(Key.N, primary),
+            // U for Up Next. Not Ctrl/⌘+Q (quit on macOS / Linux desktops) and not a bare
+            // letter; Ctrl+U is no TextBox editing key, so it works from the search box too.
+            ShortcutAction.ToggleQueue => new KeyGesture(Key.U, primary),
             _ => throw new ArgumentOutOfRangeException(nameof(action), action, null),
         };
     }

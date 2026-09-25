@@ -100,6 +100,9 @@ public partial class LyricsBackgroundPickerViewModel : ObservableObject
     [ObservableProperty] private string _youTubeStatus = string.Empty;
     [ObservableProperty] private bool _toolInstalled;
     [ObservableProperty] private bool _isInstallingTool;
+    /// <summary>"yt-dlp 2026.08.19" (+ "update available"), small secondary text in the YouTube panel.</summary>
+    [ObservableProperty] private string _toolVersionText = string.Empty;
+    private bool _toolUpdateChecked;
     /// <summary>Row the download is for; null = the default video.</summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(YouTubeTargetLabel))]
@@ -267,6 +270,32 @@ public partial class LyricsBackgroundPickerViewModel : ObservableObject
         YouTubeTarget = target;
         YouTubeStatus = string.Empty;
         ShowYouTube = true;
+        if (!_toolUpdateChecked)
+        {
+            _toolUpdateChecked = true;
+            _ = CheckToolUpdateAsync();
+        }
+    }
+
+    /// <summary>First use of the YouTube panel: show the version, then the quiet session update check.</summary>
+    private async Task CheckToolUpdateAsync()
+    {
+        if (_ytDlp is null) return;
+        try
+        {
+            await RefreshToolVersionAsync();
+            if (!ToolInstalled) return;
+            await _ytDlp.EnsureSessionUpdateCheckAsync();
+            await RefreshToolVersionAsync();
+        }
+        catch (Exception ex) { DebugLogger.Warn(DebugLogger.Category.State, "YtDlp.PanelCheckFailed", ex.Message); }
+    }
+
+    private async Task RefreshToolVersionAsync()
+    {
+        if (_ytDlp is null || !ToolInstalled) { ToolVersionText = string.Empty; return; }
+        var version = await _ytDlp.GetVersionAsync(CancellationToken.None);
+        ToolVersionText = YtDlpParsing.VersionLabel(version, _ytDlp.LatestKnownVersion);
     }
 
     [RelayCommand]
@@ -288,6 +317,7 @@ public partial class LyricsBackgroundPickerViewModel : ObservableObject
             await _ytDlp.InstallAsync(new Progress<double>(p => Dispatcher.UIThread.Post(() => DownloadProgress = p)), CancellationToken.None);
             ToolInstalled = true;
             YouTubeStatus = string.Empty;
+            await RefreshToolVersionAsync();
         }
         catch (Exception ex)
         {
@@ -317,7 +347,8 @@ public partial class LyricsBackgroundPickerViewModel : ObservableObject
             string? ffmpeg = null;
             try { ffmpeg = _ffmpegPath?.Invoke(); } catch { }
             produced = await _ytDlp.DownloadVideoAsync(url, scratchRoot, ffmpeg, SelectedQuality.MaxHeight,
-                new Progress<double>(p => Dispatcher.UIThread.Post(() => DownloadProgress = p)), cts.Token);
+                new Progress<double>(p => Dispatcher.UIThread.Post(() => DownloadProgress = p)), cts.Token,
+                status => Dispatcher.UIThread.Post(() => { DownloadProgress = 0; YouTubeStatus = status; }));
 
             if (target is null)
             {
@@ -347,6 +378,8 @@ public partial class LyricsBackgroundPickerViewModel : ObservableObject
             if (produced is not null) YtDlpTool.CleanupScratch(produced);
             IsDownloading = false;
             if (ReferenceEquals(_downloadCts, cts)) _downloadCts = null;
+            _ = RefreshToolVersionAsync(); // a blocked download may have updated yt-dlp
+
         }
     }
 

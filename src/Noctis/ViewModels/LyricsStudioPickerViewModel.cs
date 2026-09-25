@@ -220,13 +220,7 @@ public partial class LyricsStudioPickerViewModel : ObservableObject
     }
 
     /// <summary>Same wording as the Studio's own song list pills.</summary>
-    internal static string StateLabel(LyricsFormat format) => format switch
-    {
-        LyricsFormat.Elrc => "word-level",
-        LyricsFormat.Lrc => "line-level",
-        LyricsFormat.Plain => "plain only",
-        _ => "no lyrics",
-    };
+    internal static string StateLabel(LyricsFormat format) => LyricsStudioViewModel.StudioItem.FormatTag(format);
 
     [RelayCommand]
     private void ToggleSelect(LyricsStudioPickRow? row)

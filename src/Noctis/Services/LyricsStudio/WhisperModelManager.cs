@@ -1,3 +1,4 @@
+using Whisper.net;
 using Whisper.net.Ggml;
 
 namespace Noctis.Services.LyricsStudio;
@@ -101,6 +102,13 @@ public sealed class WhisperModelManager
     {
         try { File.Delete(PathFor(size)); } catch { }
     }
+
+    /// <summary>Cross-attention heads for DTW word timing, matching the file <see cref="PathFor"/> loads.</summary>
+    public static WhisperAlignmentHeadsPreset AlignmentHeads(WhisperModelSize size) => Normalize(size) switch
+    {
+        WhisperModelSize.Medium => WhisperAlignmentHeadsPreset.Medium,
+        _ => WhisperAlignmentHeadsPreset.Base,
+    };
 
     private static GgmlType ToGgml(WhisperModelSize size) => size switch
     {

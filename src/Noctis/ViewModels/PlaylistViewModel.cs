@@ -68,6 +68,8 @@ public partial class PlaylistViewModel : ViewModelBase, ISearchable, IDisposable
         PlaylistSortMode.ReleaseDateOldest => "Release Date (Oldest)",
         PlaylistSortMode.ReleaseDateNewest => "Release Date (Newest)",
         PlaylistSortMode.Badge => "Badge",
+        PlaylistSortMode.DateModifiedNewest => "Date Modified (Newest)",
+        PlaylistSortMode.DateModifiedOldest => "Date Modified (Oldest)",
         _ => "Manual"
     };
 
@@ -293,6 +295,14 @@ public partial class PlaylistViewModel : ViewModelBase, ISearchable, IDisposable
                 .OrderBy(IsUndated).ThenByDescending(ReleaseKey)
                 .ThenByDescending(t => t.Album, StringComparer.OrdinalIgnoreCase)
                 .ThenBy(t => t.DiscNumber).ThenBy(t => t.TrackNumber).ToList(),
+            // GitHub #89: file last-write time; Title keeps same-timestamp tracks
+            // (a batch retag) in a stable order in both directions.
+            PlaylistSortMode.DateModifiedNewest => tracks
+                .OrderByDescending(t => t.LastModified)
+                .ThenBy(t => t.Title, StringComparer.OrdinalIgnoreCase).ToList(),
+            PlaylistSortMode.DateModifiedOldest => tracks
+                .OrderBy(t => t.LastModified)
+                .ThenBy(t => t.Title, StringComparer.OrdinalIgnoreCase).ToList(),
             _ => tracks
         };
     }
@@ -1036,7 +1046,12 @@ public enum PlaylistSortMode
     ReleaseDateNewest,
 
     /// <summary>GitHub #74: grouped by the user badge (A→Z), unbadged tracks last.</summary>
-    Badge
+    Badge,
+
+    /// <summary>GitHub #89: by the file's last-modified time, one mode per direction
+    /// like ReleaseDate*. Appended so saved sort names stay valid.</summary>
+    DateModifiedNewest,
+    DateModifiedOldest
 }
 
 public partial class PlaylistFeaturedArtist : ObservableObject

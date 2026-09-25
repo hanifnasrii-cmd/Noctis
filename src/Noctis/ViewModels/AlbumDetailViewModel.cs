@@ -30,6 +30,7 @@ public partial class AlbumDetailViewModel : ViewModelBase, IDisposable
     private readonly EventHandler _favoritesChangedHandler;
     private readonly System.ComponentModel.PropertyChangedEventHandler? _settingsPropertyChangedHandler;
     private readonly EventHandler<string>? _themeChangedHandler;
+    private readonly EventHandler _accentAppliedHandler;
 
     /// <summary>Saved scroll offset for restoring position after navigation.</summary>
     public double SavedScrollOffset { get; set; }
@@ -72,6 +73,14 @@ public partial class AlbumDetailViewModel : ViewModelBase, IDisposable
     [ObservableProperty] private IBrush _pageForegroundBrush = Brushes.White;
     [ObservableProperty] private IBrush _pageSubtleForegroundBrush = new SolidColorBrush(Color.FromArgb(0xB0, 0xFF, 0xFF, 0xFF));
     [ObservableProperty] private IBrush _pageDividerBrush = new SolidColorBrush(Color.FromArgb(0x1F, 0xFF, 0xFF, 0xFF));
+
+    // Header controls on a tint (AlbumTintPalette.ForPage): only read by the view's on-tint
+    // styles, so the untinted page keeps its accent resources untouched.
+    [ObservableProperty] private IBrush _tintButtonBackground = new SolidColorBrush(AlbumTintPalette.HeartRed);
+    [ObservableProperty] private IBrush _tintButtonForeground = Brushes.White;
+    [ObservableProperty] private IBrush _tintButtonBorder = Brushes.Transparent;
+    [ObservableProperty] private IBrush _tintIconBrush = Brushes.White;
+    [ObservableProperty] private IBrush _tintHeartBrush = new SolidColorBrush(AlbumTintPalette.HeartRed);
     [ObservableProperty] private Guid? _currentPlayingTrackId;
     [ObservableProperty] private bool _isPlayerPlaying;
     [ObservableProperty] private string _albumDescription = string.Empty;
@@ -224,12 +233,19 @@ public partial class AlbumDetailViewModel : ViewModelBase, IDisposable
                     });
                 else if (e.PropertyName == nameof(SettingsViewModel.AlbumPageTintEnabled))
                     Dispatcher.UIThread.Post(RebuildBackgroundBrush);
+                else if (e.PropertyName == nameof(SettingsViewModel.AlbumPageTintStrength))
+                    Dispatcher.UIThread.Post(ReapplyTint);
             };
             _settings.PropertyChanged += _settingsPropertyChangedHandler;
             // A theme switch flips the untinted page text between the variants' colours.
             _themeChangedHandler = (_, _) => Dispatcher.UIThread.Post(RebuildBackgroundBrush);
             _settings.ThemeChanged += _themeChangedHandler;
         }
+
+        // The header pills are checked against the accent, which changes with the picker and
+        // with "Accent follows album art" on every track change.
+        _accentAppliedHandler = (_, _) => Dispatcher.UIThread.Post(ReapplyTint);
+        App.AccentApplied += _accentAppliedHandler;
 
         // Build related-album sections from the local library.
         // Deferred to background priority so the page paints first; the carousel
@@ -396,12 +412,45 @@ public partial class AlbumDetailViewModel : ViewModelBase, IDisposable
     /// <summary>Luminance above which the page text goes dark (spec §2).</summary>
     public const double LightTintThreshold = 0.55;
 
-    /// <summary>Applies a tint colour (or clears it) and derives the page foreground family.
-    /// Public for tests; callers on the UI thread only.</summary>
+    /// <summary>The cover edge colour behind the current tint (before the strength blend), so
+    /// the Tint strength slider and accent changes re-blend without decoding the cover again.</summary>
+    private Color? _tintEdgeColor;
+
+    /// <summary>Settings › Artwork › Tint strength, in percent; 100 without a settings VM.</summary>
+    private int TintStrength => _settings?.AlbumPageTintStrength ?? AppSettings.AlbumPageTintStrengthDefault;
+
+    private void ReapplyTint()
+    {
+        if (_tintEdgeColor is { } edge && _settings?.AlbumPageTintEnabled != false)
+            ApplyTint(edge);
+    }
+
+    /// <summary>The theme's own page colour, which a partial tint blends toward.</summary>
+    internal static Color ThemePageColor()
+    {
+        var fallback = IsLightThemeActive() ? Colors.White : Color.FromRgb(0x25, 0x25, 0x25);
+        return ResourceColor("AppMainBackgroundColor", fallback);
+    }
+
+    private static Color ResourceColor(string key, Color fallback)
+    {
+        var app = Avalonia.Application.Current;
+        if (app != null && app.TryGetResource(key, app.ActualThemeVariant, out var value))
+        {
+            if (value is Color c) return c;
+            if (value is ISolidColorBrush b) return b.Color;
+        }
+        return fallback;
+    }
+
+    /// <summary>Applies a cover edge colour (or clears it) and derives the page foreground family.
+    /// The page colour is the edge colour blended into the theme page by the Tint strength
+    /// setting (100 = the edge colour as is). Public for tests; callers on the UI thread only.</summary>
     public void ApplyTint(Color? tint)
     {
+        _tintEdgeColor = tint;
         bool light;
-        if (tint is not { } color)
+        if (tint is not { } edge)
         {
             // No tint: the page sits on the theme surface, so the text follows the theme
             // variant (white text on the Light theme was invisible, 09-17).
@@ -411,9 +460,12 @@ public partial class AlbumDetailViewModel : ViewModelBase, IDisposable
         }
         else
         {
+            var strength = TintStrength;
+            var color = AlbumTintPalette.PageColor(edge, ThemePageColor(), strength);
             BackgroundBrush = BuildTintBrush(color);
-            light = DominantColorExtractor.GetRelativeLuminance(color) > LightTintThreshold;
+            light = AlbumTintPalette.UsesDarkText(color, strength, LightTintThreshold);
             IsLightTint = light;
+            ApplyTintHeaderColours(color);
         }
         PageForegroundBrush = light ? new SolidColorBrush(Color.FromRgb(0x11, 0x11, 0x11)) : Brushes.White;
         PageSubtleForegroundBrush = new SolidColorBrush(light
@@ -427,6 +479,25 @@ public partial class AlbumDetailViewModel : ViewModelBase, IDisposable
     /// <summary>The album block's fill for a tint: the cover's edge colour, flat, the way
     /// iTunes' expanded album view painted it (user ask 2026-09-07: no gradient).</summary>
     public static SolidColorBrush BuildTintBrush(Color color) => new(color);
+
+    /// <summary>Header pill / heart / "…" colours for a tinted page colour: the live accent
+    /// where it already stands apart from the page, a lighter or darker shade of it where it
+    /// would melt in (the accent may BE the cover colour with "Accent follows album art").</summary>
+    private void ApplyTintHeaderColours(Color page)
+    {
+        var accent = ResourceColor("AccentButtonBackground", AlbumTintPalette.HeartRed);
+        var c = AlbumTintPalette.ForPage(
+            page,
+            accent,
+            ResourceColor("AccentForegroundBrush", Colors.White),
+            ResourceColor("AccentBorderBrush", Colors.Transparent),
+            ResourceColor("AccentTextExactBrush", accent));
+        TintButtonBackground = new SolidColorBrush(c.Fill);
+        TintButtonForeground = new SolidColorBrush(c.Label);
+        TintButtonBorder = new SolidColorBrush(c.Border);
+        TintIconBrush = new SolidColorBrush(c.Icon);
+        TintHeartBrush = new SolidColorBrush(c.Heart);
+    }
 
     private void BuildRelatedSections()
     {
@@ -925,6 +996,16 @@ public partial class AlbumDetailViewModel : ViewModelBase, IDisposable
         _player.ReplaceQueueAndPlay(InAlbumOrder(album.Tracks), 0);
     }
 
+    /// <summary>Related tile hover button: Pause/resume when this album is the loaded one,
+    /// else play it from track 1 (the Albums grid's TogglePlayAlbum).</summary>
+    [RelayCommand]
+    private void TogglePlayRelatedAlbum(Album? album)
+    {
+        if (album == null) return;
+        if (album.IsCurrent) { _player.PlayPauseCommand.Execute(null); return; }
+        PlayRelatedAlbum(album);
+    }
+
     [RelayCommand]
     private void ShuffleRelatedAlbum(Album? album)
     {
@@ -1024,6 +1105,7 @@ public partial class AlbumDetailViewModel : ViewModelBase, IDisposable
             _settings.PropertyChanged -= _settingsPropertyChangedHandler;
         if (_settings != null && _themeChangedHandler != null)
             _settings.ThemeChanged -= _themeChangedHandler;
+        App.AccentApplied -= _accentAppliedHandler;
         AlbumArt?.Dispose();
         AlbumArt = null;
     }

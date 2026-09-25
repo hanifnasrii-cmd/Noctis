@@ -66,7 +66,10 @@ internal sealed class FakeAudioPlayer : IAudioPlayer
     public void PrepareNext(string filePath, long startPositionMs = -1) => PreparedPaths.Add(filePath);
     public int CancelledCount { get; private set; }
     public void CancelPreparedNext() => CancelledCount++;
-    public void SetAdvancedEqualizer(bool enabled, float[] bands, float preampDb) { }
+    /// <summary>The last curve pushed by SetAdvancedEqualizer (null until the first call).</summary>
+    public (bool Enabled, float[] Bands, float PreampDb)? LastEqualizer { get; private set; }
+    public void SetAdvancedEqualizer(bool enabled, float[] bands, float preampDb) =>
+        LastEqualizer = (enabled, (float[])bands.Clone(), preampDb);
     public void Dispose() { }
 }
 

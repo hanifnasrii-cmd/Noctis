@@ -1142,10 +1142,16 @@
                     <Button Grid.Column="1" Classes="text-link" Content="{loc:T ArtistDetail.Shuffle}"
                             Command="{Binding ShuffleAllCommand}" VerticalAlignment="Center" />
                 </Grid>
+                <!-- Virtualized (09-24): only the rows inside the page's viewport exist. The
+                     panel reads its window from the outer PageScrollViewer's effective
+                     viewport, so it works nested in the page. As a plain StackPanel every
+                     song was a live row: a 175-song artist realized all 175 on the tab
+                     switch (~0.7 MB and ~7 ms each in the headless probe), a multi-second
+                     stall and hundreds of MB of garbage for the GC (ArtistPageStreamingTests). -->
                 <ItemsControl ItemsSource="{Binding AllSongs}" ItemTemplate="{StaticResource SongPill}">
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
-                            <StackPanel />
+                            <VirtualizingStackPanel />
                         </ItemsPanelTemplate>
                     </ItemsControl.ItemsPanel>
                 </ItemsControl>

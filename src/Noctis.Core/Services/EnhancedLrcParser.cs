@@ -56,6 +56,21 @@ public static partial class EnhancedLrcParser
     }
 
     /// <summary>
+    /// A common ELRC variant leaves the first word untagged because the line stamp already
+    /// times it: <c>[00:12.34]Hello &lt;00:12.80&gt;world</c>. Tags that leading text with
+    /// <paramref name="lineStart"/> so it becomes its own word, instead of being folded into
+    /// the next tagged word (which would start it late and glue the two words together).
+    /// Bodies that start with a tag, or carry no tags, come back unchanged.
+    /// </summary>
+    public static string TagLeadingText(string body, TimeSpan lineStart)
+    {
+        if (string.IsNullOrEmpty(body)) return body ?? string.Empty;
+        var first = WordTagRegex().Match(body);
+        if (!first.Success || first.Index == 0 || string.IsNullOrWhiteSpace(body[..first.Index])) return body;
+        return $"<{(int)lineStart.TotalMinutes:00}:{lineStart.Seconds:00}.{lineStart.Milliseconds:000}>{body}";
+    }
+
+    /// <summary>
     /// Splits an enhanced-LRC line body into display text and per-word timings.
     /// Returns (plainText, null) when the body carries no inline word tags.
     /// </summary>
