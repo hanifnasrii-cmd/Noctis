@@ -751,6 +751,9 @@ public static class ShareCardRenderer
     private static readonly ConcurrentDictionary<string, string> _vibrantHexCache =
         new(StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>Whether <see cref="GetVibrantColorHex"/> would answer from cache (no decode).</summary>
+    public static bool HasVibrantColor(string artworkPath) => _vibrantHexCache.ContainsKey(artworkPath);
+
     /// <summary>
     /// The vibrant background color this renderer derives for <paramref name="artworkPath"/>,
     /// as a "#RRGGBB" hex string — so the dialog's "Auto" swatch and the lyrics page's

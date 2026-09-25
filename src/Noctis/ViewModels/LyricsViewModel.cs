@@ -370,6 +370,36 @@ public partial class LyricsViewModel : ViewModelBase, IDisposable
 
     // ── Adaptive foreground colors (react to background luminance) ──
 
+    // Cached per-branch brushes. UpdateForegroundsForBackground runs on every track
+    // change; fresh instances made every colour binding on every word control
+    // re-evaluate even when the branch didn't change (the setters skip same-instance
+    // sets). Kept as SolidColorBrush, not immutable: LyricsView.SetResourceBrush
+    // pattern-matches SolidColorBrush to copy the BtnBg colours. Never mutated.
+    private static SolidColorBrush Solid(string hex) => new(Color.Parse(hex));
+    private static readonly SolidColorBrush LightPrimaryFg = Solid("#111111");
+    private static readonly SolidColorBrush LightSecondaryFg = Solid("#55111111");
+    private static readonly SolidColorBrush LightSubtleFg = Solid("#555555");
+    private static readonly SolidColorBrush LightSliderFilled = Solid("#CC111111");
+    private static readonly SolidColorBrush LightSliderUnfilled = Solid("#33111111");
+    private static readonly SolidColorBrush LightControlFill = Solid("#222222");
+    private static readonly SolidColorBrush LightBtnBg = Solid("#22000000");
+    private static readonly SolidColorBrush LightBtnBgHover = Solid("#33000000");
+    private static readonly SolidColorBrush LightSliderThumb = Solid("#DD111111");
+    private static readonly SolidColorBrush MediumSecondaryFg = Solid("#DDFFFFFF");
+    private static readonly SolidColorBrush MediumSubtleFg = Solid("#CCCCCC");
+    private static readonly SolidColorBrush MediumSliderFilled = Solid("#EEFFFFFF");
+    private static readonly SolidColorBrush MediumSliderUnfilled = Solid("#44FFFFFF");
+    private static readonly SolidColorBrush MediumBtnBg = Solid("#44000000");
+    private static readonly SolidColorBrush MediumBtnBgHover = Solid("#55000000");
+    private static readonly SolidColorBrush MediumSliderThumb = Solid("#FFFFFFFF");
+    private static readonly SolidColorBrush DarkSecondaryFg = Solid("#B0FFFFFF");
+    private static readonly SolidColorBrush DarkSubtleFg = Solid("#999999");
+    private static readonly SolidColorBrush DarkSliderFilled = Solid("#CCFFFFFF");
+    private static readonly SolidColorBrush DarkSliderUnfilled = Solid("#33FFFFFF");
+    private static readonly SolidColorBrush DarkBtnBg = Solid("#33FFFFFF");
+    private static readonly SolidColorBrush DarkBtnBgHover = Solid("#55FFFFFF");
+    private static readonly SolidColorBrush DarkSliderThumb = Solid("#EEFFFFFF");
+
     [ObservableProperty] private IBrush _lyricsPrimaryFg = Brushes.White;
     [ObservableProperty] private IBrush _lyricsSecondaryFg = new SolidColorBrush(Color.Parse("#B0FFFFFF"));
     [ObservableProperty] private IBrush _lyricsAccentFg = ResolveAccentBrush();
@@ -407,42 +437,42 @@ public partial class LyricsViewModel : ViewModelBase, IDisposable
 
         if (lum > 0.65) // Light background
         {
-            LyricsPrimaryFg = new SolidColorBrush(Color.Parse("#111111"));
-            LyricsSecondaryFg = new SolidColorBrush(Color.Parse("#55111111"));
+            LyricsPrimaryFg = LightPrimaryFg;
+            LyricsSecondaryFg = LightSecondaryFg;
             LyricsAccentFg = ResolveAccentBrush("AccentColorBrushDark1");
-            LyricsSubtleFg = new SolidColorBrush(Color.Parse("#555555"));
-            LyricsSliderFilled = new SolidColorBrush(Color.Parse("#CC111111"));
-            LyricsSliderUnfilled = new SolidColorBrush(Color.Parse("#33111111"));
-            LyricsControlFill = new SolidColorBrush(Color.Parse("#222222"));
-            LyricsBtnBg = new SolidColorBrush(Color.Parse("#22000000"));
-            LyricsBtnBgHover = new SolidColorBrush(Color.Parse("#33000000"));
-            LyricsSliderThumb = new SolidColorBrush(Color.Parse("#DD111111"));
+            LyricsSubtleFg = LightSubtleFg;
+            LyricsSliderFilled = LightSliderFilled;
+            LyricsSliderUnfilled = LightSliderUnfilled;
+            LyricsControlFill = LightControlFill;
+            LyricsBtnBg = LightBtnBg;
+            LyricsBtnBgHover = LightBtnBgHover;
+            LyricsSliderThumb = LightSliderThumb;
         }
         else if (lum > 0.35) // Medium background — boost contrast
         {
             LyricsPrimaryFg = Brushes.White;
-            LyricsSecondaryFg = new SolidColorBrush(Color.Parse("#DDFFFFFF"));
+            LyricsSecondaryFg = MediumSecondaryFg;
             LyricsAccentFg = ResolveAccentBrush("AccentColorBrushLight1");
-            LyricsSubtleFg = new SolidColorBrush(Color.Parse("#CCCCCC"));
-            LyricsSliderFilled = new SolidColorBrush(Color.Parse("#EEFFFFFF"));
-            LyricsSliderUnfilled = new SolidColorBrush(Color.Parse("#44FFFFFF"));
+            LyricsSubtleFg = MediumSubtleFg;
+            LyricsSliderFilled = MediumSliderFilled;
+            LyricsSliderUnfilled = MediumSliderUnfilled;
             LyricsControlFill = Brushes.White;
-            LyricsBtnBg = new SolidColorBrush(Color.Parse("#44000000"));
-            LyricsBtnBgHover = new SolidColorBrush(Color.Parse("#55000000"));
-            LyricsSliderThumb = new SolidColorBrush(Color.Parse("#FFFFFFFF"));
+            LyricsBtnBg = MediumBtnBg;
+            LyricsBtnBgHover = MediumBtnBgHover;
+            LyricsSliderThumb = MediumSliderThumb;
         }
         else // Dark background
         {
             LyricsPrimaryFg = Brushes.White;
-            LyricsSecondaryFg = new SolidColorBrush(Color.Parse("#B0FFFFFF"));
+            LyricsSecondaryFg = DarkSecondaryFg;
             LyricsAccentFg = ResolveAccentBrush();
-            LyricsSubtleFg = new SolidColorBrush(Color.Parse("#999999"));
-            LyricsSliderFilled = new SolidColorBrush(Color.Parse("#CCFFFFFF"));
-            LyricsSliderUnfilled = new SolidColorBrush(Color.Parse("#33FFFFFF"));
+            LyricsSubtleFg = DarkSubtleFg;
+            LyricsSliderFilled = DarkSliderFilled;
+            LyricsSliderUnfilled = DarkSliderUnfilled;
             LyricsControlFill = Brushes.White;
-            LyricsBtnBg = new SolidColorBrush(Color.Parse("#33FFFFFF"));
-            LyricsBtnBgHover = new SolidColorBrush(Color.Parse("#55FFFFFF"));
-            LyricsSliderThumb = new SolidColorBrush(Color.Parse("#EEFFFFFF"));
+            LyricsBtnBg = DarkBtnBg;
+            LyricsBtnBgHover = DarkBtnBgHover;
+            LyricsSliderThumb = DarkSliderThumb;
         }
     }
 
@@ -467,15 +497,15 @@ public partial class LyricsViewModel : ViewModelBase, IDisposable
     private void ResetForegroundsToDefault()
     {
         LyricsPrimaryFg = Brushes.White;
-        LyricsSecondaryFg = new SolidColorBrush(Color.Parse("#B0FFFFFF"));
+        LyricsSecondaryFg = DarkSecondaryFg;
         LyricsAccentFg = ResolveAccentBrush();
-        LyricsSubtleFg = new SolidColorBrush(Color.Parse("#999999"));
-        LyricsSliderFilled = new SolidColorBrush(Color.Parse("#CCFFFFFF"));
-        LyricsSliderUnfilled = new SolidColorBrush(Color.Parse("#33FFFFFF"));
+        LyricsSubtleFg = DarkSubtleFg;
+        LyricsSliderFilled = DarkSliderFilled;
+        LyricsSliderUnfilled = DarkSliderUnfilled;
         LyricsControlFill = Brushes.White;
-        LyricsBtnBg = new SolidColorBrush(Color.Parse("#33FFFFFF"));
-        LyricsBtnBgHover = new SolidColorBrush(Color.Parse("#55FFFFFF"));
-        LyricsSliderThumb = new SolidColorBrush(Color.Parse("#EEFFFFFF"));
+        LyricsBtnBg = DarkBtnBg;
+        LyricsBtnBgHover = DarkBtnBgHover;
+        LyricsSliderThumb = DarkSliderThumb;
     }
 
     /// <summary>Whether the "Search Lyrics" button should be shown (no local lyrics found).</summary>
@@ -654,6 +684,54 @@ public partial class LyricsViewModel : ViewModelBase, IDisposable
     /// (Rectangle Fill="#66000000" in LyricsView.axaml). Keep in sync if that changes —
     /// it shifts the visible luminance enough to matter for the readability threshold.</summary>
     private const double ArtworkScrimAlpha = 0x66 / 255.0;
+
+    private int _adaptiveBackgroundGeneration;
+
+    /// <summary>
+    /// Track change / new art: the colours come from the cover FILE, analysed on a worker
+    /// (SkiaSharp), then applied here on the UI thread. Analysing the Bitmap instead ran
+    /// three RenderTargetBitmap round-trips plus a full-size decode for the vibrant colour
+    /// on the UI thread, right on top of the lyrics fade, and at a track change the
+    /// Bitmap can still be the PREVIOUS cover, whose colours then got cached under the new
+    /// path. Warm caches (a cover seen before) apply at once.
+    /// </summary>
+    private void RequestAdaptiveBackground()
+    {
+        var generation = ++_adaptiveBackgroundGeneration;
+        var artPath = _player.AlbumArt != null ? _player.CurrentArtPath : null;
+        if (artPath == null
+            || (DominantColorExtractor.HasCachedColors(artPath) && ShareCardRenderer.HasVibrantColor(artPath)))
+        {
+            UpdateAdaptiveBackground(_player.AlbumArt);
+            return;
+        }
+        _ = WarmThenApplyAdaptiveBackgroundAsync(artPath, generation);
+    }
+
+    private async Task WarmThenApplyAdaptiveBackgroundAsync(string artPath, int generation)
+    {
+        var warmed = false;
+        try
+        {
+            warmed = await Task.Run(() =>
+            {
+                ShareCardRenderer.GetVibrantColorHex(artPath);
+                return DominantColorExtractor.WarmFromFile(artPath);
+            });
+        }
+        catch (Exception ex)
+        {
+            DebugLog.Write("Lyrics", $"Artwork colour warm-up failed: {ex.Message}");
+        }
+
+        // Back on the UI thread. A newer track or cover owns the background now.
+        if (generation != _adaptiveBackgroundGeneration) return;
+        // Unreadable file: the on-screen bitmap is still the previous cover (this one can't
+        // decode either), so analysing it would cache the old colours under this path.
+        // Keep the current background instead.
+        if (!warmed) return;
+        UpdateAdaptiveBackground(_player.AlbumArt);
+    }
 
     private void UpdateAdaptiveBackground(Bitmap? albumArt)
     {
@@ -1747,12 +1825,16 @@ public partial class LyricsViewModel : ViewModelBase, IDisposable
             if (_hasSyncedLyrics)
                 InsertIntroPlaceholderIfNeeded(parsedLines);
 
-            LyricLines.ReplaceAll(parsedLines);
-
-            if (!string.IsNullOrWhiteSpace(plainForUnsync))
-                PopulateUnsyncedFromPlainText(plainForUnsync);
-            else
-                PopulateUnsyncedLines(parsedLines);
+            List<LyricLine> synced = parsedLines;
+            FillLyricCollections(
+                () => LyricLines.ReplaceAll(synced),
+                () =>
+                {
+                    if (!string.IsNullOrWhiteSpace(plainForUnsync))
+                        PopulateUnsyncedFromPlainText(plainForUnsync);
+                    else
+                        PopulateUnsyncedLines(synced);
+                });
         }
         else if (!string.IsNullOrWhiteSpace(result.PlainLyrics))
         {
@@ -1763,11 +1845,15 @@ public partial class LyricsViewModel : ViewModelBase, IDisposable
                 var wrapped = SoftWrapText(line);
                 rendered.Add(new LyricLine { Text = wrapped, IsActive = true });
             }
-            LyricLines.ReplaceAll(rendered);
-            UnsyncedLines.ReplaceAll(rendered.Select(r => new LyricLine { Text = r.Text, IsActive = true }));
+            FillLyricCollections(
+                () => LyricLines.ReplaceAll(rendered),
+                () => UnsyncedLines.ReplaceAll(rendered.Select(r => new LyricLine { Text = r.Text, IsActive = true })));
+        }
+        else
+        {
+            AutoSelectTab();
         }
 
-        AutoSelectTab();
         RefreshActiveLyricPosition();
         CanSaveToFile = true;
         CanRemoveLyrics = true;
@@ -1855,7 +1941,7 @@ public partial class LyricsViewModel : ViewModelBase, IDisposable
                 _currentTrack.PropertyChanged -= OnCurrentTrackPropertyChanged;
 
             LoadLyricsForTrack(track);
-            UpdateAdaptiveBackground(_player.AlbumArt);
+            RequestAdaptiveBackground();
 
             // Subscribe to new track's IsFavorite changes for metadata heart
             track.PropertyChanged += OnCurrentTrackPropertyChanged;
@@ -2013,7 +2099,7 @@ public partial class LyricsViewModel : ViewModelBase, IDisposable
         // Update adaptive background when album art loads/changes
         else if (e.PropertyName == nameof(PlayerViewModel.AlbumArt))
         {
-            UpdateAdaptiveBackground(_player.AlbumArt);
+            RequestAdaptiveBackground();
         }
         // Fullscreen-focus setting flipped while lyrics are showing — re-dim in place.
         else if (e.PropertyName == nameof(PlayerViewModel.LyricsFullScreenFocusEnabled))
@@ -2166,8 +2252,22 @@ public partial class LyricsViewModel : ViewModelBase, IDisposable
             {
                 if (generation == _searchGeneration)
                 {
+                    // Developer Mode timing (same channel as LocalProbe above): the
+                    // synchronous swap, then the wait until the layout pass that
+                    // realizes the new line controls has run — Loaded-priority work
+                    // runs after layout. Off → no stopwatch, no extra post.
+                    var swapClock = DebugLogger.IsEnabled ? System.Diagnostics.Stopwatch.StartNew() : null;
                     ApplyLocalLyricsResult(track, probe);
                     LyricsSwapped?.Invoke(this, EventArgs.Empty);
+                    if (swapClock != null)
+                    {
+                        var swapMs = swapClock.ElapsedMilliseconds;
+                        var lines = IsSyncTabSelected ? LyricLines.Count : UnsyncedLines.Count;
+                        Dispatcher.UIThread.Post(() =>
+                            DebugLogger.Info(DebugLogger.Category.Lyrics, "LyricsSwap",
+                                $"swap ms={swapMs} layout ms={swapClock.ElapsedMilliseconds} lines={lines}"),
+                            DispatcherPriority.Loaded);
+                    }
                 }
             }
             finally
@@ -2294,14 +2394,18 @@ public partial class LyricsViewModel : ViewModelBase, IDisposable
                 InsertIntroPlaceholderIfNeeded(probe.Lines);
             }
 
-            LyricLines.ReplaceAll(probe.Lines);
+            List<LyricLine> synced = probe.Lines;
+            var unsyncedPlain = probe.UnsyncedPlain;
+            FillLyricCollections(
+                () => LyricLines.ReplaceAll(synced),
+                () =>
+                {
+                    if (!string.IsNullOrWhiteSpace(unsyncedPlain))
+                        PopulateUnsyncedFromPlainText(unsyncedPlain);
+                    else
+                        PopulateUnsyncedLines(synced);
+                });
 
-            if (!string.IsNullOrWhiteSpace(probe.UnsyncedPlain))
-                PopulateUnsyncedFromPlainText(probe.UnsyncedPlain);
-            else
-                PopulateUnsyncedLines(probe.Lines);
-
-            AutoSelectTab();
             LyricsSourceName = string.Empty;
             if (probe.FromCache) CanRemoveLyrics = true;
             RefreshActiveLyricPosition();
@@ -2326,9 +2430,9 @@ public partial class LyricsViewModel : ViewModelBase, IDisposable
             var rendered = new List<LyricLine>(split.Length);
             foreach (var line in split)
                 rendered.Add(new LyricLine { Text = SoftWrapText(line), IsActive = true });
-            LyricLines.ReplaceAll(rendered);
-            UnsyncedLines.ReplaceAll(rendered.Select(r => new LyricLine { Text = r.Text, IsActive = true }));
-            AutoSelectTab();
+            FillLyricCollections(
+                () => LyricLines.ReplaceAll(rendered),
+                () => UnsyncedLines.ReplaceAll(rendered.Select(r => new LyricLine { Text = r.Text, IsActive = true })));
             LyricsSourceName = string.Empty;
             CanRemoveLyrics = true;
             RefreshActiveLyricPosition();
@@ -2364,6 +2468,11 @@ public partial class LyricsViewModel : ViewModelBase, IDisposable
                          : plainIsActuallyLrc ? track.Lyrics
                          : null;
 
+        // Build first, fill once below (FillLyricCollections) — a null fill leaves
+        // that collection untouched, as before.
+        List<LyricLine>? syncedLines = null;
+        Action? fillUnsynced = null;
+
         if (!string.IsNullOrWhiteSpace(syncedSource))
         {
             var parsedLines = ParseLrcContent(syncedSource);
@@ -2374,8 +2483,8 @@ public partial class LyricsViewModel : ViewModelBase, IDisposable
             if (_hasSyncedLyrics)
                 InsertIntroPlaceholderIfNeeded(parsedLines);
 
-            LyricLines.ReplaceAll(parsedLines);
-            PopulateUnsyncedLines(parsedLines);
+            syncedLines = parsedLines;
+            fillUnsynced = () => PopulateUnsyncedLines(parsedLines);
         }
 
         if (hasPlainField && !plainIsActuallyLrc)
@@ -2386,19 +2495,21 @@ public partial class LyricsViewModel : ViewModelBase, IDisposable
                 var rendered = new List<LyricLine>(split.Length);
                 foreach (var line in split)
                     rendered.Add(new LyricLine { Text = SoftWrapText(line), IsActive = true });
-                LyricLines.ReplaceAll(rendered);
-                UnsyncedLines.ReplaceAll(rendered.Select(r => new LyricLine { Text = r.Text, IsActive = true }));
+                syncedLines = rendered;
+                fillUnsynced = () => UnsyncedLines.ReplaceAll(rendered.Select(r => new LyricLine { Text = r.Text, IsActive = true }));
             }
             else
             {
                 var unsynced = new List<LyricLine>(split.Length);
                 foreach (var line in split)
                     unsynced.Add(new LyricLine { Text = SoftWrapText(line), IsActive = true });
-                UnsyncedLines.ReplaceAll(unsynced);
+                fillUnsynced = () => UnsyncedLines.ReplaceAll(unsynced);
             }
         }
 
-        AutoSelectTab();
+        FillLyricCollections(
+            () => { if (syncedLines != null) LyricLines.ReplaceAll(syncedLines); },
+            () => fillUnsynced?.Invoke());
         LyricsSourceName = string.Empty;
         RefreshActiveLyricPosition();
     }
@@ -2496,6 +2607,32 @@ public partial class LyricsViewModel : ViewModelBase, IDisposable
         foreach (var line in split)
             batch.Add(new LyricLine { Text = SoftWrapText(line), IsActive = true });
         UnsyncedLines.ReplaceAll(batch);
+    }
+
+    /// <summary>
+    /// Fills both lyric collections with ONE rebuild of the visible list. Views bind
+    /// <see cref="ActiveLyricLines"/> (one collection at a time) and a ReplaceAll on
+    /// the bound one rebuilds every line control. Filling both and THEN flipping the
+    /// tab rebuilt twice on a synced↔plain change (old tab's list, then the new one);
+    /// flipping first would rebuild the new tab's STALE lines, then the fresh ones.
+    /// So: fill the collection the new content will show, flip (AutoSelectTab — reads
+    /// only <see cref="_hasSyncedLyrics"/>, which callers set for the NEW content
+    /// first), then fill the other one once it's off-screen.
+    /// </summary>
+    private void FillLyricCollections(Action fillSynced, Action fillUnsynced)
+    {
+        if (_hasSyncedLyrics)
+        {
+            fillSynced();
+            AutoSelectTab();
+            fillUnsynced();
+        }
+        else
+        {
+            fillUnsynced();
+            AutoSelectTab();
+            fillSynced();
+        }
     }
 
     private void AutoSelectTab()
